@@ -5,7 +5,12 @@ import { CONFIG_DIR_NAME, getAgentDir } from "@earendil-works/pi-coding-agent";
 import { codeToANSI } from "@shikijs/cli";
 import * as Diff from "diff";
 import { configIndicatorStyle } from "../core/config.js";
-import { getSepStyle, type ParsedDiff, sepLabelSplit, sepLabelUnified } from "../core/diff.js";
+import {
+	getSepStyle,
+	type ParsedDiff,
+	sepLabelSplit,
+	sepLabelUnified,
+} from "../core/diff.js";
 import type { ReviewHunk } from "./git.js";
 
 type BundledLanguage = Parameters<typeof codeToANSI>[1];
@@ -19,7 +24,9 @@ export interface ReviewHunkPreviewInput {
 	maxLines?: number;
 }
 
-export type ReviewHunkPreviewRenderer = (input: ReviewHunkPreviewInput) => Promise<string>;
+export type ReviewHunkPreviewRenderer = (
+	input: ReviewHunkPreviewInput,
+) => Promise<string>;
 
 interface DiffPreset {
 	name: string;
@@ -59,7 +66,8 @@ interface DiffRenderOptions {
 const DIFF_PRESETS: Record<string, DiffPreset> = {
 	default: {
 		name: "default",
-		description: "Original pi-diff colors — tuned for dark theme bases (~#1e1e2e)",
+		description:
+			"Original pi-diff colors — tuned for dark theme bases (~#1e1e2e)",
 		bgAdd: "#1a3324",
 		bgDel: "#3d2020",
 		bgAddHighlight: "#2d5c3a",
@@ -162,11 +170,16 @@ const ANSI_CAPTURE_RE = /\u001b\[([^m]*)m/g;
 const ANSI_PARAM_CAPTURE_RE = /\u001b\[([0-9;]*)m/g;
 const BG_DEFAULT = "\x1b[49m";
 let BG_BASE = BG_DEFAULT;
-let DEFAULT_DIFF_COLORS: DiffColors = { fgAdd: FG_ADD, fgDel: FG_DEL, fgCtx: FG_DIM };
+let DEFAULT_DIFF_COLORS: DiffColors = {
+	fgAdd: FG_ADD,
+	fgDel: FG_DEL,
+	fgCtx: FG_DIM,
+};
 let _lastResolvedThemeKey = "";
 let _autoDerivePending = true;
 let _hasExplicitBgConfig = false;
-let THEME: BundledTheme = (process.env.DIFF_THEME as BundledTheme | undefined) ?? "github-dark";
+let THEME: BundledTheme =
+	(process.env.DIFF_THEME as BundledTheme | undefined) ?? "github-dark";
 let paletteApplied = false;
 
 const EXT_LANG: Record<string, BundledLanguage> = {
@@ -212,13 +225,21 @@ const EXT_LANG: Record<string, BundledLanguage> = {
 codeToANSI("", "typescript", THEME).catch(() => {});
 const highlightCache = new Map<string, string[]>();
 
-export async function renderReviewHunkPreview(input: ReviewHunkPreviewInput): Promise<string> {
+export async function renderReviewHunkPreview(
+	input: ReviewHunkPreviewInput,
+): Promise<string> {
 	ensurePalette();
 	const diff = createParsedDiffFromReviewHunk(input.hunk);
 	const width = Math.max(MIN_RENDER_WIDTH, input.width || DEFAULT_RENDER_WIDTH);
 	const language = lang(input.filePath);
 	const colors = resolveDiffColors(input.theme);
-	return renderUnified(diff, language, input.maxLines ?? diff.lines.length, colors, width);
+	return renderUnified(
+		diff,
+		language,
+		input.maxLines ?? diff.lines.length,
+		colors,
+		width,
+	);
 }
 
 function ensurePalette(): void {
@@ -272,9 +293,13 @@ function envBg(name: string, fallback: string): string {
 	return `\x1b[48;2;${r};${g};${b}m`;
 }
 
-function parseAnsiRgb(ansi: string): { r: number; g: number; b: number } | null {
+function parseAnsiRgb(
+	ansi: string,
+): { r: number; g: number; b: number } | null {
 	const match = ansi.match(/\u001b\[(?:38|48);2;(\d+);(\d+);(\d+)m/);
-	return match ? { r: Number(match[1]), g: Number(match[2]), b: Number(match[3]) } : null;
+	return match
+		? { r: Number(match[1]), g: Number(match[2]), b: Number(match[3]) }
+		: null;
 }
 
 function hexToBgAnsi(hex: string): string {
@@ -350,7 +375,10 @@ function autoDeriveBgFromTheme(theme: any): void {
 }
 
 function loadDiffConfig(): DiffUserConfig {
-	const paths = [`${process.cwd()}/${CONFIG_DIR_NAME}/settings.json`, `${getAgentDir()}/settings.json`];
+	const paths = [
+		`${process.cwd()}/${CONFIG_DIR_NAME}/settings.json`,
+		`${getAgentDir()}/settings.json`,
+	];
 	for (const path of paths) {
 		try {
 			if (existsSync(path)) {
@@ -404,12 +432,22 @@ export function applyDiffPalette(): void {
 	applyBg("DIFF_BG_DEL", "bgDel", preset?.bgDel, (value) => {
 		BG_DEL = value;
 	});
-	applyBg("DIFF_BG_ADD_HL", "bgAddHighlight", preset?.bgAddHighlight, (value) => {
-		BG_ADD_W = value;
-	});
-	applyBg("DIFF_BG_DEL_HL", "bgDelHighlight", preset?.bgDelHighlight, (value) => {
-		BG_DEL_W = value;
-	});
+	applyBg(
+		"DIFF_BG_ADD_HL",
+		"bgAddHighlight",
+		preset?.bgAddHighlight,
+		(value) => {
+			BG_ADD_W = value;
+		},
+	);
+	applyBg(
+		"DIFF_BG_DEL_HL",
+		"bgDelHighlight",
+		preset?.bgDelHighlight,
+		(value) => {
+			BG_DEL_W = value;
+		},
+	);
 	applyBg("DIFF_BG_GUTTER_ADD", "bgGutterAdd", preset?.bgGutterAdd, (value) => {
 		BG_GUTTER_ADD = value;
 	});
@@ -480,7 +518,11 @@ export function themeCacheKey(theme?: any): string {
 
 export function resolveDiffColors(theme?: any): DiffColors {
 	const currentThemeKey = themeCacheKey(theme);
-	if (!_hasExplicitBgConfig && _lastResolvedThemeKey && _lastResolvedThemeKey !== currentThemeKey) {
+	if (
+		!_hasExplicitBgConfig &&
+		_lastResolvedThemeKey &&
+		_lastResolvedThemeKey !== currentThemeKey
+	) {
 		BG_BASE = BG_DEFAULT;
 		RST = "\x1b[0m";
 		_autoDerivePending = true;
@@ -546,7 +588,9 @@ function fit(content: string, width: number): string {
 		visible += 1;
 		index += 1;
 	}
-	return width > 2 ? `${content.slice(0, index)}${RST}${FG_DIM}›${RST}` : `${content.slice(0, index)}${RST}`;
+	return width > 2
+		? `${content.slice(0, index)}${RST}${FG_DIM}›${RST}`
+		: `${content.slice(0, index)}${RST}`;
 }
 
 function ansiState(content: string): string {
@@ -574,7 +618,8 @@ function isLowContrastShikiFg(params: string): boolean {
 	if (params === "38;5;0" || params === "38;5;8") return true;
 	if (!params.startsWith("38;2;")) return false;
 	const parts = params.split(";").map(Number);
-	if (parts.length !== 5 || parts.some((value) => !Number.isFinite(value))) return false;
+	if (parts.length !== 5 || parts.some((value) => !Number.isFinite(value)))
+		return false;
 	const [, , r, g, b] = parts;
 	const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
 	return luminance < 72;
@@ -586,12 +631,19 @@ function normalizeShikiContrast(ansi: string): string {
 	);
 }
 
-function wrapAnsi(content: string, width: number, maxRows: number, fillBg = ""): string[] {
+function wrapAnsi(
+	content: string,
+	width: number,
+	maxRows: number,
+	fillBg = "",
+): string[] {
 	if (width <= 0) return [""];
 	const plain = strip(content);
 	if (plain.length <= width) {
 		const padding = width - plain.length;
-		return padding > 0 ? [content + fillBg + " ".repeat(padding) + (fillBg ? RST : "")] : [content];
+		return padding > 0
+			? [content + fillBg + " ".repeat(padding) + (fillBg ? RST : "")]
+			: [content];
 	}
 	const rows: string[] = [];
 	let row = "";
@@ -660,12 +712,19 @@ function rule(width: number): string {
 	return `${BG_BASE}${FG_RULE}${"─".repeat(width)}${RST}`;
 }
 
-function shouldUseSplit(diff: ParsedDiff, width: number, maxRows: number, options: DiffRenderOptions = {}): boolean {
+function shouldUseSplit(
+	diff: ParsedDiff,
+	width: number,
+	maxRows: number,
+	options: DiffRenderOptions = {},
+): boolean {
 	if (!diff.lines.length) return false;
 	if (width < SPLIT_MIN_WIDTH) return false;
 	const numberWidth = Math.max(
 		2,
-		String(Math.max(...diff.lines.map((line) => line.oldNum ?? line.newNum ?? 0), 0)).length,
+		String(
+			Math.max(...diff.lines.map((line) => line.oldNum ?? line.newNum ?? 0), 0),
+		).length,
 	);
 	const half = Math.floor(width / 2);
 	const compactGutter = !!options.compactGutter;
@@ -677,7 +736,8 @@ function shouldUseSplit(diff: ParsedDiff, width: number, maxRows: number, option
 	const visibleAdd = visibleLines.filter((line) => line.type === "add").length;
 	const visibleDel = visibleLines.filter((line) => line.type === "del").length;
 	if (visibleAdd === 0 || visibleDel === 0) return false;
-	if (Math.max(visibleAdd, visibleDel) > Math.min(visibleAdd, visibleDel) * 2) return false;
+	if (Math.max(visibleAdd, visibleDel) > Math.min(visibleAdd, visibleDel) * 2)
+		return false;
 
 	let contentLines = 0;
 	let wrapCandidates = 0;
@@ -708,14 +768,19 @@ function touchCache(key: string, value: string[]): string[] {
 	return value;
 }
 
-async function hlBlock(code: string, language: BundledLanguage | undefined): Promise<string[]> {
+async function hlBlock(
+	code: string,
+	language: BundledLanguage | undefined,
+): Promise<string[]> {
 	if (!code) return [""];
 	if (!language || code.length > MAX_HL_CHARS) return code.split("\n");
 	const key = `${THEME}\0${language}\0${code}`;
 	const cached = highlightCache.get(key);
 	if (cached) return touchCache(key, cached);
 	try {
-		const ansi = normalizeShikiContrast(await codeToANSI(code, language, THEME));
+		const ansi = normalizeShikiContrast(
+			await codeToANSI(code, language, THEME),
+		);
 		const output = (ansi.endsWith("\n") ? ansi.slice(0, -1) : ansi).split("\n");
 		return touchCache(key, output);
 	} catch {
@@ -731,7 +796,8 @@ function wordDiffAnalysis(
 	oldRanges: Array<[number, number]>;
 	newRanges: Array<[number, number]>;
 } {
-	if (!oldText && !newText) return { similarity: 1, oldRanges: [], newRanges: [] };
+	if (!oldText && !newText)
+		return { similarity: 1, oldRanges: [], newRanges: [] };
 	const parts = Diff.diffWords(oldText, newText);
 	const oldRanges: Array<[number, number]> = [];
 	const newRanges: Array<[number, number]> = [];
@@ -753,10 +819,19 @@ function wordDiffAnalysis(
 		}
 	}
 	const maxLength = Math.max(oldText.length, newText.length);
-	return { similarity: maxLength > 0 ? same / maxLength : 1, oldRanges, newRanges };
+	return {
+		similarity: maxLength > 0 ? same / maxLength : 1,
+		oldRanges,
+		newRanges,
+	};
 }
 
-function injectBg(ansiLine: string, ranges: Array<[number, number]>, baseBg: string, highlightBg: string): string {
+function injectBg(
+	ansiLine: string,
+	ranges: Array<[number, number]>,
+	baseBg: string,
+	highlightBg: string,
+): string {
 	let output = baseBg;
 	let visible = 0;
 	let inHighlight = false;
@@ -770,16 +845,23 @@ function injectBg(ansiLine: string, ranges: Array<[number, number]>, baseBg: str
 				output += sequence;
 				// Re-inject bg after any reset-like sequence (Shiki uses \x1b[39m
 				// between tokens; some terminals may treat it as a broader reset).
-				if (sequence === "\x1b[0m" || sequence === "\x1b[39m" || sequence === "\x1b[49m") {
+				if (
+					sequence === "\x1b[0m" ||
+					sequence === "\x1b[39m" ||
+					sequence === "\x1b[49m"
+				) {
 					output += inHighlight ? highlightBg : baseBg;
 				}
 				index = end + 1;
 				continue;
 			}
 		}
-		while (rangeIndex < ranges.length && visible >= ranges[rangeIndex][1]) rangeIndex += 1;
+		while (rangeIndex < ranges.length && visible >= ranges[rangeIndex][1])
+			rangeIndex += 1;
 		const wantsHighlight =
-			rangeIndex < ranges.length && visible >= ranges[rangeIndex][0] && visible < ranges[rangeIndex][1];
+			rangeIndex < ranges.length &&
+			visible >= ranges[rangeIndex][0] &&
+			visible < ranges[rangeIndex][1];
 		if (wantsHighlight !== inHighlight) {
 			inHighlight = wantsHighlight;
 			output += inHighlight ? highlightBg : baseBg;
@@ -791,7 +873,10 @@ function injectBg(ansiLine: string, ranges: Array<[number, number]>, baseBg: str
 	return output + RST;
 }
 
-function plainWordDiff(oldText: string, newText: string): { old: string; new: string } {
+function plainWordDiff(
+	oldText: string,
+	newText: string,
+): { old: string; new: string } {
 	const parts = Diff.diffWords(oldText, newText);
 	let oldOutput = "";
 	let newOutput = "";
@@ -819,7 +904,9 @@ export async function renderUnified(
 	const renderWidth = Math.max(MIN_RENDER_WIDTH, width);
 	const numberWidth = Math.max(
 		2,
-		String(Math.max(...visible.map((line) => line.oldNum ?? line.newNum ?? 0), 0)).length,
+		String(
+			Math.max(...visible.map((line) => line.oldNum ?? line.newNum ?? 0), 0),
+		).length,
 	);
 	const compactGutter = !!options.compactGutter;
 	const gutterWidth = numberWidth + (compactGutter ? 3 : 4);
@@ -830,11 +917,16 @@ export async function renderUnified(
 	const oldSource: string[] = [];
 	const newSource: string[] = [];
 	for (const line of visible) {
-		if (line.type === "ctx" || line.type === "del") oldSource.push(line.content);
-		if (line.type === "ctx" || line.type === "add") newSource.push(line.content);
+		if (line.type === "ctx" || line.type === "del")
+			oldSource.push(line.content);
+		if (line.type === "ctx" || line.type === "add")
+			newSource.push(line.content);
 	}
 	const [oldHighlights, newHighlights] = canHighlight
-		? await Promise.all([hlBlock(oldSource.join("\n"), language), hlBlock(newSource.join("\n"), language)])
+		? await Promise.all([
+				hlBlock(oldSource.join("\n"), language),
+				hlBlock(newSource.join("\n"), language),
+			])
 		: [oldSource, newSource];
 
 	let oldIndex = 0;
@@ -850,12 +942,22 @@ export async function renderUnified(
 		body: string,
 		bodyBg = "",
 	): void {
-		const borderFg = sign === "-" ? colors.fgDel : sign === "+" ? colors.fgAdd : "";
-		const border = compactGutter ? "" : borderFg ? `${borderFg}${getBorderBar()}${RST}` : `${BG_BASE} `;
+		const borderFg =
+			sign === "-" ? colors.fgDel : sign === "+" ? colors.fgAdd : "";
+		const border = compactGutter
+			? ""
+			: borderFg
+				? `${borderFg}${getBorderBar()}${RST}`
+				: `${BG_BASE} `;
 		const numFg = borderFg || FG_LNUM;
 		const gutter = `${border}${gutterBg}${lnum(number, numberWidth, numFg)}${gutterBg} ${signFg}${sign}${gutterBg} ${RST}`;
 		const continuationGutter = `${border}${gutterBg}${" ".repeat(numberWidth + 3)}${RST}`;
-		const rows = wrapAnsi(tabs(body), codeWidth, adaptiveWrapRows(renderWidth), bodyBg);
+		const rows = wrapAnsi(
+			tabs(body),
+			codeWidth,
+			adaptiveWrapRows(renderWidth),
+			bodyBg,
+		);
 		output.push(`${gutter}${rows[0]}${RST}`);
 		for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
 			output.push(`${continuationGutter}${rows[rowIndex]}${RST}`);
@@ -865,7 +967,12 @@ export async function renderUnified(
 	while (index < visible.length) {
 		const line = visible[index];
 		if (line.type === "sep") {
-			const label = sepLabelUnified(getSepStyle(), line.hunkMeta, line.newNum, line.content);
+			const label = sepLabelUnified(
+				getSepStyle(),
+				line.hunkMeta,
+				line.newNum,
+				line.content,
+			);
 			if (!label) {
 				index++;
 				continue;
@@ -874,20 +981,30 @@ export async function renderUnified(
 			const padding = Math.max(0, totalWidth - label.length - 2);
 			const left = Math.floor(padding / 2);
 			const right = padding - left;
-			output.push(`${BG_BASE}${FG_DIM}${"─".repeat(left)}${label}${"─".repeat(right)}${RST}`);
+			output.push(
+				`${BG_BASE}${FG_DIM}${"─".repeat(left)}${label}${"─".repeat(right)}${RST}`,
+			);
 			index += 1;
 			continue;
 		}
 		if (line.type === "ctx") {
 			const highlight = oldHighlights[oldIndex] ?? line.content;
-			emitRow(line.newNum, " ", BG_BASE, colors.fgCtx, `${BG_BASE}${DIM}${highlight}`, BG_BASE);
+			emitRow(
+				line.newNum,
+				" ",
+				BG_BASE,
+				colors.fgCtx,
+				`${BG_BASE}${DIM}${highlight}`,
+				BG_BASE,
+			);
 			oldIndex += 1;
 			newIndex += 1;
 			index += 1;
 			continue;
 		}
 
-		const deletions: Array<{ line: ParsedDiff["lines"][number]; hl: string }> = [];
+		const deletions: Array<{ line: ParsedDiff["lines"][number]; hl: string }> =
+			[];
 		while (index < visible.length && visible[index].type === "del") {
 			deletions.push({
 				line: visible[index],
@@ -896,7 +1013,8 @@ export async function renderUnified(
 			oldIndex += 1;
 			index += 1;
 		}
-		const additions: Array<{ line: ParsedDiff["lines"][number]; hl: string }> = [];
+		const additions: Array<{ line: ParsedDiff["lines"][number]; hl: string }> =
+			[];
 		while (index < visible.length && visible[index].type === "add") {
 			additions.push({
 				line: visible[index],
@@ -907,33 +1025,109 @@ export async function renderUnified(
 		}
 
 		const isPaired = deletions.length === 1 && additions.length === 1;
-		const wordDiff = isPaired ? wordDiffAnalysis(deletions[0].line.content, additions[0].line.content) : null;
-		const wordDiffBalanced = wordDiff && wordDiff.oldRanges.length > 0 && wordDiff.newRanges.length > 0;
-		if (isPaired && wordDiffBalanced && wordDiff.similarity >= WORD_DIFF_MIN_SIM && canHighlight) {
-			const deletionBody = injectBg(deletions[0].hl, wordDiff.oldRanges, BG_DEL, BG_DEL_W);
-			const additionBody = injectBg(additions[0].hl, wordDiff.newRanges, BG_ADD, BG_ADD_W);
-			emitRow(deletions[0].line.oldNum, "-", BG_GUTTER_DEL, colors.fgDel, deletionBody, BG_DEL);
-			emitRow(additions[0].line.newNum, "+", BG_GUTTER_ADD, colors.fgAdd, additionBody, BG_ADD);
+		const wordDiff = isPaired
+			? wordDiffAnalysis(deletions[0].line.content, additions[0].line.content)
+			: null;
+		const wordDiffBalanced =
+			wordDiff &&
+			wordDiff.oldRanges.length > 0 &&
+			wordDiff.newRanges.length > 0;
+		if (
+			isPaired &&
+			wordDiffBalanced &&
+			wordDiff.similarity >= WORD_DIFF_MIN_SIM &&
+			canHighlight
+		) {
+			const deletionBody = injectBg(
+				deletions[0].hl,
+				wordDiff.oldRanges,
+				BG_DEL,
+				BG_DEL_W,
+			);
+			const additionBody = injectBg(
+				additions[0].hl,
+				wordDiff.newRanges,
+				BG_ADD,
+				BG_ADD_W,
+			);
+			emitRow(
+				deletions[0].line.oldNum,
+				"-",
+				BG_GUTTER_DEL,
+				colors.fgDel,
+				deletionBody,
+				BG_DEL,
+			);
+			emitRow(
+				additions[0].line.newNum,
+				"+",
+				BG_GUTTER_ADD,
+				colors.fgAdd,
+				additionBody,
+				BG_ADD,
+			);
 			continue;
 		}
-		if (isPaired && wordDiffBalanced && wordDiff.similarity >= WORD_DIFF_MIN_SIM && !canHighlight) {
-			const plain = plainWordDiff(deletions[0].line.content, additions[0].line.content);
-			emitRow(deletions[0].line.oldNum, "-", BG_GUTTER_DEL, colors.fgDel, `${BG_DEL}${plain.old}`, BG_DEL);
-			emitRow(additions[0].line.newNum, "+", BG_GUTTER_ADD, colors.fgAdd, `${BG_ADD}${plain.new}`, BG_ADD);
+		if (
+			isPaired &&
+			wordDiffBalanced &&
+			wordDiff.similarity >= WORD_DIFF_MIN_SIM &&
+			!canHighlight
+		) {
+			const plain = plainWordDiff(
+				deletions[0].line.content,
+				additions[0].line.content,
+			);
+			emitRow(
+				deletions[0].line.oldNum,
+				"-",
+				BG_GUTTER_DEL,
+				colors.fgDel,
+				`${BG_DEL}${plain.old}`,
+				BG_DEL,
+			);
+			emitRow(
+				additions[0].line.newNum,
+				"+",
+				BG_GUTTER_ADD,
+				colors.fgAdd,
+				`${BG_ADD}${plain.new}`,
+				BG_ADD,
+			);
 			continue;
 		}
 		for (const deletion of deletions) {
-			const body = canHighlight ? injectBg(deletion.hl, [], BG_DEL, BG_DEL) : `${BG_DEL}${deletion.line.content}`;
-			emitRow(deletion.line.oldNum, "-", BG_GUTTER_DEL, colors.fgDel, body, BG_DEL);
+			const body = canHighlight
+				? injectBg(deletion.hl, [], BG_DEL, BG_DEL)
+				: `${BG_DEL}${deletion.line.content}`;
+			emitRow(
+				deletion.line.oldNum,
+				"-",
+				BG_GUTTER_DEL,
+				colors.fgDel,
+				body,
+				BG_DEL,
+			);
 		}
 		for (const addition of additions) {
-			const body = canHighlight ? injectBg(addition.hl, [], BG_ADD, BG_ADD) : `${BG_ADD}${addition.line.content}`;
-			emitRow(addition.line.newNum, "+", BG_GUTTER_ADD, colors.fgAdd, body, BG_ADD);
+			const body = canHighlight
+				? injectBg(addition.hl, [], BG_ADD, BG_ADD)
+				: `${BG_ADD}${addition.line.content}`;
+			emitRow(
+				addition.line.newNum,
+				"+",
+				BG_GUTTER_ADD,
+				colors.fgAdd,
+				body,
+				BG_ADD,
+			);
 		}
 	}
 
 	if (diff.lines.length > visible.length) {
-		output.push(`${BG_BASE}${FG_DIM}  … ${diff.lines.length - visible.length} more lines${RST}`);
+		output.push(
+			`${BG_BASE}${FG_DIM}  … ${diff.lines.length - visible.length} more lines${RST}`,
+		);
 	}
 	return output.join("\n");
 }
@@ -983,36 +1177,48 @@ export async function renderSplit(
 			idx++;
 		}
 		const count = Math.max(dels.length, adds.length);
-		for (let r = 0; r < count; r++) rows.push({ left: dels[r] ?? null, right: adds[r] ?? null });
+		for (let r = 0; r < count; r++)
+			rows.push({ left: dels[r] ?? null, right: adds[r] ?? null });
 	}
 
 	const visible = rows.slice(0, maxLines);
 	const renderWidth = Math.max(MIN_RENDER_WIDTH, width);
 	const numberWidth = Math.max(
 		2,
-		String(Math.max(...diff.lines.map((line) => line.oldNum ?? line.newNum ?? 0), 0)).length,
+		String(
+			Math.max(...diff.lines.map((line) => line.oldNum ?? line.newNum ?? 0), 0),
+		).length,
 	);
 	const compactGutter = !!options.compactGutter;
 	const gutterWidth = numberWidth + (compactGutter ? 3 : 4);
 	const half = Math.floor(renderWidth / 2);
 	const codeWidth = Math.max(12, half - gutterWidth);
-	const canHighlight = diff.chars <= MAX_HL_CHARS && visible.length * 2 <= maxLines * 2;
+	const canHighlight =
+		diff.chars <= MAX_HL_CHARS && visible.length * 2 <= maxLines * 2;
 
 	const leftSource: string[] = [];
 	const rightSource: string[] = [];
 	for (const row of visible) {
 		if (row.left && row.left.type !== "sep") leftSource.push(row.left.content);
-		if (row.right && row.right.type !== "sep") rightSource.push(row.right.content);
+		if (row.right && row.right.type !== "sep")
+			rightSource.push(row.right.content);
 	}
 	const [leftHighlights, rightHighlights] = canHighlight
-		? await Promise.all([hlBlock(leftSource.join("\n"), language), hlBlock(rightSource.join("\n"), language)])
+		? await Promise.all([
+				hlBlock(leftSource.join("\n"), language),
+				hlBlock(rightSource.join("\n"), language),
+			])
 		: [leftSource, rightSource];
 
 	let leftIndex = 0;
 	let rightIndex = 0;
 	const output: string[] = [];
 
-	type HalfResult = { gutter: string; continuation: string; bodyRows: string[] };
+	type HalfResult = {
+		gutter: string;
+		continuation: string;
+		bodyRows: string[];
+	};
 
 	function buildHalf(
 		line: ParsedDiff["lines"][number] | null,
@@ -1024,7 +1230,12 @@ export async function renderSplit(
 			return { gutter: "", continuation: "", bodyRows: [""] };
 		}
 		if (line.type === "sep") {
-			const label = sepLabelSplit(getSepStyle(), line.hunkMeta, line.newNum, line.content);
+			const label = sepLabelSplit(
+				getSepStyle(),
+				line.hunkMeta,
+				line.newNum,
+				line.content,
+			);
 			if (!label) return { gutter: "", continuation: "", bodyRows: [""] };
 			const gutter = compactGutter
 				? `${BG_BASE}${FG_DIM}${fit("", numberWidth + 3)}${RST}`
@@ -1037,50 +1248,105 @@ export async function renderSplit(
 		}
 		const isDeletion = line.type === "del";
 		const isAddition = line.type === "add";
-		const gutterBg = isDeletion ? BG_GUTTER_DEL : isAddition ? BG_GUTTER_ADD : BG_BASE;
+		const gutterBg = isDeletion
+			? BG_GUTTER_DEL
+			: isAddition
+				? BG_GUTTER_ADD
+				: BG_BASE;
 		const codeBg = isDeletion ? BG_DEL : isAddition ? BG_ADD : BG_BASE;
-		const signFg = isDeletion ? colors.fgDel : isAddition ? colors.fgAdd : colors.fgCtx;
+		const signFg = isDeletion
+			? colors.fgDel
+			: isAddition
+				? colors.fgAdd
+				: colors.fgCtx;
 		const sign = isDeletion ? "-" : isAddition ? "+" : " ";
-		const number = isDeletion ? line.oldNum : isAddition ? line.newNum : side === "left" ? line.oldNum : line.newNum;
+		const number = isDeletion
+			? line.oldNum
+			: isAddition
+				? line.newNum
+				: side === "left"
+					? line.oldNum
+					: line.newNum;
 		const borderFg = isDeletion ? colors.fgDel : isAddition ? colors.fgAdd : "";
-		const border = compactGutter ? "" : borderFg ? `${borderFg}${getBorderBar()}${RST}` : `${BG_BASE} `;
+		const border = compactGutter
+			? ""
+			: borderFg
+				? `${borderFg}${getBorderBar()}${RST}`
+				: `${BG_BASE} `;
 		const numFg = borderFg || FG_LNUM;
-		let body = isDeletion || isAddition ? injectBg(highlight, [], codeBg, codeBg) : `${BG_BASE}${DIM}${highlight}`;
-		if (ranges && ranges.length > 0) body = injectBg(highlight, ranges, codeBg, isDeletion ? BG_DEL_W : BG_ADD_W);
+		let body =
+			isDeletion || isAddition
+				? injectBg(highlight, [], codeBg, codeBg)
+				: `${BG_BASE}${DIM}${highlight}`;
+		if (ranges && ranges.length > 0)
+			body = injectBg(
+				highlight,
+				ranges,
+				codeBg,
+				isDeletion ? BG_DEL_W : BG_ADD_W,
+			);
 		const gutter = `${border}${gutterBg}${lnum(number, numberWidth, numFg)}${gutterBg} ${signFg}${sign}${gutterBg} ${RST}`;
 		const continuation = `${border}${gutterBg}${" ".repeat(numberWidth + 3)}${RST}`;
 		return {
 			gutter,
 			continuation,
-			bodyRows: wrapAnsi(tabs(body), codeWidth, adaptiveWrapRows(renderWidth), codeBg),
+			bodyRows: wrapAnsi(
+				tabs(body),
+				codeWidth,
+				adaptiveWrapRows(renderWidth),
+				codeBg,
+			),
 		};
 	}
 
 	for (const row of visible) {
-		const isPairedChange = row.left?.type === "del" && row.right?.type === "add";
+		const isPairedChange =
+			row.left?.type === "del" && row.right?.type === "add";
 		const wordDiff =
-			isPairedChange && row.left && row.right ? wordDiffAnalysis(row.left.content, row.right.content) : null;
-		const wordDiffBalanced = wordDiff && wordDiff.oldRanges.length > 0 && wordDiff.newRanges.length > 0;
-		const leftHighlight = row.left && row.left.type !== "sep" ? (leftHighlights[leftIndex++] ?? row.left.content) : "";
+			isPairedChange && row.left && row.right
+				? wordDiffAnalysis(row.left.content, row.right.content)
+				: null;
+		const wordDiffBalanced =
+			wordDiff &&
+			wordDiff.oldRanges.length > 0 &&
+			wordDiff.newRanges.length > 0;
+		const leftHighlight =
+			row.left && row.left.type !== "sep"
+				? (leftHighlights[leftIndex++] ?? row.left.content)
+				: "";
 		const rightHighlight =
-			row.right && row.right.type !== "sep" ? (rightHighlights[rightIndex++] ?? row.right.content) : "";
+			row.right && row.right.type !== "sep"
+				? (rightHighlights[rightIndex++] ?? row.right.content)
+				: "";
 		const leftHalf = buildHalf(
 			row.left,
 			leftHighlight,
-			isPairedChange && wordDiffBalanced && wordDiff.similarity >= WORD_DIFF_MIN_SIM ? wordDiff.oldRanges : null,
+			isPairedChange &&
+				wordDiffBalanced &&
+				wordDiff.similarity >= WORD_DIFF_MIN_SIM
+				? wordDiff.oldRanges
+				: null,
 			"left",
 		);
 		const rightHalf = buildHalf(
 			row.right,
 			rightHighlight,
-			isPairedChange && wordDiffBalanced && wordDiff.similarity >= WORD_DIFF_MIN_SIM ? wordDiff.newRanges : null,
+			isPairedChange &&
+				wordDiffBalanced &&
+				wordDiff.similarity >= WORD_DIFF_MIN_SIM
+				? wordDiff.newRanges
+				: null,
 			"right",
 		);
-		const maxRows = Math.max(leftHalf.bodyRows.length, rightHalf.bodyRows.length);
+		const maxRows = Math.max(
+			leftHalf.bodyRows.length,
+			rightHalf.bodyRows.length,
+		);
 		for (let rowIndex = 0; rowIndex < maxRows; rowIndex++) {
 			const leftBody = leftHalf.bodyRows[rowIndex] ?? "";
 			const rightBody = rightHalf.bodyRows[rowIndex] ?? "";
-			if (!leftHalf.gutter && !rightHalf.gutter && !leftBody && !rightBody) continue;
+			if (!leftHalf.gutter && !rightHalf.gutter && !leftBody && !rightBody)
+				continue;
 			output.push(
 				`${rowIndex === 0 ? leftHalf.gutter : leftHalf.continuation}${leftBody.trimEnd()}${rowIndex === 0 ? rightHalf.gutter : rightHalf.continuation}${rightBody.trimEnd()}`,
 			);
@@ -1088,6 +1354,8 @@ export async function renderSplit(
 	}
 
 	if (rows.length > visible.length)
-		output.push(`${BG_BASE}${FG_DIM}  … ${rows.length - visible.length} more lines${RST}`);
+		output.push(
+			`${BG_BASE}${FG_DIM}  … ${rows.length - visible.length} more lines${RST}`,
+		);
 	return output.join("\n");
 }

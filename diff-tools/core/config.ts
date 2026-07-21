@@ -103,11 +103,14 @@ export function loadPiDiffConfig(cwd?: string): PiDiffJson {
 	for (const filePath of uniquePaths) {
 		try {
 			if (!existsSync(filePath)) continue;
-			const raw = JSON.parse(readFileSync(filePath, "utf-8")) as PiDiffJson & { disabledTools?: unknown };
+			const raw = JSON.parse(readFileSync(filePath, "utf-8")) as PiDiffJson & {
+				disabledTools?: unknown;
+			};
 			if (Array.isArray(raw.disabledTools)) {
 				raw.disabledTools = raw.disabledTools.filter(
 					(tool): tool is PiDiffToolName =>
-						typeof tool === "string" && PI_DIFF_TOOL_NAMES.includes(tool as PiDiffToolName),
+						typeof tool === "string" &&
+						PI_DIFF_TOOL_NAMES.includes(tool as PiDiffToolName),
 				);
 			} else {
 				delete raw.disabledTools;
@@ -138,7 +141,10 @@ function deepMerge(a: PiDiffJson, b: PiDiffJson): PiDiffJson {
 		const bVal = b[key];
 		if (bVal === undefined) continue;
 		if (key === "colors" && typeof bVal === "object" && bVal !== null) {
-			result.colors = { ...((a.colors as Record<string, string>) || {}), ...(bVal as Record<string, string>) };
+			result.colors = {
+				...((a.colors as Record<string, string>) || {}),
+				...(bVal as Record<string, string>),
+			};
 		} else {
 			(result as Record<string, unknown>)[key] = bVal as unknown;
 		}
@@ -158,7 +164,9 @@ export function configLineNumbers(cwd?: string): boolean | undefined {
 	return loadPiDiffConfig(cwd).lineNumbers;
 }
 
-export function configIndicatorStyle(cwd?: string): PiDiffJson["indicatorStyle"] {
+export function configIndicatorStyle(
+	cwd?: string,
+): PiDiffJson["indicatorStyle"] {
 	return loadPiDiffConfig(cwd).indicatorStyle;
 }
 

@@ -154,8 +154,7 @@ function modeMetadata(mode: Mode): {
 function normalizeModeFlag(value: unknown): Mode {
 	if (typeof value !== "string") return "default";
 	const v = value.toLowerCase();
-	if (v === "ask" || v === "plan" || v === "auto" || v === "default")
-		return v;
+	if (v === "ask" || v === "plan" || v === "auto" || v === "default") return v;
 	// Legacy mappings
 	if (v === "normal") return "default";
 	if (v === "accept-edits") return "auto";
@@ -333,8 +332,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			),
 		}),
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-			const snapshot = (): TodoItem[] =>
-				planTodos.map((item) => ({ ...item }));
+			const snapshot = (): TodoItem[] => planTodos.map((item) => ({ ...item }));
 			const result = (text: string, error?: string) => ({
 				content: [{ type: "text" as const, text }],
 				details: {

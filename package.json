@@ -44,7 +44,7 @@
 	],
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
-		"test:diff": "vitest run diff-tools --passWithNoTests",
+		"test:diff": "vitest run --config vitest.diff.config.ts",
 		"test:node": "tsx --test copy-widget/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts"
 	},

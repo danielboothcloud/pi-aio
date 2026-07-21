@@ -211,8 +211,14 @@ test("ask mode is passive without forcing a plan workflow", async () => {
 		const context = await beforeAgentStart?.({}, ctx);
 		assert.match(context.message.content, /\[ASK MODE ACTIVE\]/);
 		assert.match(context.message.content, /Answer the user's request directly/);
-		assert.match(context.message.content, /Do not create an implementation plan/);
-		assert.doesNotMatch(context.message.content, /Create a detailed numbered plan/);
+		assert.match(
+			context.message.content,
+			/Do not create an implementation plan/,
+		);
+		assert.doesNotMatch(
+			context.message.content,
+			/Create a detailed numbered plan/,
+		);
 		assert.equal(process.env.PI_CURSOR_EXPOSE_BUILTIN_TOOLS, undefined);
 	} finally {
 		if (previous === undefined)

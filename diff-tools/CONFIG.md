@@ -1,8 +1,8 @@
 # pi-diff Configuration Guide
 
-pi-diff is configured through a `pi-diff.json` file placed in your project root or at `~/.pi/agent/pi-diff.json`.
+The diff renderer is configured through a `pi-diff.json` file placed in your project root, project Pi config directory, or active Pi agent directory.
 
-> **Priority:** Environment variable > project `pi-diff.json` > `~/.pi/agent/pi-diff.json` > defaults
+> **Priority:** Environment variable > project `pi-diff.json` > project Pi config > `<agent-dir>/pi-diff.json` > defaults
 
 ---
 
@@ -178,10 +178,10 @@ Lines wider than the terminal are shown as-is (no wrapping). Use your terminal's
 
 ## Global Config
 
-Set system-wide defaults for all your projects:
+Set system-wide defaults for all your projects by writing `pi-diff.json` in Pi's active agent directory. For the standard Pi installation:
 
 ```bash
-mkdir -p ~/.pi
+mkdir -p ~/.pi/agent
 cat > ~/.pi/agent/pi-diff.json << 'EOF'
 {
  "indicatorStyle": "classic",

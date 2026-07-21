@@ -2,7 +2,8 @@
 
 Combined Pi extension: structured **`ask_user_question`** dialogs, a **`/pick`**
 code picker, **`/effort`** thinking control, **`!` bash shortcuts**, **Shift+Tab**
-permission modes, and enhanced built-in tool output with FFF-backed search.
+permission modes, enhanced built-in output with FFF-backed search, and
+syntax-highlighted write/edit/patch diffs.
 
 The questionnaire implementation is based on
 [@juicesharp/rpiv-ask-user-question](https://www.npmjs.com/package/@juicesharp/rpiv-ask-user-question),
@@ -266,6 +267,32 @@ Optional `<agent-dir>/aio-pretty.json` background configuration:
 Do not load standalone `@heyhuynhgiabuu/pi-pretty` alongside `aio`: both packages
 own the same built-in tool names and would register duplicate FFF commands.
 
+## Syntax-highlighted diffs
+
+`aio` also owns the `write`, `edit`, and `apply_patch` tools and renders mutations
+as Shiki-highlighted terminal diffs:
+
+- **`edit`** — adaptive side-by-side old/new view with unified fallback on narrow
+  terminals.
+- **`write`** — unified stacked diff for overwrites and highlighted previews for
+  newly created files.
+- **`apply_patch`** — atomic multi-file add/update/delete/move operations with
+  per-file diff previews.
+- **Word-level emphasis** — brighter backgrounds identify the changed characters
+  within paired removed/added lines.
+- **Stale-edit guard** — blocks `edit` calls when any `oldText` is no longer present,
+  forcing the agent to re-read instead of retrying stale text.
+- **Large-diff fallback** — preserves diff structure while skipping expensive syntax
+  highlighting above the configured limit.
+
+Diff colors derive from the active Pi theme by default. Customize presets, colors,
+hunk separators, line numbers, wrapping, indicators, or disabled tools through
+project/global `pi-diff.json` files and `DIFF_*`/`PI_DIFF_*` environment variables.
+See [`diff-tools/CONFIG.md`](diff-tools/CONFIG.md) for the complete reference.
+
+Do not load standalone `@heyhuynhgiabuu/pi-diff` alongside `aio`, because both
+packages register `write`, `edit`, and `apply_patch`.
+
 ## Layout
 
 ```text
@@ -273,6 +300,7 @@ own the same built-in tool names and would register duplicate FFF commands.
 ├── index.ts                 # wires all aio features
 ├── ask-user-question/       # structured question tool + TUI/RPC implementations
 ├── copy-widget/             # /pick parser + TUI overlay
+├── diff-tools/              # write/edit/apply_patch diff rendering
 ├── effort/                  # /effort command + status
 ├── permission-modes/        # Shift+Tab modes + plan flow
 ├── pretty-tools/            # pretty built-ins + FFF search
@@ -282,12 +310,15 @@ own the same built-in tool names and would register duplicate FFF commands.
 ## Notes
 
 - Remove standalone `@juicesharp/rpiv-ask-user-question`,
-  `@pandi-coding-agent/pandi-effort`, `@aprimediet/permission-modes`, and
-  `@heyhuynhgiabuu/pi-pretty` packages from settings when installing this
-  combined package, to avoid duplicate tools, commands, and shortcuts.
+  `@pandi-coding-agent/pandi-effort`, `@aprimediet/permission-modes`,
+  `@heyhuynhgiabuu/pi-pretty`, and `@heyhuynhgiabuu/pi-diff` packages from
+  settings when installing this combined package, to avoid duplicate tools,
+  commands, and shortcuts.
 - Effort status (`effort:…`) and mode status (`● Default`) coexist in the status
   bar; the footer shows the active permission mode.
 - The vendored questionnaire source remains covered by its original MIT license
   in [`ask-user-question/LICENSE`](ask-user-question/LICENSE).
 - The pretty-tool implementation is based on `@heyhuynhgiabuu/pi-pretty` and
   retains its MIT license in [`pretty-tools/LICENSE`](pretty-tools/LICENSE).
+- The diff implementation is based on `@heyhuynhgiabuu/pi-diff` v0.7.6 and
+  retains its MIT license in [`diff-tools/LICENSE`](diff-tools/LICENSE).
