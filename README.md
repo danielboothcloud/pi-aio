@@ -187,6 +187,17 @@ uses a host mutation anyway, Pi cannot retroactively block it; the extension
 shows a warning when the completed replay reaches Pi instead of presenting a
 misleading after-the-fact approval dialog.
 
+### Todo tool
+
+During plan execution, the `todo` tool can manage the active plan steps:
+
+- `list` — show all steps
+- `toggle` — mark a step done or undone using `step`
+- `create` — add a step using `text`, optionally at a 1-based `position`
+- `rename` — replace a step's text using `step` and `text`
+- `reorder` — move `step` to a 1-based `position`; all steps are renumbered
+- `delete` — remove `step`; remaining steps are renumbered
+
 ### Flag
 
 ```bash

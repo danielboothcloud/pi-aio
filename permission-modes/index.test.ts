@@ -20,6 +20,7 @@ function makeHarness(options: { selections?: string[] } = {}) {
 	const notifications: Array<{ message: string; level?: string }> = [];
 	const selectPrompts: string[] = [];
 	const selections = [...(options.selections ?? [])];
+	const tools = new Map<string, any>();
 
 	const pi = {
 		appendEntry: () => {},
@@ -37,7 +38,9 @@ function makeHarness(options: { selections?: string[] } = {}) {
 		},
 		registerFlag: () => {},
 		registerShortcut: () => {},
-		registerTool: () => {},
+		registerTool: (tool: { name: string }) => {
+			tools.set(tool.name, tool);
+		},
 		sendUserMessage: (content: string) => {
 			sentUserMessages.push(content);
 		},
@@ -60,6 +63,7 @@ function makeHarness(options: { selections?: string[] } = {}) {
 			setWorkingIndicator: () => {},
 			theme: {
 				fg: (_color: string, text: string) => text,
+				strikethrough: (text: string) => text,
 			},
 		},
 	} as unknown as ExtensionCommandContext;
@@ -72,8 +76,95 @@ function makeHarness(options: { selections?: string[] } = {}) {
 		pi,
 		selectPrompts,
 		sentUserMessages,
+		tools,
 	};
 }
+
+async function executeTodo(
+	tool: any,
+	params: Record<string, unknown>,
+	ctx: ExtensionCommandContext,
+) {
+	return tool.execute("todo-call", params, undefined, undefined, ctx);
+}
+
+test("todo tool creates, renames, reorders, and deletes steps", async () => {
+	const { ctx, pi, tools } = makeHarness();
+	registerPermissionModes(pi);
+	const todo = tools.get("todo");
+	assert.ok(todo);
+
+	await executeTodo(todo, { action: "create", text: "First" }, ctx);
+	await executeTodo(todo, { action: "create", text: "Third" }, ctx);
+	let response = await executeTodo(
+		todo,
+		{ action: "create", text: "Second", position: 2 },
+		ctx,
+	);
+	assert.deepEqual(
+		response.details.todos.map((item: any) => [item.step, item.text]),
+		[
+			[1, "First"],
+			[2, "Second"],
+			[3, "Third"],
+		],
+	);
+
+	response = await executeTodo(
+		todo,
+		{ action: "rename", step: 1, text: "Updated first" },
+		ctx,
+	);
+	assert.equal(response.details.todos[0].text, "Updated first");
+
+	response = await executeTodo(
+		todo,
+		{ action: "reorder", step: 3, position: 1 },
+		ctx,
+	);
+	assert.deepEqual(
+		response.details.todos.map((item: any) => [item.step, item.text]),
+		[
+			[1, "Third"],
+			[2, "Updated first"],
+			[3, "Second"],
+		],
+	);
+
+	await executeTodo(todo, { action: "toggle", step: 2 }, ctx);
+	response = await executeTodo(todo, { action: "delete", step: 1 }, ctx);
+	assert.deepEqual(response.details.todos, [
+		{ step: 1, text: "Updated first", completed: true },
+		{ step: 2, text: "Second", completed: false },
+	]);
+});
+
+test("todo mutations validate action-specific parameters", async () => {
+	const { ctx, pi, tools } = makeHarness();
+	registerPermissionModes(pi);
+	const todo = tools.get("todo");
+	assert.ok(todo);
+
+	const missingText = await executeTodo(todo, { action: "create" }, ctx);
+	assert.equal(missingText.details.error, "text required");
+
+	await executeTodo(todo, { action: "create", text: "Only step" }, ctx);
+	const badPosition = await executeTodo(
+		todo,
+		{ action: "reorder", step: 1, position: 2 },
+		ctx,
+	);
+	assert.equal(badPosition.details.error, "position must be between 1 and 1");
+
+	const missingStep = await executeTodo(todo, { action: "delete" }, ctx);
+	assert.equal(missingStep.details.error, "step required");
+	const unknownStep = await executeTodo(
+		todo,
+		{ action: "rename", step: 9, text: "Missing" },
+		ctx,
+	);
+	assert.equal(unknownStep.details.error, "step 9 not found");
+});
 
 test("auto mode approves tools without queuing continuation prompts", async () => {
 	const { commands, ctx, handlers, pi, sentUserMessages } = makeHarness();

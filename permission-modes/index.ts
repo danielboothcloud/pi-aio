@@ -10,7 +10,7 @@
  */
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import type { AssistantMessage } from "@earendil-works/pi-ai";
+import { StringEnum, type AssistantMessage } from "@earendil-works/pi-ai";
 import type {
 	ExtensionAPI,
 	ExtensionContext,
@@ -276,63 +276,146 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 	pi.registerTool({
 		name: "todo",
 		label: "Todo",
-		description: "Inspect and update the active plan todo list",
+		description:
+			"Manage the active plan todo list. Actions: list, toggle (step), create (text, optional position), rename (step, text), reorder (step, position), delete (step)",
 		parameters: Type.Object({
-			action: Type.Union([Type.Literal("list"), Type.Literal("toggle")]),
-			step: Type.Optional(Type.Number()),
+			action: StringEnum([
+				"list",
+				"toggle",
+				"create",
+				"rename",
+				"reorder",
+				"delete",
+			] as const),
+			step: Type.Optional(
+				Type.Integer({
+					minimum: 1,
+					description: "Step number (for toggle, rename, reorder, or delete)",
+				}),
+			),
+			text: Type.Optional(
+				Type.String({ description: "Step text (for create or rename)" }),
+			),
+			position: Type.Optional(
+				Type.Integer({
+					minimum: 1,
+					description:
+						"1-based insertion or destination position (for create or reorder)",
+				}),
+			),
 		}),
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-			if (params.action === "list") {
-				let text = "No active todo list";
-				if (planTodos.length > 0) {
-					text = planTodos
-						.map((item) => {
-							const marker = item.completed ? "[x]" : "[ ]";
-							return `${marker} #${item.step}: ${item.text}`;
-						})
-						.join("\n");
+			const snapshot = (): TodoItem[] =>
+				planTodos.map((item) => ({ ...item }));
+			const result = (text: string, error?: string) => ({
+				content: [{ type: "text" as const, text }],
+				details: {
+					action: params.action,
+					todos: snapshot(),
+					...(error ? { error } : {}),
+				},
+			});
+			const renumber = (): void => {
+				for (const [index, item] of planTodos.entries()) {
+					item.step = index + 1;
 				}
-				return {
-					content: [{ type: "text", text }],
-					details: { action: "list", todos: [...planTodos] },
-				};
+			};
+			const findStep = (step: number): TodoItem | undefined =>
+				planTodos.find((item) => item.step === step);
+
+			if (params.action === "list") {
+				const text =
+					planTodos.length === 0
+						? "No active todo list"
+						: planTodos
+								.map((item) => {
+									const marker = item.completed ? "[x]" : "[ ]";
+									return `${marker} #${item.step}: ${item.text}`;
+								})
+								.join("\n");
+				return result(text);
+			}
+
+			if (params.action === "create") {
+				const text = params.text?.trim();
+				if (!text) {
+					return result("Error: text required for create", "text required");
+				}
+				const position = params.position ?? planTodos.length + 1;
+				if (
+					!Number.isInteger(position) ||
+					position < 1 ||
+					position > planTodos.length + 1
+				) {
+					const error = `position must be between 1 and ${planTodos.length + 1}`;
+					return result(`Error: ${error}`, error);
+				}
+				planTodos.splice(position - 1, 0, {
+					step: position,
+					text,
+					completed: false,
+				});
+				renumber();
+				syncPlanTodoWidget(ctx);
+				return result(`Created step ${position}: ${text}`);
 			}
 
 			const step = params.step;
-			if (typeof step !== "number" || !Number.isFinite(step)) {
-				return {
-					content: [{ type: "text", text: "Error: step required for toggle" }],
-					details: {
-						action: "toggle",
-						todos: [...planTodos],
-						error: "step required",
-					},
-				};
+			if (!Number.isInteger(step) || (step ?? 0) < 1) {
+				return result(
+					`Error: step required for ${params.action}`,
+					"step required",
+				);
 			}
 
-			const item = planTodos.find((t) => t.step === step);
+			const item = findStep(step as number);
 			if (!item) {
-				return {
-					content: [{ type: "text", text: `Step ${step} not found` }],
-					details: {
-						action: "toggle",
-						todos: [...planTodos],
-						error: `step ${step} not found`,
-					},
-				};
+				const error = `step ${step} not found`;
+				return result(`Step ${step} not found`, error);
 			}
 
-			item.completed = !item.completed;
-			syncPlanTodoWidget(ctx);
-			return {
-				content: [
-					{
-						type: "text",
-						text: `Step ${step} ${item.completed ? "done" : "undone"}`,
-					},
-				],
-				details: { action: "toggle", todos: [...planTodos] },
-			};
+			switch (params.action) {
+				case "toggle":
+					item.completed = !item.completed;
+					syncPlanTodoWidget(ctx);
+					return result(
+						`Step ${step} ${item.completed ? "done" : "undone"}`,
+					);
+
+				case "rename": {
+					const text = params.text?.trim();
+					if (!text) {
+						return result("Error: text required for rename", "text required");
+					}
+					item.text = text;
+					syncPlanTodoWidget(ctx);
+					return result(`Renamed step ${step}: ${text}`);
+				}
+
+				case "reorder": {
+					const position = params.position;
+					if (
+						!Number.isInteger(position) ||
+						(position ?? 0) < 1 ||
+						(position ?? 0) > planTodos.length
+					) {
+						const error = `position must be between 1 and ${planTodos.length}`;
+						return result(`Error: ${error}`, error);
+					}
+					const currentIndex = planTodos.indexOf(item);
+					planTodos.splice(currentIndex, 1);
+					planTodos.splice((position as number) - 1, 0, item);
+					renumber();
+					syncPlanTodoWidget(ctx);
+					return result(`Moved step ${step} to position ${position}`);
+				}
+
+				case "delete":
+					planTodos.splice(planTodos.indexOf(item), 1);
+					renumber();
+					syncPlanTodoWidget(ctx);
+					return result(`Deleted step ${step}: ${item.text}`);
+			}
 		},
 	});
 
