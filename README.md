@@ -1,7 +1,7 @@
 # aio
 
 Combined Pi extension: structured **`ask_user_question`** dialogs, a **`/pick`**
-code picker, **`/effort`** thinking control, and **Shift+Tab** permission modes.
+code picker, **`/effort`** thinking control, **`!` bash shortcuts**, and **Shift+Tab** permission modes.
 
 The questionnaire implementation is based on
 [@juicesharp/rpiv-ask-user-question](https://www.npmjs.com/package/@juicesharp/rpiv-ask-user-question),
@@ -128,12 +128,44 @@ Set model thinking effort:
 - `ultracode` sets xhigh effort and enables the `dynamic_workflow` tool if available.
 - Current effort appears in the status bar as `effort:<level>`.
 
+## `!` bash shortcuts
+
+Pi runs shell commands when your prompt starts with `!`:
+
+```text
+!ls -la
+!git status
+!!npm test
+```
+
+- `!command` — runs the command, shows output in the transcript, and sends it to the model
+- `!!command` — runs the command and shows output, but excludes it from model context
+
+The `aio` extension applies the same permission-mode rules to your `!` commands as it
+does to agent `bash` tool calls:
+
+| Mode    | `!` read-only commands | `!` mutating commands |
+| ------- | ---------------------- | --------------------- |
+| default | allow                  | prompt                |
+| plan    | allow                  | blocked               |
+| auto    | allow                  | allow                 |
+
+Read-only commands include things like `ls`, `cat`, `git status`, and `grep`. Mutating
+commands include `rm`, redirects, package installs, and most `git write` operations.
+
+While typing a `!` command, aio shows live feedback:
+
+- Editor border switches to bash mode (green by default)
+- Top border label: `! bash` or `!! hidden`
+- Hint line below the editor with the parsed command preview
+- Footer status: `!bash`
+
 ## Permission modes (Shift+Tab)
 
 Cycle with **Shift+Tab**: default → plan → auto → default
 
-| Mode    | Edit/Write/Patch | Mutating bash | Reads |
-| ------- | ---------------- | ------------- | ----- |
+| Mode    | Edit/Write/Patch | Mutating bash / `!` | Reads |
+| ------- | ---------------- | ------------------- | ----- |
 | default | prompt           | prompt        | allow |
 | plan    | disabled         | blocked       | allow |
 | auto    | auto-approve     | auto-approve  | allow |
@@ -169,7 +201,8 @@ pi --permission-mode plan
 ├── ask-user-question/       # structured question tool + TUI/RPC implementations
 ├── copy-widget/             # /pick parser + TUI overlay
 ├── effort/                  # /effort command + status
-└── permission-modes/        # Shift+Tab modes + plan flow
+├── permission-modes/        # Shift+Tab modes + plan flow
+└── user-bash/               # !/!! command permission gating
 ```
 
 ## Notes

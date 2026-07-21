@@ -12,6 +12,7 @@ import registerAskUserQuestion from "./ask-user-question/index.js";
 import { registerCopyWidget } from "./copy-widget/index.js";
 import { registerEffort } from "./effort/index.js";
 import { registerPermissionModes } from "./permission-modes/index.js";
+import { registerUserBash } from "./user-bash/index.js";
 
 export {
 	ASK_USER_PROMPT_EVENT,
@@ -25,4 +26,5 @@ export default function aio(pi: ExtensionAPI): void {
 	registerCopyWidget(pi);
 	registerEffort(pi);
 	registerPermissionModes(pi);
+	registerUserBash(pi);
 }

@@ -26,11 +26,13 @@
 		"effort/**/*.ts",
 		"permission-modes/**/*.ts",
 		"!permission-modes/**/*.test.ts",
+		"user-bash/**/*.ts",
+		"!user-bash/**/*.test.ts",
 		"README.md"
 	],
 	"scripts": {
 		"test": "npm run test:node && npm run test:upstream",
-		"test:node": "tsx --test copy-widget/*.test.ts permission-modes/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:node": "tsx --test copy-widget/*.test.ts permission-modes/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts"
 	},
 	"pi": {

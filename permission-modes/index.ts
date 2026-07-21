@@ -18,6 +18,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
+import { setPermissionModeAccess } from "./mode-access.js";
 import {
 	extractTodoItems,
 	formatCount,
@@ -386,6 +387,11 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 
 		persistState();
 	}
+
+	setPermissionModeAccess({
+		getMode: () => currentMode,
+		setMode,
+	});
 
 	function updateStatus(ctx: ExtensionContext): void {
 		if (!ctx.hasUI) return;
