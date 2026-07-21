@@ -3,6 +3,7 @@
  */
 
 import { relative } from "node:path";
+import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
 
 // ---------------------------------------------------------------------------
 // String / normalization
@@ -61,6 +62,38 @@ export function inferBashExitCode(text: string, fallback: number | null): number
 // ---------------------------------------------------------------------------
 // Compact error lines
 // ---------------------------------------------------------------------------
+
+export function isPassiveExplorationMode(): boolean {
+	const mode = getPermissionModeAccess()?.getMode();
+	return mode === "plan" || mode === "ask";
+}
+
+/** Drop engine/debug footers; keep limits, partial index, and pagination hints. */
+export function filterSearchNotices(notices: string[]): string[] {
+	return notices.filter(
+		(notice) =>
+			!/^(Search engine:|FFF find unavailable|FFF glob returned no matches)/i.test(notice.trim()),
+	);
+}
+
+export function countGrepMatchLines(text: string): number {
+	return normalizeLineEndings(text)
+		.split("\n")
+		.filter((line) => /^.+:\d+:/.test(line.trim()))
+		.length;
+}
+
+export function compactSearchSummary(
+	tool: "grep" | "find",
+	query: string,
+	count: number,
+	unit: "matches" | "files",
+	expanded: boolean,
+): string {
+	const label = query ? `${tool} ${query}` : tool;
+	const hint = expanded ? "" : " · ctrl+o";
+	return `${label} · ${count} ${unit}${hint}`;
+}
 
 export function compactErrorLines(error: string): string[] {
 	const compactedLines: string[] = [];

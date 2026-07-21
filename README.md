@@ -26,6 +26,15 @@ Or one-off:
 pi -e /Users/danielbooth/projects/home/pi
 ```
 
+## Follow-ups panel (upstream Pi)
+
+Cursor-style follow-ups UI (`enter send now · ↑ select/edit · esc cancel`) is
+implemented in **pi-mono** core, not in this extension bundle. Semantics are
+documented in [`follow-ups-panel/SEMANTICS.md`](follow-ups-panel/SEMANTICS.md).
+
+Use a Pi build that includes the follow-ups panel changes (pi-mono PR). This
+`aio` package requires no extra extension for the panel.
+
 Project-local (after trusting the project):
 
 ```bash
