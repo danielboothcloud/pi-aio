@@ -1,13 +1,15 @@
 {
 	"name": "aio",
-	"version": "0.2.0",
-	"description": "Combined Pi extension for copyable code blocks, thinking effort, and permission modes.",
+	"version": "0.3.0",
+	"description": "Combined Pi extension for structured questions, copyable code blocks, thinking effort, and permission modes.",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
 		"pi-package",
 		"pi",
 		"pi-extension",
+		"questionnaire",
+		"clarifying-questions",
 		"clipboard",
 		"effort",
 		"thinking",
@@ -15,6 +17,10 @@
 	],
 	"files": [
 		"index.ts",
+		"ask-user-question/**/*",
+		"!ask-user-question/**/*.test.ts",
+		"!ask-user-question/test-fixtures.ts",
+		"!ask-user-question/test-utils.ts",
 		"copy-widget/**/*.ts",
 		"!copy-widget/**/*.test.ts",
 		"effort/**/*.ts",
@@ -23,7 +29,9 @@
 		"README.md"
 	],
 	"scripts": {
-		"test": "tsx --test copy-widget/*.test.ts permission-modes/*.test.ts"
+		"test": "npm run test:node && npm run test:upstream",
+		"test:node": "tsx --test copy-widget/*.test.ts permission-modes/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:upstream": "vitest run --config vitest.config.ts"
 	},
 	"pi": {
 		"extensions": [
@@ -31,16 +39,24 @@
 		]
 	},
 	"dependencies": {
-		"marked": "18.0.5"
+		"@juicesharp/rpiv-config": "2.0.0",
+		"marked": "18.0.5",
+		"typebox": "^1.1.24"
 	},
 	"devDependencies": {
-		"tsx": "4.20.6"
+		"tsx": "4.20.6",
+		"vitest": "4.1.10"
 	},
 	"peerDependencies": {
 		"@earendil-works/pi-agent-core": "*",
 		"@earendil-works/pi-ai": "*",
 		"@earendil-works/pi-coding-agent": "*",
 		"@earendil-works/pi-tui": "*",
-		"typebox": "*"
+		"@juicesharp/rpiv-i18n": "*"
+	},
+	"peerDependenciesMeta": {
+		"@juicesharp/rpiv-i18n": {
+			"optional": true
+		}
 	}
 }

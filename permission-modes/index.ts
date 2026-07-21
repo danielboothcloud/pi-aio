@@ -2,8 +2,8 @@
  * permission-modes — a Claude-Code-style Shift+Tab mode extension for the pi coding agent.
  *
  * Three modes, cycled with Shift+Tab:
- *  - default: prompt for edit/write and mutating bash; reads pass through
- *  - plan:    read-only exploration; edit/write removed, bash restricted to allowlist
+ *  - default: prompt for file mutations and mutating bash; reads pass through
+ *  - plan:    read-only exploration; file mutation tools removed, bash restricted to allowlist
  *  - auto:    auto-approve edits, writes, and mutating bash; no permission prompts
  *
  * See .pi/plan/BUILD.md for the full spec.
@@ -33,7 +33,10 @@ type Mode = "default" | "plan" | "auto";
 const MODE_CYCLE: Mode[] = ["default", "plan", "auto"];
 
 const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls"];
-const PLAN_MODE_DISABLED_TOOLS = new Set<string>(["edit", "write"]);
+const FILE_MUTATION_TOOLS = new Set<string>(["edit", "write", "apply_patch"]);
+const PLAN_MODE_DISABLED_TOOLS = FILE_MUTATION_TOOLS;
+const CURSOR_BRIDGE_BUILTINS_ENV = "PI_CURSOR_EXPOSE_BUILTIN_TOOLS";
+const CURSOR_REPLAY_TOOL_CALL_PREFIX = "cursor-replay-";
 
 interface PersistedState {
 	currentMode: Mode;
@@ -56,6 +59,63 @@ function getTextContent(message: AssistantMessage): string {
 
 function uniqueToolNames(toolNames: string[]): string[] {
 	return [...new Set(toolNames)];
+}
+
+function isEnabledEnvValue(value: string | undefined): boolean {
+	if (value === undefined) return false;
+	return ["1", "true", "on", "yes", "enabled"].includes(
+		value.trim().toLowerCase(),
+	);
+}
+
+function isCursorReplayToolCall(toolCallId: string): boolean {
+	return toolCallId.startsWith(CURSOR_REPLAY_TOOL_CALL_PREFIX);
+}
+
+function getFileMutationTarget(input: Record<string, unknown>): string {
+	if (typeof input.path === "string") return input.path;
+	if (!Array.isArray(input.changes)) return "(unknown)";
+
+	const paths = uniqueToolNames(
+		input.changes.flatMap((change) => {
+			if (typeof change !== "object" || change === null) return [];
+			const path = (change as Record<string, unknown>).path;
+			return typeof path === "string" ? [path] : [];
+		}),
+	);
+	if (paths.length === 0) return "(unknown)";
+	if (paths.length <= 3) return paths.join(", ");
+	return `${paths.slice(0, 3).join(", ")} (+${paths.length - 3} more)`;
+}
+
+function getCursorReplayMutation(
+	tool: string,
+	input: Record<string, unknown>,
+): string | undefined {
+	if (FILE_MUTATION_TOOLS.has(tool)) return tool;
+	if (tool === "bash") {
+		const command = String(input.command ?? "");
+		return isSafeCommand(command) ? undefined : "shell command";
+	}
+	if (tool !== "cursor") return undefined;
+
+	const label = [input.activityTitle, input.sourceToolName, input.toolName]
+		.filter((value): value is string => typeof value === "string")
+		.join(" ");
+	const mutation = label.match(/\b(edit|write|delete|shell)\b/i)?.[1];
+	return mutation?.toLowerCase();
+}
+
+function cursorModeGuidance(mode: Mode): string {
+	if (mode === "auto") return "";
+	if (mode === "plan") {
+		return `[CURSOR PROVIDER SAFETY]
+Cursor host tools execute inside the headless Cursor SDK and bypass Pi's tool_call gate.
+Do not use Cursor host edit, write, delete, or mutating shell tools in plan mode. Use only read/search operations. If a requested action would mutate state, describe it in the plan instead.`;
+	}
+
+	return `[CURSOR PROVIDER PERMISSION ROUTING]
+Cursor host edit/write/delete/shell tools bypass Pi's permission prompt. For every file mutation or mutating command, use the exposed Pi bridge tools (pi__edit, pi__write, pi__apply_patch, or pi__bash) instead of Cursor host tools so Pi can ask the user before execution. Cursor host read/search tools remain allowed. If the required pi__ tool is unavailable, do not mutate anything; explain that permission routing is unavailable.`;
 }
 
 function modeMetadata(mode: Mode): {
@@ -93,6 +153,21 @@ export function registerPermissionModes(pi: ExtensionAPI): void {
 	let toolsBeforePlanMode: string[] | undefined;
 	let planExecuting = false;
 	let planTodos: TodoItem[] = [];
+	let enabledCursorBridgeBuiltins = false;
+
+	function syncCursorPermissionBridge(ctx: ExtensionContext): void {
+		const shouldEnable =
+			ctx.model?.provider === "cursor" && currentMode === "default";
+		if (shouldEnable && process.env[CURSOR_BRIDGE_BUILTINS_ENV] === undefined) {
+			// Cursor's headless host tools bypass Pi hooks. Expose overlapping Pi
+			// built-ins so mutations can route through the normal permission gate.
+			process.env[CURSOR_BRIDGE_BUILTINS_ENV] = "1";
+			enabledCursorBridgeBuiltins = true;
+		} else if (!shouldEnable && enabledCursorBridgeBuiltins) {
+			delete process.env[CURSOR_BRIDGE_BUILTINS_ENV];
+			enabledCursorBridgeBuiltins = false;
+		}
+	}
 
 	// Stream stats cache (for working message). Kept on the closure so it
 	// survives across events but is reset on each new turn.
@@ -446,11 +521,25 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		const tool = event.toolName;
 		const input = (event.input ?? {}) as Record<string, unknown>;
 
+		// pi-cursor-sdk replay calls only display work that Cursor's host already
+		// completed. Prompting here would be misleading because it cannot prevent
+		// the mutation. Allow the replay card and warn if routing was bypassed.
+		if (isCursorReplayToolCall(event.toolCallId)) {
+			const mutation = getCursorReplayMutation(tool, input);
+			if (mutation && currentMode !== "auto" && ctx.hasUI) {
+				ctx.ui.notify(
+					`Cursor host ${mutation} bypassed ${currentMode} mode; the action already ran outside Pi's permission gate.`,
+					"warning",
+				);
+			}
+			return undefined;
+		}
+
 		if (currentMode === "plan") {
-			if (tool === "edit" || tool === "write") {
+			if (FILE_MUTATION_TOOLS.has(tool)) {
 				return {
 					block: true,
-					reason: "Plan mode: edit/write disabled. Use /plan to exit first.",
+					reason: `Plan mode: ${tool} disabled. Use /plan to exit first.`,
 				};
 			}
 			if (tool === "bash") {
@@ -470,8 +559,8 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		}
 
 		// default mode
-		if (tool === "edit" || tool === "write") {
-			const path = String(input.path ?? "(unknown)");
+		if (FILE_MUTATION_TOOLS.has(tool)) {
+			const path = getFileMutationTarget(input);
 			if (!ctx.hasUI) {
 				return { block: true, reason: `${tool} blocked: no UI to confirm.` };
 			}
@@ -532,6 +621,8 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 	// ---------- before_agent_start: inject mode context ----------
 
 	pi.on("before_agent_start", async (_event, ctx) => {
+		syncCursorPermissionBridge(ctx);
+
 		if (planExecuting && planTodos.length > 0) {
 			const remaining = planTodos.filter((t) => !t.completed);
 			const todoList = remaining.map((t) => `${t.step}. ${t.text}`).join("\n");
@@ -560,7 +651,7 @@ Execute each step in order. After completing a step, include a [DONE:n] tag in y
 You are in plan mode — a read-only exploration mode for safe code analysis.
 
 Restrictions:
-- edit and write tools are disabled
+- edit, write, and apply_patch tools are disabled
 - bash is restricted to an allowlist of read-only commands
 - reads (read/grep/find/ls) pass through
 
@@ -578,9 +669,20 @@ All tool calls (edit, write, bash) are auto-approved — no permission prompts.
 Proceed without asking for confirmation. After completing each meaningful chunk, briefly summarize progress.`;
 		} else {
 			body = `[DEFAULT MODE ACTIVE]
-- edit and write tools require per-call user approval
+- edit, write, and apply_patch tools require per-call user approval
 - mutating bash commands require per-call user approval
 - read-only bash and reads (read/grep/find/ls) pass through without prompting`;
+		}
+
+		if (ctx.model?.provider === "cursor") {
+			const guidance = cursorModeGuidance(currentMode);
+			if (guidance) body += `\n\n${guidance}`;
+			if (
+				currentMode === "default" &&
+				!isEnabledEnvValue(process.env[CURSOR_BRIDGE_BUILTINS_ENV])
+			) {
+				body += `\n\nPi bridge mutation tools are currently unavailable because ${CURSOR_BRIDGE_BUILTINS_ENV} is disabled. Do not mutate files or run mutating commands.`;
+			}
 		}
 
 		return {
@@ -835,5 +937,11 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 
 	pi.on("session_tree", async (_event, ctx) => {
 		await restoreSession(ctx);
+	});
+
+	pi.on("session_shutdown", async () => {
+		if (!enabledCursorBridgeBuiltins) return;
+		delete process.env[CURSOR_BRIDGE_BUILTINS_ENV];
+		enabledCursorBridgeBuiltins = false;
 	});
 }
