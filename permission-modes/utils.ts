@@ -132,7 +132,9 @@ export function extractTodoItems(message: string): TodoItem[] {
 	const headerMatch = message.match(/\*{0,2}Plan:\*{0,2}\s*\n/i);
 	if (!headerMatch) return items;
 
-	const planSection = message.slice(message.indexOf(headerMatch[0]) + headerMatch[0].length);
+	const planSection = message.slice(
+		message.indexOf(headerMatch[0]) + headerMatch[0].length,
+	);
 	const numberedPattern = /^\s*(\d+)[.)]\s+\*{0,2}([^*\n]+)/gm;
 
 	for (const match of planSection.matchAll(numberedPattern)) {
@@ -140,7 +142,12 @@ export function extractTodoItems(message: string): TodoItem[] {
 			.trim()
 			.replace(/\*{1,2}$/, "")
 			.trim();
-		if (text.length > 5 && !text.startsWith("`") && !text.startsWith("/") && !text.startsWith("-")) {
+		if (
+			text.length > 5 &&
+			!text.startsWith("`") &&
+			!text.startsWith("/") &&
+			!text.startsWith("-")
+		) {
 			const cleaned = cleanStepText(text);
 			if (cleaned.length > 3) {
 				items.push({ step: items.length + 1, text: cleaned, completed: false });
@@ -166,33 +173,6 @@ export function markCompletedSteps(text: string, items: TodoItem[]): number {
 		if (item) item.completed = true;
 	}
 	return doneSteps.length;
-}
-
-export function isCompletionSignal(text: string): boolean {
-	if (!text) return false;
-	const t = text.trim();
-	if (t.length === 0) return false;
-	const patterns: RegExp[] = [
-		/\b(plan|task|everything|all)\s+(is\s+)?(complete|completed|done|finished)\b/i,
-		/\ball\s+done\b/i,
-		/\bno\s+(more|further|additional)\s+(work|changes|steps?|edits?|tasks?)\b/i,
-		/\b(none|nothing)\s+(else|more)\s+(to\s+)?do\b/i,
-		/\b(finished|done|complete)\b\s*[\.\!\?]*\s*$/i,
-		/^\s*(done|finished|complete)\s*[\.\!\?]*\s*$/i,
-		/\b(all\s+)?(tests?|checks?)\s+(are\s+)?(pass(ing|es)?|succeed(s|ed)?|green)\b/i,
-		/\b(here('s| is)|below|above)\s+(a\s+)?summary\b/i,
-		/\bsummary\s+(of|:)\b/i,
-		/\b(changes?\s+(applied|made|complete)|implementation\s+(done|complete))\b/i,
-		/\b(fixed|resolved|corrected)\s+(the\s+)?(issue|bug|problem)\b/i,
-		/\b(issue|bug|problem)\s+(fixed|resolved|corrected)\b/i,
-		/\bread(y|ied)\s+(for\s+(review|merge)|to\s+(review|merge|go))\b/i,
-		/\b(all\s+)?(set|good)\b\s*[\.\!\?]*\s*$/i,
-		/\b(that|this)\s+(should\s+)?do\s*it\b/i,
-		/\bsudah\s*(selesai|jadi|beres)\b/i,
-		/\bselesai\b/i,
-		/\bberes\b/i,
-	];
-	return patterns.some((p) => p.test(t));
 }
 
 export function formatCount(n: number): string {

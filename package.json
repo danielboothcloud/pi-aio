@@ -19,10 +19,11 @@
 		"!copy-widget/**/*.test.ts",
 		"effort/**/*.ts",
 		"permission-modes/**/*.ts",
+		"!permission-modes/**/*.test.ts",
 		"README.md"
 	],
 	"scripts": {
-		"test": "node --experimental-strip-types --test copy-widget/*.test.ts"
+		"test": "tsx --test copy-widget/*.test.ts permission-modes/*.test.ts"
 	},
 	"pi": {
 		"extensions": [
@@ -31,6 +32,9 @@
 	},
 	"dependencies": {
 		"marked": "18.0.5"
+	},
+	"devDependencies": {
+		"tsx": "4.20.6"
 	},
 	"peerDependencies": {
 		"@earendil-works/pi-agent-core": "*",

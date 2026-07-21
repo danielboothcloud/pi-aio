@@ -83,8 +83,9 @@ Cycle with **Shift+Tab**: default → plan → auto → default
 
 - `/default`, `/plan`, `/auto` — switch mode directly
 - `/mode [name]` — selector or direct switch
-- `/auto-depth <n>` — auto-follow-up cap (default 20, 0 = unlimited)
-- `/done` — stop auto-follow-up in auto mode
+
+Auto mode only suppresses permission prompts; it does not submit follow-up messages
+or continue the agent automatically.
 
 ### Flag
 

@@ -10,8 +10,12 @@
  */
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import type { AssistantMessage, TextContent } from "@earendil-works/pi-ai";
-import type { ExtensionAPI, ExtensionContext, WorkingIndicatorOptions } from "@earendil-works/pi-coding-agent";
+import type { AssistantMessage } from "@earendil-works/pi-ai";
+import type {
+	ExtensionAPI,
+	ExtensionContext,
+	WorkingIndicatorOptions,
+} from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import {
@@ -43,17 +47,22 @@ function isAssistantMessage(m: AgentMessage): m is AssistantMessage {
 }
 
 function getTextContent(message: AssistantMessage): string {
-	return message.content
-		.filter((block): block is TextContent => block.type === "text")
-		.map((block) => block.text)
-		.join("\n");
+	const text: string[] = [];
+	for (const block of message.content) {
+		if (block.type === "text") text.push(block.text);
+	}
+	return text.join("\n");
 }
 
 function uniqueToolNames(toolNames: string[]): string[] {
 	return [...new Set(toolNames)];
 }
 
-function modeMetadata(mode: Mode): { icon: string; label: string; role: "muted" | "warning" | "accent" } {
+function modeMetadata(mode: Mode): {
+	icon: string;
+	label: string;
+	role: "muted" | "warning" | "accent";
+} {
 	switch (mode) {
 		case "default":
 			return { icon: "●", label: "Default", role: "muted" };
@@ -61,6 +70,8 @@ function modeMetadata(mode: Mode): { icon: string; label: string; role: "muted" 
 			return { icon: "⏸", label: "Plan", role: "warning" };
 		case "auto":
 			return { icon: "▶", label: "Auto", role: "accent" };
+		default:
+			return { icon: "●", label: "Default", role: "muted" };
 	}
 }
 
@@ -113,7 +124,9 @@ export function registerPermissionModes(pi: ExtensionAPI): void {
 	}
 
 	function buildPlanExecutionBody(): string {
-		const remainingList = planTodos.map((t) => `${t.step}. ${t.text}`).join("\n");
+		const remainingList = planTodos
+			.map((t) => `${t.step}. ${t.text}`)
+			.join("\n");
 		const firstStep = planTodos[0];
 		const todoHint =
 			planTodos.length > 2
@@ -166,18 +179,20 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 					ctx.ui.notify(`Mode: ${currentMode}`);
 					return;
 				}
-				const choice = await ctx.ui.select(`Mode: ${currentMode} — switch to:`, [
-					"default",
-					"plan",
-					"auto",
-				]);
+				const choice = await ctx.ui.select(
+					`Mode: ${currentMode} — switch to:`,
+					["default", "plan", "auto"],
+				);
 				if (choice) await setMode(choice as Mode, ctx);
 				return;
 			}
 			if (trimmed === "default" || trimmed === "plan" || trimmed === "auto") {
 				await setMode(trimmed, ctx);
 			} else {
-				ctx.ui.notify(`Unknown mode "${trimmed}". Use: default | plan | auto`, "error");
+				ctx.ui.notify(
+					`Unknown mode "${trimmed}". Use: default | plan | auto`,
+					"error",
+				);
 			}
 		},
 	});
@@ -192,17 +207,17 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		}),
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
 			if (params.action === "list") {
+				let text = "No active todo list";
+				if (planTodos.length > 0) {
+					text = planTodos
+						.map((item) => {
+							const marker = item.completed ? "[x]" : "[ ]";
+							return `${marker} #${item.step}: ${item.text}`;
+						})
+						.join("\n");
+				}
 				return {
-					content: [
-						{
-							type: "text",
-							text: planTodos.length
-								? planTodos
-									.map((item) => `${item.completed ? "[x]" : "[ ]"} #${item.step}: ${item.text}`)
-									.join("\n")
-								: "No active todo list",
-						},
-					],
+					content: [{ type: "text", text }],
 					details: { action: "list", todos: [...planTodos] },
 				};
 			}
@@ -211,7 +226,11 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			if (typeof step !== "number" || !Number.isFinite(step)) {
 				return {
 					content: [{ type: "text", text: "Error: step required for toggle" }],
-					details: { action: "toggle", todos: [...planTodos], error: "step required" },
+					details: {
+						action: "toggle",
+						todos: [...planTodos],
+						error: "step required",
+					},
 				};
 			}
 
@@ -219,14 +238,23 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			if (!item) {
 				return {
 					content: [{ type: "text", text: `Step ${step} not found` }],
-					details: { action: "toggle", todos: [...planTodos], error: `step ${step} not found` },
+					details: {
+						action: "toggle",
+						todos: [...planTodos],
+						error: `step ${step} not found`,
+					},
 				};
 			}
 
 			item.completed = !item.completed;
 			syncPlanTodoWidget(ctx);
 			return {
-				content: [{ type: "text", text: `Step ${step} ${item.completed ? "done" : "undone"}` }],
+				content: [
+					{
+						type: "text",
+						text: `Step ${step} ${item.completed ? "done" : "undone"}`,
+					},
+				],
 				details: { action: "toggle", todos: [...planTodos] },
 			};
 		},
@@ -238,7 +266,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		description: "Cycle permission mode (default → plan → auto)",
 		handler: async (ctx) => {
 			const idx = MODE_CYCLE.indexOf(currentMode);
-			const next = MODE_CYCLE[(idx + 1) % MODE_CYCLE.length]!;
+			const next = MODE_CYCLE[(idx + 1) % MODE_CYCLE.length] ?? "default";
 			await setMode(next, ctx);
 			ctx.ui.notify(`Mode: ${next}`, "info");
 		},
@@ -262,7 +290,9 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			}
 			pi.setActiveTools(
 				uniqueToolNames([
-					...toolsBeforePlanMode.filter((t) => !PLAN_MODE_DISABLED_TOOLS.has(t)),
+					...toolsBeforePlanMode.filter(
+						(t) => !PLAN_MODE_DISABLED_TOOLS.has(t),
+					),
 					...PLAN_MODE_TOOLS,
 				]),
 			);
@@ -285,10 +315,13 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 	function updateStatus(ctx: ExtensionContext): void {
 		if (!ctx.hasUI) return;
 		const meta = modeMetadata(currentMode);
-		ctx.ui.setStatus("modes", ctx.ui.theme.fg(meta.role, `${meta.icon} ${meta.label}`));
+		ctx.ui.setStatus(
+			"modes",
+			ctx.ui.theme.fg(meta.role, `${meta.icon} ${meta.label}`),
+		);
 		const indicator: WorkingIndicatorOptions = {
-			frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"].map(
-				(f) => ctx.ui.theme.fg(meta.role, f),
+			frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"].map((f) =>
+				ctx.ui.theme.fg(meta.role, f),
 			),
 			intervalMs: 80,
 		};
@@ -331,18 +364,32 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 					centerParts.push(ctx.cwd || "");
 					if (gitBranch) centerParts.push(gitBranch);
 					const centerText = centerParts.filter(Boolean).join(" [");
-					const center = theme.fg("dim", centerParts.length > 1 ? `${centerText}]` : centerText);
+					const center = theme.fg(
+						"dim",
+						centerParts.length > 1 ? `${centerText}]` : centerText,
+					);
 
-					const right = theme.fg("dim", ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model");
+					const right = theme.fg(
+						"dim",
+						ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model",
+					);
 
 					const lw = visibleWidth(left);
 					const rw = visibleWidth(right);
 					const cw = Math.max(0, width - lw - rw - 2);
 					const centerVisible = truncateToWidth(center, cw);
-					const remaining = Math.max(1, width - lw - rw - visibleWidth(centerVisible));
+					const remaining = Math.max(
+						1,
+						width - lw - rw - visibleWidth(centerVisible),
+					);
 					const centerPad = " ".repeat(Math.floor(remaining / 2));
 
-					return [truncateToWidth(left + centerPad + centerVisible + centerPad + right, width)];
+					return [
+						truncateToWidth(
+							left + centerPad + centerVisible + centerPad + right,
+							width,
+						),
+					];
 				},
 			};
 		});
@@ -371,7 +418,9 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		const tokens = usage?.tokens ?? 0;
 		const contextWindow = usage?.contextWindow ?? 0;
 		const pct =
-			tokens > 0 && contextWindow > 0 ? Math.round((tokens / contextWindow) * 100) : 0;
+			tokens > 0 && contextWindow > 0
+				? Math.round((tokens / contextWindow) * 100)
+				: 0;
 		return { input, output, cost, pct };
 	}
 
@@ -447,8 +496,13 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			if (!ctx.hasUI) {
 				return { block: true, reason: "bash blocked: no UI to confirm." };
 			}
-			const choice = await ctx.ui.select(`Allow bash "${cmd}"?`, ["Allow", "Block"]);
-			return choice === "Allow" ? undefined : { block: true, reason: "bash blocked by user" };
+			const choice = await ctx.ui.select(`Allow bash "${cmd}"?`, [
+				"Allow",
+				"Block",
+			]);
+			return choice === "Allow"
+				? undefined
+				: { block: true, reason: "bash blocked by user" };
 		}
 
 		// reads and anything else: pass through
@@ -604,7 +658,7 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 		if (!ctx.hasUI) return;
 
 		// Find last assistant message
-		const lastAssistant = [...event.messages].reverse().find(isAssistantMessage);
+		const lastAssistant = event.messages.toReversed().find(isAssistantMessage);
 		if (!lastAssistant) return;
 
 		const extracted = extractTodoItems(getTextContent(lastAssistant));
@@ -612,7 +666,9 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 		planTodos = extracted;
 		persistState();
 
-		const todoListText = planTodos.map((t) => `${t.step}. ☐ ${t.text}`).join("\n");
+		const todoListText = planTodos
+			.map((t) => `${t.step}. ☐ ${t.text}`)
+			.join("\n");
 		const planTodoListMessage = {
 			customType: "modes-plan-list",
 			content: `**Plan Steps (${planTodos.length}):**\n\n${todoListText}`,
@@ -708,8 +764,13 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 						if (items.length > 0) extracted = items;
 						continue;
 					}
-					if (entry.message.role === "toolResult" && entry.message.toolName === "todo") {
-						const details = entry.message.details as { todos?: TodoItem[] } | undefined;
+					if (
+						entry.message.role === "toolResult" &&
+						entry.message.toolName === "todo"
+					) {
+						const details = entry.message.details as
+							| { todos?: TodoItem[] }
+							| undefined;
 						if (Array.isArray(details?.todos) && details.todos.length > 0) {
 							extracted = details.todos.map((item) => ({ ...item }));
 						}
@@ -724,7 +785,11 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 						.slice(executeIndex + 1)
 						.map((e) => {
 							const entry = e as { type?: string; message?: AgentMessage };
-							if (entry.type === "message" && entry.message && isAssistantMessage(entry.message)) {
+							if (
+								entry.type === "message" &&
+								entry.message &&
+								isAssistantMessage(entry.message)
+							) {
 								return getTextContent(entry.message);
 							}
 							return "";
@@ -745,7 +810,9 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 			toolsBeforePlanMode = pi.getActiveTools();
 			pi.setActiveTools(
 				uniqueToolNames([
-					...toolsBeforePlanMode.filter((t) => !PLAN_MODE_DISABLED_TOOLS.has(t)),
+					...toolsBeforePlanMode.filter(
+						(t) => !PLAN_MODE_DISABLED_TOOLS.has(t),
+					),
 					...PLAN_MODE_TOOLS,
 				]),
 			);
