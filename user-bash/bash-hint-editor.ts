@@ -6,7 +6,7 @@ import {
 import type { EditorOptions, EditorTheme, TUI } from "@earendil-works/pi-tui";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { syncBashHint } from "./bash-hint.js";
-import { parseBashInput } from "./parse-bash-input.js";
+import { ensureBashSpacing, parseBashInput } from "./parse-bash-input.js";
 
 function fitBorder(
 	left: string,
@@ -66,6 +66,10 @@ export class BashHintEditor extends CustomEditor {
 
 	handleInput(data: string): void {
 		super.handleInput(data);
+		const spaced = ensureBashSpacing(this.getText());
+		if (spaced !== null) {
+			this.setText(spaced);
+		}
 		syncBashHint(this.ctx, this.getText());
 	}
 

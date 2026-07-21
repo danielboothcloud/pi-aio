@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseBashInput } from "./parse-bash-input.js";
+import { ensureBashSpacing, parseBashInput } from "./parse-bash-input.js";
 
 test("parseBashInput ignores normal prompts", () => {
 	assert.deepEqual(parseBashInput("hello"), {
@@ -29,4 +29,13 @@ test("parseBashInput detects !! hidden prefix", () => {
 		hidden: true,
 		command: "npm test",
 	});
+});
+
+test("ensureBashSpacing inserts space after ! and !!", () => {
+	assert.equal(ensureBashSpacing("!ls"), "! ls");
+	assert.equal(ensureBashSpacing("!!npm test"), "!! npm test");
+	assert.equal(ensureBashSpacing("  !echo hi"), "  ! echo hi");
+	assert.equal(ensureBashSpacing("! ls"), null);
+	assert.equal(ensureBashSpacing("!"), null);
+	assert.equal(ensureBashSpacing("hello"), null);
 });
