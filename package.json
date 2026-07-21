@@ -1,27 +1,36 @@
 {
 	"name": "aio",
-	"version": "0.1.0",
-	"description": "Pi extension combining /effort thinking control and Shift+Tab permission modes (default, plan, auto).",
+	"version": "0.2.0",
+	"description": "Combined Pi extension for copyable code blocks, thinking effort, and permission modes.",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
 		"pi-package",
 		"pi",
 		"pi-extension",
+		"clipboard",
 		"effort",
 		"thinking",
 		"permission-modes"
 	],
 	"files": [
 		"index.ts",
+		"copy-widget/**/*.ts",
+		"!copy-widget/**/*.test.ts",
 		"effort/**/*.ts",
 		"permission-modes/**/*.ts",
 		"README.md"
 	],
+	"scripts": {
+		"test": "node --experimental-strip-types --test copy-widget/*.test.ts"
+	},
 	"pi": {
 		"extensions": [
 			"./index.ts"
 		]
+	},
+	"dependencies": {
+		"marked": "18.0.5"
 	},
 	"peerDependencies": {
 		"@earendil-works/pi-agent-core": "*",

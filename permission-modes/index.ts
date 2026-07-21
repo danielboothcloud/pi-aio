@@ -4,7 +4,7 @@
  * Three modes, cycled with Shift+Tab:
  *  - default: prompt for edit/write and mutating bash; reads pass through
  *  - plan:    read-only exploration; edit/write removed, bash restricted to allowlist
- *  - auto:    auto-approve everything; auto-follow-up until task is done
+ *  - auto:    auto-approve edits, writes, and mutating bash; no permission prompts
  *
  * See .pi/plan/BUILD.md for the full spec.
  */
@@ -17,7 +17,6 @@ import { Type } from "typebox";
 import {
 	extractTodoItems,
 	formatCount,
-	isCompletionSignal,
 	isSafeCommand,
 	markCompletedSteps,
 	type TodoItem,
@@ -34,7 +33,6 @@ const PLAN_MODE_DISABLED_TOOLS = new Set<string>(["edit", "write"]);
 
 interface PersistedState {
 	currentMode: Mode;
-	autoFollowUpDepth: number;
 	toolsBeforePlanMode?: string[];
 }
 
@@ -76,23 +74,11 @@ function normalizeModeFlag(value: unknown): Mode {
 	return "default";
 }
 
-function assistantMadeToolCalls(message: AssistantMessage): boolean {
-	if (!Array.isArray(message.content)) return false;
-	for (const block of message.content) {
-		const t = (block as { type?: string }).type;
-		if (t === "toolCall") return true;
-	}
-	return false;
-}
-
 // ---------- Extension factory ----------
 
 export function registerPermissionModes(pi: ExtensionAPI): void {
 	// ---- Closure state ----
 	let currentMode: Mode = "default";
-	let autoFollowUpDepth = 20;
-	let autoFollowUpCount = 0;
-	let isStepping = false;
 	let toolsBeforePlanMode: string[] | undefined;
 	let planExecuting = false;
 	let planTodos: TodoItem[] = [];
@@ -148,7 +134,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		default: "default",
 	});
 
-	// ---- Register /default, /plan, /auto, /mode, /auto-depth commands ----
+	// ---- Register /default, /plan, /auto, and /mode commands ----
 
 	pi.registerCommand("default", {
 		description: "Switch to default mode (prompt for edits & mutating bash)",
@@ -165,7 +151,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 	});
 
 	pi.registerCommand("auto", {
-		description: "Switch to auto mode (auto-approve everything; auto-follow-up)",
+		description: "Switch to auto mode (auto-approve without follow-up prompts)",
 		handler: async (_args, ctx) => {
 			await setMode("auto", ctx);
 		},
@@ -193,41 +179,6 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			} else {
 				ctx.ui.notify(`Unknown mode "${trimmed}". Use: default | plan | auto`, "error");
 			}
-		},
-	});
-
-	pi.registerCommand("auto-depth", {
-		description: "Set the auto-follow-up cap (0 = unlimited)",
-		handler: async (args, ctx) => {
-			const trimmed = (args ?? "").trim();
-			const n = Number.parseInt(trimmed, 10);
-			if (!Number.isFinite(n) || n < 0) {
-				ctx.ui.notify(`auto-follow-up depth: ${autoFollowUpDepth} (0 = unlimited)`, "info");
-				return;
-			}
-			autoFollowUpDepth = n;
-			persistState();
-			ctx.ui.notify(`auto-follow-up depth set to ${n}`, "info");
-		},
-	});
-
-	pi.registerCommand("done", {
-		description: "Stop auto-follow-up. Mark the current task as complete — no more 'Continue' will be sent in this session until you manually switch back to auto mode.",
-		handler: async (_args, ctx) => {
-			if (currentMode !== "auto") {
-				ctx.ui.notify("Not in auto mode — nothing to stop.", "info");
-				return;
-			}
-			// Exhaust the follow-up cap so no more Continue is sent
-			if (autoFollowUpDepth > 0) {
-				autoFollowUpCount = autoFollowUpDepth;
-			} else {
-				// Unlimited depth — bump count past a reasonable ceiling
-				autoFollowUpCount = 999_999;
-			}
-			isStepping = true;
-			persistState();
-			ctx.ui.notify("Auto-follow-up stopped. Switch mode or run /auto to resume.", "info");
 		},
 	});
 
@@ -299,9 +250,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		const prev = currentMode;
 		currentMode = mode;
 
-		// Reset transient state on every mode switch
-		autoFollowUpCount = 0;
-		isStepping = false;
+		// Reset transient plan state on every mode switch
 		planExecuting = false;
 		planTodos = [];
 
@@ -349,7 +298,6 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 	function persistState(): void {
 		const state: PersistedState = {
 			currentMode,
-			autoFollowUpDepth,
 			toolsBeforePlanMode,
 		};
 		pi.appendEntry("modes", state);
@@ -607,53 +555,24 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 		refreshWorkingMessage(ctx);
 	});
 
-	// ---------- agent_end: reset stepping + working message (runs first) ----------
+	// ---------- agent_end: reset working message (runs first) ----------
 
 	pi.on("agent_end", async (_event, ctx) => {
-		isStepping = false;
 		streamStart = 0;
 		resetWorkingMessage(ctx);
 	});
 
-	// ---------- turn_end: auto-follow-up + plan execution progress ----------
+	// ---------- turn_end: plan execution progress ----------
 
 	pi.on("turn_end", async (event, ctx) => {
 		const last = event.message;
 		if (!last || !isAssistantMessage(last)) return;
 
-		// Plan execution progress
 		if (planExecuting && planTodos.length > 0) {
 			const text = getTextContent(last);
 			markCompletedSteps(text, planTodos);
 			syncPlanTodoWidget(ctx);
 			persistState();
-		}
-
-		// Auto-follow-up (auto mode only)
-		if (currentMode !== "auto") return;
-		if (isStepping) return;
-		if (!assistantMadeToolCalls(last)) return;
-
-		// Heuristic: only follow up if there's no completion signal in the text
-		const text = getTextContent(last);
-		if (isCompletionSignal(text)) return;
-
-		// Cap check
-		if (autoFollowUpDepth > 0 && autoFollowUpCount >= autoFollowUpDepth) return;
-
-		isStepping = true;
-		autoFollowUpCount++;
-		try {
-			pi.sendUserMessage("Continue. Auto mode is active — proceed without asking.", {
-				deliverAs: "followUp",
-			});
-		} catch (err) {
-			isStepping = false;
-			autoFollowUpCount = Math.max(0, autoFollowUpCount - 1);
-			ctx.ui.notify(
-				`Auto follow-up failed: ${err instanceof Error ? err.message : String(err)}`,
-				"warning",
-			);
 		}
 	});
 
@@ -715,8 +634,6 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 			pi.setActiveTools(toolsBeforePlanMode ?? pi.getActiveTools());
 			toolsBeforePlanMode = undefined;
 			currentMode = "auto";
-			autoFollowUpCount = 0;
-			isStepping = false;
 			updateStatus(ctx);
 			persistState();
 
@@ -751,8 +668,6 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 		currentMode = normalizeModeFlag(flag);
 		planExecuting = false;
 		planTodos = [];
-		autoFollowUpCount = 0;
-		isStepping = false;
 		// Reset git branch cache; will be re-seeded by installFooter factory
 		gitBranch = null;
 
@@ -768,9 +683,6 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 				.pop() as { data?: PersistedState } | undefined;
 			if (modesEntry?.data) {
 				currentMode = normalizeModeFlag(modesEntry.data.currentMode);
-				if (typeof modesEntry.data.autoFollowUpDepth === "number") {
-					autoFollowUpDepth = modesEntry.data.autoFollowUpDepth;
-				}
 				toolsBeforePlanMode = modesEntry.data.toolsBeforePlanMode;
 			}
 

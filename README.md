@@ -1,7 +1,7 @@
 # aio
 
-Combined pi extension: **`/effort`** thinking control and **Shift+Tab**
-permission modes.
+Combined Pi extension: a **`/pick`** code picker, **`/effort`**
+thinking control, and **Shift+Tab** permission modes.
 
 Based on
 [@pandi-coding-agent/pandi-effort](https://www.npmjs.com/package/@pandi-coding-agent/pandi-effort)
@@ -39,6 +39,23 @@ shortcut, add this to `~/.pi/agent/keybindings.json`:
 
 Then run `/reload` or restart Pi. Use `/effort` when you want to change the
 thinking level.
+
+## `/pick` command
+
+Run `/pick` to select a fenced code block from the latest assistant
+response and copy its contents to the system clipboard. The centered TUI
+overlay provides a rendered preview of the selected block.
+
+- **Up/Down** or **j/k** — move between code blocks
+- **Page Up/Page Down** or **Ctrl+d/Ctrl+u** — jump through longer lists
+- **g/G** — jump to the first or last block
+- **Enter** — copy the selected block without its Markdown fences
+- **Escape/Ctrl+C/q** — close without copying
+
+The command only searches the latest assistant response and ignores inline or
+indented code. Pi does not expose focusable renderers for existing assistant
+transcript entries, so selection happens in the overlay rather than directly in
+the transcript. Pi's existing Ctrl+X whole-message copy remains unchanged.
 
 ## `/effort` command
 
@@ -79,12 +96,16 @@ pi --permission-mode plan
 
 ```text
 .
-├── index.ts                 # wires effort + permission-modes
+├── index.ts                 # wires all aio features
+├── copy-widget/             # /pick parser + TUI overlay
 ├── effort/                  # /effort command + status
 └── permission-modes/        # Shift+Tab modes + plan flow
 ```
 
 ## Notes
 
-- Remove the standalone `@pandi-coding-agent/pandi-effort` and `@aprimediet/permission-modes` packages from settings if you install this combined package, to avoid duplicate commands/shortcuts.
-- Effort status (`effort:…`) and mode status (`● Default`) coexist in the status bar; the footer shows the active permission mode.
+- Remove the standalone `@pandi-coding-agent/pandi-effort` and
+  `@aprimediet/permission-modes` packages from settings when installing this
+  combined package, to avoid duplicate commands and shortcuts.
+- Effort status (`effort:…`) and mode status (`● Default`) coexist in the status
+  bar; the footer shows the active permission mode.
