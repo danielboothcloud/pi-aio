@@ -1,0 +1,33 @@
+{
+	"name": "aio",
+	"version": "0.1.0",
+	"description": "Pi extension combining /effort thinking control and Shift+Tab permission modes (default, plan, auto).",
+	"license": "MIT",
+	"type": "module",
+	"keywords": [
+		"pi-package",
+		"pi",
+		"pi-extension",
+		"effort",
+		"thinking",
+		"permission-modes"
+	],
+	"files": [
+		"index.ts",
+		"effort/**/*.ts",
+		"permission-modes/**/*.ts",
+		"README.md"
+	],
+	"pi": {
+		"extensions": [
+			"./index.ts"
+		]
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-agent-core": "*",
+		"@earendil-works/pi-ai": "*",
+		"@earendil-works/pi-coding-agent": "*",
+		"@earendil-works/pi-tui": "*",
+		"typebox": "*"
+	}
+}
