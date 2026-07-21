@@ -166,6 +166,61 @@ test("todo mutations validate action-specific parameters", async () => {
 	assert.equal(unknownStep.details.error, "step 9 not found");
 });
 
+test("ask mode is passive without forcing a plan workflow", async () => {
+	const previous = process.env.PI_CURSOR_EXPOSE_BUILTIN_TOOLS;
+	delete process.env.PI_CURSOR_EXPOSE_BUILTIN_TOOLS;
+	try {
+		const { commands, ctx, handlers, pi, selectPrompts } = makeHarness();
+		registerPermissionModes(pi);
+
+		assert.equal(commands.has("ask"), true);
+		await commands.get("ask")?.handler("", ctx);
+
+		const [toolCall] = handlers.get("tool_call") ?? [];
+		const editResult = await toolCall?.(
+			{
+				toolCallId: "ask-edit",
+				toolName: "edit",
+				input: { path: "src/example.ts" },
+			},
+			ctx,
+		);
+		const bashResult = await toolCall?.(
+			{
+				toolCallId: "ask-bash",
+				toolName: "bash",
+				input: { command: "npm install" },
+			},
+			ctx,
+		);
+		const readResult = await toolCall?.(
+			{
+				toolCallId: "ask-read",
+				toolName: "read",
+				input: { path: "README.md" },
+			},
+			ctx,
+		);
+
+		assert.match(editResult.reason, /Ask mode: edit disabled/);
+		assert.match(bashResult.reason, /Ask mode: read-only commands only/);
+		assert.equal(readResult, undefined);
+		assert.deepEqual(selectPrompts, []);
+
+		const [beforeAgentStart] = handlers.get("before_agent_start") ?? [];
+		const context = await beforeAgentStart?.({}, ctx);
+		assert.match(context.message.content, /\[ASK MODE ACTIVE\]/);
+		assert.match(context.message.content, /Answer the user's request directly/);
+		assert.match(context.message.content, /Do not create an implementation plan/);
+		assert.doesNotMatch(context.message.content, /Create a detailed numbered plan/);
+		assert.equal(process.env.PI_CURSOR_EXPOSE_BUILTIN_TOOLS, undefined);
+	} finally {
+		if (previous === undefined)
+			delete process.env.PI_CURSOR_EXPOSE_BUILTIN_TOOLS;
+		else process.env.PI_CURSOR_EXPOSE_BUILTIN_TOOLS = previous;
+	}
+});
+
 test("auto mode approves tools without queuing continuation prompts", async () => {
 	const { commands, ctx, handlers, pi, sentUserMessages } = makeHarness();
 

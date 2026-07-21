@@ -58,6 +58,19 @@ test("user_bash allows read-only commands in plan mode", async () => {
 	assert.equal(result, undefined);
 });
 
+test("user_bash blocks mutating commands in ask mode", async () => {
+	setPermissionModeAccess({
+		getMode: () => "ask",
+		setMode: async () => {},
+	});
+
+	const harness = makeHarness();
+	const result = await harness.runUserBash("npm install");
+	assert.equal(result?.result?.exitCode, 1);
+	assert.match(String(result?.result?.output), /Ask mode/);
+	assert.deepEqual(harness.selectPrompts, []);
+});
+
 test("user_bash blocks mutating commands in plan mode", async () => {
 	setPermissionModeAccess({
 		getMode: () => "plan",

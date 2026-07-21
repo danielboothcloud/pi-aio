@@ -1,6 +1,6 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 
-export type PermissionMode = "default" | "plan" | "auto";
+export type PermissionMode = "default" | "ask" | "plan" | "auto";
 
 export interface PermissionModeAccess {
 	getMode: () => PermissionMode;

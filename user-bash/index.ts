@@ -27,9 +27,10 @@ async function gateUserBash(
 
 	if (mode === "auto" || isSafeCommand(command)) return undefined;
 
-	if (mode === "plan") {
+	if (mode === "ask" || mode === "plan") {
+		const label = mode === "ask" ? "Ask" : "Plan";
 		return blocked(
-			`Plan mode: read-only commands only.\n  Command: ${command}`,
+			`${label} mode: read-only commands only.\n  Command: ${command}`,
 		);
 	}
 

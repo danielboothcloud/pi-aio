@@ -1,9 +1,10 @@
 /**
  * permission-modes — a Claude-Code-style Shift+Tab mode extension for the pi coding agent.
  *
- * Three modes, cycled with Shift+Tab:
+ * Four modes, cycled with Shift+Tab:
  *  - default: prompt for file mutations and mutating bash; reads pass through
- *  - plan:    read-only exploration; file mutation tools removed, bash restricted to allowlist
+ *  - ask:     passive Q&A and exploration; mutations blocked, no plan workflow
+ *  - plan:    read-only exploration followed by an optional execution workflow
  *  - auto:    auto-approve edits, writes, and mutating bash; no permission prompts
  *
  * See .pi/plan/BUILD.md for the full spec.
@@ -29,9 +30,9 @@ import {
 
 // ---------- Types ----------
 
-type Mode = "default" | "plan" | "auto";
+type Mode = "default" | "ask" | "plan" | "auto";
 
-const MODE_CYCLE: Mode[] = ["default", "plan", "auto"];
+const MODE_CYCLE: Mode[] = ["default", "ask", "plan", "auto"];
 
 const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls"];
 const FILE_MUTATION_TOOLS = new Set<string>(["edit", "write", "apply_patch"]);
@@ -41,6 +42,8 @@ const CURSOR_REPLAY_TOOL_CALL_PREFIX = "cursor-replay-";
 
 interface PersistedState {
 	currentMode: Mode;
+	toolsBeforePassiveMode?: string[];
+	/** Legacy persisted field retained for session compatibility. */
 	toolsBeforePlanMode?: string[];
 	planExecuting?: boolean;
 	planTodos?: TodoItem[];
@@ -109,12 +112,20 @@ function getCursorReplayMutation(
 	return mutation?.toLowerCase();
 }
 
+function isPassiveMode(mode: Mode): boolean {
+	return mode === "ask" || mode === "plan";
+}
+
 function cursorModeGuidance(mode: Mode): string {
 	if (mode === "auto") return "";
-	if (mode === "plan") {
+	if (isPassiveMode(mode)) {
+		const fallback =
+			mode === "plan"
+				? "Describe requested mutations in the plan instead."
+				: "Answer the user's request without making changes or creating a plan unless they explicitly request one.";
 		return `[CURSOR PROVIDER SAFETY]
 Cursor host tools execute inside the headless Cursor SDK and bypass Pi's tool_call gate.
-Do not use Cursor host edit, write, delete, or mutating shell tools in plan mode. Use only read/search operations. If a requested action would mutate state, describe it in the plan instead.`;
+Do not use Cursor host edit, write, delete, or mutating shell tools in ${mode} mode. Use only read/search operations. ${fallback}`;
 	}
 
 	return `[CURSOR PROVIDER PERMISSION ROUTING]
@@ -129,6 +140,8 @@ function modeMetadata(mode: Mode): {
 	switch (mode) {
 		case "default":
 			return { icon: "●", label: "Default", role: "muted" };
+		case "ask":
+			return { icon: "?", label: "Ask", role: "accent" };
 		case "plan":
 			return { icon: "⏸", label: "Plan", role: "warning" };
 		case "auto":
@@ -141,9 +154,10 @@ function modeMetadata(mode: Mode): {
 function normalizeModeFlag(value: unknown): Mode {
 	if (typeof value !== "string") return "default";
 	const v = value.toLowerCase();
-	if (v === "plan" || v === "auto" || v === "default") return v;
+	if (v === "ask" || v === "plan" || v === "auto" || v === "default")
+		return v;
 	// Legacy mappings
-	if (v === "ask" || v === "normal") return "default";
+	if (v === "normal") return "default";
 	if (v === "accept-edits") return "auto";
 	return "default";
 }
@@ -153,7 +167,7 @@ function normalizeModeFlag(value: unknown): Mode {
 export function registerPermissionModes(pi: ExtensionAPI): void {
 	// ---- Closure state ----
 	let currentMode: Mode = "default";
-	let toolsBeforePlanMode: string[] | undefined;
+	let toolsBeforePassiveMode: string[] | undefined;
 	let planExecuting = false;
 	let planTodos: TodoItem[] = [];
 	let enabledCursorBridgeBuiltins = false;
@@ -220,12 +234,12 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 
 	// ---- Register CLI flag ----
 	pi.registerFlag("permission-mode", {
-		description: "Start in a permission mode: default | plan | auto",
+		description: "Start in a permission mode: default | ask | plan | auto",
 		type: "string",
 		default: "default",
 	});
 
-	// ---- Register /default, /plan, /auto, and /mode commands ----
+	// ---- Register direct mode commands and /mode ----
 
 	pi.registerCommand("default", {
 		description: "Switch to default mode (prompt for edits & mutating bash)",
@@ -234,8 +248,15 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		},
 	});
 
+	pi.registerCommand("ask", {
+		description: "Switch to ask mode (passive read-only Q&A)",
+		handler: async (_args, ctx) => {
+			await setMode("ask", ctx);
+		},
+	});
+
 	pi.registerCommand("plan", {
-		description: "Switch to plan mode (read-only; edit/write disabled)",
+		description: "Switch to plan mode (read-only planning)",
 		handler: async (_args, ctx) => {
 			await setMode("plan", ctx);
 		},
@@ -259,16 +280,21 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 				}
 				const choice = await ctx.ui.select(
 					`Mode: ${currentMode} — switch to:`,
-					["default", "plan", "auto"],
+					["default", "ask", "plan", "auto"],
 				);
 				if (choice) await setMode(choice as Mode, ctx);
 				return;
 			}
-			if (trimmed === "default" || trimmed === "plan" || trimmed === "auto") {
+			if (
+				trimmed === "default" ||
+				trimmed === "ask" ||
+				trimmed === "plan" ||
+				trimmed === "auto"
+			) {
 				await setMode(trimmed, ctx);
 			} else {
 				ctx.ui.notify(
-					`Unknown mode "${trimmed}". Use: default | plan | auto`,
+					`Unknown mode "${trimmed}". Use: default | ask | plan | auto`,
 					"error",
 				);
 			}
@@ -420,7 +446,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 	// ---- Register Shift+Tab shortcut ----
 
 	pi.registerShortcut("shift+tab", {
-		description: "Cycle permission mode (default → plan → auto)",
+		description: "Cycle permission mode (default → ask → plan → auto)",
 		handler: async (ctx) => {
 			const idx = MODE_CYCLE.indexOf(currentMode);
 			const next = MODE_CYCLE[(idx + 1) % MODE_CYCLE.length] ?? "default";
@@ -439,23 +465,23 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		planExecuting = false;
 		planTodos = [];
 
-		// Apply tool restrictions
-		if (mode === "plan" && prev !== "plan") {
-			// Capture active tools only on first plan entry
-			if (toolsBeforePlanMode === undefined) {
-				toolsBeforePlanMode = pi.getActiveTools();
+		// Ask and plan share the same passive tool restrictions. Switching
+		// between them keeps the original active-tool snapshot intact.
+		if (isPassiveMode(mode) && !isPassiveMode(prev)) {
+			if (toolsBeforePassiveMode === undefined) {
+				toolsBeforePassiveMode = pi.getActiveTools();
 			}
 			pi.setActiveTools(
 				uniqueToolNames([
-					...toolsBeforePlanMode.filter(
+					...toolsBeforePassiveMode.filter(
 						(t) => !PLAN_MODE_DISABLED_TOOLS.has(t),
 					),
 					...PLAN_MODE_TOOLS,
 				]),
 			);
-		} else if (mode !== "plan" && prev === "plan") {
-			pi.setActiveTools(toolsBeforePlanMode ?? pi.getActiveTools());
-			toolsBeforePlanMode = undefined;
+		} else if (!isPassiveMode(mode) && isPassiveMode(prev)) {
+			pi.setActiveTools(toolsBeforePassiveMode ?? pi.getActiveTools());
+			toolsBeforePassiveMode = undefined;
 		}
 
 		// Clear plan widget on any non-plan mode
@@ -493,7 +519,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 	function persistState(): void {
 		const state: PersistedState = {
 			currentMode,
-			toolsBeforePlanMode,
+			toolsBeforePassiveMode,
 		};
 		pi.appendEntry("modes", state);
 	}
@@ -622,11 +648,12 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			return undefined;
 		}
 
-		if (currentMode === "plan") {
+		if (isPassiveMode(currentMode)) {
+			const label = currentMode === "ask" ? "Ask" : "Plan";
 			if (FILE_MUTATION_TOOLS.has(tool)) {
 				return {
 					block: true,
-					reason: `Plan mode: ${tool} disabled. Use /plan to exit first.`,
+					reason: `${label} mode: ${tool} disabled. Switch modes to make changes.`,
 				};
 			}
 			if (tool === "bash") {
@@ -634,7 +661,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 				if (!isSafeCommand(cmd)) {
 					return {
 						block: true,
-						reason: `Plan mode: read-only commands only.\n  Command: ${cmd}`,
+						reason: `${label} mode: read-only commands only.\n  Command: ${cmd}`,
 					};
 				}
 			}
@@ -733,7 +760,18 @@ Execute each step in order. After completing a step, include a [DONE:n] tag in y
 		}
 
 		let body: string;
-		if (currentMode === "plan") {
+		if (currentMode === "ask") {
+			body = `[ASK MODE ACTIVE]
+You are in ask mode — a passive, read-only mode for questions, explanations, and codebase exploration.
+
+Restrictions:
+- edit, write, and apply_patch tools are disabled
+- bash is restricted to an allowlist of read-only commands
+- reads (read/grep/find/ls) pass through
+
+Answer the user's request directly. Inspect the codebase when useful, but do not modify files or system state.
+Do not create an implementation plan unless the user explicitly asks for one.`;
+		} else if (currentMode === "plan") {
 			body = `[PLAN MODE ACTIVE]
 You are in plan mode — a read-only exploration mode for safe code analysis.
 
@@ -876,8 +914,8 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 			// Switch into plan-execute flow (auto mode semantics)
 			planExecuting = true;
 			// Restore tools
-			pi.setActiveTools(toolsBeforePlanMode ?? pi.getActiveTools());
-			toolsBeforePlanMode = undefined;
+			pi.setActiveTools(toolsBeforePassiveMode ?? pi.getActiveTools());
+			toolsBeforePassiveMode = undefined;
 			currentMode = "auto";
 			updateStatus(ctx);
 			persistState();
@@ -928,7 +966,9 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 				.pop() as { data?: PersistedState } | undefined;
 			if (modesEntry?.data) {
 				currentMode = normalizeModeFlag(modesEntry.data.currentMode);
-				toolsBeforePlanMode = modesEntry.data.toolsBeforePlanMode;
+				toolsBeforePassiveMode =
+					modesEntry.data.toolsBeforePassiveMode ??
+					modesEntry.data.toolsBeforePlanMode;
 			}
 
 			// 3) If we were mid-plan-execution, re-scan assistant and todo messages after the last execute marker
@@ -994,20 +1034,23 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 			);
 		}
 
-		// 4) Apply tool restrictions
-		if (currentMode === "plan" && toolsBeforePlanMode === undefined) {
-			toolsBeforePlanMode = pi.getActiveTools();
+		// 4) Apply passive-mode tool restrictions
+		if (isPassiveMode(currentMode)) {
+			toolsBeforePassiveMode ??= pi.getActiveTools();
 			pi.setActiveTools(
 				uniqueToolNames([
-					...toolsBeforePlanMode.filter(
+					...toolsBeforePassiveMode.filter(
 						(t) => !PLAN_MODE_DISABLED_TOOLS.has(t),
 					),
 					...PLAN_MODE_TOOLS,
 				]),
 			);
-		} else if (currentMode !== "plan" && toolsBeforePlanMode !== undefined) {
-			// leftover from a previous run — discard
-			toolsBeforePlanMode = undefined;
+		} else if (
+			!isPassiveMode(currentMode) &&
+			toolsBeforePassiveMode !== undefined
+		) {
+			// Leftover from a previous passive-mode run — discard.
+			toolsBeforePassiveMode = undefined;
 		}
 
 		// 5) Restore plan-execute widget if applicable

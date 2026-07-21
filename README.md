@@ -148,6 +148,7 @@ does to agent `bash` tool calls:
 | Mode    | `!` read-only commands | `!` mutating commands |
 | ------- | ---------------------- | --------------------- |
 | default | allow                  | prompt                |
+| ask     | allow                  | blocked               |
 | plan    | allow                  | blocked               |
 | auto    | allow                  | allow                 |
 
@@ -163,17 +164,23 @@ While typing a `!` command, aio shows live feedback:
 
 ## Permission modes (Shift+Tab)
 
-Cycle with **Shift+Tab**: default → plan → auto → default
+Cycle with **Shift+Tab**: default → ask → plan → auto → default
 
 | Mode    | Edit/Write/Patch | Mutating bash / `!` | Reads |
 | ------- | ---------------- | ------------------- | ----- |
-| default | prompt           | prompt        | allow |
-| plan    | disabled         | blocked       | allow |
-| auto    | auto-approve     | auto-approve  | allow |
+| default | prompt           | prompt              | allow |
+| ask     | disabled         | blocked             | allow |
+| plan    | disabled         | blocked             | allow |
+| auto    | auto-approve     | auto-approve        | allow |
+
+Ask mode is passive Q&A and exploration: it can inspect the codebase and answer
+questions, but it cannot mutate state and does not start plan extraction or
+execution flows. Plan mode has the same read-only boundary but instructs the
+agent to produce a numbered implementation plan.
 
 ### Commands
 
-- `/default`, `/plan`, `/auto` — switch mode directly
+- `/default`, `/ask`, `/plan`, `/auto` — switch mode directly
 - `/mode [name]` — selector or direct switch
 
 Auto mode only suppresses permission prompts; it does not submit follow-up messages
@@ -202,6 +209,7 @@ During plan execution, the `todo` tool can manage the active plan steps:
 ### Flag
 
 ```bash
+pi --permission-mode ask
 pi --permission-mode plan
 ```
 
