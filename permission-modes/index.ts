@@ -42,6 +42,8 @@ const CURSOR_REPLAY_TOOL_CALL_PREFIX = "cursor-replay-";
 interface PersistedState {
 	currentMode: Mode;
 	toolsBeforePlanMode?: string[];
+	planExecuting?: boolean;
+	planTodos?: TodoItem[];
 }
 
 // ---------- Helpers (type guards, text extraction) ----------
@@ -324,15 +326,15 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 				planTodos.find((item) => item.step === step);
 
 			if (params.action === "list") {
-				const text =
-					planTodos.length === 0
-						? "No active todo list"
-						: planTodos
-								.map((item) => {
-									const marker = item.completed ? "[x]" : "[ ]";
-									return `${marker} #${item.step}: ${item.text}`;
-								})
-								.join("\n");
+				let text = "No active todo list";
+				if (planTodos.length > 0) {
+					text = planTodos
+						.map((item) => {
+							const marker = item.completed ? "[x]" : "[ ]";
+							return `${marker} #${item.step}: ${item.text}`;
+						})
+						.join("\n");
+				}
 				return result(text);
 			}
 
@@ -374,48 +376,44 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 				return result(`Step ${step} not found`, error);
 			}
 
-			switch (params.action) {
-				case "toggle":
-					item.completed = !item.completed;
-					syncPlanTodoWidget(ctx);
-					return result(
-						`Step ${step} ${item.completed ? "done" : "undone"}`,
-					);
-
-				case "rename": {
-					const text = params.text?.trim();
-					if (!text) {
-						return result("Error: text required for rename", "text required");
-					}
-					item.text = text;
-					syncPlanTodoWidget(ctx);
-					return result(`Renamed step ${step}: ${text}`);
-				}
-
-				case "reorder": {
-					const position = params.position;
-					if (
-						!Number.isInteger(position) ||
-						(position ?? 0) < 1 ||
-						(position ?? 0) > planTodos.length
-					) {
-						const error = `position must be between 1 and ${planTodos.length}`;
-						return result(`Error: ${error}`, error);
-					}
-					const currentIndex = planTodos.indexOf(item);
-					planTodos.splice(currentIndex, 1);
-					planTodos.splice((position as number) - 1, 0, item);
-					renumber();
-					syncPlanTodoWidget(ctx);
-					return result(`Moved step ${step} to position ${position}`);
-				}
-
-				case "delete":
-					planTodos.splice(planTodos.indexOf(item), 1);
-					renumber();
-					syncPlanTodoWidget(ctx);
-					return result(`Deleted step ${step}: ${item.text}`);
+			if (params.action === "toggle") {
+				item.completed = !item.completed;
+				syncPlanTodoWidget(ctx);
+				return result(`Step ${step} ${item.completed ? "done" : "undone"}`);
 			}
+
+			if (params.action === "rename") {
+				const text = params.text?.trim();
+				if (!text) {
+					return result("Error: text required for rename", "text required");
+				}
+				item.text = text;
+				syncPlanTodoWidget(ctx);
+				return result(`Renamed step ${step}: ${text}`);
+			}
+
+			if (params.action === "reorder") {
+				const position = params.position;
+				if (
+					!Number.isInteger(position) ||
+					(position ?? 0) < 1 ||
+					(position ?? 0) > planTodos.length
+				) {
+					const error = `position must be between 1 and ${planTodos.length}`;
+					return result(`Error: ${error}`, error);
+				}
+				const currentIndex = planTodos.indexOf(item);
+				planTodos.splice(currentIndex, 1);
+				planTodos.splice((position as number) - 1, 0, item);
+				renumber();
+				syncPlanTodoWidget(ctx);
+				return result(`Moved step ${step} to position ${position}`);
+			}
+
+			planTodos.splice(planTodos.indexOf(item), 1);
+			renumber();
+			syncPlanTodoWidget(ctx);
+			return result(`Deleted step ${step}: ${item.text}`);
 		},
 	});
 
