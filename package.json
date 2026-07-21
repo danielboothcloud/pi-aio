@@ -1,7 +1,7 @@
 {
 	"name": "aio",
-	"version": "0.3.0",
-	"description": "Combined Pi extension for structured questions, copyable code blocks, thinking effort, and permission modes.",
+	"version": "0.4.0",
+	"description": "Combined Pi extension for structured questions, copyable code blocks, thinking effort, permission modes, and enhanced built-in tool output.",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
@@ -13,7 +13,10 @@
 		"clipboard",
 		"effort",
 		"thinking",
-		"permission-modes"
+		"permission-modes",
+		"syntax-highlighting",
+		"pretty-print",
+		"fff"
 	],
 	"files": [
 		"index.ts",
@@ -26,13 +29,16 @@
 		"effort/**/*.ts",
 		"permission-modes/**/*.ts",
 		"!permission-modes/**/*.test.ts",
+		"pretty-tools/**/*.ts",
+		"!pretty-tools/**/*.test.ts",
+		"pretty-tools/LICENSE",
 		"user-bash/**/*.ts",
 		"!user-bash/**/*.test.ts",
 		"README.md"
 	],
 	"scripts": {
 		"test": "npm run test:node && npm run test:upstream",
-		"test:node": "tsx --test copy-widget/*.test.ts permission-modes/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:node": "tsx --test copy-widget/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts"
 	},
 	"pi": {
@@ -41,11 +47,18 @@
 		]
 	},
 	"dependencies": {
+		"@ff-labs/fff-node": "^0.10.0",
 		"@juicesharp/rpiv-config": "2.0.0",
+		"@shikijs/cli": "4.0.2",
 		"marked": "18.0.5",
+		"shiki": "4.0.2",
 		"typebox": "^1.1.24"
 	},
 	"devDependencies": {
+		"@earendil-works/pi-agent-core": "0.80.10",
+		"@earendil-works/pi-ai": "0.80.10",
+		"@earendil-works/pi-coding-agent": "0.80.10",
+		"@earendil-works/pi-tui": "0.80.10",
 		"tsx": "4.20.6",
 		"vitest": "4.1.10"
 	},

@@ -1,7 +1,8 @@
 # aio
 
 Combined Pi extension: structured **`ask_user_question`** dialogs, a **`/pick`**
-code picker, **`/effort`** thinking control, **`!` bash shortcuts**, and **Shift+Tab** permission modes.
+code picker, **`/effort`** thinking control, **`!` bash shortcuts**, **Shift+Tab**
+permission modes, and enhanced built-in tool output with FFF-backed search.
 
 The questionnaire implementation is based on
 [@juicesharp/rpiv-ask-user-question](https://www.npmjs.com/package/@juicesharp/rpiv-ask-user-question),
@@ -204,6 +205,59 @@ During plan execution, the `todo` tool can manage the active plan steps:
 pi --permission-mode plan
 ```
 
+## Pretty built-in tools
+
+`aio` replaces Pi's built-in `read`, `bash`, `ls`, `find`, and `grep` tool
+definitions while delegating their normal execution to Pi. The replacements add:
+
+- **`read`** — collapsed line-count summaries, expanded line-numbered Shiki syntax
+  highlighting, and Pi's native inline image rendering.
+- **`bash`** — colored `exit 0`/`exit 1` summaries, elapsed time, line counts,
+  and expanded command output.
+- **`ls`** — Nerd Font icons and tree-oriented expanded listings.
+- **`find`** — FFF-backed, frecency-aware file search with grouped results and
+  automatic fallback to Pi's normal `fd` implementation.
+- **`grep`** — FFF-backed content search with file grouping, line numbers,
+  highlighted literal matches, context lines, and fallback to Pi's normal search
+  whenever `path` or `glob` scopes are supplied.
+- **`@file` completion** — FFF-ranked file suggestions while composing prompts.
+
+Tool result bodies start collapsed. Press **Ctrl+O** (`app.tools.expand`) to toggle
+full output. Pi also recognizes **Ctrl+Shift+O** for expanding all tool output in
+supported builds.
+
+FFF initializes for the current project at session start and stores its frecency
+and history data under `<agent-dir>/aio/fff/`. Use these maintenance commands:
+
+```text
+/fff-health
+/fff-rescan
+```
+
+All five enhanced tools are enabled by default. Configuration environment variables:
+
+- `PRETTY_DISABLE_TOOLS` — comma-separated tools to leave untouched.
+- `PRETTY_ENABLE_TOOLS` — explicitly enable tools if defaults change.
+- `PRETTY_THEME` — Shiki theme; otherwise the active Pi theme or `github-dark`.
+- `PRETTY_ICONS=none` — disable Nerd Font icons.
+- `PRETTY_MAX_HL_CHARS`, `PRETTY_MAX_PREVIEW_LINES`, `PRETTY_CACHE_LIMIT` —
+  highlighting and preview limits.
+- `PRETTY_CONFIG_DIR` — directory containing `aio-pretty.json`.
+
+Optional `<agent-dir>/aio-pretty.json` background configuration:
+
+```json
+{
+  "background": {
+    "tool": "#1e1e2e",
+    "error": "#2a1e1e"
+  }
+}
+```
+
+Do not load standalone `@heyhuynhgiabuu/pi-pretty` alongside `aio`: both packages
+own the same built-in tool names and would register duplicate FFF commands.
+
 ## Layout
 
 ```text
@@ -213,16 +267,19 @@ pi --permission-mode plan
 ├── copy-widget/             # /pick parser + TUI overlay
 ├── effort/                  # /effort command + status
 ├── permission-modes/        # Shift+Tab modes + plan flow
+├── pretty-tools/            # pretty built-ins + FFF search
 └── user-bash/               # !/!! command permission gating
 ```
 
 ## Notes
 
 - Remove standalone `@juicesharp/rpiv-ask-user-question`,
-  `@pandi-coding-agent/pandi-effort`, and `@aprimediet/permission-modes`
-  packages from settings when installing this combined package, to avoid
-  duplicate tools, commands, and shortcuts.
+  `@pandi-coding-agent/pandi-effort`, `@aprimediet/permission-modes`, and
+  `@heyhuynhgiabuu/pi-pretty` packages from settings when installing this
+  combined package, to avoid duplicate tools, commands, and shortcuts.
 - Effort status (`effort:…`) and mode status (`● Default`) coexist in the status
   bar; the footer shows the active permission mode.
 - The vendored questionnaire source remains covered by its original MIT license
   in [`ask-user-question/LICENSE`](ask-user-question/LICENSE).
+- The pretty-tool implementation is based on `@heyhuynhgiabuu/pi-pretty` and
+  retains its MIT license in [`pretty-tools/LICENSE`](pretty-tools/LICENSE).

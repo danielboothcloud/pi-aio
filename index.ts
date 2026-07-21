@@ -1,6 +1,6 @@
 /**
- * Combined Pi extension: ask_user_question, /pick, /effort, and Shift+Tab
- * permission modes.
+ * Combined Pi extension: ask_user_question, /pick, /effort, Shift+Tab
+ * permission modes, and enhanced built-in tool output with FFF search.
  *
  * Effort and permission modes are based on @pandi-coding-agent/pandi-effort
  * and @aprimediet/permission-modes. The questionnaire implementation is based
@@ -12,6 +12,7 @@ import registerAskUserQuestion from "./ask-user-question/index.js";
 import { registerCopyWidget } from "./copy-widget/index.js";
 import { registerEffort } from "./effort/index.js";
 import { registerPermissionModes } from "./permission-modes/index.js";
+import registerPrettyTools from "./pretty-tools/index.js";
 import { registerUserBash } from "./user-bash/index.js";
 
 export {
@@ -21,10 +22,11 @@ export {
 	type AskUserPromptQuestion,
 } from "./ask-user-question/events.js";
 
-export default function aio(pi: ExtensionAPI): void {
+export default async function aio(pi: ExtensionAPI): Promise<void> {
 	registerAskUserQuestion(pi);
 	registerCopyWidget(pi);
 	registerEffort(pi);
 	registerPermissionModes(pi);
 	registerUserBash(pi);
+	await registerPrettyTools(pi);
 }
