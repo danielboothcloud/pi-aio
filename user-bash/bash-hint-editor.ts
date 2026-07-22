@@ -64,6 +64,11 @@ export class BashHintEditor extends CustomEditor {
 		syncBashHint(ctx, this.getText());
 	}
 
+	setPaddingX(padding: number): void {
+		// Pi copies default editor padding (0) onto custom editors after creation.
+		super.setPaddingX(Math.max(1, padding));
+	}
+
 	handleInput(data: string): void {
 		super.handleInput(data);
 		const spaced = ensureBashSpacing(this.getText());
