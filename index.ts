@@ -1,6 +1,7 @@
 /**
  * Combined Pi extension: ask_user_question, /pick, /effort, Shift+Tab
- * permission modes, enhanced built-in tool output, syntax-highlighted diffs, and rtk shell-command rewriting.
+ * permission modes, enhanced built-in tool output, syntax-highlighted diffs, rtk shell-command
+ * rewriting, and ast-grep structural search.
  *
  * Effort and permission modes are based on @pandi-coding-agent/pandi-effort
  * and @aprimediet/permission-modes. The questionnaire implementation is based
@@ -9,6 +10,7 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import registerAskUserQuestion from "./ask-user-question/index.js";
+import { registerAstGrep } from "./ast-grep/index.js";
 import { registerCopyWidget } from "./copy-widget/index.js";
 import registerDiffTools from "./diff-tools/index.js";
 import { registerEffort } from "./effort/index.js";
@@ -28,6 +30,7 @@ export {
 
 export default async function aio(pi: ExtensionAPI): Promise<void> {
 	registerAskUserQuestion(pi);
+	registerAstGrep(pi);
 	registerCopyWidget(pi);
 	registerEffort(pi);
 	registerInit(pi);

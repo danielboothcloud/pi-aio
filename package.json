@@ -1,7 +1,7 @@
 {
 	"name": "aio",
 	"version": "0.6.0",
-	"description": "Combined Pi extension for structured questions, permission modes, subagent delegation, enhanced built-in tools, syntax-highlighted diffs, and rtk shell-command rewriting.",
+	"description": "Combined Pi extension for structured questions, permission modes, subagent delegation, enhanced built-in tools, syntax-highlighted diffs, rtk shell-command rewriting, and ast-grep structural search.",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
@@ -24,7 +24,11 @@
 		"word-diff",
 		"rtk",
 		"token-optimization",
-		"shell-rewrite"
+		"shell-rewrite",
+		"ast-grep",
+		"structural-search",
+		"syntax-aware-search",
+		"codemod"
 	],
 	"files": [
 		"index.ts",
@@ -53,12 +57,14 @@
 		"!subagents/**/*.test.ts",
 		"user-bash/**/*.ts",
 		"!user-bash/**/*.test.ts",
+		"ast-grep/**/*.ts",
+		"!ast-grep/**/*.test.ts",
 		"README.md"
 	],
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
-		"test:node": "tsx --test copy-widget/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts rtk/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:node": "tsx --test ast-grep/*.test.ts copy-widget/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts rtk/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts"
 	},
 	"pi": {
@@ -67,6 +73,7 @@
 		]
 	},
 	"dependencies": {
+		"@ast-grep/cli": "0.43.0",
 		"@ff-labs/fff-node": "^0.10.0",
 		"@juicesharp/rpiv-config": "2.0.0",
 		"@shikijs/cli": "4.0.2",
