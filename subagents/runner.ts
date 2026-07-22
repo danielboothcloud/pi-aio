@@ -4,6 +4,10 @@ import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
 import { findAgent } from "./agents.js";
+import {
+	childSupportsModel,
+	resolveChildExtensionPaths,
+} from "./extensions.js";
 import { createRun } from "./registry.js";
 import type {
 	AgentConfig,
@@ -125,7 +129,13 @@ function resolvedModel(
 	agent: AgentConfig,
 	parent: ParentLaunchContext,
 ): string | undefined {
-	return task.model ?? request.model ?? agent.model ?? parent.model;
+	const model =
+		task.model ?? request.model ?? agent.model ?? parent.model;
+	if (!model) return undefined;
+	const extensionPaths =
+		parent.extensionPaths ??
+		resolveChildExtensionPaths({ modelProvider: parent.modelProvider });
+	return childSupportsModel(extensionPaths, model) ? model : undefined;
 }
 
 function resolvedThinking(
@@ -176,8 +186,14 @@ export function buildSpawnSpec(input: {
 	});
 
 	const args = [...(input.deps?.piArgsPrefix ?? []), "--mode", "json", "-p"];
-	if (input.parent.extensionPath) {
-		args.push("--no-extensions", "--extension", input.parent.extensionPath);
+	const extensionPaths =
+		input.parent.extensionPaths ??
+		resolveChildExtensionPaths({ modelProvider: input.parent.modelProvider });
+	if (extensionPaths.length) {
+		args.push("--no-extensions");
+		for (const extensionPath of extensionPaths) {
+			args.push("--extension", extensionPath);
+		}
 	}
 	const context = input.request.context ?? "fresh";
 	let requestedSessionFile: string | undefined;

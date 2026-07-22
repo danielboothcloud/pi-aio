@@ -11,6 +11,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, test } from "node:test";
 import { discoverAgents } from "./agents.ts";
+import {
+	AIO_EXTENSION_PATH,
+	resolveCursorExtensionPath,
+} from "./extensions.ts";
 import { clearRuns, listRuns, stopRun } from "./registry.ts";
 import { buildSpawnSpec, executeSubagentRun } from "./runner.ts";
 import type { AgentConfig, ParentLaunchContext } from "./types.ts";
@@ -99,14 +103,13 @@ test("project agents are excluded when project trust is unavailable", () => {
 
 test("spawn specification inherits the active parent model and thinking level", () => {
 	const runsBaseDir = temporaryDirectory();
-	const extensionPath = fileURLToPath(new URL("../index.ts", import.meta.url));
 	const spec = buildSpawnSpec({
 		runId: "run-1",
 		index: 0,
 		task: { agent: "reviewer", task: "review this" },
 		request: { agent: "reviewer", task: "review this" },
 		agent: agent(),
-		parent: parent({ extensionPath }),
+		parent: parent({ extensionPaths: [AIO_EXTENSION_PATH] }),
 		deps: { runsBaseDir },
 	});
 
@@ -136,14 +139,14 @@ test("spawn specification inherits the active parent model and thinking level", 
 	assert.equal(spec.args[spec.args.indexOf("--tools") + 1], "read,grep");
 });
 
-test("spawn specification omits extension flags when parent has no extension path", () => {
+test("spawn specification omits extension flags when extension paths are empty", () => {
 	const spec = buildSpawnSpec({
 		runId: "run-1",
 		index: 0,
 		task: { agent: "reviewer", task: "review this" },
 		request: { agent: "reviewer", task: "review this" },
 		agent: agent(),
-		parent: parent(),
+		parent: parent({ extensionPaths: [] }),
 		deps: { runsBaseDir: temporaryDirectory() },
 	});
 	assert.equal(spec.args.includes("--extension"), false);
@@ -303,4 +306,44 @@ test("stop terminates an active background-style run", async () => {
 	const run = await promise;
 	assert.equal(run.state, "stopped");
 	assert.equal(run.results[0].state, "stopped");
+});
+
+test("cursor parent models include pi-cursor-sdk when it is installed", () => {
+	const cursorExtension = resolveCursorExtensionPath();
+	if (!cursorExtension) return;
+	const spec = buildSpawnSpec({
+		runId: "run-cursor",
+		index: 0,
+		task: { agent: "reviewer", task: "review this" },
+		request: { agent: "reviewer", task: "review this" },
+		agent: agent(),
+		parent: parent({
+			model: "cursor/composer-2.5",
+			modelProvider: "cursor",
+			extensionPaths: [AIO_EXTENSION_PATH, cursorExtension],
+		}),
+		deps: { runsBaseDir: temporaryDirectory() },
+	});
+	assert.equal(
+		spec.args[spec.args.indexOf("--model") + 1],
+		"cursor/composer-2.5",
+	);
+	assert.equal(spec.args.includes(cursorExtension), true);
+});
+
+test("cursor parent models omit --model when pi-cursor-sdk is unavailable", () => {
+	const spec = buildSpawnSpec({
+		runId: "run-cursor-fallback",
+		index: 0,
+		task: { agent: "reviewer", task: "review this" },
+		request: { agent: "reviewer", task: "review this" },
+		agent: agent(),
+		parent: parent({
+			model: "cursor/composer-2.5",
+			modelProvider: "cursor",
+			extensionPaths: [AIO_EXTENSION_PATH],
+		}),
+		deps: { runsBaseDir: temporaryDirectory() },
+	});
+	assert.equal(spec.args.includes("--model"), false);
 });

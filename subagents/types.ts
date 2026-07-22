@@ -107,7 +107,8 @@ export interface ParentLaunchContext {
 	thinking?: SubagentThinking;
 	permissionMode: "default" | "ask" | "plan" | "auto";
 	parentSessionFile?: string;
-	extensionPath?: string;
+	extensionPaths?: string[];
+	modelProvider?: string;
 }
 
 export interface SpawnSpec {

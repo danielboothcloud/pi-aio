@@ -1,4 +1,3 @@
-import { fileURLToPath } from "node:url";
 import { StringEnum } from "@earendil-works/pi-ai";
 import type {
 	ExtensionAPI,
@@ -7,6 +6,7 @@ import type {
 import { Type, type Static } from "typebox";
 import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
 import { discoverAgents } from "./agents.js";
+import { resolveChildExtensionPaths } from "./extensions.js";
 import { clearRuns, getRun, listRuns, stopRun } from "./registry.js";
 import {
 	executeSubagentRun,
@@ -89,15 +89,17 @@ function parentContext(
 	ctx: ExtensionContext,
 	pi: ExtensionAPI,
 ): ParentLaunchContext {
-	const model = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
+	const modelProvider = ctx.model?.provider;
+	const model = ctx.model ? `${modelProvider}/${ctx.model.id}` : undefined;
 	const thinking = pi.getThinkingLevel() as SubagentThinking;
 	return {
 		cwd: ctx.cwd,
 		model,
+		modelProvider,
 		thinking,
 		permissionMode: getPermissionModeAccess()?.getMode() ?? "default",
 		parentSessionFile: ctx.sessionManager.getSessionFile(),
-		extensionPath: fileURLToPath(new URL("../index.ts", import.meta.url)),
+		extensionPaths: resolveChildExtensionPaths({ modelProvider }),
 	};
 }
 
