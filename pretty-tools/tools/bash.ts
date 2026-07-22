@@ -1,11 +1,37 @@
 /* pi-pretty: bash tool -- command execution with styled output. */
 
-import type { AgentToolResult, ExtensionAPI, ExtensionContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
-import { resolveBaseBackground, TOOL_RESULT_INDENT, termWidth } from "../config.js";
-import { compactErrorLines, inferBashExitCode, stripBashExitStatusLine } from "../helpers.js";
-import { fillToolBackground, renderToolDuration, renderToolError } from "../render.js";
+import type {
+	AgentToolResult,
+	ExtensionAPI,
+	ExtensionContext,
+	ToolDefinition,
+} from "@earendil-works/pi-coding-agent";
+import {
+	bashGrepGuardEnabled,
+	resolveBaseBackground,
+	TOOL_RESULT_INDENT,
+	termWidth,
+} from "../config.js";
+import { findGnuGrepInvocation } from "../grep-guard.js";
+import {
+	compactErrorLines,
+	inferBashExitCode,
+	stripBashExitStatusLine,
+} from "../helpers.js";
+import {
+	fillToolBackground,
+	renderToolDuration,
+	renderToolError,
+} from "../render.js";
 import { resolveTextCtor } from "../tui-text.js";
-import type { BashDetails, ComponentLike, RenderCtxLike, SdkToolDef, TextContent, ThemeLike } from "../types.js";
+import type {
+	BashDetails,
+	ComponentLike,
+	RenderCtxLike,
+	SdkToolDef,
+	TextContent,
+	ThemeLike,
+} from "../types.js";
 import { wrapExecuteWithMetrics } from "./metrics.js";
 
 type Result = AgentToolResult<Record<string, unknown>>;
@@ -15,7 +41,11 @@ export function registerBashTool(
 	_cwd: string,
 	_fffService: unknown,
 	sdkTool: SdkToolDef,
-	TextComp?: new (t?: string, x?: number, y?: number) => { setText(v: string): void },
+	TextComp?: new (
+		t?: string,
+		x?: number,
+		y?: number,
+	) => { setText(v: string): void },
 ): void {
 	const TC = resolveTextCtor(TextComp);
 
@@ -29,32 +59,65 @@ export function registerBashTool(
 		promptGuidelines: [
 			"For text search: `rg -n`. If no results, try `rg -u` (respects .gitignore by default).",
 			"In rg: | means alternation, \\| means literal pipe. Opposite of GNU grep. Never use \\| for alternation.",
+			"GNU grep (grep/egrep/fgrep) is blocked in bash; use the grep tool or `rg -n` instead.",
 		],
 		parameters: sdkTool.parameters,
 		renderShell: "self",
 
-		execute: wrapExecuteWithMetrics(async (tid, params, sig, _upd, ctx: ExtensionContext) => {
-			try {
-				return (await sdkTool.execute(tid, params, sig, undefined, ctx)) as Result;
-			} catch (error: unknown) {
-				const msg = error instanceof Error ? error.message : String(error);
-				return {
-					content: [{ type: "text" as const, text: msg }],
-					isError: true,
-					details: {
-						_type: "bashResult",
-						text: msg,
-						exitCode: 1,
-						command: String((params as any).command ?? ""),
-					} as BashDetails,
-				};
-			}
-		}),
+		execute: wrapExecuteWithMetrics(
+			async (tid, params, sig, _upd, ctx: ExtensionContext) => {
+				const command = String((params as any).command ?? "");
+				const gnuGrep = bashGrepGuardEnabled()
+					? findGnuGrepInvocation(command)
+					: undefined;
+				if (gnuGrep) {
+					const msg = [
+						`Blocked GNU grep invocation: \`${gnuGrep}\`. Use the grep tool instead — it runs ripgrep (rg).`,
+						`If you need shell search, run: rg -n "pattern"`,
+						`Set PRETTY_BASH_GREP_GUARD=0 to disable this guard.`,
+					].join("\n");
+					return {
+						content: [{ type: "text" as const, text: msg }],
+						isError: true,
+						details: {
+							_type: "bashResult",
+							text: msg,
+							exitCode: 1,
+							command,
+						} as BashDetails,
+					};
+				}
+				try {
+					return (await sdkTool.execute(
+						tid,
+						params,
+						sig,
+						undefined,
+						ctx,
+					)) as Result;
+				} catch (error: unknown) {
+					const msg = error instanceof Error ? error.message : String(error);
+					return {
+						content: [{ type: "text" as const, text: msg }],
+						isError: true,
+						details: {
+							_type: "bashResult",
+							text: msg,
+							exitCode: 1,
+							command: String((params as any).command ?? ""),
+						} as BashDetails,
+					};
+				}
+			},
+		),
 
 		renderCall(args: any, theme: ThemeLike, ctx: RenderCtxLike) {
 			resolveBaseBackground(theme);
 			const text = ctx.lastComponent ?? new TC("", 0, 0);
-			const t = typeof args.timeout === "number" ? ` ${theme.fg("muted", `(timeout ${args.timeout}s)`)}` : "";
+			const t =
+				typeof args.timeout === "number"
+					? ` ${theme.fg("muted", `(timeout ${args.timeout}s)`)}`
+					: "";
 			const tw = termWidth() || 80;
 			const rawCmd = String(args.command ?? "");
 			const headerBudget = ctx.expanded ? tw : Math.max(8, tw - 20);
@@ -64,14 +127,26 @@ export function registerBashTool(
 					: !ctx.expanded && rawCmd.length > headerBudget
 						? `${rawCmd.slice(0, Math.max(1, headerBudget))}…`
 						: rawCmd;
-			const commandLabel = theme.fg(ctx.isError ? "error" : "toolTitle", theme.bold(`$ ${cmd}`));
+			const commandLabel = theme.fg(
+				ctx.isError ? "error" : "toolTitle",
+				theme.bold(`$ ${cmd}`),
+			);
 			text.setText(
-				fillToolBackground(`\n${TOOL_RESULT_INDENT}${commandLabel}${t}\n`, undefined, ctx.expanded ? undefined : tw),
+				fillToolBackground(
+					`\n${TOOL_RESULT_INDENT}${commandLabel}${t}\n`,
+					undefined,
+					ctx.expanded ? undefined : tw,
+				),
 			);
 			return text;
 		},
 
-		renderResult(result: Result, _opt: unknown, theme: ThemeLike, ctx: RenderCtxLike) {
+		renderResult(
+			result: Result,
+			_opt: unknown,
+			theme: ThemeLike,
+			ctx: RenderCtxLike,
+		) {
 			resolveBaseBackground(theme);
 
 			const text = ctx.lastComponent ?? new TC("", 0, 0);
@@ -96,26 +171,43 @@ export function registerBashTool(
 				const output = isErr ? compactErrorLines(cleaned).join("\n") : cleaned;
 				const lineCount = output.split("\n").length;
 				const exitCode = d.exitCode ?? (isErr ? 1 : 0);
-				const exitSummary = theme.fg(isErr ? "error" : "success", `exit ${exitCode}`);
-				const metadata = [`${lineCount} lines`, renderToolDuration(result), !ctx.expanded ? "ctrl+o to expand" : ""]
+				const exitSummary = theme.fg(
+					isErr ? "error" : "success",
+					`exit ${exitCode}`,
+				);
+				const metadata = [
+					`${lineCount} lines`,
+					renderToolDuration(result),
+					!ctx.expanded ? "ctrl+o to expand" : "",
+				]
 					.filter(Boolean)
 					.map((part) => theme.fg("dim", part))
 					.join(theme.fg("dim", " · "));
-				const info = metadata ? `${exitSummary}${theme.fg("dim", " · ")}${metadata}` : exitSummary;
+				const info = metadata
+					? `${exitSummary}${theme.fg("dim", " · ")}${metadata}`
+					: exitSummary;
 				const header = `${TOOL_RESULT_INDENT}${info}`;
 				const rw = termWidth();
 
 				const renderFn = (w: number) => {
-					if (!ctx.expanded) return fillToolBackground(`${header}\n`, undefined, w);
-					if (!output.trim()) return fillToolBackground(`${header}\n`, undefined, w);
+					if (!ctx.expanded)
+						return fillToolBackground(`${header}\n`, undefined, w);
+					if (!output.trim())
+						return fillToolBackground(`${header}\n`, undefined, w);
 					const show = output.split("\n");
-					const out = [header, "", ...show.map((line: string) => `${TOOL_RESULT_INDENT}${line}`)];
+					const out = [
+						header,
+						"",
+						...show.map((line: string) => `${TOOL_RESULT_INDENT}${line}`),
+					];
 					return fillToolBackground(`${out.join("\n")}\n`, undefined, w);
 				};
 
 				text.setText(renderFn(rw));
 				const baseRender =
-					typeof (text as ComponentLike).render === "function" ? (text as ComponentLike).render.bind(text) : null;
+					typeof (text as ComponentLike).render === "function"
+						? (text as ComponentLike).render.bind(text)
+						: null;
 				if (baseRender) {
 					let key: string | undefined;
 					(text as unknown as Record<string, unknown>).render = (w: number) => {

@@ -332,9 +332,13 @@ definitions while delegating their normal execution to Pi. The replacements add:
 - **`ls`** — Nerd Font icons and tree-oriented expanded listings.
 - **`find`** — FFF-backed, frecency-aware file search with grouped results and
   automatic fallback to Pi's normal `fd` implementation.
-- **`grep`** — FFF-backed content search with file grouping, line numbers,
-  highlighted literal matches, context lines, and fallback to Pi's normal search
-  whenever `path` or `glob` scopes are supplied.
+- **`grep`** — ripgrep-backed content search: the FFF index handles unscoped
+  searches, and Pi's ripgrep (`rg`) implementation handles `path`/`glob` scoped
+  searches and fallback. File grouping, line numbers, highlighted literal
+  matches, and context lines. Guidance steers agents away from GNU grep.
+- **GNU grep guard** — bare `grep`/`egrep`/`fgrep` invocations in the `bash`
+  tool are blocked with a nudge to use the `grep` tool or `rg -n`. Set
+  `PRETTY_BASH_GREP_GUARD=0` to allow them.
 - **`@file` completion** — FFF-ranked file suggestions while composing prompts.
 
 Tool result bodies start collapsed. Press **Ctrl+O** (`app.tools.expand`) to toggle
@@ -351,6 +355,7 @@ and history data under `<agent-dir>/aio/fff/`. Use these maintenance commands:
 
 All five enhanced tools are enabled by default. Configuration environment variables:
 
+- `PRETTY_BASH_GREP_GUARD=0` — allow GNU grep in the `bash` tool (blocked by default).
 - `PRETTY_DISABLE_TOOLS` — comma-separated tools to leave untouched.
 - `PRETTY_ENABLE_TOOLS` — explicitly enable tools if defaults change.
 - `PRETTY_THEME` — Shiki theme; otherwise the active Pi theme or `github-dark`.
