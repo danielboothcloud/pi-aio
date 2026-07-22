@@ -59,7 +59,8 @@ function rtkStatusReport(ctx: ExtensionContext): StatusReport {
 		});
 		const versionText = (version.stdout ?? "").trim() || "version unknown";
 		const pathText = (path.stdout ?? "").trim();
-		binary = pathText.length > 0 ? `${versionText} at ${pathText}` : versionText;
+		binary =
+			pathText.length > 0 ? `${versionText} at ${pathText}` : versionText;
 	}
 
 	return {
@@ -75,12 +76,19 @@ function showRtkStatus(ctx: ExtensionContext): void {
 }
 
 async function showRtkOverlay(ctx: ExtensionContext): Promise<void> {
-	const selected = await ctx.ui.select("aio-rtk", ["enable", "disable", "status"]);
+	const selected = await ctx.ui.select("aio-rtk", [
+		"enable",
+		"disable",
+		"status",
+	]);
 	if (selected === undefined || !isRtkSubcommand(selected)) return;
 	handleRtkSubcommand(selected, ctx);
 }
 
-export function handleRtkSubcommand(subcommand: RtkSubcommand, ctx: ExtensionContext): void {
+export function handleRtkSubcommand(
+	subcommand: RtkSubcommand,
+	ctx: ExtensionContext,
+): void {
 	if (subcommand === "status") {
 		showRtkStatus(ctx);
 		return;
@@ -93,11 +101,12 @@ export function handleRtkSubcommand(subcommand: RtkSubcommand, ctx: ExtensionCon
 
 export function registerRtkCommand(pi: ExtensionAPI): void {
 	pi.registerCommand("rtk", {
-		description: "Control aio-rtk shell command rewriting (enable | disable | status)",
+		description:
+			"Control aio-rtk shell command rewriting (enable | disable | status)",
 		getArgumentCompletions: (prefix: string) => {
-			const completions = VALID_RTK_SUBCOMMANDS.filter((sub) => sub.startsWith(prefix)).map(
-				(sub) => ({ label: sub, value: sub }),
-			);
+			const completions = VALID_RTK_SUBCOMMANDS.filter((sub) =>
+				sub.startsWith(prefix),
+			).map((sub) => ({ label: sub, value: sub }));
 			return completions.length > 0 ? completions : null;
 		},
 		handler: async (args: string, ctx: ExtensionCommandContext) => {

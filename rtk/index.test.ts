@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
-import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type {
+	ExtensionAPI,
+	ExtensionCommandContext,
+	ExtensionContext,
+} from "@earendil-works/pi-coding-agent";
 import { afterEach, beforeEach, test } from "node:test";
 import { handleRtkSubcommand, registerRtkCommand } from "./command.ts";
 import { registerRtk } from "./index.ts";
@@ -40,8 +44,10 @@ function makeHarness(selections: string[] = []): Harness {
 
 	const ui = {
 		select: async () => queue.shift(),
-		notify: (message: string, type?: string) => notifies.push({ message, type }),
-		setStatus: (key: string, text: string | undefined) => statuses.push({ key, text }),
+		notify: (message: string, type?: string) =>
+			notifies.push({ message, type }),
+		setStatus: (key: string, text: string | undefined) =>
+			statuses.push({ key, text }),
 		theme: { fg: (_key: string, text: string) => text },
 	};
 
@@ -59,8 +65,14 @@ test("registerRtk registers the /rtk command and lifecycle handlers", () => {
 	registerRtk(h.pi);
 
 	assert.ok(h.commands.has("rtk"), "/rtk command registered");
-	assert.ok(h.handlers.has("session_start"), "session_start handler registered");
-	assert.ok(h.handlers.has("session_shutdown"), "session_shutdown handler registered");
+	assert.ok(
+		h.handlers.has("session_start"),
+		"session_start handler registered",
+	);
+	assert.ok(
+		h.handlers.has("session_shutdown"),
+		"session_shutdown handler registered",
+	);
 	assert.ok(h.handlers.has("user_bash"), "user_bash handler registered");
 });
 
@@ -79,7 +91,9 @@ test("/rtk getArgumentCompletions returns matching subcommands", () => {
 	const h = makeHarness();
 	registerRtk(h.pi);
 	const cmd = h.commands.get("rtk")!;
-	const completions = (cmd.getArgumentCompletions as (p: string) => unknown[])("en");
+	const completions = (cmd.getArgumentCompletions as (p: string) => unknown[])(
+		"en",
+	);
 	assert.deepEqual(completions, [{ label: "enable", value: "enable" }]);
 });
 
@@ -112,7 +126,9 @@ test("/rtk with no argument opens the overlay and applies the selection", async 
 	const h = makeHarness(["disable"]);
 	registerRtk(h.pi);
 	const cmd = h.commands.get("rtk")!;
-	await (cmd.handler as (a: string, c: ExtensionCommandContext) => Promise<void>)("", h.commandCtx);
+	await (
+		cmd.handler as (a: string, c: ExtensionCommandContext) => Promise<void>
+	)("", h.commandCtx);
 
 	assert.equal(isRtkEnabled(), false);
 	assert.match(String(h.notifies.at(-1)?.message), /disabled/);
@@ -122,7 +138,9 @@ test("/rtk with an invalid subcommand notifies an error", async () => {
 	const h = makeHarness();
 	registerRtk(h.pi);
 	const cmd = h.commands.get("rtk")!;
-	await (cmd.handler as (a: string, c: ExtensionCommandContext) => Promise<void>)("bogus", h.commandCtx);
+	await (
+		cmd.handler as (a: string, c: ExtensionCommandContext) => Promise<void>
+	)("bogus", h.commandCtx);
 
 	assert.equal(h.notifies.at(-1)?.type, "error");
 	assert.match(String(h.notifies.at(-1)?.message), /Unknown \/rtk subcommand/);
@@ -147,7 +165,12 @@ test("user_bash handler skips rewriting when the toggle is disabled", async () =
 	registerRtk(h.pi);
 	const [handler] = h.handlers.get("user_bash")!;
 	const result = await handler(
-		{ type: "user_bash", command: "ls", excludeFromContext: false, cwd: "/tmp" },
+		{
+			type: "user_bash",
+			command: "ls",
+			excludeFromContext: false,
+			cwd: "/tmp",
+		},
 		h.ctx,
 	);
 	assert.equal(result, undefined);
@@ -159,10 +182,18 @@ test("user_bash handler returns operations when enabled and rewrite succeeds", a
 	registerRtk(h.pi);
 	const [handler] = h.handlers.get("user_bash")!;
 	const result = await handler(
-		{ type: "user_bash", command: "ls", excludeFromContext: false, cwd: "/tmp" },
+		{
+			type: "user_bash",
+			command: "ls",
+			excludeFromContext: false,
+			cwd: "/tmp",
+		},
 		h.ctx,
 	);
-	assert.ok(result?.operations?.exec, "expected operations.exec to be returned");
+	assert.ok(
+		result?.operations?.exec,
+		"expected operations.exec to be returned",
+	);
 });
 
 test("user_bash handler falls through when rewrite has no equivalent", async () => {
@@ -171,7 +202,12 @@ test("user_bash handler falls through when rewrite has no equivalent", async () 
 	registerRtk(h.pi);
 	const [handler] = h.handlers.get("user_bash")!;
 	const result = await handler(
-		{ type: "user_bash", command: "ls", excludeFromContext: false, cwd: "/tmp" },
+		{
+			type: "user_bash",
+			command: "ls",
+			excludeFromContext: false,
+			cwd: "/tmp",
+		},
 		h.ctx,
 	);
 	assert.equal(result, undefined);

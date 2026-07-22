@@ -3,8 +3,8 @@
 Combined Pi extension: structured **`ask_user_question`** dialogs, a **`/pick`**
 code picker, **`/init`** AGENTS.md bootstrap, **`/effort`** thinking control,
 generic **subagent delegation**, **`!` bash shortcuts**, **Shift+Tab** permission
-modes, enhanced built-in output with FFF-backed search, and syntax-highlighted
-write/edit/patch diffs.
+modes, enhanced built-in output with FFF-backed search, **rtk** shell-command
+rewriting, and syntax-highlighted write/edit/patch diffs.
 
 The questionnaire implementation is based on
 [@juicesharp/rpiv-ask-user-question](https://www.npmjs.com/package/@juicesharp/rpiv-ask-user-question),
@@ -378,6 +378,47 @@ Optional `<agent-dir>/aio-pretty.json` background configuration:
 Do not load standalone `@heyhuynhgiabuu/pi-pretty` alongside `aio`: both packages
 own the same built-in tool names and would register duplicate FFF commands.
 
+## rtk shell rewriting
+
+`aio` routes shell commands through [rtk](https://github.com/rtk-ai/rtk) to
+reduce LLM token usage. When the agent runs a `bash` tool call, or you run a
+`!command`, aio first rewrites the command with `rtk rewrite` and executes the
+rewritten form. Commands rtk has no equivalent for run unchanged.
+
+- **Agent `bash` tool** — a spawn hook rewrites the command before execution,
+  preserving the original command in tool output.
+- **`!command`** — aio returns custom bash operations that run the rewritten
+  command, layered on top of the normal permission-mode gate so blocked
+  commands never reach rtk.
+- **`!!command`** — not intercepted; output stays excluded from model context.
+
+If `rtk` is missing, not executable, times out, or cannot rewrite a command,
+aio falls back silently to normal shell behavior and warns once when the binary
+is unavailable. rtk's deny verdicts are not enforced — aio rewrites, it does not
+gate; use permission modes for command gating.
+
+### `/rtk` command
+
+Session-scoped control (in-memory only; resets to enabled on every Pi start):
+
+- `/rtk enable` — turn command rewriting on for this session
+- `/rtk disable` — turn command rewriting off for this session
+- `/rtk status` — show the toggle state, detected `rtk` binary, and a bypass tip
+- `/rtk` — open an overlay to choose the same actions
+
+The footer shows `rtk ✓` (green) when enabled or `rtk ✗` (red) when disabled.
+Bypass rtk for a single command while leaving the toggle on with
+`!RTK_DISABLED=1 <cmd>` (honored by rtk itself).
+
+### Prerequisites
+
+[rtk](https://github.com/rtk-ai/rtk) must be installed and on your `PATH`. `rtk
+init` is not required — aio calls `rtk rewrite` directly. aio degrades
+gracefully without it.
+
+Do not load standalone `@sherif-fanous/pi-rtk` alongside `aio`; both rewrite
+shell commands and would double-rewrite the same command.
+
 ## Syntax-highlighted diffs
 
 `aio` also owns the `write`, `edit`, and `apply_patch` tools and renders mutations
@@ -416,6 +457,7 @@ packages register `write`, `edit`, and `apply_patch`.
 ├── init/                    # /init AGENTS.md bootstrap
 ├── permission-modes/        # Shift+Tab modes + plan flow
 ├── pretty-tools/            # pretty built-ins + FFF search
+├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)
 ├── subagents/               # child-agent discovery, execution, and lifecycle
 └── user-bash/               # !/!! command permission gating
 ```
@@ -424,7 +466,8 @@ packages register `write`, `edit`, and `apply_patch`.
 
 - Remove standalone `@juicesharp/rpiv-ask-user-question`,
   `@pandi-coding-agent/pandi-effort`, `@aprimediet/permission-modes`,
-  `@heyhuynhgiabuu/pi-pretty`, `@heyhuynhgiabuu/pi-diff`, and `pi-subagents`
+  `@heyhuynhgiabuu/pi-pretty`, `@heyhuynhgiabuu/pi-diff`, `pi-subagents`,
+  and `@sherif-fanous/pi-rtk`
   packages from settings when installing this combined package, to avoid
   duplicate tools, commands, and shortcuts.
 - Effort status (`effort:…`) and mode status (`● Default`) coexist in the status

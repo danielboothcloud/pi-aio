@@ -27,7 +27,11 @@ test("setRtkEnabled flips the toggle", () => {
 test("rtkSpawnHook rewrites the command when enabled and rewrite succeeds", () => {
 	setRtkRewriteFn(() => "rtk-rewritten-command");
 	const out = rtkSpawnHook({ command: "git status", cwd: "/repo", env: {} });
-	assert.deepEqual(out, { command: "rtk-rewritten-command", cwd: "/repo", env: {} });
+	assert.deepEqual(out, {
+		command: "rtk-rewritten-command",
+		cwd: "/repo",
+		env: {},
+	});
 });
 
 test("rtkSpawnHook preserves the command when rewrite has no equivalent", () => {
@@ -71,7 +75,11 @@ test("buildRtkUserBashResult returns operations that execute the rewritten comma
 		onData: () => {},
 	});
 	assert.equal(res.exitCode, 0);
-	assert.equal(captured.cmd, "rtk-rewritten", "exec should receive the rewritten command");
+	assert.equal(
+		captured.cmd,
+		"rtk-rewritten",
+		"exec should receive the rewritten command",
+	);
 });
 
 test("buildRtkUserBashResult returns undefined when rewrite has no equivalent", () => {

@@ -102,7 +102,9 @@ function alertRtkUnavailable(reason: RtkUnavailableReason): void {
 	cachedNotify(messages[reason], "warning");
 }
 
-function classifySpawnError(err: NodeJS.ErrnoException): SpawnErrorClassification {
+function classifySpawnError(
+	err: NodeJS.ErrnoException,
+): SpawnErrorClassification {
 	if (err.code === "ENOENT") return "missing";
 	if (err.code === "EACCES") return "unexecutable";
 	return "other";
@@ -150,7 +152,9 @@ export function rtkRewriteCommand(command: string): string | undefined {
  * reported once via the notify gate.
  */
 export function probeRtkAvailability(): void {
-	const result = spawnSync("rtk", ["--version"], { timeout: REWRITE_TIMEOUT_MS });
+	const result = spawnSync("rtk", ["--version"], {
+		timeout: REWRITE_TIMEOUT_MS,
+	});
 	if (!result.error) return;
 	const reason = classifySpawnError(result.error as NodeJS.ErrnoException);
 	if (reason !== "other") alertRtkUnavailable(reason);
@@ -161,7 +165,11 @@ export function probeRtkAvailability(): void {
  * toggle is enabled and rtk can rewrite it; otherwise returns the context
  * unchanged so Pi's normal shell behavior continues.
  */
-export const rtkSpawnHook: BashSpawnHook = ({ command, cwd, env }: BashSpawnContext): BashSpawnContext => {
+export const rtkSpawnHook: BashSpawnHook = ({
+	command,
+	cwd,
+	env,
+}: BashSpawnContext): BashSpawnContext => {
 	if (!sessionEnabled) return { command, cwd, env };
 	return { command: rtkRewriteCommand(command) ?? command, cwd, env };
 };
@@ -183,7 +191,8 @@ export function buildRtkUserBashResult(
 
 	return {
 		operations: {
-			exec: (_command, cwd, options) => operations.exec(rewritten, cwd, options),
+			exec: (_command, cwd, options) =>
+				operations.exec(rewritten, cwd, options),
 		},
 	};
 }

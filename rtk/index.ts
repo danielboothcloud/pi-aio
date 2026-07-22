@@ -21,7 +21,11 @@ import {
 	isRtkEnabled,
 	probeRtkAvailability,
 } from "./rewrite.js";
-import { clearRtkFooter, registerRtkCommand, updateRtkFooter } from "./command.js";
+import {
+	clearRtkFooter,
+	registerRtkCommand,
+	updateRtkFooter,
+} from "./command.js";
 
 export {
 	rtkSpawnHook,
