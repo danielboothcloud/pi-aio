@@ -311,6 +311,13 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		label: "Todo",
 		description:
 			"Manage the active plan todo list. Actions: list, toggle (step), create (text, optional position), rename (step, text), reorder (step, position), delete (step)",
+		promptSnippet: "Track plan steps and mark each step done with todo action=toggle",
+		promptGuidelines: [
+			"When executing a numbered plan, call todo action=toggle for the matching step immediately after that step's work is finished, before starting the next step.",
+			"Use todo action=list at the start of plan execution and again whenever you need to confirm which steps remain.",
+			"Do not leave completed steps unchecked; toggle flips completion state, so only call it once per finished step.",
+			"After toggling a step, briefly note what was completed in your response so the user can see progress.",
+		],
 		parameters: Type.Object({
 			action: StringEnum([
 				"list",
@@ -750,8 +757,8 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			const remaining = planTodos.filter((t) => !t.completed);
 			const todoList = remaining.map((t) => `${t.step}. ${t.text}`).join("\n");
 			const todoHint =
-				planTodos.length > 2
-					? "\nUse the todo tool to list and toggle the steps as you finish them."
+				planTodos.length > 0
+					? "\nAfter each step finishes, call todo({ action: \"toggle\", step: n }) for that step before moving on. Use todo({ action: \"list\" }) to verify nothing is left unchecked."
 					: "";
 			return {
 				message: {
@@ -762,7 +769,7 @@ Remaining steps:
 ${todoList}
 ${todoHint}
 
-Execute each step in order. After completing a step, include a [DONE:n] tag in your response.`,
+Execute each step in order. Mark progress in the todo tool as you go; do not batch toggles at the end.`,
 					display: false,
 				},
 			};
@@ -800,7 +807,8 @@ Do NOT attempt to make changes — just describe what you would do.`;
 		} else if (currentMode === "auto") {
 			body = `[AUTO MODE ACTIVE]
 All tool calls (edit, write, bash) are auto-approved — no permission prompts.
-Proceed without asking for confirmation. After completing each meaningful chunk, briefly summarize progress.`;
+Proceed without asking for confirmation. After completing each meaningful chunk, briefly summarize progress.
+If a todo list is active, toggle each finished step with the todo tool before continuing.`;
 		} else {
 			body = `[DEFAULT MODE ACTIVE]
 - edit, write, and apply_patch tools require per-call user approval
