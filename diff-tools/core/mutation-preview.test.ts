@@ -43,6 +43,17 @@ describe("formatMutationPreview", () => {
 		expect(readFileSync(filePath, "utf8")).toBe("const value = 1;\n");
 	});
 
+	it("previews Cursor old_string/new_string edit args", async () => {
+		const preview = await formatMutationPreview("edit", {
+			path: filePath,
+			old_string: "const value = 1;",
+			new_string: "const value = 2;",
+		});
+
+		expect(preview).toMatch(/- const value = 1;/);
+		expect(preview).toMatch(/\+ const value = 2;/);
+	});
+
 	it("previews apply_patch updates before execution", async () => {
 		const preview = await formatMutationPreview("apply_patch", {
 			changes: [

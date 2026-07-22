@@ -32,7 +32,6 @@ import type { Component } from "@earendil-works/pi-tui";
 import { codeToANSI } from "@shikijs/cli";
 import * as Diff from "diff";
 import {
-	type ApplyPatchChange,
 	executeApplyPatch,
 	formatApplyPatchResult,
 } from "./core/apply-patch.js";
@@ -52,6 +51,11 @@ import {
 	sepLabelSplit,
 	sepLabelUnified,
 } from "./core/diff.js";
+import {
+	getEditOperations,
+	normalizeEditParams,
+	resolveApplyPatchChanges,
+} from "./core/cursor-compat.js";
 import { replace } from "./core/replace.js";
 import { registerEditGuard } from "./edit-guard.js";
 
@@ -2306,46 +2310,6 @@ export default async function diffRendererExtension(
 
 	const origEdit = createEditTool(cwd);
 
-	function getEditOperations(
-		input: any,
-	): Array<{ oldText: string; newText: string }> {
-		if (Array.isArray(input?.edits)) {
-			return input.edits
-				.map((edit: any) => ({
-					oldText:
-						typeof edit?.oldText === "string"
-							? edit.oldText
-							: typeof edit?.old_text === "string"
-								? edit.old_text
-								: "",
-					newText:
-						typeof edit?.newText === "string"
-							? edit.newText
-							: typeof edit?.new_text === "string"
-								? edit.new_text
-								: "",
-				}))
-				.filter(
-					(edit: { oldText: string; newText: string }) =>
-						edit.oldText && edit.oldText !== edit.newText,
-				);
-		}
-
-		const oldText =
-			typeof input?.oldText === "string"
-				? input.oldText
-				: typeof input?.old_text === "string"
-					? input.old_text
-					: "";
-		const newText =
-			typeof input?.newText === "string"
-				? input.newText
-				: typeof input?.new_text === "string"
-					? input.new_text
-					: "";
-		return oldText && oldText !== newText ? [{ oldText, newText }] : [];
-	}
-
 	function summarizeEditOperations(
 		operations: Array<{ oldText: string; newText: string }>,
 	) {
@@ -2377,15 +2341,25 @@ export default async function diffRendererExtension(
 					type: "string",
 					description: "Replacement text for oldText.",
 				},
+				old_string: {
+					type: "string",
+					description: "Cursor IDE alias for oldText.",
+				},
+				new_string: {
+					type: "string",
+					description: "Cursor IDE alias for newText.",
+				},
 			},
 			required: ["path"],
 			additionalProperties: true,
 		},
 
 		async execute(tid: string, params: any, sig: any, upd: any, ctx: any) {
-			const fp = params.path ?? params.file_path ?? "";
+			const normalizedParams = normalizeEditParams(params);
+			const fp =
+				normalizedParams.path ?? normalizedParams.file_path ?? "";
 
-			const operations = getEditOperations(params);
+			const operations = getEditOperations(normalizedParams);
 
 			// Try cascading replace() first — smarter matching than SDK's exact-only edit
 			if (fp && operations.length > 0 && existsSync(fp)) {
@@ -2496,7 +2470,13 @@ export default async function diffRendererExtension(
 				}
 			}
 
-			const result = await origEdit.execute(tid, params, sig, upd, ctx);
+			const result = await origEdit.execute(
+				tid,
+				normalizedParams,
+				sig,
+				upd,
+				ctx,
+			);
 
 			if (operations.length === 0) return result;
 
@@ -2698,10 +2678,15 @@ export default async function diffRendererExtension(
 		name: "apply_patch",
 		label: "apply_patch",
 		description:
-			"Multi-file patch engine. One call can add, update, delete, or move multiple files. Uses structured JSON changes array.",
+			"Multi-file patch engine. One call can add, update, delete, or move multiple files. Accepts a structured JSON changes array or a unified diff patch string.",
 		parameters: {
 			type: "object",
 			properties: {
+				patch: {
+					type: "string",
+					description:
+						"Unified diff string (Cursor IDE compatibility). Alternative to changes.",
+				},
 				changes: {
 					type: "array",
 					description: "Array of file changes to apply atomically.",
@@ -2729,6 +2714,14 @@ export default async function diffRendererExtension(
 								type: "string",
 								description: "Replacement text for updates (action=update).",
 							},
+							old_string: {
+								type: "string",
+								description: "Cursor IDE alias for oldText.",
+							},
+							new_string: {
+								type: "string",
+								description: "Cursor IDE alias for newText.",
+							},
 							movePath: {
 								type: "string",
 								description: "Destination path for moves (action=move).",
@@ -2738,19 +2731,9 @@ export default async function diffRendererExtension(
 					},
 				},
 			},
-			required: ["changes"],
 		},
 		async execute(_tid: string, params: any): Promise<any> {
-			const changes: ApplyPatchChange[] = (params.changes ?? []).map(
-				(c: any) => ({
-					path: c.path,
-					action: c.action,
-					content: c.content,
-					oldText: c.oldText,
-					newText: c.newText,
-					movePath: c.movePath,
-				}),
-			);
+			const changes = resolveApplyPatchChanges(params);
 
 			const result = await executeApplyPatch(changes);
 			const output = formatApplyPatchResult(result);
@@ -2763,7 +2746,7 @@ export default async function diffRendererExtension(
 		},
 		renderCall(args: any, theme: any, ctx: any) {
 			const text = getWidthAwareText(ctx.lastComponent);
-			const changes = Array.isArray(args?.changes) ? args.changes : [];
+			const changes = resolveApplyPatchChanges(args ?? {});
 			const count = changes.length;
 			if (ctx.argsComplete && count > 0) {
 				clearToolHeaderBg(text);

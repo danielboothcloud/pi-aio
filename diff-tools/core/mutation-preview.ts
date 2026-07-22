@@ -9,53 +9,15 @@ import {
 	type ApplyPatchChange,
 	previewApplyPatch,
 } from "./apply-patch.js";
+import {
+	getEditOperations,
+	resolveApplyPatchChanges,
+} from "./cursor-compat.js";
 import { type ParsedDiff, parseDiff } from "./diff.js";
 import { replace } from "./replace.js";
 
 const MAX_PREVIEW_LINES = 40;
 const MAX_PREVIEW_CHARS = 2_000;
-
-type EditOperation = { oldText: string; newText: string };
-
-function getEditOperations(
-	input: Record<string, unknown>,
-): EditOperation[] {
-	if (Array.isArray(input.edits)) {
-		return input.edits
-			.map((edit) => {
-				if (typeof edit !== "object" || edit === null) return null;
-				const record = edit as Record<string, unknown>;
-				const oldText =
-					typeof record.oldText === "string"
-						? record.oldText
-						: typeof record.old_text === "string"
-							? record.old_text
-							: "";
-				const newText =
-					typeof record.newText === "string"
-						? record.newText
-						: typeof record.new_text === "string"
-							? record.new_text
-							: "";
-				return oldText && oldText !== newText ? { oldText, newText } : null;
-			})
-			.filter((edit): edit is EditOperation => edit !== null);
-	}
-
-	const oldText =
-		typeof input.oldText === "string"
-			? input.oldText
-			: typeof input.old_text === "string"
-				? input.old_text
-				: "";
-	const newText =
-		typeof input.newText === "string"
-			? input.newText
-			: typeof input.new_text === "string"
-				? input.new_text
-				: "";
-	return oldText && oldText !== newText ? [{ oldText, newText }] : [];
-}
 
 export function formatParsedDiffPlain(
 	diff: ParsedDiff,
@@ -121,29 +83,7 @@ function previewEditInput(input: Record<string, unknown>): string | undefined {
 function previewApplyPatchInput(
 	input: Record<string, unknown>,
 ): Promise<string | undefined> {
-	if (!Array.isArray(input.changes) || input.changes.length === 0) {
-		return Promise.resolve(undefined);
-	}
-
-	const changes: ApplyPatchChange[] = input.changes.flatMap((change) => {
-		if (typeof change !== "object" || change === null) return [];
-		const record = change as Record<string, unknown>;
-		if (typeof record.path !== "string" || typeof record.action !== "string") {
-			return [];
-		}
-		return [
-			{
-				path: record.path,
-				action: record.action as ApplyPatchChange["action"],
-				content: typeof record.content === "string" ? record.content : undefined,
-				oldText: typeof record.oldText === "string" ? record.oldText : undefined,
-				newText: typeof record.newText === "string" ? record.newText : undefined,
-				movePath:
-					typeof record.movePath === "string" ? record.movePath : undefined,
-			},
-		];
-	});
-
+	const changes = resolveApplyPatchChanges(input);
 	if (changes.length === 0) return Promise.resolve(undefined);
 	return formatApplyPatchPreview(changes);
 }

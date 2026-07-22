@@ -68,7 +68,24 @@ describe("registerEditGuard", () => {
 		expect(result).toBeUndefined();
 	});
 
-	it("ignores non-array edits and unreadable files", async () => {
+	it("blocks Cursor old_string/new_string edits when old text is missing", async () => {
+		if (!tempDir) throw new Error("tempDir missing");
+		const file = join(tempDir, "a.ts");
+		writeFileSync(file, "const v = 1;\n");
+
+		const handler = captureHandler();
+		const result = await handler({
+			toolName: "edit",
+			input: {
+				path: file,
+				old_string: "missing text",
+				new_string: "x",
+			},
+		});
+		expect(result?.block).toBe(true);
+	});
+
+	it("ignores unreadable files and edits with no replacement", async () => {
 		const handler = captureHandler();
 		expect(await handler({ toolName: "edit", input: { path: "/nope", edits: null } })).toBeUndefined();
 		expect(await handler({ toolName: "edit", input: { path: "/nope" } })).toBeUndefined();
