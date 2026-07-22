@@ -15,6 +15,7 @@ import { registerEffort } from "./effort/index.js";
 import { registerInit } from "./init/index.js";
 import { registerPermissionModes } from "./permission-modes/index.js";
 import registerPrettyTools from "./pretty-tools/index.js";
+import { registerSubagents } from "./subagents/index.js";
 import { registerUserBash } from "./user-bash/index.js";
 
 export {
@@ -31,6 +32,7 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	registerInit(pi);
 	await registerDiffTools(pi);
 	registerPermissionModes(pi);
+	registerSubagents(pi);
 	registerUserBash(pi);
 	await registerPrettyTools(pi);
 }

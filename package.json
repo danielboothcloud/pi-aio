@@ -1,7 +1,7 @@
 {
 	"name": "aio",
-	"version": "0.5.0",
-	"description": "Combined Pi extension for structured questions, permission modes, enhanced built-in tools, and syntax-highlighted diffs.",
+	"version": "0.6.0",
+	"description": "Combined Pi extension for structured questions, permission modes, subagent delegation, enhanced built-in tools, and syntax-highlighted diffs.",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
@@ -14,6 +14,9 @@
 		"effort",
 		"thinking",
 		"permission-modes",
+		"subagents",
+		"delegation",
+		"parallel-agents",
 		"syntax-highlighting",
 		"pretty-print",
 		"fff",
@@ -40,6 +43,9 @@
 		"pretty-tools/**/*.ts",
 		"!pretty-tools/**/*.test.ts",
 		"pretty-tools/LICENSE",
+		"subagents/**/*.ts",
+		"subagents/agents/**/*.md",
+		"!subagents/**/*.test.ts",
 		"user-bash/**/*.ts",
 		"!user-bash/**/*.test.ts",
 		"README.md"
@@ -47,7 +53,7 @@
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
-		"test:node": "tsx --test copy-widget/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:node": "tsx --test copy-widget/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts"
 	},
 	"pi": {
@@ -63,7 +69,8 @@
 		"marked": "18.0.5",
 		"shiki": "4.0.2",
 		"xxhash-wasm": "^1.1.0",
-		"typebox": "^1.1.24"
+		"typebox": "^1.1.24",
+		"yaml": "^2.8.3"
 	},
 	"devDependencies": {
 		"@earendil-works/pi-agent-core": "0.80.10",

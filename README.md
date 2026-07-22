@@ -1,9 +1,10 @@
 # aio
 
 Combined Pi extension: structured **`ask_user_question`** dialogs, a **`/pick`**
-code picker, **`/init`** AGENTS.md bootstrap, **`/effort`** thinking control, **`!` bash shortcuts**, **Shift+Tab**
-permission modes, enhanced built-in output with FFF-backed search, and
-syntax-highlighted write/edit/patch diffs.
+code picker, **`/init`** AGENTS.md bootstrap, **`/effort`** thinking control,
+generic **subagent delegation**, **`!` bash shortcuts**, **Shift+Tab** permission
+modes, enhanced built-in output with FFF-backed search, and syntax-highlighted
+write/edit/patch diffs.
 
 The questionnaire implementation is based on
 [@juicesharp/rpiv-ask-user-question](https://www.npmjs.com/package/@juicesharp/rpiv-ask-user-question),
@@ -145,6 +146,95 @@ Analyze the codebase and create or update `AGENTS.md` for Pi and other coding ag
 - Propagates nested `AGENTS.md` files in monorepo subprojects when they need stack-specific guidance.
 - `force` regenerates even when `AGENTS.md` already exists; `dry-run` shows the proposed content without writing files.
 - Run `/reload` after writing so Pi loads the new context.
+
+## Subagent delegation
+
+The `subagent` tool launches focused child Pi sessions for isolated work. It
+supports single-agent and bounded parallel execution, fresh or forked context,
+foreground or background runs, configurable concurrency, and basic
+`list`/`status`/`stop` lifecycle control.
+
+When `model` and `thinking` are omitted, each child inherits the model and
+thinking level active in the parent session at launch time. Explicit per-run,
+per-task, or agent-frontmatter values override that default.
+
+Typical single run:
+
+```ts
+{
+  agent: "reviewer",
+  task: "Review the current diff for correctness. Do not modify files.",
+  context: "fresh"
+}
+```
+
+Parallel independent review:
+
+```ts
+{
+  tasks: [
+    { agent: "reviewer", task: "Review correctness and regressions. Do not edit files." },
+    { agent: "reviewer", task: "Review tests and edge cases. Do not edit files." },
+    { agent: "reviewer", task: "Review maintainability. Do not edit files." }
+  ],
+  context: "fresh",
+  concurrency: 3,
+  async: true
+}
+```
+
+Background runs return an id immediately and publish their result back into the
+originating session when complete:
+
+```ts
+{ action: "status" }
+{ action: "status", id: "<run-id>" }
+{ action: "stop", id: "<run-id>" }
+```
+
+AIO ships neutral `scout`, `planner`, `worker`, `reviewer`, `researcher`, and
+`validator` agents. Override them or add agents with Markdown files in:
+
+- User scope: `~/.pi/agent/agents/**/*.md`
+- Project scope: `.pi/agents/**/*.md`
+- Legacy project scope: `.agents/agents/**/*.md`
+
+A minimal agent definition:
+
+```md
+---
+name: security-reviewer
+description: Reviews changes for concrete security defects
+tools: read, grep, find, ls, bash
+systemPromptMode: replace
+inheritProjectContext: true
+inheritSkills: false
+---
+Inspect the assigned change for concrete security defects. Report evidence with
+file and line references. Do not modify files.
+```
+
+Supported frontmatter fields are `name`, `description`, `tools`, `model`,
+`thinking`, `systemPromptMode`, `inheritProjectContext`, and `inheritSkills`.
+Trusted project definitions override user definitions, which override bundled
+agents. Project agent files are ignored until Pi trusts the checkout.
+
+Subagents inherit AIO's active permission mode. In `ask` and `plan` modes,
+mutations remain blocked. In `default` mode, headless children cannot answer
+permission prompts, so mutation attempts are blocked. Use `auto` only when you
+intend to authorize a writer child. Child sessions never receive the `subagent`
+tool, so nested delegation is unavailable.
+
+AIO launches child sessions through `pi` on `PATH`. Wrappers and custom
+installations can set `AIO_SUBAGENT_PI_BINARY` to an alternate Pi executable.
+
+This intentionally reduced runtime does not include chains, dynamic fanout,
+structured-output contracts, worktrees, resume/steer, scheduling, acceptance
+gates, persistent agent memory, or automatic model fallbacks. Keep parallel
+children read-only in a shared checkout and use one writer for changes.
+
+Do not load standalone `pi-subagents` alongside AIO because both packages
+register a tool named `subagent`.
 
 ## `!` bash shortcuts
 
@@ -321,6 +411,7 @@ packages register `write`, `edit`, and `apply_patch`.
 ├── init/                    # /init AGENTS.md bootstrap
 ├── permission-modes/        # Shift+Tab modes + plan flow
 ├── pretty-tools/            # pretty built-ins + FFF search
+├── subagents/               # child-agent discovery, execution, and lifecycle
 └── user-bash/               # !/!! command permission gating
 ```
 
@@ -328,9 +419,9 @@ packages register `write`, `edit`, and `apply_patch`.
 
 - Remove standalone `@juicesharp/rpiv-ask-user-question`,
   `@pandi-coding-agent/pandi-effort`, `@aprimediet/permission-modes`,
-  `@heyhuynhgiabuu/pi-pretty`, and `@heyhuynhgiabuu/pi-diff` packages from
-  settings when installing this combined package, to avoid duplicate tools,
-  commands, and shortcuts.
+  `@heyhuynhgiabuu/pi-pretty`, `@heyhuynhgiabuu/pi-diff`, and `pi-subagents`
+  packages from settings when installing this combined package, to avoid
+  duplicate tools, commands, and shortcuts.
 - Effort status (`effort:…`) and mode status (`● Default`) coexist in the status
   bar; the footer shows the active permission mode.
 - The vendored questionnaire source remains covered by its original MIT license
