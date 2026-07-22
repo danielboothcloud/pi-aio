@@ -1,6 +1,6 @@
 /**
  * Combined Pi extension: ask_user_question, /pick, /effort, Shift+Tab
- * permission modes, enhanced built-in tool output, and syntax-highlighted diffs.
+ * permission modes, enhanced built-in tool output, syntax-highlighted diffs, and rtk shell-command rewriting.
  *
  * Effort and permission modes are based on @pandi-coding-agent/pandi-effort
  * and @aprimediet/permission-modes. The questionnaire implementation is based
@@ -14,6 +14,7 @@ import registerDiffTools from "./diff-tools/index.js";
 import { registerEffort } from "./effort/index.js";
 import { registerInit } from "./init/index.js";
 import { registerPermissionModes } from "./permission-modes/index.js";
+import { registerRtk } from "./rtk/index.js";
 import registerPrettyTools from "./pretty-tools/index.js";
 import { registerSubagents } from "./subagents/index.js";
 import { registerUserBash } from "./user-bash/index.js";
@@ -34,5 +35,6 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	registerPermissionModes(pi);
 	registerSubagents(pi);
 	registerUserBash(pi);
+	registerRtk(pi);
 	await registerPrettyTools(pi);
 }

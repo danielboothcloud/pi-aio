@@ -1,7 +1,7 @@
 {
 	"name": "aio",
 	"version": "0.6.0",
-	"description": "Combined Pi extension for structured questions, permission modes, subagent delegation, enhanced built-in tools, and syntax-highlighted diffs.",
+	"description": "Combined Pi extension for structured questions, permission modes, subagent delegation, enhanced built-in tools, syntax-highlighted diffs, and rtk shell-command rewriting.",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
@@ -21,7 +21,10 @@
 		"pretty-print",
 		"fff",
 		"diff",
-		"word-diff"
+		"word-diff",
+		"rtk",
+		"token-optimization",
+		"shell-rewrite"
 	],
 	"files": [
 		"index.ts",
@@ -43,6 +46,8 @@
 		"pretty-tools/**/*.ts",
 		"!pretty-tools/**/*.test.ts",
 		"pretty-tools/LICENSE",
+		"rtk/**/*.ts",
+		"!rtk/**/*.test.ts",
 		"subagents/**/*.ts",
 		"subagents/agents/**/*.md",
 		"!subagents/**/*.test.ts",
@@ -53,7 +58,7 @@
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
-		"test:node": "tsx --test copy-widget/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:node": "tsx --test copy-widget/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts rtk/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts"
 	},
 	"pi": {

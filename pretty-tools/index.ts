@@ -11,6 +11,7 @@
 
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import * as hostSdk from "@earendil-works/pi-coding-agent";
+import { rtkSpawnHook } from "../rtk/index.js";
 import { createFffAutocompleteProvider } from "./autocomplete.js";
 import { getDefaultAgentDir } from "./config.js";
 import { type FffService, getSharedFffService } from "./fff.js";
@@ -212,7 +213,7 @@ export default async function piPrettyExtension(pi: ExtensionAPI, deps?: PiPrett
 		registerReadTool(pi, cwd, null, createReadTool(cwd), TextComp);
 	}
 	if (isToolEnabled("bash") && createBashTool) {
-		registerBashTool(pi, cwd, null, createBashTool(cwd), TextComp);
+		registerBashTool(pi, cwd, null, createBashTool(cwd, { spawnHook: rtkSpawnHook }), TextComp);
 	}
 	if (isToolEnabled("ls") && createLsTool) {
 		registerLsTool(pi, cwd, null, createLsTool(cwd), TextComp);
