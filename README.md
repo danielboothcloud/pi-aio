@@ -1,7 +1,7 @@
 # aio
 
 Combined Pi extension: structured **`ask_user_question`** dialogs, a **`/pick`**
-code picker, **`/effort`** thinking control, **`!` bash shortcuts**, **Shift+Tab**
+code picker, **`/init`** AGENTS.md bootstrap, **`/effort`** thinking control, **`!` bash shortcuts**, **Shift+Tab**
 permission modes, enhanced built-in output with FFF-backed search, and
 syntax-highlighted write/edit/patch diffs.
 
@@ -129,6 +129,22 @@ Set model thinking effort:
 - Run `/effort` with no args to open a selector (TUI) or show current level.
 - `ultracode` sets xhigh effort and enables the `dynamic_workflow` tool if available.
 - Current effort appears in the status bar as `effort:<level>`.
+
+## `/init` command
+
+Analyze the codebase and create or update `AGENTS.md` for Pi and other coding agents:
+
+```text
+/init
+/init force
+/init dry-run
+```
+
+- Detects build systems, test frameworks, CI, and repo conventions from manifests and config files.
+- Writes a concise root `AGENTS.md` with commands, stack, conventions, and gotchas agents cannot infer reliably.
+- Propagates nested `AGENTS.md` files in monorepo subprojects when they need stack-specific guidance.
+- `force` regenerates even when `AGENTS.md` already exists; `dry-run` shows the proposed content without writing files.
+- Run `/reload` after writing so Pi loads the new context.
 
 ## `!` bash shortcuts
 
@@ -302,6 +318,7 @@ packages register `write`, `edit`, and `apply_patch`.
 ├── copy-widget/             # /pick parser + TUI overlay
 ├── diff-tools/              # write/edit/apply_patch diff rendering
 ├── effort/                  # /effort command + status
+├── init/                    # /init AGENTS.md bootstrap
 ├── permission-modes/        # Shift+Tab modes + plan flow
 ├── pretty-tools/            # pretty built-ins + FFF search
 └── user-bash/               # !/!! command permission gating
