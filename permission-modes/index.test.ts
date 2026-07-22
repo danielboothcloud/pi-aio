@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import type { AssistantMessage } from "@earendil-works/pi-ai";
 import type {
@@ -277,50 +280,84 @@ test("Cursor default mode exposes bridge built-ins and routes mutations through 
 });
 
 test("default mode prompts for bridged Cursor edits", async () => {
-	const { ctx, handlers, pi, selectPrompts } = makeHarness({
-		selections: ["Allow"],
-	});
-	registerPermissionModes(pi);
+	const previous = process.env.PI_CURSOR_EXPOSE_BUILTIN_TOOLS;
+	delete process.env.PI_CURSOR_EXPOSE_BUILTIN_TOOLS;
+	const tempDir = mkdtempSync(join(tmpdir(), "permission-edit-preview-"));
+	const filePath = join(tempDir, "example.ts");
+	writeFileSync(filePath, "const value = 1;\n");
+	try {
+		const { ctx, handlers, pi, selectPrompts } = makeHarness({
+			selections: ["Allow"],
+		});
+		registerPermissionModes(pi);
 
-	const [handler] = handlers.get("tool_call") ?? [];
-	const result = await handler?.(
-		{
-			toolCallId: "cursor-pi-bridge-run-1-tool-1",
-			toolName: "edit",
-			input: { path: "src/example.ts" },
-		},
-		ctx,
-	);
+		const [handler] = handlers.get("tool_call") ?? [];
+		const result = await handler?.(
+			{
+				toolCallId: "cursor-pi-bridge-run-1-tool-1",
+				toolName: "edit",
+				input: {
+					path: filePath,
+					oldText: "const value = 1;",
+					newText: "const value = 2;",
+				},
+			},
+			ctx,
+		);
 
-	assert.equal(result, undefined);
-	assert.deepEqual(selectPrompts, ["Allow edit on src/example.ts?"]);
+		assert.equal(result, undefined);
+		assert.equal(selectPrompts.length, 1);
+		assert.match(selectPrompts[0], /Allow edit on .*example\.ts\?/);
+		assert.match(selectPrompts[0], /- const value = 1;/);
+		assert.match(selectPrompts[0], /\+ const value = 2;/);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+		if (previous === undefined)
+			delete process.env.PI_CURSOR_EXPOSE_BUILTIN_TOOLS;
+		else process.env.PI_CURSOR_EXPOSE_BUILTIN_TOOLS = previous;
+	}
 });
 
 test("default mode prompts once for all apply_patch target files", async () => {
-	const { ctx, handlers, pi, selectPrompts } = makeHarness({
-		selections: ["Allow"],
-	});
-	registerPermissionModes(pi);
+	const tempDir = mkdtempSync(join(tmpdir(), "permission-patch-preview-"));
+	const onePath = join(tempDir, "one.ts");
+	const twoPath = join(tempDir, "two.ts");
+	writeFileSync(onePath, "const one = 1;\n");
+	try {
+		const { ctx, handlers, pi, selectPrompts } = makeHarness({
+			selections: ["Allow"],
+		});
+		registerPermissionModes(pi);
 
-	const [handler] = handlers.get("tool_call") ?? [];
-	const result = await handler?.(
-		{
-			toolCallId: "call-apply-patch",
-			toolName: "apply_patch",
-			input: {
-				changes: [
-					{ path: "src/one.ts", action: "update" },
-					{ path: "src/two.ts", action: "add" },
-				],
+		const [handler] = handlers.get("tool_call") ?? [];
+		const result = await handler?.(
+			{
+				toolCallId: "call-apply-patch",
+				toolName: "apply_patch",
+				input: {
+					changes: [
+						{
+							path: onePath,
+							action: "update",
+							oldText: "const one = 1;",
+							newText: "const one = 10;",
+						},
+						{ path: twoPath, action: "add", content: "export const two = 2;\n" },
+					],
+				},
 			},
-		},
-		ctx,
-	);
+			ctx,
+		);
 
-	assert.equal(result, undefined);
-	assert.deepEqual(selectPrompts, [
-		"Allow apply_patch on src/one.ts, src/two.ts?",
-	]);
+		assert.equal(result, undefined);
+		assert.equal(selectPrompts.length, 1);
+		assert.match(selectPrompts[0], /Allow apply_patch on .*one\.ts.*two\.ts\?/);
+		assert.match(selectPrompts[0], /--- one.ts ---/);
+		assert.match(selectPrompts[0], /--- two.ts \(new file\) ---/);
+		assert.match(selectPrompts[0], /\+ export const two = 2;/);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
 });
 
 test("Cursor replay mutations warn instead of showing a misleading approval prompt", async () => {

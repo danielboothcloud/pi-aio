@@ -218,10 +218,14 @@ function generateDiff(_filePath: string, oldContent: string, newContent: string)
 }
 
 // ---------------------------------------------------------------------------
-// Main executor
+// Prepare changes (shared by preview + execute)
 // ---------------------------------------------------------------------------
 
-export async function executeApplyPatch(changes: ApplyPatchChange[]): Promise<ApplyPatchResult> {
+async function prepareApplyPatchChanges(changes: ApplyPatchChange[]): Promise<{
+	ok: boolean;
+	prepared: PreparedChange[];
+	errors: ApplyPatchError[];
+}> {
 	const prepared: PreparedChange[] = [];
 	const errors: ApplyPatchError[] = [];
 	const claimedPaths = new Set<string>();
@@ -251,7 +255,23 @@ export async function executeApplyPatch(changes: ApplyPatchChange[]): Promise<Ap
 		}
 	}
 
-	if (errors.length > 0) return { ok: false, applied: [], errors };
+	return { ok: errors.length === 0, prepared, errors };
+}
+
+/** Validate and compute patch effects without writing anything. */
+export async function previewApplyPatch(changes: ApplyPatchChange[]): Promise<ApplyPatchResult> {
+	const { ok, prepared, errors } = await prepareApplyPatchChanges(changes);
+	if (!ok) return { ok: false, applied: [], errors };
+	return { ok: true, applied: prepared.map((change) => change.applied), errors: [] };
+}
+
+// ---------------------------------------------------------------------------
+// Main executor
+// ---------------------------------------------------------------------------
+
+export async function executeApplyPatch(changes: ApplyPatchChange[]): Promise<ApplyPatchResult> {
+	const { ok, prepared, errors } = await prepareApplyPatchChanges(changes);
+	if (!ok) return { ok: false, applied: [], errors };
 
 	const committed: PreparedChange[] = [];
 	try {

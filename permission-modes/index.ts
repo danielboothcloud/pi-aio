@@ -19,6 +19,10 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
+import {
+	buildMutationApprovalPrompt,
+	formatMutationPreview,
+} from "../diff-tools/core/mutation-preview.js";
 import { setPermissionModeAccess } from "./mode-access.js";
 import {
 	extractTodoItems,
@@ -676,11 +680,14 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			if (!ctx.hasUI) {
 				return { block: true, reason: `${tool} blocked: no UI to confirm.` };
 			}
-			const choice = await ctx.ui.select(`Allow ${tool} on ${path}?`, [
-				"Allow",
-				"Allow all (enable auto)",
-				"Block",
-			]);
+			const preview =
+				tool === "edit" || tool === "apply_patch"
+					? await formatMutationPreview(tool, input)
+					: undefined;
+			const choice = await ctx.ui.select(
+				buildMutationApprovalPrompt(tool, path, preview),
+				["Allow", "Allow all (enable auto)", "Block"],
+			);
 			if (choice === "Allow all (enable auto)") {
 				await setMode("auto", ctx);
 				return undefined;
