@@ -391,6 +391,7 @@ test("Cursor replay mutations warn instead of showing a misleading approval prom
 			notification.message,
 			/action already ran outside Pi's permission gate/,
 		);
+		assert.match(notification.message, /pi__edit, pi__write, pi__apply_patch/);
 		assert.equal(notification.level, "warning");
 	}
 });

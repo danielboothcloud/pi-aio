@@ -43,6 +43,8 @@ const FILE_MUTATION_TOOLS = new Set<string>(["edit", "write", "apply_patch"]);
 const PLAN_MODE_DISABLED_TOOLS = FILE_MUTATION_TOOLS;
 const CURSOR_BRIDGE_BUILTINS_ENV = "PI_CURSOR_EXPOSE_BUILTIN_TOOLS";
 const CURSOR_REPLAY_TOOL_CALL_PREFIX = "cursor-replay-";
+const CURSOR_BRIDGE_MUTATION_TOOLS =
+	"pi__edit, pi__write, pi__apply_patch, or pi__bash";
 
 interface PersistedState {
 	currentMode: Mode;
@@ -133,7 +135,7 @@ Do not use Cursor host edit, write, delete, or mutating shell tools in ${mode} m
 	}
 
 	return `[CURSOR PROVIDER PERMISSION ROUTING]
-Cursor host edit/write/delete/shell tools bypass Pi's permission prompt. For every file mutation or mutating command, use the exposed Pi bridge tools (pi__edit, pi__write, pi__apply_patch, or pi__bash) instead of Cursor host tools so Pi can ask the user before execution. Cursor host read/search tools remain allowed. If the required pi__ tool is unavailable, do not mutate anything; explain that permission routing is unavailable.`;
+Cursor host edit/write/delete/shell tools bypass Pi's permission prompt. For every file mutation or mutating command, use the exposed Pi bridge tools (${CURSOR_BRIDGE_MUTATION_TOOLS}) instead of Cursor host tools so Pi can show the diff and ask before execution. Cursor host read/search tools remain allowed. If the required pi__ tool is unavailable, do not mutate anything; explain that permission routing is unavailable.`;
 }
 
 function modeMetadata(mode: Mode): {
@@ -491,6 +493,8 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			ctx.ui.setWidget("plan-todos", undefined);
 		}
 
+		syncCursorPermissionBridge(ctx);
+
 		// Update status pill + working indicator
 		updateStatus(ctx);
 
@@ -643,7 +647,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			const mutation = getCursorReplayMutation(tool, input);
 			if (mutation && currentMode !== "auto" && ctx.hasUI) {
 				ctx.ui.notify(
-					`Cursor host ${mutation} bypassed ${currentMode} mode; the action already ran outside Pi's permission gate.`,
+					`Cursor host ${mutation} bypassed ${currentMode} mode; the action already ran outside Pi's permission gate. Use ${CURSOR_BRIDGE_MUTATION_TOOLS} so Pi can show the diff and prompt before execution.`,
 					"warning",
 				);
 			}
@@ -1060,6 +1064,8 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 
 		// 5) Restore plan-execute widget if applicable
 		syncPlanTodoWidget(ctx);
+
+		syncCursorPermissionBridge(ctx);
 
 		// 6) Install footer + status
 		updateStatus(ctx);
