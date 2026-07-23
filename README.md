@@ -2,9 +2,10 @@
 
 Combined Pi extension: structured **`ask_user_question`** dialogs, a **`/pick`**
 code picker, **`/init`** AGENTS.md bootstrap, **`/effort`** thinking control,
-generic **subagent delegation**, **`!` bash shortcuts**, **Shift+Tab** permission
-modes, enhanced built-in output with FFF-backed search, **rtk** shell-command
-rewriting, and syntax-highlighted write/edit/patch diffs.
+generic **subagent delegation**, self-hosted **`web_search`** and
+**`fetch_content`**, **`!` bash shortcuts**, **Shift+Tab** permission modes,
+enhanced built-in output with FFF-backed search, **rtk** shell-command rewriting,
+and syntax-highlighted write/edit/patch diffs.
 
 The questionnaire implementation is based on
 [@juicesharp/rpiv-ask-user-question](https://www.npmjs.com/package/@juicesharp/rpiv-ask-user-question),
@@ -146,6 +147,21 @@ Analyze the codebase and create or update `AGENTS.md` for Pi and other coding ag
 - Propagates nested `AGENTS.md` files in monorepo subprojects when they need stack-specific guidance.
 - `force` regenerates even when `AGENTS.md` already exists; `dry-run` shows the proposed content without writing files.
 - Run `/reload` after writing so Pi loads the new context.
+
+## Self-hosted web search
+
+AIO provides `web_search` and `fetch_content` using the native TypeScript port
+in [`browser-search/`](browser-search/README.md):
+
+- SearXNG supplies raw multi-engine search hits.
+- Camofox extracts readable page content through headless Firefox.
+- CloakBrowser is an optional stealth fallback for blocked or empty pages.
+- Results are returned inline; there is no curator, response-id store, or
+  `get_search_content` tool.
+
+SearXNG and Camofox must be running separately. See the
+[browser-search setup and configuration](browser-search/README.md), including
+how to disable pi-web-access's overlapping extension while retaining its skills.
 
 ## Subagent delegation
 
@@ -385,8 +401,9 @@ reduce LLM token usage. When the agent runs a `bash` tool call, or you run a
 `!command`, aio first rewrites the command with `rtk rewrite` and executes the
 rewritten form. Commands rtk has no equivalent for run unchanged.
 
-- **Agent `bash` tool** — a spawn hook rewrites the command before execution,
-  preserving the original command in tool output.
+- **Agent `bash` tool** — an asynchronous `tool_call` hook rewrites the command
+  after permission checks and before execution. This works independently of the
+  pretty bash override, so disabling or replacing its renderer does not disable RTK.
 - **`!command`** — aio returns custom bash operations that run the rewritten
   command, layered on top of the normal permission-mode gate so blocked
   commands never reach rtk.

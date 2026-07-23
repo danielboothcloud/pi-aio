@@ -5,8 +5,8 @@
  *
  * Two execution paths consume this module:
  *
- * 1. Agent `bash` tool calls — {@link rtkSpawnHook} rewrites the command before
- *    the SDK spawns it, preserving the original command in tool output.
+ * 1. Agent `bash` tool calls — {@link rewriteAgentBashCommand} asynchronously
+ *    asks `rtk rewrite` for the command that Pi should execute.
  * 2. User `!<cmd>` shell commands — {@link buildRtkUserBashResult} returns custom
  *    bash operations that execute the rewritten command.
  *
@@ -22,12 +22,11 @@
 import { spawnSync } from "node:child_process";
 import type {
 	BashOperations,
-	BashSpawnContext,
-	BashSpawnHook,
+	ExtensionAPI,
 	UserBashEventResult,
 } from "@earendil-works/pi-coding-agent";
 
-const REWRITE_TIMEOUT_MS = 5000;
+const REWRITE_TIMEOUT_MS = 2_000;
 
 // ---------------------------------------------------------------------------
 // Session toggle (in-memory only)
@@ -111,9 +110,9 @@ function classifySpawnError(
 }
 
 function defaultRtkRewrite(command: string): string | undefined {
-	// rtk's exit codes are permission verdicts (0/1/2/3 = allow/no-equiv/deny/
-	// ask). We trust stdout and ignore the exit code — this shim rewrites, it
-	// does not gate. Spawn availability errors are surfaced via the notify gate.
+	// `rtk rewrite` returns 0 for a normal rewrite, 1 when no equivalent exists,
+	// and 3 for an advisory rewrite. Permission decisions remain owned by aio's
+	// permission modes.
 	try {
 		const result = spawnSync("rtk", ["rewrite", command], {
 			encoding: "utf-8",
@@ -125,6 +124,7 @@ function defaultRtkRewrite(command: string): string | undefined {
 			if (reason !== "other") alertRtkUnavailable(reason);
 			return undefined;
 		}
+		if (result.status !== 0 && result.status !== 3) return undefined;
 
 		rtkUnavailableNotified = false;
 
@@ -139,12 +139,56 @@ function defaultRtkRewrite(command: string): string | undefined {
 // Public rewrite API
 // ---------------------------------------------------------------------------
 
+function shouldSkipRewrite(command: string): boolean {
+	const trimmed = command.trimStart();
+	return (
+		trimmed === "rtk" ||
+		trimmed.startsWith("rtk ") ||
+		process.env.RTK_DISABLED === "1" ||
+		/^(?:env\s+)?RTK_DISABLED=1(?:\s|$)/.test(trimmed)
+	);
+}
+
 /**
- * Rewrite a command via rtk. Returns the rewritten command, or `undefined` when
- * rtk is unavailable, times out, or has no equivalent for the command.
+ * Rewrite a user-shell command synchronously. User-bash interception must return
+ * custom operations before Pi starts the command, so it retains the lightweight
+ * synchronous path used by the original integration.
  */
 export function rtkRewriteCommand(command: string): string | undefined {
-	return rewriteFn(command);
+	if (!sessionEnabled || shouldSkipRewrite(command)) return undefined;
+	const rewritten = rewriteFn(command);
+	return rewritten && rewritten !== command ? rewritten : undefined;
+}
+
+/**
+ * Rewrite an agent `bash` command asynchronously through Pi's process API. This
+ * is independent of whichever extension owns the final `bash` tool definition,
+ * so disabling pretty bash or loading another renderer cannot disable RTK.
+ */
+export async function rewriteAgentBashCommand(
+	pi: ExtensionAPI,
+	command: string,
+	signal?: AbortSignal,
+): Promise<string | undefined> {
+	if (!sessionEnabled || shouldSkipRewrite(command)) return undefined;
+
+	// Keep the existing injection seam deterministic for unit tests.
+	if (rewriteFn !== defaultRtkRewrite) return rtkRewriteCommand(command);
+
+	try {
+		const result = await pi.exec("rtk", ["rewrite", command], {
+			timeout: REWRITE_TIMEOUT_MS,
+			signal,
+		});
+		if (result.killed || (result.code !== 0 && result.code !== 3)) {
+			return undefined;
+		}
+		const rewritten = result.stdout.trimEnd();
+		return rewritten && rewritten !== command ? rewritten : undefined;
+	} catch {
+		// RTK is an optimization. Never prevent the original command from running.
+		return undefined;
+	}
 }
 
 /**
@@ -159,20 +203,6 @@ export function probeRtkAvailability(): void {
 	const reason = classifySpawnError(result.error as NodeJS.ErrnoException);
 	if (reason !== "other") alertRtkUnavailable(reason);
 }
-
-/**
- * Spawn hook for the agent `bash` tool. Rewrites the command when the session
- * toggle is enabled and rtk can rewrite it; otherwise returns the context
- * unchanged so Pi's normal shell behavior continues.
- */
-export const rtkSpawnHook: BashSpawnHook = ({
-	command,
-	cwd,
-	env,
-}: BashSpawnContext): BashSpawnContext => {
-	if (!sessionEnabled) return { command, cwd, env };
-	return { command: rtkRewriteCommand(command) ?? command, cwd, env };
-};
 
 /**
  * Build a {@link UserBashEventResult} that executes the rewritten command via

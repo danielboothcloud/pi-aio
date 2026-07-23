@@ -73,6 +73,7 @@ test("registerRtk registers the /rtk command and lifecycle handlers", () => {
 		h.handlers.has("session_shutdown"),
 		"session_shutdown handler registered",
 	);
+	assert.ok(h.handlers.has("tool_call"), "tool_call handler registered");
 	assert.ok(h.handlers.has("user_bash"), "user_bash handler registered");
 });
 
@@ -144,6 +145,47 @@ test("/rtk with an invalid subcommand notifies an error", async () => {
 
 	assert.equal(h.notifies.at(-1)?.type, "error");
 	assert.match(String(h.notifies.at(-1)?.message), /Unknown \/rtk subcommand/);
+});
+
+test("tool_call handler rewrites agent bash commands", async () => {
+	const h = makeHarness();
+	setRtkRewriteFn((command) => `rtk-test:${command}`);
+	registerRtk(h.pi);
+	const [handler] = h.handlers.get("tool_call")!;
+	const event = {
+		type: "tool_call",
+		toolCallId: "bash-1",
+		toolName: "bash",
+		input: { command: "git status" },
+	};
+
+	await handler(event, h.ctx);
+	assert.equal(event.input.command, "rtk-test:git status");
+});
+
+test("tool_call handler leaves non-bash tools and disabled RTK untouched", async () => {
+	const h = makeHarness();
+	setRtkRewriteFn((command) => `rtk-test:${command}`);
+	registerRtk(h.pi);
+	const [handler] = h.handlers.get("tool_call")!;
+	const readEvent = {
+		type: "tool_call",
+		toolCallId: "read-1",
+		toolName: "read",
+		input: { path: "README.md" },
+	};
+	await handler(readEvent, h.ctx);
+	assert.deepEqual(readEvent.input, { path: "README.md" });
+
+	setRtkEnabled(false);
+	const bashEvent = {
+		type: "tool_call",
+		toolCallId: "bash-2",
+		toolName: "bash",
+		input: { command: "git status" },
+	};
+	await handler(bashEvent, h.ctx);
+	assert.equal(bashEvent.input.command, "git status");
 });
 
 test("user_bash handler skips !! commands (excluded from context)", async () => {

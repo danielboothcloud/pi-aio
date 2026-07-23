@@ -14,12 +14,14 @@ import {
 	createLocalBashOperations,
 	type ExtensionAPI,
 	type ExtensionContext,
+	isToolCallEventType,
 } from "@earendil-works/pi-coding-agent";
 import {
 	buildRtkUserBashResult,
 	cacheNotify,
 	isRtkEnabled,
 	probeRtkAvailability,
+	rewriteAgentBashCommand,
 } from "./rewrite.js";
 import {
 	clearRtkFooter,
@@ -28,8 +30,8 @@ import {
 } from "./command.js";
 
 export {
-	rtkSpawnHook,
 	rtkRewriteCommand,
+	rewriteAgentBashCommand,
 	isRtkEnabled,
 	setRtkEnabled,
 	setRtkRewriteFn,
@@ -50,6 +52,18 @@ export function registerRtk(pi: ExtensionAPI): void {
 
 	pi.on("session_shutdown", (_event, ctx: ExtensionContext) => {
 		clearRtkFooter(ctx);
+	});
+
+	// Permission modes register their tool_call gate before RTK, so they inspect
+	// and approve the original command. RTK then rewrites only allowed commands,
+	// independently of whichever extension owns the final bash renderer.
+	pi.on("tool_call", async (event, ctx: ExtensionContext) => {
+		if (!isToolCallEventType("bash", event)) return;
+		const command = event.input.command;
+		if (typeof command !== "string" || command.trim() === "") return;
+
+		const rewritten = await rewriteAgentBashCommand(pi, command, ctx.signal);
+		if (rewritten) event.input.command = rewritten;
 	});
 
 	pi.on("user_bash", (event, ctx: ExtensionContext) => {

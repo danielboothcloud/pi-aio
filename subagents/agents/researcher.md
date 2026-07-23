@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Researches external documentation and primary sources and returns a concise evidence-backed brief.
-tools: read, web_search, fetch_content, get_search_content
+tools: read, web_search, fetch_content
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: true
