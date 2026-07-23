@@ -14,14 +14,23 @@ There is deliberately no curator UI, response-id store, or
 
 ## Runtime setup
 
-SearXNG and Camofox are external services and are not started by AIO. Follow the
-upstream [Docker setup](https://github.com/Johell1NS/browser-search/blob/master/docker/setup.md),
-then verify:
+Start the included local-only Compose stack from the repository root:
+
+```bash
+cp .env.example .env # optional: customize images, ports, or secrets
+docker compose up -d
+docker compose ps
+```
+
+Both ports bind to `127.0.0.1`. Verify the services with:
 
 ```bash
 curl 'http://localhost:8080/search?format=json&q=health'
 curl 'http://localhost:9377/health'
 ```
+
+Stop them with `docker compose down`; add `-v` to also delete browser profiles
+and the SearXNG cache.
 
 `cloakbrowser` and `playwright-core` are optional npm dependencies. AIO installs
 them when the platform supports them, but imports them only when Camofox cannot
