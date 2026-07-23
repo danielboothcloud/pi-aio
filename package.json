@@ -66,6 +66,7 @@
 		"compose.yaml",
 		".env.example",
 		"docker/searxng/settings.yml",
+		"docker/searxng/Dockerfile",
 		"user-bash/**/*.ts",
 		"!user-bash/**/*.test.ts",
 		"ast-grep/**/*.ts",

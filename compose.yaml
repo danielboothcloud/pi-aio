@@ -2,7 +2,9 @@ name: pi-aio-browser-search
 
 services:
   searxng:
-    image: ${SEARXNG_IMAGE:-docker.io/searxng/searxng:latest}
+    build:
+      context: ./docker/searxng
+    image: ${SEARXNG_IMAGE:-pi-aio-searxng:local}
     container_name: searxng
     restart: unless-stopped
     ports:
@@ -14,10 +16,6 @@ services:
       SEARXNG_LIMITER: "false"
       SEARXNG_SECRET: ${SEARXNG_SECRET:-local-development-secret-change-me}
       FORCE_OWNERSHIP: "false"
-    configs:
-      - source: searxng_settings
-        target: /etc/searxng/settings.yml
-        mode: 0444
     volumes:
       - searxng-cache:/var/cache/searxng
     healthcheck:
@@ -72,26 +70,3 @@ services:
 volumes:
   searxng-cache:
   camofox-data:
-
-# Avoid host bind mounts: Podman on macOS cannot statfs host paths into the VM.
-# Keep docker/searxng/settings.yml in sync with this config content.
-configs:
-  searxng_settings:
-    content: |
-      use_default_settings: true
-
-      general:
-        debug: false
-        instance_name: pi-aio SearXNG
-
-      search:
-        safe_search: 0
-        autocomplete: ""
-        formats:
-          - html
-          - json
-
-      server:
-        secret_key: overridden-by-SEARXNG_SECRET
-        limiter: false
-        image_proxy: true

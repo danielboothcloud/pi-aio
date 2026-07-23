@@ -18,7 +18,7 @@ Start the included local-only Compose stack from the repository root:
 
 ```bash
 cp .env.example .env # optional: customize images, ports, or secrets
-docker compose up -d
+docker compose up --build -d
 docker compose ps
 ```
 
