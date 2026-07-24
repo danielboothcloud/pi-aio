@@ -106,7 +106,7 @@ function truncateForInline(
 	return {
 		text:
 			content.slice(0, limit) +
-			`\n\n[Content truncated… ${limit}/${fullChars} chars shown]`,
+			`\n\n[… truncated at ${limit} / ${fullChars} chars]`,
 		truncated: true,
 		fullChars,
 	};
@@ -287,7 +287,11 @@ function formatFetchedSources(results: FetchResult[]): string {
 			return `### ${result.url}\n\nFetch error: ${result.error ?? "no content"}`;
 		}
 		const { text } = truncateForInline(result.content, perSourceLimit);
-		return `### ${result.title ?? result.url}\n\nSource: ${result.finalUrl ?? result.url}\n\n${text}`;
+		const source =
+			result.finalUrl && result.finalUrl !== result.url
+				? `\n\nSource: ${result.finalUrl}`
+				: "";
+		return `### ${result.title ?? result.url}${source}\n\n${text}`;
 	});
 	return `\n\n## In-page content\n\n${sections.join("\n\n---\n\n")}`;
 }
@@ -626,7 +630,13 @@ export function registerBrowserSearch(
 			if (urlList.length === 1) {
 				const result = successful[0];
 				const inline = truncateForInline(result.content);
-				return toolResult(inline.text || "(no content extracted)", {
+				const header = result.title ?? result.url;
+				const source =
+					result.finalUrl && result.finalUrl !== result.url
+						? `\nSource: ${result.finalUrl}`
+						: "";
+				const body = inline.text || "(no content extracted)";
+				return toolResult(`## ${header}${source}\n\n${body}`, {
 					url: result.url,
 					finalUrl: result.finalUrl,
 					title: result.title,
@@ -650,12 +660,12 @@ export function registerBrowserSearch(
 					return `## ${result.url}\n\nError: ${result.error ?? "no content"}`;
 				}
 				const inline = truncateForInline(result.content, perUrlLimit);
-				return [
-					`## ${result.title ?? result.url}`,
-					`Source: ${result.finalUrl ?? result.url}`,
-					`Backend: ${result.tier} · Format: ${result.format} · ${result.chars} chars`,
-					inline.text,
-				].join("\n\n");
+				const header = `## ${result.title ?? result.url}`;
+				const source =
+					result.finalUrl && result.finalUrl !== result.url
+						? `\n\nSource: ${result.finalUrl}`
+						: "";
+				return `${header}${source}\n\n${inline.text}`;
 			});
 			const combined = truncateForInline(sections.join("\n\n---\n\n"));
 
