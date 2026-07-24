@@ -7,7 +7,9 @@ export const STATUS_LINE_SEGMENTS = [
 	"path",
 	"git",
 	"context",
+	"effort",
 	"statuses",
+	"cursor",
 	"model",
 	"tokens",
 	"cost",
@@ -27,7 +29,7 @@ export interface StatusLineConfig {
 
 export const DEFAULT_STATUS_LINE_CONFIG: StatusLineConfig = {
 	enabled: true,
-	segments: ["mode", "path", "git", "context", "statuses", "model"],
+	segments: ["mode", "path", "git", "context", "effort", "statuses", "cursor", "model"],
 	path: "basename",
 	workingMessage: "minimal",
 };

@@ -342,7 +342,7 @@ pi --permission-mode plan
 `pi-powerline-footer`. The default layout is:
 
 ```text
-Plan · pi-aio · main · 42% · rtk✓ · cursor/composer-2.5
+Plan · ⌂ pi-aio · ⎇ main · ◫ 42% · ⚡ effort:max · rtk✓ · ◈ cursor:local · fast:on · ◇ cursor/composer-2.5
 ```
 
 Configure it in Pi settings (`~/.pi/agent/settings.json` or project
@@ -353,7 +353,7 @@ Configure it in Pi settings (`~/.pi/agent/settings.json` or project
   "aio": {
     "statusLine": {
       "enabled": true,
-      "segments": ["mode", "path", "git", "context", "statuses", "model"],
+      "segments": ["mode", "path", "git", "context", "effort", "statuses", "cursor", "model"],
       "path": "basename",
       "workingMessage": "minimal"
     }
@@ -364,7 +364,7 @@ Configure it in Pi settings (`~/.pi/agent/settings.json` or project
 | Field | Purpose |
 | ----- | ------- |
 | `enabled` | Master toggle; `false` restores Pi's default footer |
-| `segments` | Ordered list: `mode`, `path`, `git`, `context`, `statuses`, `model`, `tokens`, `cost` |
+| `segments` | Ordered list: `mode`, `path`, `git`, `context`, `effort`, `statuses`, `cursor`, `model`, `tokens`, `cost` |
 | `path` | `basename`, `abbreviated`, or `full` |
 | `workingMessage` | `minimal` (default), `verbose` (streaming stats), or `off` |
 | `statusKeys` | Optional allowlist for extension status keys |
@@ -374,8 +374,10 @@ Quick toggles:
 - `/status-line` — enable/disable
 - `/status-line minimal` or `/status-line verbose` — working message style
 
-Extension statuses (`rtk`, `effort`, `!bash`, `fff`, etc.) appear automatically
-when active. Context percentage turns warning/error at 70%/90%.
+Extension statuses (`rtk`, `!bash`, `fff`, `codex-quota`, etc.) appear in the
+`statuses` segment when active. Thinking effort (`effort`) and Cursor runtime
+(`cursor:local · fast:on`) get their own segments so they do not blend with the
+model name. Context percentage turns warning/error at 70%/90%.
 
 To migrate off `pi-powerline-footer`, remove it from `packages` in Pi settings,
 delete any `powerline` block, and reload extensions.

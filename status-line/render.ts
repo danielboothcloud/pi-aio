@@ -27,7 +27,8 @@ export interface StatusLineRenderInput {
 	usageStats: UsageStats;
 }
 
-const STATUS_KEY_ORDER = ["rtk", "effort", "user-bash", "fff"] as const;
+const STATUS_KEY_ORDER = ["rtk", "user-bash", "fff", "codex-quota"] as const;
+const DEDICATED_STATUS_KEYS = new Set(["effort", "cursor"]);
 const HIDDEN_STATUS_KEYS = new Set(["modes"]);
 
 /** Compact Unicode icons (no Nerd Font dependency). */
@@ -35,6 +36,8 @@ const ICONS = {
 	path: "⌂",
 	git: "⎇",
 	context: "◫",
+	effort: "⚡",
+	cursor: "◈",
 	model: "◇",
 	tokens: "⊛",
 	cost: "$",
@@ -88,7 +91,10 @@ function orderedStatusEntries(
 ): Array<[string, string]> {
 	const entries = [...statuses.entries()].filter(
 		([key, value]) =>
-			!HIDDEN_STATUS_KEYS.has(key) && typeof value === "string" && value.length > 0,
+			!HIDDEN_STATUS_KEYS.has(key)
+			&& !DEDICATED_STATUS_KEYS.has(key)
+			&& typeof value === "string"
+			&& value.length > 0,
 	);
 	if (statusKeys && statusKeys.length > 0) {
 		const allow = new Set(statusKeys);
@@ -134,13 +140,24 @@ function renderSegment(
 				`${contextPercent}%`,
 				contextRole(contextPercent),
 			);
+		case "effort": {
+			const value = input.extensionStatuses.get("effort");
+			if (!value) return undefined;
+			return `${theme.fg("dim", ICONS.effort)} ${value}`;
+		}
 		case "statuses": {
 			const entries = orderedStatusEntries(
 				input.extensionStatuses,
 				config.statusKeys,
 			);
 			if (entries.length === 0) return undefined;
-			return entries.map(([, value]) => value).join(" ");
+			const innerSep = theme.fg("muted", " · ");
+			return entries.map(([, value]) => value).join(innerSep);
+		}
+		case "cursor": {
+			const value = input.extensionStatuses.get("cursor");
+			if (!value) return undefined;
+			return labeled(theme, ICONS.cursor, value, "muted");
 		}
 		case "model":
 			return labeled(theme, ICONS.model, formatModel(input.model), "accent");

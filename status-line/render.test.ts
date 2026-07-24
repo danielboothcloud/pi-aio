@@ -37,14 +37,39 @@ function baseInput(
 }
 
 test("renderStatusLine joins default segments with separators", () => {
-	const [line] = renderStatusLine(baseInput());
+	const [line] = renderStatusLine(
+		baseInput({
+			extensionStatuses: new Map([
+				["rtk", "rtk✓"],
+				["effort", "effort:max"],
+				["cursor", "cursor:local · fast:on"],
+			]),
+		}),
+	);
 	assert.match(line, /⏸ Plan/);
 	assert.match(line, /⌂ pi-aio/);
 	assert.match(line, /⎇ main/);
 	assert.match(line, /◫ 42%/);
+	assert.match(line, /⚡ effort:max/);
 	assert.match(line, /rtk✓/);
+	assert.match(line, /◈ cursor:local · fast:on/);
 	assert.match(line, /◇ cursor\/composer-2\.5/);
 	assert.match(line, / · /);
+	assert.doesNotMatch(line, /effort:max rtk/);
+});
+
+test("renderStatusLine separates codex quota from effort", () => {
+	const [line] = renderStatusLine(
+		baseInput({
+			extensionStatuses: new Map([
+				["effort", "effort:max"],
+				["codex-quota", "weekly 40% left"],
+			]),
+		}),
+	);
+	assert.match(line, /⚡ effort:max/);
+	assert.match(line, /weekly 40% left/);
+	assert.doesNotMatch(line, /effort:max weekly/);
 });
 
 test("renderStatusLine omits empty git segment", () => {
