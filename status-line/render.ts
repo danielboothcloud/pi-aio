@@ -30,6 +30,30 @@ export interface StatusLineRenderInput {
 const STATUS_KEY_ORDER = ["rtk", "effort", "user-bash", "fff"] as const;
 const HIDDEN_STATUS_KEYS = new Set(["modes"]);
 
+/** Compact Unicode icons (no Nerd Font dependency). */
+const ICONS = {
+	path: "⌂",
+	git: "⎇",
+	context: "◫",
+	model: "◇",
+	tokens: "⊛",
+	cost: "$",
+} as const;
+
+function withIcon(icon: string, text: string): string {
+	return icon ? `${icon} ${text}` : text;
+}
+
+/** Icon in dim; value in the given role — keeps segments scannable without shouting. */
+function labeled(
+	theme: PiTheme,
+	icon: string,
+	text: string,
+	role: string = "muted",
+): string {
+	return `${theme.fg("dim", icon)} ${theme.fg(role, text)}`;
+}
+
 function formatPath(cwd: string, display: PathDisplay): string {
 	if (!cwd) return "";
 	if (display === "full") return cwd;
@@ -46,10 +70,10 @@ function formatPath(cwd: string, display: PathDisplay): string {
 	return parts[parts.length - 1] ?? cwd;
 }
 
-function contextRole(percent: number): "dim" | "warning" | "error" {
+function contextRole(percent: number): "muted" | "warning" | "error" {
 	if (percent >= 90) return "error";
 	if (percent >= 70) return "warning";
-	return "dim";
+	return "muted";
 }
 
 function formatModel(model: StatusLineRenderInput["model"]): string {
@@ -93,16 +117,23 @@ function renderSegment(
 	switch (segment) {
 		case "mode": {
 			const meta = modeMetadata(mode);
-			return theme.fg(meta.role, meta.label);
+			return theme.fg(meta.role, withIcon(meta.icon, meta.label));
 		}
 		case "path": {
 			const path = formatPath(input.cwd, config.path);
-			return path ? theme.fg("dim", path) : undefined;
+			return path ? labeled(theme, ICONS.path, path) : undefined;
 		}
 		case "git":
-			return gitBranch ? theme.fg("dim", gitBranch) : undefined;
+			return gitBranch
+				? labeled(theme, ICONS.git, gitBranch, "accent")
+				: undefined;
 		case "context":
-			return theme.fg(contextRole(contextPercent), `${contextPercent}%`);
+			return labeled(
+				theme,
+				ICONS.context,
+				`${contextPercent}%`,
+				contextRole(contextPercent),
+			);
 		case "statuses": {
 			const entries = orderedStatusEntries(
 				input.extensionStatuses,
@@ -112,14 +143,15 @@ function renderSegment(
 			return entries.map(([, value]) => value).join(" ");
 		}
 		case "model":
-			return theme.fg("dim", formatModel(input.model));
+			return labeled(theme, ICONS.model, formatModel(input.model), "accent");
 		case "tokens":
-			return theme.fg(
-				"dim",
+			return labeled(
+				theme,
+				ICONS.tokens,
 				`↑${formatCount(usageStats.input)} ↓${formatCount(usageStats.output)}`,
 			);
 		case "cost":
-			return theme.fg("dim", `$${usageStats.cost.toFixed(3)}`);
+			return labeled(theme, ICONS.cost, usageStats.cost.toFixed(3));
 		default:
 			return undefined;
 	}
@@ -134,7 +166,7 @@ export function renderStatusLine(input: StatusLineRenderInput): string[] {
 	}
 	if (parts.length === 0) return [""];
 
-	const separator = input.theme.fg("dim", " · ");
+	const separator = input.theme.fg("muted", " · ");
 	const line = parts.join(separator);
 	return [truncateToWidth(line, input.width)];
 }

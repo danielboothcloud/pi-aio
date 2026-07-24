@@ -38,12 +38,12 @@ function baseInput(
 
 test("renderStatusLine joins default segments with separators", () => {
 	const [line] = renderStatusLine(baseInput());
-	assert.match(line, /Plan/);
-	assert.match(line, /pi-aio/);
-	assert.match(line, /main/);
-	assert.match(line, /42%/);
+	assert.match(line, /⏸ Plan/);
+	assert.match(line, /⌂ pi-aio/);
+	assert.match(line, /⎇ main/);
+	assert.match(line, /◫ 42%/);
 	assert.match(line, /rtk✓/);
-	assert.match(line, /cursor\/composer-2\.5/);
+	assert.match(line, /◇ cursor\/composer-2\.5/);
 	assert.match(line, / · /);
 });
 
@@ -75,7 +75,7 @@ test("renderStatusLine uses abbreviated path display", () => {
 			},
 		}),
 	);
-	assert.match(line, /…\/projects\/pi-aio/);
+	assert.match(line, /⌂ …\/projects\/pi-aio/);
 });
 
 test("formatWorkingMessage respects mode", () => {
