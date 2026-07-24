@@ -17,7 +17,6 @@ import type {
 	ExtensionContext,
 	WorkingIndicatorOptions,
 } from "@earendil-works/pi-coding-agent";
-import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import {
 	buildMutationApprovalPrompt,
@@ -26,7 +25,6 @@ import {
 import { setPermissionModeAccess } from "./mode-access.js";
 import {
 	extractTodoItems,
-	formatCount,
 	isSafeCommand,
 	markCompletedSteps,
 	type TodoItem,
@@ -138,7 +136,7 @@ Do not use Cursor host edit, write, delete, or mutating shell tools in ${mode} m
 Cursor host edit/write/delete/shell tools bypass Pi's permission prompt. For every file mutation or mutating command, use the exposed Pi bridge tools (${CURSOR_BRIDGE_MUTATION_TOOLS}) instead of Cursor host tools so Pi can show the diff and ask before execution. Cursor host read/search tools remain allowed. If the required pi__ tool is unavailable, do not mutate anything; explain that permission routing is unavailable.`;
 }
 
-function modeMetadata(mode: Mode): {
+export function modeMetadata(mode: Mode): {
 	icon: string;
 	label: string;
 	role: "muted" | "warning" | "accent";
@@ -191,13 +189,7 @@ export function registerPermissionModes(pi: ExtensionAPI): void {
 		}
 	}
 
-	// Stream stats cache (for working message). Kept on the closure so it
-	// survives across events but is reset on each new turn.
-	let streamStart = 0;
-	let outputAtTurnStart = 0;
-
-	// Cached git branch (read once on session_start, refreshed via footerData events)
-	let gitBranch: string | null = null;
+	// Stream stats removed — aio status-line owns footer and working message.
 
 	function renderPlanTodoLines(ctx: ExtensionContext): string[] {
 		return planTodos.map((item) => {
@@ -537,110 +529,6 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		pi.appendEntry("modes", state);
 	}
 
-	// ---------- Footer (mode + cwd/git + provider/model) ----------
-
-	function installFooter(ctx: ExtensionContext): void {
-		if (!ctx.hasUI) return;
-		ctx.ui.setFooter((_tui, theme, footerData) => {
-			// Seed cached branch eagerly
-			if (gitBranch === null) {
-				gitBranch = footerData.getGitBranch();
-			}
-			const unsub = footerData.onBranchChange(() => {
-				gitBranch = footerData.getGitBranch();
-				_tui.requestRender();
-			});
-			return {
-				dispose() {
-					if (typeof unsub === "function") unsub();
-				},
-				invalidate() {},
-				render(width: number): string[] {
-					const meta = modeMetadata(currentMode);
-					const left =
-						`${theme.fg(meta.role, `${meta.icon} ${meta.label}`)} ` +
-						theme.fg("dim", "(shift+tab to cycle)");
-
-					const centerParts: string[] = [];
-					centerParts.push(ctx.cwd || "");
-					if (gitBranch) centerParts.push(gitBranch);
-					const centerText = centerParts.filter(Boolean).join(" [");
-					const center = theme.fg(
-						"dim",
-						centerParts.length > 1 ? `${centerText}]` : centerText,
-					);
-
-					const right = theme.fg(
-						"dim",
-						ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model",
-					);
-
-					const lw = visibleWidth(left);
-					const rw = visibleWidth(right);
-					const cw = Math.max(0, width - lw - rw - 2);
-					const centerVisible = truncateToWidth(center, cw);
-					const remaining = Math.max(
-						1,
-						width - lw - rw - visibleWidth(centerVisible),
-					);
-					const centerPad = " ".repeat(Math.floor(remaining / 2));
-
-					return [
-						truncateToWidth(
-							left + centerPad + centerVisible + centerPad + right,
-							width,
-						),
-					];
-				},
-			};
-		});
-	}
-
-	// ---------- Working message (streaming stats) ----------
-
-	function computeStats(ctx: ExtensionContext): {
-		input: number;
-		output: number;
-		cost: number;
-		pct: number;
-	} {
-		let input = 0;
-		let output = 0;
-		let cost = 0;
-		for (const e of ctx.sessionManager.getBranch()) {
-			if (e.type === "message" && e.message.role === "assistant") {
-				const m = e.message as AssistantMessage;
-				input += m.usage?.input ?? 0;
-				output += m.usage?.output ?? 0;
-				cost += m.usage?.cost?.total ?? 0;
-			}
-		}
-		const usage = ctx.getContextUsage?.();
-		const tokens = usage?.tokens ?? 0;
-		const contextWindow = usage?.contextWindow ?? 0;
-		const pct =
-			tokens > 0 && contextWindow > 0
-				? Math.round((tokens / contextWindow) * 100)
-				: 0;
-		return { input, output, cost, pct };
-	}
-
-	function refreshWorkingMessage(ctx: ExtensionContext): void {
-		if (!ctx.hasUI) return;
-		if (streamStart === 0) return;
-		const { input, output, pct } = computeStats(ctx);
-		const elapsedSec = Math.max(0.001, (Date.now() - streamStart) / 1000);
-		const outDelta = Math.max(0, output - outputAtTurnStart);
-		const tps = outDelta / elapsedSec;
-		const msg = `Working (${elapsedSec.toFixed(1)}s  ↑${formatCount(input)} ↓${formatCount(output)} ${tps.toFixed(1)} tok/s  ${pct}% ctx)`;
-		ctx.ui.setWorkingMessage(msg);
-	}
-
-	function resetWorkingMessage(ctx: ExtensionContext): void {
-		if (!ctx.hasUI) return;
-		ctx.ui.setWorkingMessage();
-	}
-
 	// ---------- tool_call gate (the single handler) ----------
 
 	pi.on("tool_call", async (event, ctx) => {
@@ -836,30 +724,6 @@ If a todo list is active, toggle each finished step with the todo tool before co
 		};
 	});
 
-	// ---------- Stream stats events ----------
-
-	pi.on("turn_start", async (_event, ctx) => {
-		streamStart = Date.now();
-		const stats = computeStats(ctx);
-		outputAtTurnStart = stats.output;
-		refreshWorkingMessage(ctx);
-	});
-
-	pi.on("before_provider_request", async (_event, ctx) => {
-		refreshWorkingMessage(ctx);
-	});
-
-	pi.on("message_update", async (_event, ctx) => {
-		refreshWorkingMessage(ctx);
-	});
-
-	// ---------- agent_end: reset working message (runs first) ----------
-
-	pi.on("agent_end", async (_event, ctx) => {
-		streamStart = 0;
-		resetWorkingMessage(ctx);
-	});
-
 	// ---------- turn_end: plan execution progress ----------
 
 	pi.on("turn_end", async (event, ctx) => {
@@ -968,8 +832,6 @@ If a todo list is active, toggle each finished step with the todo tool before co
 		currentMode = normalizeModeFlag(flag);
 		planExecuting = false;
 		planTodos = [];
-		// Reset git branch cache; will be re-seeded by installFooter factory
-		gitBranch = null;
 
 		// 2) Let the latest persisted "modes" entry override
 		try {
@@ -1075,9 +937,8 @@ If a todo list is active, toggle each finished step with the todo tool before co
 
 		syncCursorPermissionBridge(ctx);
 
-		// 6) Install footer + status
+		// 6) Restore status pill
 		updateStatus(ctx);
-		installFooter(ctx);
 	}
 
 	pi.on("session_start", async (_event, ctx) => {

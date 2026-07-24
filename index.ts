@@ -20,6 +20,7 @@ import { registerPermissionModes } from "./permission-modes/index.js";
 import { registerRtk } from "./rtk/index.js";
 import registerPrettyTools from "./pretty-tools/index.js";
 import { registerSubagents } from "./subagents/index.js";
+import { registerStatusLine } from "./status-line/index.js";
 import { registerUserBash } from "./user-bash/index.js";
 
 export {
@@ -42,4 +43,5 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	registerUserBash(pi);
 	registerRtk(pi);
 	await registerPrettyTools(pi);
+	registerStatusLine(pi);
 }

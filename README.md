@@ -336,6 +336,50 @@ pi --permission-mode ask
 pi --permission-mode plan
 ```
 
+## Status line
+
+`aio` installs a quiet single-row footer that replaces noisy packages like
+`pi-powerline-footer`. The default layout is:
+
+```text
+Plan · pi-aio · main · 42% · rtk✓ · cursor/composer-2.5
+```
+
+Configure it in Pi settings (`~/.pi/agent/settings.json` or project
+`.pi/settings.json`):
+
+```json
+{
+  "aio": {
+    "statusLine": {
+      "enabled": true,
+      "segments": ["mode", "path", "git", "context", "statuses", "model"],
+      "path": "basename",
+      "workingMessage": "minimal"
+    }
+  }
+}
+```
+
+| Field | Purpose |
+| ----- | ------- |
+| `enabled` | Master toggle; `false` restores Pi's default footer |
+| `segments` | Ordered list: `mode`, `path`, `git`, `context`, `statuses`, `model`, `tokens`, `cost` |
+| `path` | `basename`, `abbreviated`, or `full` |
+| `workingMessage` | `minimal` (default), `verbose` (streaming stats), or `off` |
+| `statusKeys` | Optional allowlist for extension status keys |
+
+Quick toggles:
+
+- `/status-line` — enable/disable
+- `/status-line minimal` or `/status-line verbose` — working message style
+
+Extension statuses (`rtk`, `effort`, `!bash`, `fff`, etc.) appear automatically
+when active. Context percentage turns warning/error at 70%/90%.
+
+To migrate off `pi-powerline-footer`, remove it from `packages` in Pi settings,
+delete any `powerline` block, and reload extensions.
+
 ## Pretty built-in tools
 
 `aio` replaces Pi's built-in `read`, `bash`, `ls`, `find`, and `grep` tool
@@ -473,6 +517,7 @@ packages register `write`, `edit`, and `apply_patch`.
 ├── effort/                  # /effort command + status
 ├── init/                    # /init AGENTS.md bootstrap
 ├── permission-modes/        # Shift+Tab modes + plan flow
+├── status-line/             # quiet footer + working message
 ├── pretty-tools/            # pretty built-ins + FFF search
 ├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)
 ├── subagents/               # child-agent discovery, execution, and lifecycle
@@ -487,8 +532,8 @@ packages register `write`, `edit`, and `apply_patch`.
   and `@sherif-fanous/pi-rtk`
   packages from settings when installing this combined package, to avoid
   duplicate tools, commands, and shortcuts.
-- Effort status (`effort:…`) and mode status (`● Default`) coexist in the status
-  bar; the footer shows the active permission mode.
+- Effort status (`effort:…`), rtk, and `!bash` appear in the aio status line
+  when active; the footer shows mode, path, git, context, and model.
 - The vendored questionnaire source remains covered by its original MIT license
   in [`ask-user-question/LICENSE`](ask-user-question/LICENSE).
 - The pretty-tool implementation is based on `@heyhuynhgiabuu/pi-pretty` and
