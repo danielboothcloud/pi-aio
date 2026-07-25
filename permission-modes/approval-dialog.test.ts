@@ -167,13 +167,13 @@ test("Tab cycles option selection and renders the marker on the selected option"
 		return trimmed.find((l) => l.startsWith("→ "));
 	};
 	let lines = dialog.render(80);
-	assert.equal(selectedLabel(lines), "→ Allow", "Allow selected by default");
+	assert.equal(selectedLabel(lines), "→ 1 Allow", "Allow selected by default");
 
 	dialog.handleInput("\t"); // Tab → Allow all
 	lines = dialog.render(80);
 	assert.equal(
 		selectedLabel(lines),
-		"→ Allow all (enable auto)",
+		"→ 2 Allow all (enable auto)",
 		"Allow all selected after Tab",
 	);
 
@@ -181,7 +181,7 @@ test("Tab cycles option selection and renders the marker on the selected option"
 	lines = dialog.render(80);
 	assert.equal(
 		selectedLabel(lines),
-		"→ Allow",
+		"→ 1 Allow",
 		"Allow selected after back-Tab",
 	);
 });
@@ -196,16 +196,16 @@ test("j/k cycle options while arrow keys scroll the diff", () => {
 
 	// j moves the selection down to Allow all, then Block.
 	dialog.handleInput("j");
-	assert.equal(selectedLabel(dialog.render(80)), "→ Allow all (enable auto)");
+	assert.equal(selectedLabel(dialog.render(80)), "→ 2 Allow all (enable auto)");
 	dialog.handleInput("j");
-	assert.equal(selectedLabel(dialog.render(80)), "→ Block");
+	assert.equal(selectedLabel(dialog.render(80)), "→ 3 Block");
 	// j wraps back to Allow.
 	dialog.handleInput("j");
-	assert.equal(selectedLabel(dialog.render(80)), "→ Allow");
+	assert.equal(selectedLabel(dialog.render(80)), "→ 1 Allow");
 
 	// k moves the selection up (wraps from Allow to Block).
 	dialog.handleInput("k");
-	assert.equal(selectedLabel(dialog.render(80)), "→ Block");
+	assert.equal(selectedLabel(dialog.render(80)), "→ 3 Block");
 
 	// Arrow down scrolls the diff — it must NOT change the selection.
 	dialog.handleInput("\u001b[B"); // arrow down
@@ -216,7 +216,7 @@ test("j/k cycle options while arrow keys scroll the diff", () => {
 	);
 	assert.equal(
 		lines.map((l) => l.trim()).find((l) => l.startsWith("→ ")),
-		"→ Block",
+		"→ 3 Block",
 		"arrow down did not move the selection",
 	);
 });

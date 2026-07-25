@@ -379,13 +379,17 @@ export class ApprovalDialog implements Component {
 
 	private optionLine(index: number, width: number): string {
 		const label = OPTIONS[index] ?? "";
+		const key = `${index + 1}`;
 		if (index === this.selected) {
 			return this.padLine(
-				this.theme.fg("accent", `→ ${this.theme.bold(label)}`),
+				this.theme.fg("accent", `→ ${key} ${this.theme.bold(label)}`),
 				width,
 			);
 		}
-		return this.padLine(`  ${this.theme.fg("text", label)}`, width);
+		return this.padLine(
+			`  ${this.theme.fg("muted", key)} ${this.theme.fg("text", label)}`,
+			width,
+		);
 	}
 
 	private hintLine(width: number): string {
