@@ -65,7 +65,7 @@ test("render pins the file-path header, options, and hint within terminal rows",
 		"Block option visible",
 	);
 	assert.ok(
-		lines.some((l) => l.includes("scroll") && l.includes("confirm")),
+		lines.some((l) => l.includes("scroll diff") && l.includes("confirm")),
 		"hint visible",
 	);
 	// Body shows the diff content (not truncated to a 40-line cap region).
@@ -183,6 +183,41 @@ test("Tab cycles option selection and renders the marker on the selected option"
 		selectedLabel(lines),
 		"→ Allow",
 		"Allow selected after back-Tab",
+	);
+});
+
+test("j/k cycle options while arrow keys scroll the diff", () => {
+	const big = Array.from({ length: 100 }, (_, i) => `+ line ${i}`).join("\n");
+	const { dialog } = makeDialog(big, { rows: 20 });
+	const selectedLabel = (lines: string[]): string | undefined => {
+		const trimmed = trim(lines).map((l) => l.trim());
+		return trimmed.find((l) => l.startsWith("→ "));
+	};
+
+	// j moves the selection down to Allow all, then Block.
+	dialog.handleInput("j");
+	assert.equal(selectedLabel(dialog.render(80)), "→ Allow all (enable auto)");
+	dialog.handleInput("j");
+	assert.equal(selectedLabel(dialog.render(80)), "→ Block");
+	// j wraps back to Allow.
+	dialog.handleInput("j");
+	assert.equal(selectedLabel(dialog.render(80)), "→ Allow");
+
+	// k moves the selection up (wraps from Allow to Block).
+	dialog.handleInput("k");
+	assert.equal(selectedLabel(dialog.render(80)), "→ Block");
+
+	// Arrow down scrolls the diff — it must NOT change the selection.
+	dialog.handleInput("\u001b[B"); // arrow down
+	const lines = trim(dialog.render(80));
+	assert.ok(
+		lines.some((l) => l.includes("above")),
+		"arrow down scrolled the diff",
+	);
+	assert.equal(
+		lines.map((l) => l.trim()).find((l) => l.startsWith("→ ")),
+		"→ Block",
+		"arrow down did not move the selection",
 	);
 });
 

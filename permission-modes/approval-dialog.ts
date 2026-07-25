@@ -167,12 +167,22 @@ export class ApprovalDialog implements Component {
 
 	handleInput(data: string): void {
 		const kb = getKeybindings();
-		if (kb.matches(data, "tui.select.up") || data === "k") {
+		// Arrow keys scroll the diff body; j/k cycle the options (vim-style,
+		// matching Pi's other selectors so users can leave "Allow").
+		if (kb.matches(data, "tui.select.up")) {
 			this.scrollBy(-1);
 			return;
 		}
-		if (kb.matches(data, "tui.select.down") || data === "j") {
+		if (kb.matches(data, "tui.select.down")) {
 			this.scrollBy(1);
+			return;
+		}
+		if (data === "k") {
+			this.selected = (this.selected + OPTIONS.length - 1) % OPTIONS.length;
+			return;
+		}
+		if (data === "j") {
+			this.selected = (this.selected + 1) % OPTIONS.length;
 			return;
 		}
 		if (kb.matches(data, "tui.select.pageUp")) {
@@ -382,7 +392,7 @@ export class ApprovalDialog implements Component {
 		return this.padLine(
 			this.theme.fg(
 				"muted",
-				"↑↓ scroll  Tab option  1/2/3 quick-pick  Enter confirm  Esc cancel",
+				"↑↓ scroll diff  j/k option  1/2/3 quick-pick  Enter confirm  Esc cancel",
 			),
 			width,
 		);
