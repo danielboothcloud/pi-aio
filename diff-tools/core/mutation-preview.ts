@@ -5,10 +5,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { basename } from "node:path";
-import {
-	type ApplyPatchChange,
-	previewApplyPatch,
-} from "./apply-patch.js";
+import { type ApplyPatchChange, previewApplyPatch } from "./apply-patch.js";
 import {
 	getEditOperations,
 	resolveApplyPatchChanges,
@@ -18,6 +15,16 @@ import { replace } from "./replace.js";
 
 const MAX_PREVIEW_LINES = 40;
 const MAX_PREVIEW_CHARS = 2_000;
+
+/**
+ * Optional caps for mutation previews. The default caps keep the legacy
+ * `ctx.ui.select` approval prompt small; the scrollable approval overlay passes
+ * large values so it can show the whole diff.
+ */
+export interface MutationPreviewOptions {
+	maxLines?: number;
+	maxChars?: number;
+}
 
 export function formatParsedDiffPlain(
 	diff: ParsedDiff,
@@ -31,8 +38,7 @@ export function formatParsedDiffPlain(
 		if (line.type === "sep") continue;
 		total++;
 		if (shown >= maxLines) continue;
-		const prefix =
-			line.type === "add" ? "+" : line.type === "del" ? "-" : " ";
+		const prefix = line.type === "add" ? "+" : line.type === "del" ? "-" : " ";
 		lines.push(`${prefix} ${line.content}`);
 		shown++;
 	}
@@ -44,12 +50,15 @@ export function formatParsedDiffPlain(
 	return lines.join("\n");
 }
 
-function truncatePreview(text: string): string {
-	if (text.length <= MAX_PREVIEW_CHARS) return text;
-	return `${text.slice(0, MAX_PREVIEW_CHARS)}\n… (preview truncated)`;
+function truncatePreview(text: string, maxChars = MAX_PREVIEW_CHARS): string {
+	if (text.length <= maxChars) return text;
+	return `${text.slice(0, maxChars)}\n… (preview truncated)`;
 }
 
-function previewEditInput(input: Record<string, unknown>): string | undefined {
+function previewEditInput(
+	input: Record<string, unknown>,
+	opts: MutationPreviewOptions = {},
+): string | undefined {
 	const filePath =
 		typeof input.path === "string"
 			? input.path
@@ -76,21 +85,24 @@ function previewEditInput(input: Record<string, unknown>): string | undefined {
 
 	if (content === original) return "(no changes)";
 	const diff = parseDiff(original, content);
-	const body = formatParsedDiffPlain(diff);
-	return body ? truncatePreview(body) : "(no diff)";
+	const body = formatParsedDiffPlain(diff, opts.maxLines ?? MAX_PREVIEW_LINES);
+	return body ? truncatePreview(body, opts.maxChars) : "(no diff)";
 }
 
 function previewApplyPatchInput(
 	input: Record<string, unknown>,
+	opts: MutationPreviewOptions = {},
 ): Promise<string | undefined> {
 	const changes = resolveApplyPatchChanges(input);
 	if (changes.length === 0) return Promise.resolve(undefined);
-	return formatApplyPatchPreview(changes);
+	return formatApplyPatchPreview(changes, opts);
 }
 
 async function formatApplyPatchPreview(
 	changes: ApplyPatchChange[],
+	opts: MutationPreviewOptions = {},
 ): Promise<string | undefined> {
+	const maxLines = opts.maxLines ?? MAX_PREVIEW_LINES;
 	const result = await previewApplyPatch(changes);
 	if (!result.ok) {
 		const first = result.errors[0];
@@ -107,10 +119,10 @@ async function formatApplyPatchPreview(
 				const content = change.newContent ?? "";
 				const lines = content.split("\n");
 				const previewLines = lines
-					.slice(0, MAX_PREVIEW_LINES)
+					.slice(0, maxLines)
 					.map((line) => `+ ${line}`);
-				if (lines.length > MAX_PREVIEW_LINES) {
-					previewLines.push(`… ${lines.length - MAX_PREVIEW_LINES} more lines`);
+				if (lines.length > maxLines) {
+					previewLines.push(`… ${lines.length - maxLines} more lines`);
 				}
 				blocks.push(`--- ${label} (new file) ---\n${previewLines.join("\n")}`);
 				break;
@@ -118,7 +130,7 @@ async function formatApplyPatchPreview(
 			case "delete": {
 				const content = change.oldContent ?? "";
 				const diff = parseDiff(content, "");
-				const body = formatParsedDiffPlain(diff);
+				const body = formatParsedDiffPlain(diff, maxLines);
 				blocks.push(`--- ${label} (delete) ---\n${body || "(empty file)"}`);
 				break;
 			}
@@ -133,7 +145,7 @@ async function formatApplyPatchPreview(
 					change.oldContent ?? "",
 					change.newContent ?? "",
 				);
-				const body = formatParsedDiffPlain(diff);
+				const body = formatParsedDiffPlain(diff, maxLines);
 				blocks.push(`--- ${label} ---\n${body || "(no diff)"}`);
 				break;
 			}
@@ -141,15 +153,16 @@ async function formatApplyPatchPreview(
 	}
 
 	if (blocks.length === 0) return undefined;
-	return truncatePreview(blocks.join("\n\n"));
+	return truncatePreview(blocks.join("\n\n"), opts.maxChars);
 }
 
 export async function formatMutationPreview(
 	tool: string,
 	input: Record<string, unknown>,
+	opts: MutationPreviewOptions = {},
 ): Promise<string | undefined> {
-	if (tool === "edit") return previewEditInput(input);
-	if (tool === "apply_patch") return previewApplyPatchInput(input);
+	if (tool === "edit") return previewEditInput(input, opts);
+	if (tool === "apply_patch") return previewApplyPatchInput(input, opts);
 	return undefined;
 }
 

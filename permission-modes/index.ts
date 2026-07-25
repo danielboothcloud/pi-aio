@@ -18,11 +18,8 @@ import type {
 	WorkingIndicatorOptions,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import {
-	buildMutationApprovalPrompt,
-	formatMutationPreview,
-} from "../diff-tools/core/mutation-preview.js";
 import { setPermissionModeAccess } from "./mode-access.js";
+import { showMutationApproval } from "./approval-dialog.js";
 import {
 	extractTodoItems,
 	isSafeCommand,
@@ -303,7 +300,8 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		label: "Todo",
 		description:
 			"Manage the active plan todo list. Actions: list, toggle (step), create (text, optional position), rename (step, text), reorder (step, position), delete (step)",
-		promptSnippet: "Track plan steps and mark each step done with todo action=toggle",
+		promptSnippet:
+			"Track plan steps and mark each step done with todo action=toggle",
 		promptGuidelines: [
 			"When executing a numbered plan, call todo action=toggle for the matching step immediately after that step's work is finished, before starting the next step.",
 			"Use todo action=list at the start of plan execution and again whenever you need to confirm which steps remain.",
@@ -579,19 +577,12 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			if (!ctx.hasUI) {
 				return { block: true, reason: `${tool} blocked: no UI to confirm.` };
 			}
-			const preview =
-				tool === "edit" || tool === "apply_patch"
-					? await formatMutationPreview(tool, input)
-					: undefined;
-			const choice = await ctx.ui.select(
-				buildMutationApprovalPrompt(tool, path, preview),
-				["Allow", "Allow all (enable auto)", "Block"],
-			);
-			if (choice === "Allow all (enable auto)") {
+			const decision = await showMutationApproval(ctx, { tool, input, path });
+			if (decision === "allowAll") {
 				await setMode("auto", ctx);
 				return undefined;
 			}
-			if (choice !== "Allow") {
+			if (decision !== "allow") {
 				return { block: true, reason: `${tool} blocked by user on ${path}` };
 			}
 			return undefined;
@@ -646,7 +637,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			const todoList = remaining.map((t) => `${t.step}. ${t.text}`).join("\n");
 			const todoHint =
 				planTodos.length > 0
-					? "\nAfter each step finishes, call todo({ action: \"toggle\", step: n }) for that step before moving on. Use todo({ action: \"list\" }) to verify nothing is left unchecked."
+					? '\nAfter each step finishes, call todo({ action: "toggle", step: n }) for that step before moving on. Use todo({ action: "list" }) to verify nothing is left unchecked.'
 					: "";
 			return {
 				message: {
