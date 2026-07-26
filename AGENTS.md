@@ -53,6 +53,15 @@ generated `dist/` tree without changing the package contract.
   `ask-user-question/UPSTREAM.md`: preserve its license, config/event
   namespaces, sequential execution, soft i18n peer, and
   `*.upstream.test.ts` coverage when syncing upstream.
+- `goal-loop/` is vendored from pi-goal-list-loop-audit (MIT, DraconDev — see
+  `goal-loop/LICENSE-glla`). Only the `/goal` command and its supporting
+  modules are retained (`goal-loop-core`, `goal-loop-auditor`,
+  `goal-loop-shield`, `goal-loop-display`, `goal-loop-backoff`,
+  `goal-settings`, `quota-retry`); the `/list`, `/loop`, `/gla`, `/review`
+  commands, the reviewer/stats/forever/repetition/subagents modules, and all
+  loop/list state were stripped. It drives `agent_end` continuations (the
+  Two-Driver Rule) and is inert in aio subagent child processes
+  (`AIO_SUBAGENT_CHILD=1`) so a child never restores the parent's goal.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

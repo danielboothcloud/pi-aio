@@ -17,6 +17,10 @@
 		"subagents",
 		"delegation",
 		"parallel-agents",
+		"goal",
+		"goal-loop",
+		"isolated-auditor",
+		"verification-contract",
 		"syntax-highlighting",
 		"pretty-print",
 		"fff",
@@ -49,6 +53,10 @@
 		"effort/**/*.ts",
 		"init/**/*.ts",
 		"!init/**/*.test.ts",
+		"goal-loop/**/*.ts",
+		"!goal-loop/**/*.test.ts",
+		"goal-loop/prompts/*.md",
+		"goal-loop/LICENSE-glla",
 		"permission-modes/**/*.ts",
 		"!permission-modes/**/*.test.ts",
 		"status-line/**/*.ts",
@@ -78,7 +86,7 @@
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
-		"test:node": "tsx --test ast-grep/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts rtk/*.test.ts status-line/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:node": "tsx --test ast-grep/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts goal-loop/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts rtk/*.test.ts status-line/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts"
 	},
 	"pi": {

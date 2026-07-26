@@ -16,6 +16,7 @@ import { registerCopyWidget } from "./copy-widget/index.js";
 import registerDiffTools from "./diff-tools/index.js";
 import { registerEffort } from "./effort/index.js";
 import { registerInit } from "./init/index.js";
+import registerGoalLoop from "./goal-loop/index.js";
 import { registerPermissionModes } from "./permission-modes/index.js";
 import { registerRtk } from "./rtk/index.js";
 import registerPrettyTools from "./pretty-tools/index.js";
@@ -32,6 +33,7 @@ export {
 
 export default async function aio(pi: ExtensionAPI): Promise<void> {
 	registerAskUserQuestion(pi);
+	registerGoalLoop(pi);
 	registerAstGrep(pi);
 	registerBrowserSearch(pi);
 	registerCopyWidget(pi);
