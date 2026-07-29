@@ -1,19 +1,38 @@
-/* pi-pretty: grep tool -- FFF-backed text search with SDK fallback. */
+/* pi-pretty: grep tool -- RTK-enforced text search with SDK fallback. */
 
-import type { AgentToolResult, ExtensionAPI, ExtensionContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
-import { BG_ERROR, FG_DIM, RST, resolveBaseBackground, TOOL_RESULT_INDENT } from "../config.js";
-import { fffFormatGrepText } from "../fff-helpers.js";
+import type {
+	AgentToolResult,
+	ExtensionAPI,
+	ExtensionContext,
+	ToolDefinition,
+} from "@earendil-works/pi-coding-agent";
 import {
-	compactSearchSummary,
-	filterSearchNotices,
-	isPassiveExplorationMode,
-	normalizeLineEndings,
-	shortPath,
-} from "../helpers.js";
-import { NOTICE_PARTIAL_FILE_INDEX } from "../notices.js";
-import { fillToolBackground, renderGrepResults, renderToolError } from "../render.js";
+	executeRtkTool,
+	requireRtkSuccess,
+	truncateRtkOutput,
+} from "../../rtk/tool-routing.js";
+import {
+	BG_ERROR,
+	FG_DIM,
+	RST,
+	resolveBaseBackground,
+	TOOL_RESULT_INDENT,
+} from "../config.js";
+import { normalizeLineEndings, shortPath } from "../helpers.js";
+import {
+	fillToolBackground,
+	renderGrepResults,
+	renderToolError,
+} from "../render.js";
 import { resolveTextCtor } from "../tui-text.js";
-import type { FffServiceWithCursor, GrepDetails, RenderCtxLike, SdkToolDef, TextContent, ThemeLike } from "../types.js";
+import type {
+	FffServiceWithCursor,
+	GrepDetails,
+	RenderCtxLike,
+	SdkToolDef,
+	TextContent,
+	ThemeLike,
+} from "../types.js";
 import { wrapExecuteWithMetrics } from "./metrics.js";
 
 const invalidArg = "<missing>";
@@ -23,105 +42,127 @@ type Result = AgentToolResult<Record<string, unknown>>;
 export function registerGrepTool(
 	pi: ExtensionAPI,
 	cwd: string,
-	fffService: FffServiceWithCursor | null | undefined,
+	_fffService: FffServiceWithCursor | null | undefined,
 	sdkTool: SdkToolDef,
-	TextComp?: new (t?: string, x?: number, y?: number) => { setText(v: string): void },
+	TextComp?: new (
+		t?: string,
+		x?: number,
+		y?: number,
+	) => { setText(v: string): void },
 ): void {
 	const T = resolveTextCtor(TextComp);
 	const home = process.env.HOME ?? "";
 
+	const baseDescription =
+		sdkTool.description ?? "Search file contents by pattern";
 	pi.registerTool({
 		name: "grep",
 		label: "Grep",
-		description: sdkTool.description ?? "Search file contents by pattern",
+		description: `${baseDescription} Every supported search is executed through rtk grep; the SDK is used only when RTK cannot execute.`,
+		promptSnippet: "Search file contents through RTK-enforced grep",
+		promptGuidelines: [
+			"Always use the grep tool for content search; aio enforces RTK routing for it.",
+			"In grep patterns, | means alternation and \\| means a literal pipe.",
+			"If no matches, try a broader pattern or pass path/glob explicitly.",
+		],
 		parameters: sdkTool.parameters,
 		renderShell: "self",
 
-		execute: wrapExecuteWithMetrics(async (tid, params, sig, _upd, ctx: ExtensionContext) => {
-			const p = params as any;
-			const pattern = String(p.pattern ?? "");
-			const path = p.path ? String(p.path) : undefined;
-			const glob = p.glob ? String(p.glob) : undefined;
-			const context = typeof p.context === "number" ? p.context : 0;
-			const limit = typeof p.limit === "number" ? p.limit : 200;
-			const literal = p.literal === true;
+		execute: wrapExecuteWithMetrics(
+			async (tid, params, sig, _upd, ctx: ExtensionContext) => {
+				const p = params as any;
+				const pattern = String(p.pattern ?? "");
+				const path = p.path ? String(p.path) : undefined;
+				const glob = p.glob ? String(p.glob) : undefined;
+				const context = typeof p.context === "number" ? p.context : 0;
+				const limit = typeof p.limit === "number" ? p.limit : 200;
+				const literal = p.literal === true;
+				const effectiveLimit = Math.max(1, limit);
+				const args = ["-m", String(effectiveLimit), "-l", "500", "-R"];
+				args.push(literal ? "-F" : "-E");
+				if (p.ignoreCase === true || p.caseInsensitive === true)
+					args.push("-i");
+				if (context > 0) args.push("-C", String(context));
+				if (glob) args.push(`--include=${glob}`);
+				args.push("--", pattern, path ?? ".");
 
-			if (fffService?.isAvailable && !path && !glob) {
-				try {
-					const fff = fffService.getFinder();
-					if (!fff) throw new Error("FFF finder not available");
-					const effectiveLimit = Math.max(1, limit);
-					const grepResult = fff.grep(pattern, {
-						pageSize: effectiveLimit,
-						mode: literal ? "plain" : "regex",
-						beforeContext: context,
-						afterContext: context,
-					});
-					if (grepResult.ok) {
-						const grep = grepResult.value;
-						const items = grep.items.slice(0, effectiveLimit);
-						const cursorStore = fffService.getCursorStore();
-						const notices: string[] = [];
-						if (fffService.partialIndex) notices.push(NOTICE_PARTIAL_FILE_INDEX);
-						if (items.length >= effectiveLimit) notices.push(`${effectiveLimit} limit reached`);
-						if (grep.regexFallbackError) notices.push(`Regex failed: ${grep.regexFallbackError}, used literal match`);
-						if (grep.nextCursor) {
-							const cursorId = cursorStore.store(grep.nextCursor);
-							notices.push(`More results available: cursor="${cursorId}"`);
-						}
-						const text = appendNotices(fffFormatGrepText(items, effectiveLimit), notices);
-						return {
-							content: [{ type: "text" as const, text }],
-							details: {
-								_type: "grepResult",
-								text,
-								pattern,
-								matchCount: items.length,
-							} as GrepDetails,
-						};
-					}
-				} catch {
-					/* fall through */
+				const routed = await executeRtkTool(pi, "grep", args, ctx.cwd, sig);
+				if (routed) {
+					requireRtkSuccess("grep", routed, [0, 1]);
+					const tc = truncateRtkOutput(normalizeLineEndings(routed.stdout));
+					return {
+						content: [{ type: "text" as const, text: tc }],
+						details: {
+							_type: "grepResult",
+							text: tc,
+							pattern,
+							matchCount: tc ? tc.trim().split("\n").filter(Boolean).length : 0,
+						} as GrepDetails,
+					};
 				}
-			}
 
-			const result = (await sdkTool.execute(tid, p, sig, undefined, ctx)) as Result;
-			for (const c of (result.content ?? []) as any[]) {
-				if (c.type === "text") c.text = normalizeLineEndings(c.text);
-			}
-			const tc =
-				((result.content ?? []) as TextContent[])
-					.filter((c) => c.type === "text")
-					.map((c) => c.text)
-					.join("\n") ?? "";
-			result.details = {
-				_type: "grepResult",
-				text: tc,
-				pattern,
-				matchCount: tc ? tc.trim().split("\n").filter(Boolean).length : 0,
-			} as GrepDetails;
-			return result;
-		}),
+				const result = (await sdkTool.execute(
+					tid,
+					p,
+					sig,
+					undefined,
+					ctx,
+				)) as Result;
+				for (const c of (result.content ?? []) as any[]) {
+					if (c.type === "text") c.text = normalizeLineEndings(c.text);
+				}
+				const tc =
+					((result.content ?? []) as TextContent[])
+						.filter((c) => c.type === "text")
+						.map((c) => c.text)
+						.join("\n") ?? "";
+				result.details = {
+					_type: "grepResult",
+					text: tc,
+					pattern,
+					matchCount: tc ? tc.trim().split("\n").filter(Boolean).length : 0,
+				} as GrepDetails;
+				return result;
+			},
+		),
 
 		renderCall(args: any, theme: ThemeLike, ctx: RenderCtxLike) {
 			resolveBaseBackground(theme);
 			const text = ctx.lastComponent ?? new T("", 0, 0);
-			const pattern = args.pattern === null || args.pattern === undefined ? invalidArg : String(args.pattern);
-			const path = args.path === null || args.path === undefined ? invalidArg : shortPath(cwd, home, String(args.path));
+			const pattern =
+				args.pattern === null || args.pattern === undefined
+					? invalidArg
+					: String(args.pattern);
+			const path =
+				args.path === null || args.path === undefined
+					? invalidArg
+					: shortPath(cwd, home, String(args.path));
 			const glob = args.glob;
 			const limit = args.limit;
 			const literal = args.literal === true;
-			const caseInsensitive = args.caseInsensitive === true || args.ignoreCase === true;
+			const caseInsensitive =
+				args.caseInsensitive === true || args.ignoreCase === true;
 			let out = `${theme.fg(ctx.isError ? "error" : "toolTitle", theme.bold("✱ grep"))} ${theme.fg("toolTitle", `/${pattern || ""}/`)}${theme.fg("toolOutput", ` in ${path}`)}`;
 			if (glob) out += theme.fg("dim", ` (${String(glob)})`);
-			if (limit !== undefined && limit !== null) out += theme.fg("dim", ` limit ${limit}`);
+			if (limit !== undefined && limit !== null)
+				out += theme.fg("dim", ` limit ${limit}`);
 			if (literal) out += theme.fg("dim", ` (literal)`);
 			if (caseInsensitive) out += theme.fg("dim", ` (case-insensitive)`);
-			text.setText(fillToolBackground(`\n${TOOL_RESULT_INDENT}${out}\n`, ctx.isError ? BG_ERROR : undefined));
+			text.setText(
+				fillToolBackground(
+					`\n${TOOL_RESULT_INDENT}${out}\n`,
+					ctx.isError ? BG_ERROR : undefined,
+				),
+			);
 			return text;
 		},
 
-		renderResult(result: Result, _opt: unknown, theme: ThemeLike, ctx: RenderCtxLike) {
+		renderResult(
+			result: Result,
+			_opt: unknown,
+			theme: ThemeLike,
+			ctx: RenderCtxLike,
+		) {
 			resolveBaseBackground(theme);
 			const text = ctx.lastComponent ?? new T("", 0, 0);
 			if (ctx.isError) {
@@ -152,19 +193,24 @@ export function registerGrepTool(
 					.split("\n")
 					.map((line) => `${TOOL_RESULT_INDENT}${line}`)
 					.join("\n");
-				text.setText(fillToolBackground(`${rendered}\n\n`, ctx.isError ? BG_ERROR : undefined));
+				text.setText(
+					fillToolBackground(
+						`${rendered}\n\n`,
+						ctx.isError ? BG_ERROR : undefined,
+					),
+				);
 				return text;
 			}
 			const fc = result.content?.[0];
-			const fallback = fc && "text" in fc ? String(fc.text).slice(0, 120) : "no matches";
+			const fallback =
+				fc && "text" in fc ? String(fc.text).slice(0, 120) : "no matches";
 			text.setText(
-				fillToolBackground(`${TOOL_RESULT_INDENT}${theme.fg("dim", fallback)}`, ctx.isError ? BG_ERROR : undefined),
+				fillToolBackground(
+					`${TOOL_RESULT_INDENT}${theme.fg("dim", fallback)}`,
+					ctx.isError ? BG_ERROR : undefined,
+				),
 			);
 			return text;
 		},
 	} as unknown as ToolDefinition<any, any, any>);
-}
-
-function appendNotices(text: string, notices: string[]): string {
-	return notices.length ? `${text}\n\n[${notices.join(". ")}]` : text;
 }

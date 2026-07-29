@@ -17,16 +17,11 @@ import type {
 	ExtensionContext,
 	WorkingIndicatorOptions,
 } from "@earendil-works/pi-coding-agent";
-import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
-import {
-	buildMutationApprovalPrompt,
-	formatMutationPreview,
-} from "../diff-tools/core/mutation-preview.js";
 import { setPermissionModeAccess } from "./mode-access.js";
+import { showMutationApproval } from "./approval-dialog.js";
 import {
 	extractTodoItems,
-	formatCount,
 	isSafeCommand,
 	markCompletedSteps,
 	type TodoItem,
@@ -138,7 +133,7 @@ Do not use Cursor host edit, write, delete, or mutating shell tools in ${mode} m
 Cursor host edit/write/delete/shell tools bypass Pi's permission prompt. For every file mutation or mutating command, use the exposed Pi bridge tools (${CURSOR_BRIDGE_MUTATION_TOOLS}) instead of Cursor host tools so Pi can show the diff and ask before execution. Cursor host read/search tools remain allowed. If the required pi__ tool is unavailable, do not mutate anything; explain that permission routing is unavailable.`;
 }
 
-function modeMetadata(mode: Mode): {
+export function modeMetadata(mode: Mode): {
 	icon: string;
 	label: string;
 	role: "muted" | "warning" | "accent";
@@ -191,13 +186,7 @@ export function registerPermissionModes(pi: ExtensionAPI): void {
 		}
 	}
 
-	// Stream stats cache (for working message). Kept on the closure so it
-	// survives across events but is reset on each new turn.
-	let streamStart = 0;
-	let outputAtTurnStart = 0;
-
-	// Cached git branch (read once on session_start, refreshed via footerData events)
-	let gitBranch: string | null = null;
+	// Stream stats removed — aio status-line owns footer and working message.
 
 	function renderPlanTodoLines(ctx: ExtensionContext): string[] {
 		return planTodos.map((item) => {
@@ -311,6 +300,14 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		label: "Todo",
 		description:
 			"Manage the active plan todo list. Actions: list, toggle (step), create (text, optional position), rename (step, text), reorder (step, position), delete (step)",
+		promptSnippet:
+			"Track plan steps and mark each step done with todo action=toggle",
+		promptGuidelines: [
+			"When executing a numbered plan, call todo action=toggle for the matching step immediately after that step's work is finished, before starting the next step.",
+			"Use todo action=list at the start of plan execution and again whenever you need to confirm which steps remain.",
+			"Do not leave completed steps unchecked; toggle flips completion state, so only call it once per finished step.",
+			"After toggling a step, briefly note what was completed in your response so the user can see progress.",
+		],
 		parameters: Type.Object({
 			action: StringEnum([
 				"list",
@@ -530,110 +527,6 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		pi.appendEntry("modes", state);
 	}
 
-	// ---------- Footer (mode + cwd/git + provider/model) ----------
-
-	function installFooter(ctx: ExtensionContext): void {
-		if (!ctx.hasUI) return;
-		ctx.ui.setFooter((_tui, theme, footerData) => {
-			// Seed cached branch eagerly
-			if (gitBranch === null) {
-				gitBranch = footerData.getGitBranch();
-			}
-			const unsub = footerData.onBranchChange(() => {
-				gitBranch = footerData.getGitBranch();
-				_tui.requestRender();
-			});
-			return {
-				dispose() {
-					if (typeof unsub === "function") unsub();
-				},
-				invalidate() {},
-				render(width: number): string[] {
-					const meta = modeMetadata(currentMode);
-					const left =
-						`${theme.fg(meta.role, `${meta.icon} ${meta.label}`)} ` +
-						theme.fg("dim", "(shift+tab to cycle)");
-
-					const centerParts: string[] = [];
-					centerParts.push(ctx.cwd || "");
-					if (gitBranch) centerParts.push(gitBranch);
-					const centerText = centerParts.filter(Boolean).join(" [");
-					const center = theme.fg(
-						"dim",
-						centerParts.length > 1 ? `${centerText}]` : centerText,
-					);
-
-					const right = theme.fg(
-						"dim",
-						ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model",
-					);
-
-					const lw = visibleWidth(left);
-					const rw = visibleWidth(right);
-					const cw = Math.max(0, width - lw - rw - 2);
-					const centerVisible = truncateToWidth(center, cw);
-					const remaining = Math.max(
-						1,
-						width - lw - rw - visibleWidth(centerVisible),
-					);
-					const centerPad = " ".repeat(Math.floor(remaining / 2));
-
-					return [
-						truncateToWidth(
-							left + centerPad + centerVisible + centerPad + right,
-							width,
-						),
-					];
-				},
-			};
-		});
-	}
-
-	// ---------- Working message (streaming stats) ----------
-
-	function computeStats(ctx: ExtensionContext): {
-		input: number;
-		output: number;
-		cost: number;
-		pct: number;
-	} {
-		let input = 0;
-		let output = 0;
-		let cost = 0;
-		for (const e of ctx.sessionManager.getBranch()) {
-			if (e.type === "message" && e.message.role === "assistant") {
-				const m = e.message as AssistantMessage;
-				input += m.usage?.input ?? 0;
-				output += m.usage?.output ?? 0;
-				cost += m.usage?.cost?.total ?? 0;
-			}
-		}
-		const usage = ctx.getContextUsage?.();
-		const tokens = usage?.tokens ?? 0;
-		const contextWindow = usage?.contextWindow ?? 0;
-		const pct =
-			tokens > 0 && contextWindow > 0
-				? Math.round((tokens / contextWindow) * 100)
-				: 0;
-		return { input, output, cost, pct };
-	}
-
-	function refreshWorkingMessage(ctx: ExtensionContext): void {
-		if (!ctx.hasUI) return;
-		if (streamStart === 0) return;
-		const { input, output, pct } = computeStats(ctx);
-		const elapsedSec = Math.max(0.001, (Date.now() - streamStart) / 1000);
-		const outDelta = Math.max(0, output - outputAtTurnStart);
-		const tps = outDelta / elapsedSec;
-		const msg = `Working (${elapsedSec.toFixed(1)}s  ↑${formatCount(input)} ↓${formatCount(output)} ${tps.toFixed(1)} tok/s  ${pct}% ctx)`;
-		ctx.ui.setWorkingMessage(msg);
-	}
-
-	function resetWorkingMessage(ctx: ExtensionContext): void {
-		if (!ctx.hasUI) return;
-		ctx.ui.setWorkingMessage();
-	}
-
 	// ---------- tool_call gate (the single handler) ----------
 
 	pi.on("tool_call", async (event, ctx) => {
@@ -684,19 +577,12 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			if (!ctx.hasUI) {
 				return { block: true, reason: `${tool} blocked: no UI to confirm.` };
 			}
-			const preview =
-				tool === "edit" || tool === "apply_patch"
-					? await formatMutationPreview(tool, input)
-					: undefined;
-			const choice = await ctx.ui.select(
-				buildMutationApprovalPrompt(tool, path, preview),
-				["Allow", "Allow all (enable auto)", "Block"],
-			);
-			if (choice === "Allow all (enable auto)") {
+			const decision = await showMutationApproval(ctx, { tool, input, path });
+			if (decision === "allowAll") {
 				await setMode("auto", ctx);
 				return undefined;
 			}
-			if (choice !== "Allow") {
+			if (decision !== "allow") {
 				return { block: true, reason: `${tool} blocked by user on ${path}` };
 			}
 			return undefined;
@@ -750,8 +636,8 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			const remaining = planTodos.filter((t) => !t.completed);
 			const todoList = remaining.map((t) => `${t.step}. ${t.text}`).join("\n");
 			const todoHint =
-				planTodos.length > 2
-					? "\nUse the todo tool to list and toggle the steps as you finish them."
+				planTodos.length > 0
+					? '\nAfter each step finishes, call todo({ action: "toggle", step: n }) for that step before moving on. Use todo({ action: "list" }) to verify nothing is left unchecked.'
 					: "";
 			return {
 				message: {
@@ -762,7 +648,7 @@ Remaining steps:
 ${todoList}
 ${todoHint}
 
-Execute each step in order. After completing a step, include a [DONE:n] tag in your response.`,
+Execute each step in order. Mark progress in the todo tool as you go; do not batch toggles at the end.`,
 					display: false,
 				},
 			};
@@ -800,7 +686,8 @@ Do NOT attempt to make changes — just describe what you would do.`;
 		} else if (currentMode === "auto") {
 			body = `[AUTO MODE ACTIVE]
 All tool calls (edit, write, bash) are auto-approved — no permission prompts.
-Proceed without asking for confirmation. After completing each meaningful chunk, briefly summarize progress.`;
+Proceed without asking for confirmation. After completing each meaningful chunk, briefly summarize progress.
+If a todo list is active, toggle each finished step with the todo tool before continuing.`;
 		} else {
 			body = `[DEFAULT MODE ACTIVE]
 - edit, write, and apply_patch tools require per-call user approval
@@ -826,30 +713,6 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 				display: false,
 			},
 		};
-	});
-
-	// ---------- Stream stats events ----------
-
-	pi.on("turn_start", async (_event, ctx) => {
-		streamStart = Date.now();
-		const stats = computeStats(ctx);
-		outputAtTurnStart = stats.output;
-		refreshWorkingMessage(ctx);
-	});
-
-	pi.on("before_provider_request", async (_event, ctx) => {
-		refreshWorkingMessage(ctx);
-	});
-
-	pi.on("message_update", async (_event, ctx) => {
-		refreshWorkingMessage(ctx);
-	});
-
-	// ---------- agent_end: reset working message (runs first) ----------
-
-	pi.on("agent_end", async (_event, ctx) => {
-		streamStart = 0;
-		resetWorkingMessage(ctx);
 	});
 
 	// ---------- turn_end: plan execution progress ----------
@@ -960,8 +823,6 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 		currentMode = normalizeModeFlag(flag);
 		planExecuting = false;
 		planTodos = [];
-		// Reset git branch cache; will be re-seeded by installFooter factory
-		gitBranch = null;
 
 		// 2) Let the latest persisted "modes" entry override
 		try {
@@ -1067,9 +928,8 @@ Proceed without asking for confirmation. After completing each meaningful chunk,
 
 		syncCursorPermissionBridge(ctx);
 
-		// 6) Install footer + status
+		// 6) Restore status pill
 		updateStatus(ctx);
-		installFooter(ctx);
 	}
 
 	pi.on("session_start", async (_event, ctx) => {

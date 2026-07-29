@@ -9,7 +9,11 @@
  *   • Custom ANSI rendering for all tools
  */
 
-import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type {
+	ExtensionAPI,
+	ExtensionCommandContext,
+	ExtensionContext,
+} from "@earendil-works/pi-coding-agent";
 import * as hostSdk from "@earendil-works/pi-coding-agent";
 import { createFffAutocompleteProvider } from "./autocomplete.js";
 import { getDefaultAgentDir } from "./config.js";
@@ -27,7 +31,9 @@ import type { PiPrettyDeps, SdkTools } from "./types.js";
 
 const DEFAULT_DISABLED_TOOLS = new Set<string>();
 
-function envTools(name: "PRETTY_DISABLE_TOOLS" | "PRETTY_ENABLE_TOOLS"): Set<string> {
+function envTools(
+	name: "PRETTY_DISABLE_TOOLS" | "PRETTY_ENABLE_TOOLS",
+): Set<string> {
 	return new Set(
 		(process.env[name] ?? "")
 			.split(",")
@@ -42,14 +48,18 @@ function envTools(name: "PRETTY_DISABLE_TOOLS" | "PRETTY_ENABLE_TOOLS"): Set<str
 
 export type { PiPrettyDeps };
 
-export default async function piPrettyExtension(pi: ExtensionAPI, deps?: PiPrettyDeps): Promise<void> {
+export default async function piPrettyExtension(
+	pi: ExtensionAPI,
+	deps?: PiPrettyDeps,
+): Promise<void> {
 	const disabledTools = envTools("PRETTY_DISABLE_TOOLS");
 	const enabledTools = envTools("PRETTY_ENABLE_TOOLS");
 	const isToolEnabled = (name: string) => {
 		const normalizedName = name.toLowerCase();
 		return (
 			!disabledTools.has(normalizedName) &&
-			(!DEFAULT_DISABLED_TOOLS.has(normalizedName) || enabledTools.has(normalizedName))
+			(!DEFAULT_DISABLED_TOOLS.has(normalizedName) ||
+				enabledTools.has(normalizedName))
 		);
 	};
 	const cwd = process.cwd();
@@ -63,8 +73,14 @@ export default async function piPrettyExtension(pi: ExtensionAPI, deps?: PiPrett
 	// should still work even when SDK tool factories are unavailable.
 
 	const maybeGetAgentDir = deps?.sdk?.getAgentDir ?? hostSdk.getAgentDir;
-	const agentDir = typeof maybeGetAgentDir === "function" ? maybeGetAgentDir() : getDefaultAgentDir();
-	const fffService: FffService | null = getSharedFffService(deps?.fffModule, agentDir);
+	const agentDir =
+		typeof maybeGetAgentDir === "function"
+			? maybeGetAgentDir()
+			: getDefaultAgentDir();
+	const fffService: FffService | null = getSharedFffService(
+		deps?.fffModule,
+		agentDir,
+	);
 
 	// Text component for custom rendering (DI-friendly)
 	const TextComp = deps?.TextComponent;
@@ -160,7 +176,10 @@ export default async function piPrettyExtension(pi: ExtensionAPI, deps?: PiPrett
 
 			await fffService.ensureFinder(ctx.cwd);
 			if (fffService.partialIndex) {
-				ctx.ui?.notify?.("FFF: scan timed out — using partial index. Run /fff-rescan when ready.", "warning");
+				ctx.ui?.notify?.(
+					"FFF: scan timed out — using partial index. Run /fff-rescan when ready.",
+					"warning",
+				);
 			} else {
 				const ui = ctx.ui;
 				ui?.setStatus?.("fff", "FFF indexed");
@@ -169,10 +188,16 @@ export default async function piPrettyExtension(pi: ExtensionAPI, deps?: PiPrett
 
 			// Register FFF-backed @-mention autocomplete only after a finder exists.
 			ctx.ui?.addAutocompleteProvider?.((current) =>
-				createFffAutocompleteProvider(current, () => fffService?.getFinder() ?? null),
+				createFffAutocompleteProvider(
+					current,
+					() => fffService?.getFinder() ?? null,
+				),
 			);
 		} catch (error: unknown) {
-			ctx.ui?.notify?.(`FFF init failed: ${error instanceof Error ? error.message : String(error)}`, "error");
+			ctx.ui?.notify?.(
+				`FFF init failed: ${error instanceof Error ? error.message : String(error)}`,
+				"error",
+			);
 		}
 	});
 
@@ -208,19 +233,21 @@ export default async function piPrettyExtension(pi: ExtensionAPI, deps?: PiPrett
 	// Tool registration
 	// ------------------------------------------------------------------
 
-	if (isToolEnabled("read") && createReadTool) {
+	// RTK-covered read-only tools are mandatory. PRETTY_DISABLE_TOOLS may still
+	// disable the bash renderer, but cannot silently restore native read/search.
+	if (createReadTool) {
 		registerReadTool(pi, cwd, null, createReadTool(cwd), TextComp);
 	}
 	if (isToolEnabled("bash") && createBashTool) {
 		registerBashTool(pi, cwd, null, createBashTool(cwd), TextComp);
 	}
-	if (isToolEnabled("ls") && createLsTool) {
+	if (createLsTool) {
 		registerLsTool(pi, cwd, null, createLsTool(cwd), TextComp);
 	}
-	if (isToolEnabled("find") && createFindTool) {
+	if (createFindTool) {
 		registerFindTool(pi, cwd, fffService, createFindTool(cwd), TextComp);
 	}
-	if (isToolEnabled("grep") && createGrepTool) {
+	if (createGrepTool) {
 		registerGrepTool(pi, cwd, fffService, createGrepTool(cwd), TextComp);
 	}
 }

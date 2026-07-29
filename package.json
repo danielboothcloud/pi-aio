@@ -1,7 +1,7 @@
 {
 	"name": "aio",
-	"version": "0.5.0",
-	"description": "Combined Pi extension for structured questions, permission modes, enhanced built-in tools, and syntax-highlighted diffs.",
+	"version": "0.6.0",
+	"description": "Combined Pi extension for structured questions, permission modes, subagents, enhanced tools and diffs, shell rewriting, structural search, and self-hosted web browsing.",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
@@ -14,11 +14,31 @@
 		"effort",
 		"thinking",
 		"permission-modes",
+		"subagents",
+		"delegation",
+		"parallel-agents",
+		"goal",
+		"goal-loop",
+		"isolated-auditor",
+		"verification-contract",
 		"syntax-highlighting",
 		"pretty-print",
 		"fff",
 		"diff",
-		"word-diff"
+		"word-diff",
+		"rtk",
+		"token-optimization",
+		"message-queue",
+		"queue",
+		"shell-rewrite",
+		"ast-grep",
+		"structural-search",
+		"syntax-aware-search",
+		"codemod",
+		"web-search",
+		"searxng",
+		"camofox",
+		"cloakbrowser"
 	],
 	"files": [
 		"index.ts",
@@ -35,19 +55,42 @@
 		"effort/**/*.ts",
 		"init/**/*.ts",
 		"!init/**/*.test.ts",
+		"goal-loop/**/*.ts",
+		"!goal-loop/**/*.test.ts",
+		"goal-loop/prompts/*.md",
+		"goal-loop/LICENSE-glla",
 		"permission-modes/**/*.ts",
 		"!permission-modes/**/*.test.ts",
+		"status-line/**/*.ts",
+		"!status-line/**/*.test.ts",
+		"queue/**/*.ts",
+		"!queue/**/*.test.ts",
 		"pretty-tools/**/*.ts",
 		"!pretty-tools/**/*.test.ts",
 		"pretty-tools/LICENSE",
+		"rtk/**/*.ts",
+		"!rtk/**/*.test.ts",
+		"subagents/**/*.ts",
+		"subagents/agents/**/*.md",
+		"!subagents/**/*.test.ts",
+		"browser-search/**/*.ts",
+		"!browser-search/**/*.test.ts",
+		"browser-search/README.md",
+		"browser-search/LICENSE",
+		"compose.yaml",
+		".env.example",
+		"docker/searxng/settings.yml",
+		"docker/searxng/Dockerfile",
 		"user-bash/**/*.ts",
 		"!user-bash/**/*.test.ts",
+		"ast-grep/**/*.ts",
+		"!ast-grep/**/*.test.ts",
 		"README.md"
 	],
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
-		"test:node": "tsx --test copy-widget/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:node": "tsx --test ast-grep/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts goal-loop/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts rtk/*.test.ts status-line/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts"
 	},
 	"pi": {
@@ -56,14 +99,19 @@
 		]
 	},
 	"dependencies": {
+		"@ast-grep/cli": "0.43.0",
 		"@ff-labs/fff-node": "^0.10.0",
 		"@juicesharp/rpiv-config": "2.0.0",
+		"@mozilla/readability": "^0.6.0",
 		"@shikijs/cli": "4.0.2",
 		"diff": "^7.0.0",
+		"linkedom": "^0.18.0",
 		"marked": "18.0.5",
 		"shiki": "4.0.2",
+		"turndown": "^7.2.0",
 		"xxhash-wasm": "^1.1.0",
-		"typebox": "^1.1.24"
+		"typebox": "^1.1.24",
+		"yaml": "^2.8.3"
 	},
 	"devDependencies": {
 		"@earendil-works/pi-agent-core": "0.80.10",
@@ -85,5 +133,9 @@
 		"@juicesharp/rpiv-i18n": {
 			"optional": true
 		}
+	},
+	"optionalDependencies": {
+		"cloakbrowser": "0.5.1",
+		"playwright-core": "1.60.0"
 	}
 }

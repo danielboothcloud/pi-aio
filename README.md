@@ -1,9 +1,11 @@
 # aio
 
 Combined Pi extension: structured **`ask_user_question`** dialogs, a **`/pick`**
-code picker, **`/init`** AGENTS.md bootstrap, **`/effort`** thinking control, **`!` bash shortcuts**, **Shift+Tab**
-permission modes, enhanced built-in output with FFF-backed search, and
-syntax-highlighted write/edit/patch diffs.
+code picker, **`/init`** AGENTS.md bootstrap, **`/effort`** thinking control,
+generic **subagent delegation**, self-hosted **`web_search`** and
+**`fetch_content`**, **`!` bash shortcuts**, **Shift+Tab** permission modes,
+enhanced built-in output with FFF-backed search, **rtk** shell-command rewriting,
+and syntax-highlighted write/edit/patch diffs.
 
 The questionnaire implementation is based on
 [@juicesharp/rpiv-ask-user-question](https://www.npmjs.com/package/@juicesharp/rpiv-ask-user-question),
@@ -146,6 +148,110 @@ Analyze the codebase and create or update `AGENTS.md` for Pi and other coding ag
 - `force` regenerates even when `AGENTS.md` already exists; `dry-run` shows the proposed content without writing files.
 - Run `/reload` after writing so Pi loads the new context.
 
+## Self-hosted web search
+
+AIO provides `web_search` and `fetch_content` using the native TypeScript port
+in [`browser-search/`](browser-search/README.md):
+
+- SearXNG supplies raw multi-engine search hits.
+- Camofox extracts readable page content through headless Firefox.
+- CloakBrowser is an optional stealth fallback for blocked or empty pages.
+- Results are returned inline; there is no curator, response-id store, or
+  `get_search_content` tool.
+
+SearXNG and Camofox must be running separately. See the
+[browser-search setup and configuration](browser-search/README.md), including
+how to disable pi-web-access's overlapping extension while retaining its skills.
+
+## Subagent delegation
+
+The `subagent` tool launches focused child Pi sessions for isolated work. It
+supports single-agent and bounded parallel execution, fresh or forked context,
+foreground or background runs, configurable concurrency, and basic
+`list`/`status`/`stop` lifecycle control.
+
+When `model` and `thinking` are omitted, each child inherits the model and
+thinking level active in the parent session at launch time. Explicit per-run,
+per-task, or agent-frontmatter values override that default.
+
+Typical single run:
+
+```ts
+{
+  agent: "reviewer",
+  task: "Review the current diff for correctness. Do not modify files.",
+  context: "fresh"
+}
+```
+
+Parallel independent review:
+
+```ts
+{
+  tasks: [
+    { agent: "reviewer", task: "Review correctness and regressions. Do not edit files." },
+    { agent: "reviewer", task: "Review tests and edge cases. Do not edit files." },
+    { agent: "reviewer", task: "Review maintainability. Do not edit files." }
+  ],
+  context: "fresh",
+  concurrency: 3,
+  async: true
+}
+```
+
+Background runs return an id immediately and publish their result back into the
+originating session when complete:
+
+```ts
+{ action: "status" }
+{ action: "status", id: "<run-id>" }
+{ action: "stop", id: "<run-id>" }
+```
+
+AIO ships neutral `scout`, `planner`, `worker`, `reviewer`, `researcher`, and
+`validator` agents. Override them or add agents with Markdown files in:
+
+- User scope: `~/.pi/agent/agents/**/*.md`
+- Project scope: `.pi/agents/**/*.md`
+- Legacy project scope: `.agents/agents/**/*.md`
+
+A minimal agent definition:
+
+```md
+---
+name: security-reviewer
+description: Reviews changes for concrete security defects
+tools: read, grep, find, ls, bash
+systemPromptMode: replace
+inheritProjectContext: true
+inheritSkills: false
+---
+Inspect the assigned change for concrete security defects. Report evidence with
+file and line references. Do not modify files.
+```
+
+Supported frontmatter fields are `name`, `description`, `tools`, `model`,
+`thinking`, `systemPromptMode`, `inheritProjectContext`, and `inheritSkills`.
+Trusted project definitions override user definitions, which override bundled
+agents. Project agent files are ignored until Pi trusts the checkout.
+
+Subagents inherit AIO's active permission mode. In `ask` and `plan` modes,
+mutations remain blocked. In `default` mode, headless children cannot answer
+permission prompts, so mutation attempts are blocked. Use `auto` only when you
+intend to authorize a writer child. Child sessions never receive the `subagent`
+tool, so nested delegation is unavailable.
+
+AIO launches child sessions through `pi` on `PATH`. Wrappers and custom
+installations can set `AIO_SUBAGENT_PI_BINARY` to an alternate Pi executable.
+
+This intentionally reduced runtime does not include chains, dynamic fanout,
+structured-output contracts, worktrees, resume/steer, scheduling, acceptance
+gates, persistent agent memory, or automatic model fallbacks. Keep parallel
+children read-only in a shared checkout and use one writer for changes.
+
+Do not load standalone `pi-subagents` alongside AIO because both packages
+register a tool named `subagent`.
+
 ## `!` bash shortcuts
 
 Pi runs shell commands when your prompt starts with `!`:
@@ -230,21 +336,108 @@ pi --permission-mode ask
 pi --permission-mode plan
 ```
 
+## Status line
+
+`aio` installs a quiet single-row footer that replaces noisy packages like
+`pi-powerline-footer`. The default layout is:
+
+```text
+Plan · ⌂ pi-aio · ⎇ main · ◫ 42% · ⚡ effort:max · rtk✓ · ◈ cursor:local · fast:on · ◇ cursor/composer-2.5
+```
+
+Configure it in Pi settings (`~/.pi/agent/settings.json` or project
+`.pi/settings.json`):
+
+```json
+{
+  "aio": {
+    "statusLine": {
+      "enabled": true,
+      "segments": ["mode", "path", "git", "context", "effort", "statuses", "cursor", "model"],
+      "path": "basename",
+      "workingMessage": "minimal"
+    }
+  }
+}
+```
+
+| Field | Purpose |
+| ----- | ------- |
+| `enabled` | Master toggle; `false` restores Pi's default footer |
+| `segments` | Ordered list: `mode`, `path`, `git`, `context`, `effort`, `statuses`, `cursor`, `model`, `tokens`, `cost` |
+| `path` | `basename`, `abbreviated`, or `full` |
+| `workingMessage` | `minimal` (default), `verbose` (streaming stats), or `off` |
+| `statusKeys` | Optional allowlist for extension status keys |
+
+Quick toggles:
+
+- `/status-line` — enable/disable
+- `/status-line minimal` or `/status-line verbose` — working message style
+
+Extension statuses (`rtk`, `!bash`, `fff`, `codex-quota`, etc.) appear in the
+`statuses` segment when active. Thinking effort (`effort`) and Cursor runtime
+(`cursor:local · fast:on`) get their own segments so they do not blend with the
+model name. Context percentage turns warning/error at 70%/90%.
+
+To migrate off `pi-powerline-footer`, remove it from `packages` in Pi settings,
+delete any `powerline` block, and reload extensions.
+
+## Message queue
+
+`aio` makes pi's message queue visible and actionable while the agent is
+busy. Messages you type during a run are queued by pi as steering
+(`enter` / `alt+enter`) or follow-up messages; aio mirrors that queue and
+renders it as a numbered list below the input box:
+
+```text
+ queue (2) · ⏎ send next
+ 1. [steer]  fix the parser off-by-one
+ 2. [follow] then run the full test suite
+```
+
+Steering entries are delivered after the current turn; follow-ups after the
+run finishes. Long messages show a first-line preview; more than five pending
+messages collapse into a `+N more` row.
+
+Pressing `enter` while the input box is **empty** interrupts the current run
+and immediately pushes the next pending message at the agent (the rest stay
+queued with their original steer/follow-up semantics). Pi's default behavior
+— `esc` to interrupt and dump the queue back into the editor, `alt+↑` to edit
+the queue — still works untouched.
+
+Commands:
+
+- `/queue` or `/queue status` — show the pending queue
+- `/queue off` — hide the widget and disable Enter-on-empty interrupt
+- `/queue on` — re-enable
+
+The queue editor extends the `!bash` hint editor, so bash-mode hints keep
+working. The mirror tracks queue additions and deliveries via pi events; in
+the rare cases it cannot (messages queued during compaction, or across an
+extension reload) the widget simply hides and pi's built-in dim queue lines
+above the editor remain the fallback.
+
 ## Pretty built-in tools
 
 `aio` replaces Pi's built-in `read`, `bash`, `ls`, `find`, and `grep` tool
-definitions while delegating their normal execution to Pi. The replacements add:
+definitions. Text reads, listings, file searches, and content searches execute
+through RTK; Pi's native implementations are used only when RTK cannot execute
+or when RTK cannot represent the result (for example, an inline image).
 
-- **`read`** — collapsed line-count summaries, expanded line-numbered Shiki syntax
-  highlighting, and Pi's native inline image rendering.
+- **`read`** — RTK-backed text reads with collapsed line-count summaries and
+  expanded line-numbered Shiki highlighting; image reads retain Pi's native
+  inline image rendering.
 - **`bash`** — colored `exit 0`/`exit 1` summaries, elapsed time, line counts,
   and expanded command output.
-- **`ls`** — Nerd Font icons and tree-oriented expanded listings.
-- **`find`** — FFF-backed, frecency-aware file search with grouped results and
-  automatic fallback to Pi's normal `fd` implementation.
-- **`grep`** — FFF-backed content search with file grouping, line numbers,
-  highlighted literal matches, context lines, and fallback to Pi's normal search
-  whenever `path` or `glob` scopes are supplied.
+- **`ls`** — RTK-backed directory listings with Nerd Font icons and tree-oriented
+  expanded output.
+- **`find`** — RTK-backed file search with grouped results and native `fd`
+  fallback only for patterns RTK cannot represent or when RTK cannot execute.
+- **`grep`** — RTK-backed recursive content search with file grouping, line
+  numbers, literal/extended-regex modes, highlighted matches, and context lines.
+- **GNU grep guard** — bare `grep`/`egrep`/`fgrep` invocations in the `bash`
+  tool are blocked with a nudge to use the `grep` tool or `rg -n`. Set
+  `PRETTY_BASH_GREP_GUARD=0` to allow them.
 - **`@file` completion** — FFF-ranked file suggestions while composing prompts.
 
 Tool result bodies start collapsed. Press **Ctrl+O** (`app.tools.expand`) to toggle
@@ -261,8 +454,10 @@ and history data under `<agent-dir>/aio/fff/`. Use these maintenance commands:
 
 All five enhanced tools are enabled by default. Configuration environment variables:
 
-- `PRETTY_DISABLE_TOOLS` — comma-separated tools to leave untouched.
-- `PRETTY_ENABLE_TOOLS` — explicitly enable tools if defaults change.
+- `PRETTY_BASH_GREP_GUARD=0` — allow GNU grep in the `bash` tool (blocked by default).
+- `PRETTY_DISABLE_TOOLS` — comma-separated optional renderers to leave untouched.
+  RTK-covered `read`, `ls`, `find`, and `grep` cannot be disabled through this setting.
+- `PRETTY_ENABLE_TOOLS` — explicitly enable optional tools if defaults change.
 - `PRETTY_THEME` — Shiki theme; otherwise the active Pi theme or `github-dark`.
 - `PRETTY_ICONS=none` — disable Nerd Font icons.
 - `PRETTY_MAX_HL_CHARS`, `PRETTY_MAX_PREVIEW_LINES`, `PRETTY_CACHE_LIMIT` —
@@ -282,6 +477,46 @@ Optional `<agent-dir>/aio-pretty.json` background configuration:
 
 Do not load standalone `@heyhuynhgiabuu/pi-pretty` alongside `aio`: both packages
 own the same built-in tool names and would register duplicate FFF commands.
+
+## rtk shell rewriting
+
+`aio` enforces [rtk](https://github.com/rtk-ai/rtk) routing wherever RTK has a
+representation. Agent `bash`, `!command`, and `!!command` inputs are offered to
+`rtk rewrite`; `read`, `ls`, `find`, and `grep` invoke their RTK subcommands
+directly. Commands for which RTK has no equivalent run unchanged because routing
+them is impossible.
+
+- **Agent `bash` tool** — an asynchronous `tool_call` hook rewrites the command
+  after permission checks and before execution. This works independently of the
+  pretty bash renderer.
+- **`!command` and `!!command`** — both execute rewritten commands; Pi still keeps
+  `!!` output out of model context.
+- **Read-only built-ins** — text `read`, `ls`, `find`, and `grep` calls execute
+  through RTK even if their names appear in `PRETTY_DISABLE_TOOLS`.
+- **Impossible RTK cases** — images retain Pi's native image path, file mutation
+  tools remain native, and unsupported or unavailable RTK commands fail open to
+  the existing implementation.
+
+There is no disable toggle or `RTK_DISABLED=1` bypass. Bypass assignments at
+shell-command boundaries are stripped before rewriting. If RTK is missing, not
+executable, times out, or has no equivalent, aio falls back to normal behavior and
+warns once when the binary is unavailable. Permission modes remain responsible
+for command gating.
+
+### `/rtk` command
+
+- `/rtk status` or `/rtk` — show enforced routing state and the detected binary.
+
+The footer shows `rtk ✓` while the enforced integration is loaded.
+
+### Prerequisites
+
+[rtk](https://github.com/rtk-ai/rtk) must be installed and on your `PATH`. `rtk
+init` is not required — aio calls `rtk rewrite` directly. aio degrades
+gracefully without it.
+
+Do not load standalone `@sherif-fanous/pi-rtk` alongside `aio`; both rewrite
+shell commands and would double-rewrite the same command.
 
 ## Syntax-highlighted diffs
 
@@ -320,7 +555,11 @@ packages register `write`, `edit`, and `apply_patch`.
 ├── effort/                  # /effort command + status
 ├── init/                    # /init AGENTS.md bootstrap
 ├── permission-modes/        # Shift+Tab modes + plan flow
+├── queue/                   # message-queue widget + Enter-to-interrupt
+├── status-line/             # quiet footer + working message
 ├── pretty-tools/            # pretty built-ins + FFF search
+├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)
+├── subagents/               # child-agent discovery, execution, and lifecycle
 └── user-bash/               # !/!! command permission gating
 ```
 
@@ -328,11 +567,12 @@ packages register `write`, `edit`, and `apply_patch`.
 
 - Remove standalone `@juicesharp/rpiv-ask-user-question`,
   `@pandi-coding-agent/pandi-effort`, `@aprimediet/permission-modes`,
-  `@heyhuynhgiabuu/pi-pretty`, and `@heyhuynhgiabuu/pi-diff` packages from
-  settings when installing this combined package, to avoid duplicate tools,
-  commands, and shortcuts.
-- Effort status (`effort:…`) and mode status (`● Default`) coexist in the status
-  bar; the footer shows the active permission mode.
+  `@heyhuynhgiabuu/pi-pretty`, `@heyhuynhgiabuu/pi-diff`, `pi-subagents`,
+  and `@sherif-fanous/pi-rtk`
+  packages from settings when installing this combined package, to avoid
+  duplicate tools, commands, and shortcuts.
+- Effort status (`effort:…`), rtk, and `!bash` appear in the aio status line
+  when active; the footer shows mode, path, git, context, and model.
 - The vendored questionnaire source remains covered by its original MIT license
   in [`ask-user-question/LICENSE`](ask-user-question/LICENSE).
 - The pretty-tool implementation is based on `@heyhuynhgiabuu/pi-pretty` and

@@ -2162,6 +2162,7 @@ export default async function diffRendererExtension(
 				const n = String(args.content).split("\n").length;
 				const suffix = `${TOOL_RESULT_INDENT}${theme.fg("muted", `(${n} lines…)`)}${stats ? ` ${stats.trimStart()}` : ""}`;
 				setToolHeaderBg(text);
+				text.__piDiffTask = undefined;
 				text.setText(
 					formatToolFrameHeaderText({
 						label,
@@ -2198,11 +2199,71 @@ export default async function diffRendererExtension(
 						.catch(() => {});
 				}
 				clearToolHeaderBg(text);
+				text.__piDiffTask = undefined;
 				text.setText(ctx.state._previewText ?? title);
 				return text;
 			}
 
+			// Overwrite of an existing file: preview the actual diff before the
+			// user accepts, so they can see what will change (not just a header).
+			if (args?.content && ctx.argsComplete && !isNew) {
+				const newText = String(args.content);
+				let oldContent: string | null = null;
+				try {
+					oldContent = readFileSync(fp, "utf-8");
+				} catch {
+					oldContent = null;
+				}
+				if (oldContent !== null && oldContent !== newText) {
+					const wt = getWidthAwareText(ctx.lastComponent);
+					const diff = parseDiff(oldContent, newText, 3);
+					const lg = detectDiffLanguage(fp);
+					const headerSuffix = ` ${theme.fg(
+						"muted",
+						summarizeThemed(diff.added, diff.removed, theme),
+					)}`;
+					setDiffPreviewTask(
+						wt,
+						"wc",
+						(width: number) =>
+							formatToolFrameHeader({
+								label,
+								filePath: fp,
+								theme,
+								width,
+								suffix: headerSuffix,
+								topPad: 0,
+								bottomPad: 1,
+							}),
+						diff,
+						lg,
+						MAX_RENDER_LINES,
+						theme,
+						ctx,
+						{ previewBottomPad: 1, compactGutter: true },
+					);
+					return wt;
+				}
+				if (oldContent === newText) {
+					setToolHeaderBg(text);
+					text.__piDiffTask = undefined;
+					text.setText(
+						formatToolFrameHeaderText({
+							label,
+							filePath: fp,
+							theme,
+							suffix: `${TOOL_RESULT_INDENT}${theme.fg("muted", "(no changes)")}`,
+							topPad: 0,
+							bottomPad: 1,
+						}),
+					);
+					return text;
+				}
+				// oldContent unreadable — fall through to plain header below.
+			}
+
 			setToolHeaderBg(text);
+			text.__piDiffTask = undefined;
 			text.setText(
 				formatToolFrameHeaderText({
 					label,
@@ -2296,6 +2357,7 @@ export default async function diffRendererExtension(
 				return text;
 			}
 
+			text.__piDiffTask = undefined;
 			clearToolHeaderBg(text);
 			text.setText(
 				`${TOOL_RESULT_INDENT}${theme.fg("dim", String(result?.content?.[0]?.text ?? "written").slice(0, 120))}`,
@@ -2356,8 +2418,7 @@ export default async function diffRendererExtension(
 
 		async execute(tid: string, params: any, sig: any, upd: any, ctx: any) {
 			const normalizedParams = normalizeEditParams(params);
-			const fp =
-				normalizedParams.path ?? normalizedParams.file_path ?? "";
+			const fp = normalizedParams.path ?? normalizedParams.file_path ?? "";
 
 			const operations = getEditOperations(normalizedParams);
 

@@ -1,9 +1,15 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { registerRtk, resetRtkState, setRtkRewriteFn } from "../rtk/index.ts";
 import registerPrettyTools from "./index.ts";
 import { renderGrepResults, renderTree } from "./render.ts";
-import type { ComponentLike, PiPrettyDeps, SdkToolDef, ThemeLike } from "./types.ts";
+import type {
+	ComponentLike,
+	PiPrettyDeps,
+	SdkToolDef,
+	ThemeLike,
+} from "./types.ts";
 
 class FakeText implements ComponentLike {
 	value = "";
@@ -75,7 +81,9 @@ function createHarness() {
 const originalDisabledTools = process.env.PRETTY_DISABLE_TOOLS;
 
 afterEach(() => {
-	if (originalDisabledTools === undefined) delete process.env.PRETTY_DISABLE_TOOLS;
+	resetRtkState();
+	if (originalDisabledTools === undefined)
+		delete process.env.PRETTY_DISABLE_TOOLS;
 	else process.env.PRETTY_DISABLE_TOOLS = originalDisabledTools;
 });
 
@@ -84,18 +92,46 @@ test("registers all five pretty built-in tools and FFF maintenance commands", as
 	const harness = createHarness();
 	await registerPrettyTools(harness.pi, harness.deps);
 
-	assert.deepEqual([...harness.tools.keys()], ["read", "bash", "ls", "find", "grep"]);
+	assert.deepEqual(
+		[...harness.tools.keys()],
+		["read", "bash", "ls", "find", "grep"],
+	);
 	assert.deepEqual([...harness.commands.keys()], ["fff-health", "fff-rescan"]);
 	assert.deepEqual([...harness.shortcuts.keys()], ["ctrl+shift+o"]);
 	assert.equal(harness.handlers.has("session_start"), true);
 });
 
-test("PRETTY_DISABLE_TOOLS leaves selected built-ins untouched", async () => {
-	process.env.PRETTY_DISABLE_TOOLS = "ls,grep";
+test("PRETTY_DISABLE_TOOLS cannot bypass RTK-covered read-only tools", async () => {
+	process.env.PRETTY_DISABLE_TOOLS = "read,ls,find,grep";
 	const harness = createHarness();
 	await registerPrettyTools(harness.pi, harness.deps);
 
-	assert.deepEqual([...harness.tools.keys()], ["read", "bash", "find"]);
+	assert.deepEqual(
+		[...harness.tools.keys()],
+		["read", "bash", "ls", "find", "grep"],
+	);
+});
+
+test("RTK rewriting remains active when pretty bash is disabled", async () => {
+	process.env.PRETTY_DISABLE_TOOLS = "bash";
+	const harness = createHarness();
+	setRtkRewriteFn((command) => `rtk-test:${command}`);
+	registerRtk(harness.pi);
+	await registerPrettyTools(harness.pi, harness.deps);
+
+	assert.equal(harness.tools.has("bash"), false);
+	const toolCallHandlers = harness.handlers.get("tool_call") ?? [];
+	assert.equal(toolCallHandlers.length, 1);
+	const event = {
+		type: "tool_call",
+		toolCallId: "bash-disabled-pretty",
+		toolName: "bash",
+		input: { command: "git status" },
+	};
+	await toolCallHandlers[0](event, {
+		signal: new AbortController().signal,
+	});
+	assert.equal(event.input.command, "rtk-test:git status");
 });
 
 test("bash renderer includes a colored exit summary", async () => {
@@ -112,7 +148,12 @@ test("bash renderer includes a colored exit summary", async () => {
 	const rendered = bash.renderResult(
 		{
 			content: [{ type: "text", text: "hello" }],
-			details: { _type: "bashResult", text: "hello", exitCode: 0, command: "echo hello" },
+			details: {
+				_type: "bashResult",
+				text: "hello",
+				exitCode: 0,
+				command: "echo hello",
+			},
 		},
 		{},
 		theme,
@@ -124,7 +165,10 @@ test("bash renderer includes a colored exit summary", async () => {
 });
 
 test("grep rendering groups files, shows line numbers, and highlights matches", () => {
-	const rendered = renderGrepResults("src/a.ts:12:const hello = true\nsrc/a.ts:18:hello()", "hello");
+	const rendered = renderGrepResults(
+		"src/a.ts:12:const hello = true\nsrc/a.ts:18:hello()",
+		"hello",
+	);
 
 	assert.match(rendered, /src\/a\.ts/);
 	assert.match(rendered, /12/);

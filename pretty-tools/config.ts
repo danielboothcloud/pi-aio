@@ -37,7 +37,9 @@ type BgThemeLike = {
 	bg?: (key: string, text: string) => string;
 };
 
-function parseAnsiRgb(ansi: string): { r: number; g: number; b: number } | null {
+function parseAnsiRgb(
+	ansi: string,
+): { r: number; g: number; b: number } | null {
 	const m = ansi.match(/\u001b\[(?:38|48);2;(\d+);(\d+);(\d+)m/);
 	return m ? { r: +m[1], g: +m[2], b: +m[3] } : null;
 }
@@ -101,12 +103,16 @@ function applyPrettyConfigBg(agentDir?: string): boolean {
 	const toolBg = hexToAnsiBg(config.background.tool);
 	if (!toolBg) return false;
 	BG_BASE = toolBg;
-	BG_ERROR = config.background.error ? (hexToAnsiBg(config.background.error) ?? toolBg) : toolBg;
+	BG_ERROR = config.background.error
+		? (hexToAnsiBg(config.background.error) ?? toolBg)
+		: toolBg;
 	RST = "\x1b[0m";
 	return true;
 }
 
-export function resolveBaseBackground(theme: BgThemeLike | null | undefined): void {
+export function resolveBaseBackground(
+	theme: BgThemeLike | null | undefined,
+): void {
 	const configDir = process.env.PRETTY_CONFIG_DIR ?? getDefaultAgentDir();
 	if (applyPrettyConfigBg(configDir)) return;
 	if (!theme?.getBgAnsi && !theme?.bg) return;
@@ -124,7 +130,8 @@ export function resolveBaseBackground(theme: BgThemeLike | null | undefined): vo
 // ---------------------------------------------------------------------------
 
 export function termWidth(): number {
-	if (process.stdout.columns) return Math.max(1, Math.min(process.stdout.columns, 210));
+	if (process.stdout.columns)
+		return Math.max(1, Math.min(process.stdout.columns, 210));
 	const raw =
 		(process.stderr as NodeJS.WriteStream & { columns?: number }).columns ||
 		Number.parseInt(process.env.COLUMNS ?? "", 10) ||
@@ -280,6 +287,12 @@ export function detectLang(fp: string): BundledLanguage | undefined {
 export function envInt(name: string, fallback: number): number {
 	const v = Number.parseInt(process.env[name] ?? "", 10);
 	return Number.isFinite(v) && v > 0 ? v : fallback;
+}
+
+/** GNU grep bash guard is on by default; PRETTY_BASH_GREP_GUARD=0 disables it. */
+export function bashGrepGuardEnabled(): boolean {
+	const v = (process.env.PRETTY_BASH_GREP_GUARD ?? "").toLowerCase();
+	return v !== "0" && v !== "false" && v !== "no" && v !== "off";
 }
 
 export const MAX_HL_CHARS = envInt("PRETTY_MAX_HL_CHARS", 80_000);
