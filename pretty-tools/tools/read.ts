@@ -1,7 +1,17 @@
 /* pi-pretty: read tool -- file reading with syntax highlighting and inline image support. */
 
 import { basename, dirname } from "node:path";
-import type { AgentToolResult, ExtensionAPI, ExtensionContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
+import type {
+	AgentToolResult,
+	ExtensionAPI,
+	ExtensionContext,
+	ToolDefinition,
+} from "@earendil-works/pi-coding-agent";
+import {
+	executeRtkTool,
+	requireRtkSuccess,
+	truncateRtkOutput,
+} from "../../rtk/tool-routing.js";
 import {
 	BG_BASE,
 	BG_ERROR,
@@ -14,9 +24,19 @@ import {
 	termWidth,
 } from "../config.js";
 import { normalizeLineEndings, shortPath } from "../helpers.js";
-import { fillToolBackground, renderFileContent, renderToolError } from "../render.js";
+import {
+	fillToolBackground,
+	renderFileContent,
+	renderToolError,
+} from "../render.js";
 import { resolveTextCtor } from "../tui-text.js";
-import type { ReadDetails, RenderCtxLike, SdkToolDef, TextContent, ThemeLike } from "../types.js";
+import type {
+	ReadDetails,
+	RenderCtxLike,
+	SdkToolDef,
+	TextContent,
+	ThemeLike,
+} from "../types.js";
 import { wrapExecuteWithMetrics } from "./metrics.js";
 
 type Result = AgentToolResult<Record<string, unknown>>;
@@ -26,12 +46,17 @@ function getSkillName(filePath: string, content: string): string | undefined {
 
 	const lines = content.split("\n");
 	if (lines[0]?.trim() === "---") {
-		const end = lines.findIndex((line, index) => index > 0 && line.trim() === "---");
+		const end = lines.findIndex(
+			(line, index) => index > 0 && line.trim() === "---",
+		);
 		for (const line of lines.slice(1, end < 0 ? 1 : end)) {
 			const match = /^name\s*:\s*(.+?)\s*$/.exec(line);
 			if (!match) continue;
 			const value = match[1].trim();
-			if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+			if (
+				(value.startsWith('"') && value.endsWith('"')) ||
+				(value.startsWith("'") && value.endsWith("'"))
+			) {
 				return value.slice(1, -1).trim() || basename(dirname(filePath));
 			}
 			return value || basename(dirname(filePath));
@@ -41,7 +66,11 @@ function getSkillName(filePath: string, content: string): string | undefined {
 	return basename(dirname(filePath));
 }
 
-function renderSkillHeader(skillName: string, expanded: boolean, theme: ThemeLike): string {
+function renderSkillHeader(
+	skillName: string,
+	expanded: boolean,
+	theme: ThemeLike,
+): string {
 	const label = theme.fg("accent", "[skill]");
 	const name = theme.fg("toolTitle", skillName);
 	const hint = theme.fg("dim", `ctrl+o to ${expanded ? "collapse" : "expand"}`);
@@ -53,7 +82,11 @@ export function registerReadTool(
 	cwd: string,
 	_fffService: unknown,
 	sdkTool: SdkToolDef,
-	TextComp?: new (t?: string, x?: number, y?: number) => { setText(v: string): void },
+	TextComp?: new (
+		t?: string,
+		x?: number,
+		y?: number,
+	) => { setText(v: string): void },
 ): void {
 	const TC = resolveTextCtor(TextComp);
 	const home = process.env.HOME ?? "";
@@ -65,29 +98,86 @@ export function registerReadTool(
 		parameters: sdkTool.parameters,
 		renderShell: "self",
 
-		execute: wrapExecuteWithMetrics(async (tid, params, sig, _upd, ctx: ExtensionContext) => {
-			const p = params as any;
-			const result = (await sdkTool.execute(tid, p, sig, undefined, ctx)) as Result;
+		execute: wrapExecuteWithMetrics(
+			async (tid, params, sig, _upd, ctx: ExtensionContext) => {
+				const p = params as any;
+				const filePath = String(p.path ?? "");
+				const isImage = /\.(?:jpe?g|png|gif|webp|bmp)$/i.test(filePath);
 
-			const imageBlock = (result.content as any[])?.find((c: any) => c.type === "image");
-			if (imageBlock) {
+				if (!isImage) {
+					const routed = await executeRtkTool(
+						pi,
+						"read",
+						[filePath, "--line-numbers"],
+						ctx.cwd,
+						sig,
+					);
+					if (routed) {
+						requireRtkSuccess("read", routed);
+						const offset =
+							typeof p.offset === "number" ? Math.max(1, p.offset) : 1;
+						const end =
+							typeof p.limit === "number"
+								? offset + Math.max(0, p.limit)
+								: Infinity;
+						const numberedLines = normalizeLineEndings(routed.stdout)
+							.trimEnd()
+							.split("\n")
+							.map((line) => /^\s*(\d+)\s+[│|]\s?(.*)$/.exec(line))
+							.filter((match): match is RegExpExecArray => match !== null)
+							.map((match) => ({
+								number: Number(match[1]),
+								text: match[2] ?? "",
+							}));
+						const selected = numberedLines
+							.filter((line) => line.number >= offset && line.number < end)
+							.map((line) => line.text);
+						const start = offset - 1;
+						const tc = truncateRtkOutput(selected.join("\n"));
+						return {
+							content: [{ type: "text" as const, text: tc }],
+							details: {
+								_type: "readFile",
+								filePath,
+								content: tc,
+								offset: start,
+								lineCount: tc ? tc.split("\n").length : 0,
+							} as ReadDetails,
+						};
+					}
+				}
+
+				// Images have no RTK representation. SDK execution is also the fail-open
+				// path when the RTK binary cannot execute the requested text read.
+				const result = (await sdkTool.execute(
+					tid,
+					p,
+					sig,
+					undefined,
+					ctx,
+				)) as Result;
+				const imageBlock = (result.content as any[])?.find(
+					(c: any) => c.type === "image",
+				);
+				if (imageBlock) {
+					result.details = {
+						_type: "readImage",
+						filePath,
+					} as ReadDetails;
+					return result;
+				}
+
+				const tc = normalizeLineEndings(getText(result));
 				result.details = {
-					_type: "readImage",
-					filePath: String(p.path ?? ""),
+					_type: "readFile",
+					filePath,
+					content: tc,
+					offset: typeof p.offset === "number" ? p.offset : 0,
+					lineCount: tc ? tc.split("\n").length : 0,
 				} as ReadDetails;
 				return result;
-			}
-
-			const tc = normalizeLineEndings(getText(result));
-			result.details = {
-				_type: "readFile",
-				filePath: String(p.path ?? ""),
-				content: tc,
-				offset: typeof p.offset === "number" ? p.offset : 0,
-				lineCount: tc ? tc.split("\n").length : 0,
-			} as ReadDetails;
-			return result;
-		}),
+			},
+		),
 
 		renderCall(args: any, theme: ThemeLike, ctx: RenderCtxLike) {
 			resolveBaseBackground(theme);
@@ -100,17 +190,32 @@ export function registerReadTool(
 
 			const path = String(args.path ?? "");
 			const label = theme.fg("error", theme.bold("→ read"));
-			text.setText(fillToolBackground(`\n${TOOL_RESULT_INDENT}${label} ${theme.fg("toolTitle", path)}\n`, BG_ERROR));
+			text.setText(
+				fillToolBackground(
+					`\n${TOOL_RESULT_INDENT}${label} ${theme.fg("toolTitle", path)}\n`,
+					BG_ERROR,
+				),
+			);
 			return text;
 		},
 
-		renderResult(result: Result, _opt: unknown, theme: ThemeLike, ctx: RenderCtxLike) {
+		renderResult(
+			result: Result,
+			_opt: unknown,
+			theme: ThemeLike,
+			ctx: RenderCtxLike,
+		) {
 			resolveBaseBackground(theme);
 
 			const text = ctx.lastComponent ?? new TC("", 0, 0);
 
 			if (ctx.isError) {
-				text.setText(fillToolBackground(renderToolError(getText(result) || "Error", theme), BG_ERROR));
+				text.setText(
+					fillToolBackground(
+						renderToolError(getText(result) || "Error", theme),
+						BG_ERROR,
+					),
+				);
 				return text;
 			}
 
@@ -137,7 +242,9 @@ export function registerReadTool(
 				if (!ctx.expanded) {
 					if (skillName) {
 						const header = renderSkillHeader(skillName, false, theme);
-						text.setText(fillToolBackground(`\n${TOOL_RESULT_INDENT}${header}\n`, BG_BASE));
+						text.setText(
+							fillToolBackground(`\n${TOOL_RESULT_INDENT}${header}\n`, BG_BASE),
+						);
 						return text;
 					}
 					text.setText(
@@ -162,14 +269,17 @@ export function registerReadTool(
 				for (let i = 0; i < show.length; i++) {
 					const ln = (d.offset || 0) + i + 1;
 					const code = show[i] ?? "";
-					const display = code.length > cw ? code.slice(0, cw) + `${FG_DIM}›${RST}` : code;
+					const display =
+						code.length > cw ? code.slice(0, cw) + `${FG_DIM}›${RST}` : code;
 					const lineNo = String(ln);
 					out.push(
 						`${TOOL_RESULT_INDENT}${FG_LNUM}${" ".repeat(Math.max(0, nw - lineNo.length))}${lineNo}${RST} ${FG_RULE}│${RST} ${display}${RST}`,
 					);
 				}
 				if (total > maxShow) {
-					out.push(`${TOOL_RESULT_INDENT}${FG_DIM}… ${total - maxShow} more lines (${total} total)${RST}`);
+					out.push(
+						`${TOOL_RESULT_INDENT}${FG_DIM}… ${total - maxShow} more lines (${total} total)${RST}`,
+					);
 				}
 				out.push("");
 				const rendered = out.join("\n");

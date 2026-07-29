@@ -1,14 +1,40 @@
-/* pi-pretty: find tool -- FFF-backed file search with SDK (fd) fallback. */
+/* pi-pretty: find tool -- RTK-enforced file search with SDK fallback. */
 
-import { isAbsolute, relative } from "node:path";
-import type { AgentToolResult, ExtensionAPI, ExtensionContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
-import { BG_ERROR, FG_DIM, RST, resolveBaseBackground, TOOL_RESULT_INDENT } from "../config.js";
-import { isLikelyGlobPattern, normalizeFindGlobPattern } from "../find-glob.js";
+import { join } from "node:path";
+import type {
+	AgentToolResult,
+	ExtensionAPI,
+	ExtensionContext,
+	ToolDefinition,
+} from "@earendil-works/pi-coding-agent";
+import {
+	executeRtkTool,
+	limitRtkLines,
+	requireRtkSuccess,
+} from "../../rtk/tool-routing.js";
+import {
+	BG_ERROR,
+	FG_DIM,
+	RST,
+	resolveBaseBackground,
+	TOOL_RESULT_INDENT,
+} from "../config.js";
 import { shortPath } from "../helpers.js";
-import { NOTICE_PARTIAL_FILE_INDEX } from "../notices.js";
-import { fillToolBackground, renderFindResults, renderToolDuration, renderToolError } from "../render.js";
+import {
+	fillToolBackground,
+	renderFindResults,
+	renderToolDuration,
+	renderToolError,
+} from "../render.js";
 import { resolveTextCtor } from "../tui-text.js";
-import type { FffServiceWithCursor, FindDetails, RenderCtxLike, SdkToolDef, TextContent, ThemeLike } from "../types.js";
+import type {
+	FffServiceWithCursor,
+	FindDetails,
+	RenderCtxLike,
+	SdkToolDef,
+	TextContent,
+	ThemeLike,
+} from "../types.js";
 import { wrapExecuteWithMetrics } from "./metrics.js";
 
 type Result = AgentToolResult<Record<string, unknown>>;
@@ -20,24 +46,43 @@ function getText(result: Result): string {
 		.join("\n");
 }
 
-function buildGlobPattern(pattern: string, path: string | undefined, basePath: string | null): string {
-	const raw = pattern.startsWith("/") ? pattern.slice(1) : pattern;
-	const normalized = normalizeFindGlobPattern(raw);
-	let cleanPath = path ?? "";
-	if (cleanPath && isAbsolute(cleanPath) && basePath) {
-		cleanPath = relative(basePath, cleanPath) || "";
+function buildRtkFindArgs(
+	pattern: string,
+	path: string | undefined,
+): string[] | undefined {
+	const absolute = pattern.startsWith("/");
+	const parts = pattern
+		.replace(/^\.?\//, "")
+		.split("/")
+		.filter(Boolean);
+	const filePattern = parts.pop() ?? pattern;
+	const staticDirectories: string[] = [];
+
+	for (const part of parts) {
+		if (part === "**") continue;
+		if (/[*?[\]]/.test(part)) return undefined;
+		staticDirectories.push(part);
 	}
-	cleanPath = cleanPath.replace(/\/$/, "");
-	if (cleanPath) {
-		if (normalized.startsWith("**/")) {
-			return `${cleanPath}/${normalized}`;
+
+	const searchPath = join(absolute ? "/" : (path ?? "."), ...staticDirectories);
+	return [filePattern, searchPath];
+}
+
+function parseRtkFindOutput(output: string, limit: number): string {
+	const lines = output.replace(/\r\n?/g, "\n").trim().split("\n");
+	const paths: string[] = [];
+
+	for (const line of lines) {
+		const match = /^(\S*\/)\s+(.+)$/.exec(line.trim());
+		if (!match) continue;
+		const directory = match[1] === "./" ? "" : match[1];
+		for (const file of (match[2] ?? "").split(/\s+/).filter(Boolean)) {
+			paths.push(`${directory}${file}`);
+			if (paths.length >= limit) return paths.join("\n");
 		}
-		if (normalized.includes("/")) {
-			return `${cleanPath}/${normalized}`;
-		}
-		return `${cleanPath}/**/${normalized}`;
 	}
-	return normalized.startsWith("**/") || normalized.includes("/") ? normalized : `**/${normalized}`;
+
+	return paths.length > 0 ? paths.join("\n") : limitRtkLines(output, limit);
 }
 
 async function sdkFindAsFindResult(
@@ -49,7 +94,13 @@ async function sdkFindAsFindResult(
 	pattern: string,
 	extraNotices: string[],
 ): Promise<Result> {
-	const result = (await sdkTool.execute(tid, params, sig, undefined, ctx)) as Result;
+	const result = (await sdkTool.execute(
+		tid,
+		params,
+		sig,
+		undefined,
+		ctx,
+	)) as Result;
 	const tc = getText(result);
 	const prev = (result.details as FindDetails | undefined)?.notices ?? [];
 	const notices = [...(Array.isArray(prev) ? prev : []), ...extraNotices];
@@ -66,9 +117,13 @@ async function sdkFindAsFindResult(
 export function registerFindTool(
 	pi: ExtensionAPI,
 	cwd: string,
-	fffService: FffServiceWithCursor | null | undefined,
+	_fffService: FffServiceWithCursor | null | undefined,
 	sdkTool: SdkToolDef,
-	TextComp?: new (t?: string, x?: number, y?: number) => { setText(v: string): void },
+	TextComp?: new (
+		t?: string,
+		x?: number,
+		y?: number,
+	) => { setText(v: string): void },
 ): void {
 	const TC = resolveTextCtor(TextComp);
 	const home = process.env.HOME ?? "";
@@ -80,81 +135,78 @@ export function registerFindTool(
 		parameters: sdkTool.parameters,
 		renderShell: "self",
 
-		execute: wrapExecuteWithMetrics(async (tid, params, sig, _upd, ctx: ExtensionContext) => {
-			const pattern = String(params.pattern ?? "");
-			const path = params.path ? String(params.path) : undefined;
-			const limit = params.limit;
-			const fff = fffService?.isAvailable ? fffService.getFinder() : null;
-
-			if (fff) {
-				try {
-					const effectiveLimit = Math.max(1, typeof limit === "number" ? limit : 100);
-					const basePathResult = fff.getBasePath();
-					const basePath = basePathResult.ok ? basePathResult.value : null;
-					const globPattern = buildGlobPattern(pattern, path, basePath);
-					const searchResult = fff.glob(globPattern, {
-						pageSize: effectiveLimit,
-					});
-
-					if (searchResult.ok) {
-						const items = searchResult.value.items.slice(0, effectiveLimit);
-						const notices: string[] = [];
-						if (fffService?.partialIndex) notices.push(NOTICE_PARTIAL_FILE_INDEX);
-						if (items.length >= effectiveLimit) notices.push(`${effectiveLimit} limit reached`);
-						if (searchResult.value.totalMatched > items.length) {
-							notices.push(`${searchResult.value.totalMatched} total matches`);
-						}
-
-						if (items.length === 0 && isLikelyGlobPattern(pattern)) {
-							return sdkFindAsFindResult(sdkTool, tid, params, sig, ctx, pattern, [
-								"FFF glob returned no matches; results from SDK find (fd).",
-								...notices,
-							]);
-						}
-
-						if (items.length > 0) notices.push("Search engine: FFF glob.");
-						else if (notices.length === 0) notices.push("Search engine: FFF glob (no matches).");
-
-						const paths = items.map((i) => i.relativePath).join("\n");
-						return {
-							content: [{ type: "text" as const, text: paths }],
-							details: {
-								_type: "findResult",
-								text: paths,
-								pattern,
-								matchCount: items.length,
-								notices,
-							},
-						};
-					}
-				} catch {
-					/* fall through to SDK */
+		execute: wrapExecuteWithMetrics(
+			async (tid, params, sig, _upd, ctx: ExtensionContext) => {
+				const pattern = String(params.pattern ?? "");
+				const path = params.path ? String(params.path) : undefined;
+				const effectiveLimit = Math.max(
+					1,
+					typeof params.limit === "number" ? params.limit : 100,
+				);
+				const rtkArgs = buildRtkFindArgs(pattern, path);
+				if (!rtkArgs) {
+					return sdkFindAsFindResult(sdkTool, tid, params, sig, ctx, pattern, [
+						"RTK find cannot represent wildcard directory segments; results from SDK find (fd).",
+					]);
 				}
-			}
+				const routed = await executeRtkTool(pi, "find", rtkArgs, ctx.cwd, sig);
 
-			return sdkFindAsFindResult(sdkTool, tid, params, sig, ctx, pattern, [
-				fff ? "FFF find unavailable; results from SDK find (fd)." : "Search engine: SDK find (fd).",
-			]);
-		}),
+				if (routed) {
+					requireRtkSuccess("find", routed);
+					const text = parseRtkFindOutput(routed.stdout, effectiveLimit);
+					return {
+						content: [{ type: "text" as const, text }],
+						details: {
+							_type: "findResult",
+							text,
+							pattern,
+							matchCount: text ? text.split("\n").filter(Boolean).length : 0,
+							notices: ["Search engine: RTK find."],
+						},
+					};
+				}
+
+				return sdkFindAsFindResult(sdkTool, tid, params, sig, ctx, pattern, [
+					"RTK could not execute; results from SDK find (fd).",
+				]);
+			},
+		),
 
 		renderCall(args: any, theme: ThemeLike, ctx: RenderCtxLike) {
 			resolveBaseBackground(theme);
 			const a = args as { pattern?: unknown; path?: unknown; limit?: unknown };
 			const text = (ctx as RenderCtxLike).lastComponent ?? new TC("", 0, 0);
 			const pattern = a.pattern == null ? "" : String(a.pattern);
-			const pathArg = a.path == null ? "<missing>" : shortPath(cwd, home, String(a.path));
+			const pathArg =
+				a.path == null ? "<missing>" : shortPath(cwd, home, String(a.path));
 			const limit = a.limit;
-			const findLabel = theme.fg(ctx.isError ? "error" : "toolTitle", theme.bold("✱ find"));
+			const findLabel = theme.fg(
+				ctx.isError ? "error" : "toolTitle",
+				theme.bold("✱ find"),
+			);
 			const patternPart = pattern ? theme.fg("toolTitle", pattern) : "";
 			const inPart = theme.fg("dim", " in ");
 			const pathPart = theme.fg("toolOutput", pathArg);
-			const limitPart = limit !== undefined && limit !== null ? theme.fg("dim", ` limit ${limit}`) : "";
+			const limitPart =
+				limit !== undefined && limit !== null
+					? theme.fg("dim", ` limit ${limit}`)
+					: "";
 			const out = `${findLabel} ${patternPart}${inPart}${pathPart}${limitPart}`;
-			text.setText(fillToolBackground(`\n${TOOL_RESULT_INDENT}${out}\n`, ctx.isError ? BG_ERROR : undefined));
+			text.setText(
+				fillToolBackground(
+					`\n${TOOL_RESULT_INDENT}${out}\n`,
+					ctx.isError ? BG_ERROR : undefined,
+				),
+			);
 			return text;
 		},
 
-		renderResult(result: Result, _opt: unknown, theme: ThemeLike, ctx: RenderCtxLike) {
+		renderResult(
+			result: Result,
+			_opt: unknown,
+			theme: ThemeLike,
+			ctx: RenderCtxLike,
+		) {
 			resolveBaseBackground(theme);
 			const r = result;
 			const text = (ctx as RenderCtxLike).lastComponent ?? new TC("", 0, 0);
@@ -168,7 +220,11 @@ export function registerFindTool(
 					const noticeStr = d.notices?.length
 						? `\n${TOOL_RESULT_INDENT}${theme.fg("warning", `[${d.notices.join(". ")}]`)}`
 						: "";
-					text.setText(fillToolBackground(`\n${TOOL_RESULT_INDENT}${theme.fg("dim", "0 files")}${noticeStr}\n`));
+					text.setText(
+						fillToolBackground(
+							`\n${TOOL_RESULT_INDENT}${theme.fg("dim", "0 files")}${noticeStr}\n`,
+						),
+					);
 					return text;
 				}
 				if (!ctx.expanded) {
@@ -197,7 +253,9 @@ export function registerFindTool(
 			}
 			const fc = r.content?.[0] as TextContent | undefined;
 			text.setText(
-				fillToolBackground(`\n${TOOL_RESULT_INDENT}${theme.fg("dim", fc?.text?.slice(0, 120) ?? "0 files")}\n`),
+				fillToolBackground(
+					`\n${TOOL_RESULT_INDENT}${theme.fg("dim", fc?.text?.slice(0, 120) ?? "0 files")}\n`,
+				),
 			);
 			return text;
 		},

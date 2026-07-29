@@ -19,7 +19,6 @@ import {
 import {
 	buildRtkUserBashResult,
 	cacheNotify,
-	isRtkEnabled,
 	probeRtkAvailability,
 	rewriteAgentBashCommand,
 } from "./rewrite.js";
@@ -68,13 +67,7 @@ export function registerRtk(pi: ExtensionAPI): void {
 
 	pi.on("user_bash", (event, ctx: ExtensionContext) => {
 		cacheNotify((message, level) => ctx.ui.notify(message, level));
-
-		// !!<cmd> is excluded from model context by design — do not intercept.
-		if (event.excludeFromContext) return;
-
-		// Session toggle off: fall through to Pi's normal user shell handling.
-		if (!isRtkEnabled()) return;
-
+		// !! still controls model-context inclusion; it no longer bypasses RTK.
 		return buildRtkUserBashResult(event.command, localBashOperations);
 	});
 }

@@ -6,11 +6,9 @@ import type {
 	ExtensionCommandContext,
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import { isRtkEnabled, setRtkEnabled } from "./rewrite.js";
-
 const REWRITE_TIMEOUT_MS = 5000;
 const RTK_STATUS_KEY = "rtk";
-const VALID_RTK_SUBCOMMANDS = ["enable", "disable", "status"] as const;
+const VALID_RTK_SUBCOMMANDS = ["status"] as const;
 
 type RtkSubcommand = (typeof VALID_RTK_SUBCOMMANDS)[number];
 
@@ -25,9 +23,7 @@ function isRtkSubcommand(value: string): value is RtkSubcommand {
 }
 
 function renderStatusText(ctx: ExtensionContext): string {
-	return isRtkEnabled()
-		? ctx.ui.theme.fg("success", "rtk ✓")
-		: ctx.ui.theme.fg("error", "rtk ✗");
+	return ctx.ui.theme.fg("success", "rtk ✓");
 }
 
 export function updateRtkFooter(ctx: ExtensionContext): void {
@@ -41,9 +37,7 @@ export function clearRtkFooter(ctx: ExtensionContext): void {
 }
 
 function rtkStatusReport(ctx: ExtensionContext): StatusReport {
-	const state = isRtkEnabled()
-		? ctx.ui.theme.fg("success", "enabled")
-		: ctx.ui.theme.fg("warning", "disabled");
+	const state = ctx.ui.theme.fg("success", "enforced");
 
 	const version = spawnSync("rtk", ["--version"], {
 		encoding: "utf-8",
@@ -64,9 +58,9 @@ function rtkStatusReport(ctx: ExtensionContext): StatusReport {
 	}
 
 	return {
-		state: `Session toggle: ${state}`,
+		state: `Routing: ${state}`,
 		binary: `Binary: ${binary}`,
-		tip: "Tip: bypass rtk for one command with !RTK_DISABLED=1 <cmd>.",
+		tip: "Native fallback is used only when RTK has no equivalent or cannot execute.",
 	};
 }
 
@@ -75,34 +69,16 @@ function showRtkStatus(ctx: ExtensionContext): void {
 	ctx.ui.notify(`${report.state}\n${report.binary}\n${report.tip}`, "info");
 }
 
-async function showRtkOverlay(ctx: ExtensionContext): Promise<void> {
-	const selected = await ctx.ui.select("aio-rtk", [
-		"enable",
-		"disable",
-		"status",
-	]);
-	if (selected === undefined || !isRtkSubcommand(selected)) return;
-	handleRtkSubcommand(selected, ctx);
-}
-
 export function handleRtkSubcommand(
 	subcommand: RtkSubcommand,
 	ctx: ExtensionContext,
 ): void {
-	if (subcommand === "status") {
-		showRtkStatus(ctx);
-		return;
-	}
-
-	setRtkEnabled(subcommand === "enable");
-	updateRtkFooter(ctx);
-	ctx.ui.notify(`aio-rtk ${subcommand}d for this session`, "info");
+	if (subcommand === "status") showRtkStatus(ctx);
 }
 
 export function registerRtkCommand(pi: ExtensionAPI): void {
 	pi.registerCommand("rtk", {
-		description:
-			"Control aio-rtk shell command rewriting (enable | disable | status)",
+		description: "Show enforced aio-rtk routing status",
 		getArgumentCompletions: (prefix: string) => {
 			const completions = VALID_RTK_SUBCOMMANDS.filter((sub) =>
 				sub.startsWith(prefix),
@@ -113,13 +89,13 @@ export function registerRtkCommand(pi: ExtensionAPI): void {
 			const subcommand = args.trim();
 
 			if (subcommand.length === 0) {
-				await showRtkOverlay(ctx);
+				showRtkStatus(ctx);
 				return;
 			}
 
 			if (!isRtkSubcommand(subcommand)) {
 				ctx.ui.notify(
-					"Unknown /rtk subcommand. Valid forms: /rtk enable, /rtk disable, /rtk status.",
+					"RTK routing is enforced. The only subcommand is /rtk status.",
 					"error",
 				);
 				return;

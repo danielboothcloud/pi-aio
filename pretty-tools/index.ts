@@ -233,19 +233,21 @@ export default async function piPrettyExtension(
 	// Tool registration
 	// ------------------------------------------------------------------
 
-	if (isToolEnabled("read") && createReadTool) {
+	// RTK-covered read-only tools are mandatory. PRETTY_DISABLE_TOOLS may still
+	// disable the bash renderer, but cannot silently restore native read/search.
+	if (createReadTool) {
 		registerReadTool(pi, cwd, null, createReadTool(cwd), TextComp);
 	}
 	if (isToolEnabled("bash") && createBashTool) {
 		registerBashTool(pi, cwd, null, createBashTool(cwd), TextComp);
 	}
-	if (isToolEnabled("ls") && createLsTool) {
+	if (createLsTool) {
 		registerLsTool(pi, cwd, null, createLsTool(cwd), TextComp);
 	}
-	if (isToolEnabled("find") && createFindTool) {
+	if (createFindTool) {
 		registerFindTool(pi, cwd, fffService, createFindTool(cwd), TextComp);
 	}
-	if (isToolEnabled("grep") && createGrepTool) {
+	if (createGrepTool) {
 		registerGrepTool(pi, cwd, fffService, createGrepTool(cwd), TextComp);
 	}
 }

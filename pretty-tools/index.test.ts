@@ -101,12 +101,15 @@ test("registers all five pretty built-in tools and FFF maintenance commands", as
 	assert.equal(harness.handlers.has("session_start"), true);
 });
 
-test("PRETTY_DISABLE_TOOLS leaves selected built-ins untouched", async () => {
-	process.env.PRETTY_DISABLE_TOOLS = "ls,grep";
+test("PRETTY_DISABLE_TOOLS cannot bypass RTK-covered read-only tools", async () => {
+	process.env.PRETTY_DISABLE_TOOLS = "read,ls,find,grep";
 	const harness = createHarness();
 	await registerPrettyTools(harness.pi, harness.deps);
 
-	assert.deepEqual([...harness.tools.keys()], ["read", "bash", "find"]);
+	assert.deepEqual(
+		[...harness.tools.keys()],
+		["read", "bash", "ls", "find", "grep"],
+	);
 });
 
 test("RTK rewriting remains active when pretty bash is disabled", async () => {

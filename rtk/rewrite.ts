@@ -10,13 +10,9 @@
  * 2. User `!<cmd>` shell commands — {@link buildRtkUserBashResult} returns custom
  *    bash operations that execute the rewritten command.
  *
- * Both paths fall back silently when rtk is unavailable, disabled, or cannot
- * rewrite a command. `!!<cmd>` is intentionally not intercepted here — callers
- * skip it so the user's choice to exclude shell output from model context is
- * preserved.
- *
- * The session toggle is in-memory only: it resets to enabled on every Pi process
- * start and is never persisted to disk.
+ * Both paths fall back silently only when rtk is unavailable or cannot rewrite
+ * a command. Routing is enforced for the process: there is no session toggle or
+ * RTK_DISABLED escape hatch in aio.
  */
 
 import { spawnSync } from "node:child_process";
@@ -28,19 +24,13 @@ import type {
 
 const REWRITE_TIMEOUT_MS = 2_000;
 
-// ---------------------------------------------------------------------------
-// Session toggle (in-memory only)
-// ---------------------------------------------------------------------------
-
-let sessionEnabled = true;
-
+// Kept as compatibility exports for consumers of earlier aio releases. RTK is
+// now mandatory, so attempts to disable it are intentionally ignored.
 export function isRtkEnabled(): boolean {
-	return sessionEnabled;
+	return true;
 }
 
-export function setRtkEnabled(enabled: boolean): void {
-	sessionEnabled = enabled;
-}
+export function setRtkEnabled(_enabled: boolean): void {}
 
 // ---------------------------------------------------------------------------
 // Spawn seam — overridable for tests so unit tests never invoke the real rtk
@@ -81,7 +71,6 @@ export function cacheNotify(notify: Notify): void {
 
 /** Reset all module state to defaults. Intended for tests. */
 export function resetRtkState(): void {
-	sessionEnabled = true;
 	rtkUnavailableNotified = false;
 	cachedNotify = null;
 	rewriteFn = defaultRtkRewrite;
@@ -114,6 +103,7 @@ function defaultRtkRewrite(command: string): string | undefined {
 	// and 3 for an advisory rewrite. Permission decisions remain owned by aio's
 	// permission modes.
 	try {
+		delete process.env.RTK_DISABLED;
 		const result = spawnSync("rtk", ["rewrite", command], {
 			encoding: "utf-8",
 			timeout: REWRITE_TIMEOUT_MS,
@@ -141,11 +131,17 @@ function defaultRtkRewrite(command: string): string | undefined {
 
 function shouldSkipRewrite(command: string): boolean {
 	const trimmed = command.trimStart();
-	return (
-		trimmed === "rtk" ||
-		trimmed.startsWith("rtk ") ||
-		process.env.RTK_DISABLED === "1" ||
-		/^(?:env\s+)?RTK_DISABLED=1(?:\s|$)/.test(trimmed)
+	return trimmed === "rtk" || trimmed.startsWith("rtk ");
+}
+
+function removeRtkDisabledPrefix(command: string): string {
+	return command.replace(
+		/(^|(?:&&|\|\||;|\|)\s*)((?:env\s+)?(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+)+)/g,
+		(_match, boundary: string, assignments: string) => {
+			let cleaned = assignments.replace(/\bRTK_DISABLED=1\s+/g, "");
+			if (/^\s*env\s*$/.test(cleaned)) cleaned = "";
+			return `${boundary}${cleaned}`;
+		},
 	);
 }
 
@@ -155,9 +151,11 @@ function shouldSkipRewrite(command: string): boolean {
  * synchronous path used by the original integration.
  */
 export function rtkRewriteCommand(command: string): string | undefined {
-	if (!sessionEnabled || shouldSkipRewrite(command)) return undefined;
-	const rewritten = rewriteFn(command);
-	return rewritten && rewritten !== command ? rewritten : undefined;
+	delete process.env.RTK_DISABLED;
+	const enforcedCommand = removeRtkDisabledPrefix(command);
+	if (shouldSkipRewrite(enforcedCommand)) return undefined;
+	const rewritten = rewriteFn(enforcedCommand);
+	return rewritten && rewritten !== enforcedCommand ? rewritten : undefined;
 }
 
 /**
@@ -170,13 +168,16 @@ export async function rewriteAgentBashCommand(
 	command: string,
 	signal?: AbortSignal,
 ): Promise<string | undefined> {
-	if (!sessionEnabled || shouldSkipRewrite(command)) return undefined;
+	delete process.env.RTK_DISABLED;
+	const enforcedCommand = removeRtkDisabledPrefix(command);
+	if (shouldSkipRewrite(enforcedCommand)) return undefined;
 
 	// Keep the existing injection seam deterministic for unit tests.
-	if (rewriteFn !== defaultRtkRewrite) return rtkRewriteCommand(command);
+	if (rewriteFn !== defaultRtkRewrite)
+		return rtkRewriteCommand(enforcedCommand);
 
 	try {
-		const result = await pi.exec("rtk", ["rewrite", command], {
+		const result = await pi.exec("rtk", ["rewrite", enforcedCommand], {
 			timeout: REWRITE_TIMEOUT_MS,
 			signal,
 		});
@@ -184,7 +185,7 @@ export async function rewriteAgentBashCommand(
 			return undefined;
 		}
 		const rewritten = result.stdout.trimEnd();
-		return rewritten && rewritten !== command ? rewritten : undefined;
+		return rewritten && rewritten !== enforcedCommand ? rewritten : undefined;
 	} catch {
 		// RTK is an optimization. Never prevent the original command from running.
 		return undefined;
@@ -206,16 +207,13 @@ export function probeRtkAvailability(): void {
 
 /**
  * Build a {@link UserBashEventResult} that executes the rewritten command via
- * the supplied bash operations. Returns `undefined` when rewriting is disabled or
- * rtk cannot rewrite the command, so the caller falls through to Pi's normal
- * user shell handling.
+ * the supplied bash operations. Returns `undefined` only when rtk cannot rewrite
+ * the command, so the caller falls through to Pi's normal user shell handling.
  */
 export function buildRtkUserBashResult(
 	command: string,
 	operations: BashOperations,
 ): UserBashEventResult | undefined {
-	if (!sessionEnabled) return undefined;
-
 	const rewritten = rtkRewriteCommand(command);
 	if (rewritten === undefined) return undefined;
 

@@ -1,11 +1,38 @@
 /* pi-pretty: ls tool -- directory listing with styled output. */
 
-import type { AgentToolResult, ExtensionAPI, ExtensionContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
-import { BG_ERROR, FG_DIM, RST, resolveBaseBackground, TOOL_RESULT_INDENT } from "../config.js";
+import type {
+	AgentToolResult,
+	ExtensionAPI,
+	ExtensionContext,
+	ToolDefinition,
+} from "@earendil-works/pi-coding-agent";
+import {
+	executeRtkTool,
+	limitRtkLines,
+	requireRtkSuccess,
+} from "../../rtk/tool-routing.js";
+import {
+	BG_ERROR,
+	FG_DIM,
+	RST,
+	resolveBaseBackground,
+	TOOL_RESULT_INDENT,
+} from "../config.js";
 import { shortPath } from "../helpers.js";
-import { fillToolBackground, renderToolError, renderToolMetrics, renderTree } from "../render.js";
+import {
+	fillToolBackground,
+	renderToolError,
+	renderToolMetrics,
+	renderTree,
+} from "../render.js";
 import { resolveTextCtor } from "../tui-text.js";
-import type { LsDetails, RenderCtxLike, SdkToolDef, TextContent, ThemeLike } from "../types.js";
+import type {
+	LsDetails,
+	RenderCtxLike,
+	SdkToolDef,
+	TextContent,
+	ThemeLike,
+} from "../types.js";
 import { wrapExecuteWithMetrics } from "./metrics.js";
 
 type Result = AgentToolResult<Record<string, unknown>>;
@@ -15,7 +42,11 @@ export function registerLsTool(
 	cwd: string,
 	_fffService: unknown,
 	sdkTool: SdkToolDef,
-	TextComp?: new (t?: string, x?: number, y?: number) => { setText(v: string): void },
+	TextComp?: new (
+		t?: string,
+		x?: number,
+		y?: number,
+	) => { setText(v: string): void },
 ): void {
 	const home = process.env.HOME ?? "";
 	const TC = resolveTextCtor(TextComp);
@@ -27,35 +58,85 @@ export function registerLsTool(
 		parameters: sdkTool.parameters,
 		renderShell: "self",
 
-		execute: wrapExecuteWithMetrics(async (tid, params, sig, _upd, ctx: ExtensionContext) => {
-			const result = (await sdkTool.execute(tid, params, sig, undefined, ctx)) as Result;
-			const tc = getText(result);
-			result.details = {
-				_type: "lsResult",
-				text: tc,
-				path: String((params as any).path ?? ""),
-				entryCount: tc ? tc.trim().split("\n").filter(Boolean).length : 0,
-			} as LsDetails;
-			return result;
-		}),
+		execute: wrapExecuteWithMetrics(
+			async (tid, params, sig, _upd, ctx: ExtensionContext) => {
+				const path = String((params as any).path ?? ".");
+				const limit = Math.max(
+					1,
+					typeof (params as any).limit === "number"
+						? (params as any).limit
+						: 500,
+				);
+				const routed = await executeRtkTool(
+					pi,
+					"ls",
+					["-A", path],
+					ctx.cwd,
+					sig,
+				);
+
+				if (routed) {
+					requireRtkSuccess("ls", routed);
+					const tc = limitRtkLines(routed.stdout, limit);
+					return {
+						content: [{ type: "text" as const, text: tc }],
+						details: {
+							_type: "lsResult",
+							text: tc,
+							path,
+							entryCount: tc ? tc.split("\n").filter(Boolean).length : 0,
+						} as LsDetails,
+					};
+				}
+
+				const result = (await sdkTool.execute(
+					tid,
+					params,
+					sig,
+					undefined,
+					ctx,
+				)) as Result;
+				const tc = getText(result);
+				result.details = {
+					_type: "lsResult",
+					text: tc,
+					path,
+					entryCount: tc ? tc.trim().split("\n").filter(Boolean).length : 0,
+				} as LsDetails;
+				return result;
+			},
+		),
 
 		renderCall(args: any, theme: ThemeLike, ctx: RenderCtxLike) {
 			resolveBaseBackground(theme);
 			const text = ctx.lastComponent ?? new TC("", 0, 0);
 			const rawPath = args.path;
 			const path =
-				rawPath === null || rawPath === undefined || String(rawPath).length === 0
+				rawPath === null ||
+				rawPath === undefined ||
+				String(rawPath).length === 0
 					? ""
 					: shortPath(cwd, home, String(rawPath));
 			const limit = args.limit;
 			let out = theme.fg("toolTitle", theme.bold("ls"));
 			if (path) out += ` ${theme.fg("accent", path)}`;
-			if (limit !== undefined && limit !== null) out += theme.fg("toolOutput", ` (limit ${limit})`);
-			text.setText(fillToolBackground(`\n${TOOL_RESULT_INDENT}${out}\n`, ctx.isError ? BG_ERROR : undefined));
+			if (limit !== undefined && limit !== null)
+				out += theme.fg("toolOutput", ` (limit ${limit})`);
+			text.setText(
+				fillToolBackground(
+					`\n${TOOL_RESULT_INDENT}${out}\n`,
+					ctx.isError ? BG_ERROR : undefined,
+				),
+			);
 			return text;
 		},
 
-		renderResult(result: Result, _opt: unknown, theme: ThemeLike, ctx: RenderCtxLike) {
+		renderResult(
+			result: Result,
+			_opt: unknown,
+			theme: ThemeLike,
+			ctx: RenderCtxLike,
+		) {
 			resolveBaseBackground(theme);
 
 			const text = ctx.lastComponent ?? new TC("", 0, 0);

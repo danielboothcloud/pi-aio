@@ -13,26 +13,12 @@ import {
 	setRtkRewriteFn,
 } from "./rewrite.ts";
 
-const originalRtkDisabled = process.env.RTK_DISABLED;
+beforeEach(() => resetRtkState());
+afterEach(() => resetRtkState());
 
-beforeEach(() => {
-	resetRtkState();
-	delete process.env.RTK_DISABLED;
-});
-afterEach(() => {
-	resetRtkState();
-	if (originalRtkDisabled === undefined) delete process.env.RTK_DISABLED;
-	else process.env.RTK_DISABLED = originalRtkDisabled;
-});
-
-test("session toggle defaults to enabled", () => {
+test("RTK routing is always enabled", () => {
 	assert.equal(isRtkEnabled(), true);
-});
-
-test("setRtkEnabled flips the toggle", () => {
 	setRtkEnabled(false);
-	assert.equal(isRtkEnabled(), false);
-	setRtkEnabled(true);
 	assert.equal(isRtkEnabled(), true);
 });
 
@@ -102,26 +88,36 @@ test("rewriteAgentBashCommand falls through on no-equivalent or killed execution
 	);
 });
 
-test("rewriteAgentBashCommand skips disabled, bypassed, and already rewritten commands", async () => {
-	let calls = 0;
+test("rewriteAgentBashCommand enforces routing and strips bypass prefixes", async () => {
+	const commands: string[] = [];
 	const pi = {
-		async exec() {
-			calls++;
+		async exec(_binary: string, args: string[]) {
+			commands.push(args[1] ?? "");
 			return { stdout: "rewritten", stderr: "", code: 0, killed: false };
 		},
 	} as unknown as ExtensionAPI;
 
 	setRtkEnabled(false);
-	assert.equal(await rewriteAgentBashCommand(pi, "git status"), undefined);
-	setRtkEnabled(true);
+	process.env.RTK_DISABLED = "1";
+	assert.equal(await rewriteAgentBashCommand(pi, "git status"), "rewritten");
+	assert.equal(process.env.RTK_DISABLED, undefined);
 	assert.equal(await rewriteAgentBashCommand(pi, "rtk git status"), undefined);
 	assert.equal(
 		await rewriteAgentBashCommand(pi, "RTK_DISABLED=1 git status"),
-		undefined,
+		"rewritten",
 	);
-	process.env.RTK_DISABLED = "1";
-	assert.equal(await rewriteAgentBashCommand(pi, "git status"), undefined);
-	assert.equal(calls, 0);
+	assert.equal(
+		await rewriteAgentBashCommand(
+			pi,
+			"FOO=1 RTK_DISABLED=1 git status && env RTK_DISABLED=1 ls",
+		),
+		"rewritten",
+	);
+	assert.deepEqual(commands, [
+		"git status",
+		"git status",
+		"FOO=1 git status && ls",
+	]);
 });
 
 test("rewriteAgentBashCommand supports the injected rewrite seam", async () => {
@@ -165,16 +161,16 @@ test("buildRtkUserBashResult falls through without an equivalent", () => {
 	assert.equal(result, undefined);
 });
 
-test("buildRtkUserBashResult falls through when disabled or bypassed", () => {
-	setRtkRewriteFn(() => "rtk-rewritten");
+test("buildRtkUserBashResult cannot be disabled or bypassed", () => {
+	const seen: string[] = [];
+	setRtkRewriteFn((command) => {
+		seen.push(command);
+		return `rtk:${command}`;
+	});
 	setRtkEnabled(false);
-	assert.equal(
-		buildRtkUserBashResult("git status", fakeOperations({})),
-		undefined,
-	);
-	setRtkEnabled(true);
-	assert.equal(
+	assert.ok(buildRtkUserBashResult("git status", fakeOperations({})));
+	assert.ok(
 		buildRtkUserBashResult("RTK_DISABLED=1 git status", fakeOperations({})),
-		undefined,
 	);
+	assert.deepEqual(seen, ["git status", "git status"]);
 });

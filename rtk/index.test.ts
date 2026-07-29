@@ -88,51 +88,35 @@ test("session_start sets the rtk footer status", () => {
 	assert.match(String(rtkStatus?.text), /rtk ✓/);
 });
 
-test("/rtk getArgumentCompletions returns matching subcommands", () => {
+test("/rtk getArgumentCompletions exposes status only", () => {
 	const h = makeHarness();
 	registerRtk(h.pi);
 	const cmd = h.commands.get("rtk")!;
 	const completions = (cmd.getArgumentCompletions as (p: string) => unknown[])(
-		"en",
+		"st",
 	);
-	assert.deepEqual(completions, [{ label: "enable", value: "enable" }]);
+	assert.deepEqual(completions, [{ label: "status", value: "status" }]);
 });
 
-test("handleRtkSubcommand enable turns the toggle on and notifies", () => {
-	const h = makeHarness();
-	setRtkEnabled(false);
-	handleRtkSubcommand("enable", h.ctx);
-	assert.equal(isRtkEnabled(), true);
-	assert.equal(h.notifies.at(-1)?.type, "info");
-	assert.match(String(h.notifies.at(-1)?.message), /enabled/);
-});
-
-test("handleRtkSubcommand disable turns the toggle off and notifies", () => {
-	const h = makeHarness();
-	handleRtkSubcommand("disable", h.ctx);
-	assert.equal(isRtkEnabled(), false);
-	assert.match(String(h.notifies.at(-1)?.message), /disabled/);
-});
-
-test("handleRtkSubcommand status reports state, binary, and tip", () => {
+test("handleRtkSubcommand status reports enforced state and binary", () => {
 	const h = makeHarness();
 	handleRtkSubcommand("status", h.ctx);
 	const msg = String(h.notifies.at(-1)?.message);
-	assert.match(msg, /Session toggle:/);
+	assert.match(msg, /Routing: enforced/);
 	assert.match(msg, /Binary:/);
-	assert.match(msg, /Tip:/);
+	assert.match(msg, /Native fallback/);
 });
 
-test("/rtk with no argument opens the overlay and applies the selection", async () => {
-	const h = makeHarness(["disable"]);
+test("/rtk with no argument reports enforced status", async () => {
+	const h = makeHarness();
 	registerRtk(h.pi);
 	const cmd = h.commands.get("rtk")!;
 	await (
 		cmd.handler as (a: string, c: ExtensionCommandContext) => Promise<void>
 	)("", h.commandCtx);
 
-	assert.equal(isRtkEnabled(), false);
-	assert.match(String(h.notifies.at(-1)?.message), /disabled/);
+	assert.equal(isRtkEnabled(), true);
+	assert.match(String(h.notifies.at(-1)?.message), /Routing: enforced/);
 });
 
 test("/rtk with an invalid subcommand notifies an error", async () => {
@@ -144,7 +128,7 @@ test("/rtk with an invalid subcommand notifies an error", async () => {
 	)("bogus", h.commandCtx);
 
 	assert.equal(h.notifies.at(-1)?.type, "error");
-	assert.match(String(h.notifies.at(-1)?.message), /Unknown \/rtk subcommand/);
+	assert.match(String(h.notifies.at(-1)?.message), /routing is enforced/i);
 });
 
 test("tool_call handler rewrites agent bash commands", async () => {
@@ -163,7 +147,7 @@ test("tool_call handler rewrites agent bash commands", async () => {
 	assert.equal(event.input.command, "rtk-test:git status");
 });
 
-test("tool_call handler leaves non-bash tools and disabled RTK untouched", async () => {
+test("tool_call leaves non-bash tools untouched but cannot disable RTK", async () => {
 	const h = makeHarness();
 	setRtkRewriteFn((command) => `rtk-test:${command}`);
 	registerRtk(h.pi);
@@ -185,10 +169,10 @@ test("tool_call handler leaves non-bash tools and disabled RTK untouched", async
 		input: { command: "git status" },
 	};
 	await handler(bashEvent, h.ctx);
-	assert.equal(bashEvent.input.command, "git status");
+	assert.equal(bashEvent.input.command, "rtk-test:git status");
 });
 
-test("user_bash handler skips !! commands (excluded from context)", async () => {
+test("user_bash routes !! commands while preserving Pi's context flag", async () => {
 	const h = makeHarness();
 	setRtkRewriteFn(() => "rewritten");
 	registerRtk(h.pi);
@@ -197,10 +181,10 @@ test("user_bash handler skips !! commands (excluded from context)", async () => 
 		{ type: "user_bash", command: "ls", excludeFromContext: true, cwd: "/tmp" },
 		h.ctx,
 	);
-	assert.equal(result, undefined);
+	assert.ok(result?.operations?.exec);
 });
 
-test("user_bash handler skips rewriting when the toggle is disabled", async () => {
+test("user_bash routing cannot be disabled", async () => {
 	const h = makeHarness();
 	setRtkEnabled(false);
 	setRtkRewriteFn(() => "rewritten");
@@ -215,10 +199,10 @@ test("user_bash handler skips rewriting when the toggle is disabled", async () =
 		},
 		h.ctx,
 	);
-	assert.equal(result, undefined);
+	assert.ok(result?.operations?.exec);
 });
 
-test("user_bash handler returns operations when enabled and rewrite succeeds", async () => {
+test("user_bash handler returns operations when rewrite succeeds", async () => {
 	const h = makeHarness();
 	setRtkRewriteFn(() => "rtk-rewritten");
 	registerRtk(h.pi);

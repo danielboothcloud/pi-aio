@@ -1,4 +1,4 @@
-/* pi-pretty: grep tool -- FFF-backed text search with SDK fallback. */
+/* pi-pretty: grep tool -- RTK-enforced text search with SDK fallback. */
 
 import type {
 	AgentToolResult,
@@ -7,21 +7,18 @@ import type {
 	ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import {
+	executeRtkTool,
+	requireRtkSuccess,
+	truncateRtkOutput,
+} from "../../rtk/tool-routing.js";
+import {
 	BG_ERROR,
 	FG_DIM,
 	RST,
 	resolveBaseBackground,
 	TOOL_RESULT_INDENT,
 } from "../config.js";
-import { fffFormatGrepText } from "../fff-helpers.js";
-import {
-	compactSearchSummary,
-	filterSearchNotices,
-	isPassiveExplorationMode,
-	normalizeLineEndings,
-	shortPath,
-} from "../helpers.js";
-import { NOTICE_PARTIAL_FILE_INDEX } from "../notices.js";
+import { normalizeLineEndings, shortPath } from "../helpers.js";
 import {
 	fillToolBackground,
 	renderGrepResults,
@@ -45,7 +42,7 @@ type Result = AgentToolResult<Record<string, unknown>>;
 export function registerGrepTool(
 	pi: ExtensionAPI,
 	cwd: string,
-	fffService: FffServiceWithCursor | null | undefined,
+	_fffService: FffServiceWithCursor | null | undefined,
 	sdkTool: SdkToolDef,
 	TextComp?: new (
 		t?: string,
@@ -61,12 +58,12 @@ export function registerGrepTool(
 	pi.registerTool({
 		name: "grep",
 		label: "Grep",
-		description: `${baseDescription} Runs ripgrep (rg) under the hood; never use GNU grep via bash for the same search.`,
-		promptSnippet: "Search file contents with ripgrep (rg) — never GNU grep",
+		description: `${baseDescription} Every supported search is executed through rtk grep; the SDK is used only when RTK cannot execute.`,
+		promptSnippet: "Search file contents through RTK-enforced grep",
 		promptGuidelines: [
-			"Always use the grep tool for content search instead of running GNU grep in bash; it runs ripgrep (rg).",
-			"In rg: | means alternation, \\| means literal pipe. Opposite of GNU grep. Never use \\| for alternation.",
-			"If no matches, try a broader pattern or pass path/glob explicitly; searches respect .gitignore by default.",
+			"Always use the grep tool for content search; aio enforces RTK routing for it.",
+			"In grep patterns, | means alternation and \\| means a literal pipe.",
+			"If no matches, try a broader pattern or pass path/glob explicitly.",
 		],
 		parameters: sdkTool.parameters,
 		renderShell: "self",
@@ -80,52 +77,28 @@ export function registerGrepTool(
 				const context = typeof p.context === "number" ? p.context : 0;
 				const limit = typeof p.limit === "number" ? p.limit : 200;
 				const literal = p.literal === true;
+				const effectiveLimit = Math.max(1, limit);
+				const args = ["-m", String(effectiveLimit), "-l", "500", "-R"];
+				args.push(literal ? "-F" : "-E");
+				if (p.ignoreCase === true || p.caseInsensitive === true)
+					args.push("-i");
+				if (context > 0) args.push("-C", String(context));
+				if (glob) args.push(`--include=${glob}`);
+				args.push("--", pattern, path ?? ".");
 
-				if (fffService?.isAvailable && !path && !glob) {
-					try {
-						const fff = fffService.getFinder();
-						if (!fff) throw new Error("FFF finder not available");
-						const effectiveLimit = Math.max(1, limit);
-						const grepResult = fff.grep(pattern, {
-							pageSize: effectiveLimit,
-							mode: literal ? "plain" : "regex",
-							beforeContext: context,
-							afterContext: context,
-						});
-						if (grepResult.ok) {
-							const grep = grepResult.value;
-							const items = grep.items.slice(0, effectiveLimit);
-							const cursorStore = fffService.getCursorStore();
-							const notices: string[] = [];
-							if (fffService.partialIndex)
-								notices.push(NOTICE_PARTIAL_FILE_INDEX);
-							if (items.length >= effectiveLimit)
-								notices.push(`${effectiveLimit} limit reached`);
-							if (grep.regexFallbackError)
-								notices.push(
-									`Regex failed: ${grep.regexFallbackError}, used literal match`,
-								);
-							if (grep.nextCursor) {
-								const cursorId = cursorStore.store(grep.nextCursor);
-								notices.push(`More results available: cursor="${cursorId}"`);
-							}
-							const text = appendNotices(
-								fffFormatGrepText(items, effectiveLimit),
-								notices,
-							);
-							return {
-								content: [{ type: "text" as const, text }],
-								details: {
-									_type: "grepResult",
-									text,
-									pattern,
-									matchCount: items.length,
-								} as GrepDetails,
-							};
-						}
-					} catch {
-						/* fall through */
-					}
+				const routed = await executeRtkTool(pi, "grep", args, ctx.cwd, sig);
+				if (routed) {
+					requireRtkSuccess("grep", routed, [0, 1]);
+					const tc = truncateRtkOutput(normalizeLineEndings(routed.stdout));
+					return {
+						content: [{ type: "text" as const, text: tc }],
+						details: {
+							_type: "grepResult",
+							text: tc,
+							pattern,
+							matchCount: tc ? tc.trim().split("\n").filter(Boolean).length : 0,
+						} as GrepDetails,
+					};
 				}
 
 				const result = (await sdkTool.execute(
@@ -240,8 +213,4 @@ export function registerGrepTool(
 			return text;
 		},
 	} as unknown as ToolDefinition<any, any, any>);
-}
-
-function appendNotices(text: string, notices: string[]): string {
-	return notices.length ? `${text}\n\n[${notices.join(". ")}]` : text;
 }

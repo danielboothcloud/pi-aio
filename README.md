@@ -385,19 +385,21 @@ delete any `powerline` block, and reload extensions.
 ## Pretty built-in tools
 
 `aio` replaces Pi's built-in `read`, `bash`, `ls`, `find`, and `grep` tool
-definitions while delegating their normal execution to Pi. The replacements add:
+definitions. Text reads, listings, file searches, and content searches execute
+through RTK; Pi's native implementations are used only when RTK cannot execute
+or when RTK cannot represent the result (for example, an inline image).
 
-- **`read`** — collapsed line-count summaries, expanded line-numbered Shiki syntax
-  highlighting, and Pi's native inline image rendering.
+- **`read`** — RTK-backed text reads with collapsed line-count summaries and
+  expanded line-numbered Shiki highlighting; image reads retain Pi's native
+  inline image rendering.
 - **`bash`** — colored `exit 0`/`exit 1` summaries, elapsed time, line counts,
   and expanded command output.
-- **`ls`** — Nerd Font icons and tree-oriented expanded listings.
-- **`find`** — FFF-backed, frecency-aware file search with grouped results and
-  automatic fallback to Pi's normal `fd` implementation.
-- **`grep`** — ripgrep-backed content search: the FFF index handles unscoped
-  searches, and Pi's ripgrep (`rg`) implementation handles `path`/`glob` scoped
-  searches and fallback. File grouping, line numbers, highlighted literal
-  matches, and context lines. Guidance steers agents away from GNU grep.
+- **`ls`** — RTK-backed directory listings with Nerd Font icons and tree-oriented
+  expanded output.
+- **`find`** — RTK-backed file search with grouped results and native `fd`
+  fallback only for patterns RTK cannot represent or when RTK cannot execute.
+- **`grep`** — RTK-backed recursive content search with file grouping, line
+  numbers, literal/extended-regex modes, highlighted matches, and context lines.
 - **GNU grep guard** — bare `grep`/`egrep`/`fgrep` invocations in the `bash`
   tool are blocked with a nudge to use the `grep` tool or `rg -n`. Set
   `PRETTY_BASH_GREP_GUARD=0` to allow them.
@@ -418,8 +420,9 @@ and history data under `<agent-dir>/aio/fff/`. Use these maintenance commands:
 All five enhanced tools are enabled by default. Configuration environment variables:
 
 - `PRETTY_BASH_GREP_GUARD=0` — allow GNU grep in the `bash` tool (blocked by default).
-- `PRETTY_DISABLE_TOOLS` — comma-separated tools to leave untouched.
-- `PRETTY_ENABLE_TOOLS` — explicitly enable tools if defaults change.
+- `PRETTY_DISABLE_TOOLS` — comma-separated optional renderers to leave untouched.
+  RTK-covered `read`, `ls`, `find`, and `grep` cannot be disabled through this setting.
+- `PRETTY_ENABLE_TOOLS` — explicitly enable optional tools if defaults change.
 - `PRETTY_THEME` — Shiki theme; otherwise the active Pi theme or `github-dark`.
 - `PRETTY_ICONS=none` — disable Nerd Font icons.
 - `PRETTY_MAX_HL_CHARS`, `PRETTY_MAX_PREVIEW_LINES`, `PRETTY_CACHE_LIMIT` —
@@ -442,36 +445,34 @@ own the same built-in tool names and would register duplicate FFF commands.
 
 ## rtk shell rewriting
 
-`aio` routes shell commands through [rtk](https://github.com/rtk-ai/rtk) to
-reduce LLM token usage. When the agent runs a `bash` tool call, or you run a
-`!command`, aio first rewrites the command with `rtk rewrite` and executes the
-rewritten form. Commands rtk has no equivalent for run unchanged.
+`aio` enforces [rtk](https://github.com/rtk-ai/rtk) routing wherever RTK has a
+representation. Agent `bash`, `!command`, and `!!command` inputs are offered to
+`rtk rewrite`; `read`, `ls`, `find`, and `grep` invoke their RTK subcommands
+directly. Commands for which RTK has no equivalent run unchanged because routing
+them is impossible.
 
 - **Agent `bash` tool** — an asynchronous `tool_call` hook rewrites the command
   after permission checks and before execution. This works independently of the
-  pretty bash override, so disabling or replacing its renderer does not disable RTK.
-- **`!command`** — aio returns custom bash operations that run the rewritten
-  command, layered on top of the normal permission-mode gate so blocked
-  commands never reach rtk.
-- **`!!command`** — not intercepted; output stays excluded from model context.
+  pretty bash renderer.
+- **`!command` and `!!command`** — both execute rewritten commands; Pi still keeps
+  `!!` output out of model context.
+- **Read-only built-ins** — text `read`, `ls`, `find`, and `grep` calls execute
+  through RTK even if their names appear in `PRETTY_DISABLE_TOOLS`.
+- **Impossible RTK cases** — images retain Pi's native image path, file mutation
+  tools remain native, and unsupported or unavailable RTK commands fail open to
+  the existing implementation.
 
-If `rtk` is missing, not executable, times out, or cannot rewrite a command,
-aio falls back silently to normal shell behavior and warns once when the binary
-is unavailable. rtk's deny verdicts are not enforced — aio rewrites, it does not
-gate; use permission modes for command gating.
+There is no disable toggle or `RTK_DISABLED=1` bypass. Bypass assignments at
+shell-command boundaries are stripped before rewriting. If RTK is missing, not
+executable, times out, or has no equivalent, aio falls back to normal behavior and
+warns once when the binary is unavailable. Permission modes remain responsible
+for command gating.
 
 ### `/rtk` command
 
-Session-scoped control (in-memory only; resets to enabled on every Pi start):
+- `/rtk status` or `/rtk` — show enforced routing state and the detected binary.
 
-- `/rtk enable` — turn command rewriting on for this session
-- `/rtk disable` — turn command rewriting off for this session
-- `/rtk status` — show the toggle state, detected `rtk` binary, and a bypass tip
-- `/rtk` — open an overlay to choose the same actions
-
-The footer shows `rtk ✓` (green) when enabled or `rtk ✗` (red) when disabled.
-Bypass rtk for a single command while leaving the toggle on with
-`!RTK_DISABLED=1 <cmd>` (honored by rtk itself).
+The footer shows `rtk ✓` while the enforced integration is loaded.
 
 ### Prerequisites
 
