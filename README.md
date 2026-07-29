@@ -382,6 +382,41 @@ model name. Context percentage turns warning/error at 70%/90%.
 To migrate off `pi-powerline-footer`, remove it from `packages` in Pi settings,
 delete any `powerline` block, and reload extensions.
 
+## Message queue
+
+`aio` makes pi's message queue visible and actionable while the agent is
+busy. Messages you type during a run are queued by pi as steering
+(`enter` / `alt+enter`) or follow-up messages; aio mirrors that queue and
+renders it as a numbered list below the input box:
+
+```text
+ queue (2) · ⏎ send next
+ 1. [steer]  fix the parser off-by-one
+ 2. [follow] then run the full test suite
+```
+
+Steering entries are delivered after the current turn; follow-ups after the
+run finishes. Long messages show a first-line preview; more than five pending
+messages collapse into a `+N more` row.
+
+Pressing `enter` while the input box is **empty** interrupts the current run
+and immediately pushes the next pending message at the agent (the rest stay
+queued with their original steer/follow-up semantics). Pi's default behavior
+— `esc` to interrupt and dump the queue back into the editor, `alt+↑` to edit
+the queue — still works untouched.
+
+Commands:
+
+- `/queue` or `/queue status` — show the pending queue
+- `/queue off` — hide the widget and disable Enter-on-empty interrupt
+- `/queue on` — re-enable
+
+The queue editor extends the `!bash` hint editor, so bash-mode hints keep
+working. The mirror tracks queue additions and deliveries via pi events; in
+the rare cases it cannot (messages queued during compaction, or across an
+extension reload) the widget simply hides and pi's built-in dim queue lines
+above the editor remain the fallback.
+
 ## Pretty built-in tools
 
 `aio` replaces Pi's built-in `read`, `bash`, `ls`, `find`, and `grep` tool
@@ -520,6 +555,7 @@ packages register `write`, `edit`, and `apply_patch`.
 ├── effort/                  # /effort command + status
 ├── init/                    # /init AGENTS.md bootstrap
 ├── permission-modes/        # Shift+Tab modes + plan flow
+├── queue/                   # message-queue widget + Enter-to-interrupt
 ├── status-line/             # quiet footer + working message
 ├── pretty-tools/            # pretty built-ins + FFF search
 ├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)

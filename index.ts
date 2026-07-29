@@ -1,7 +1,8 @@
 /**
  * Combined Pi extension: ask_user_question, /pick, /effort, Shift+Tab
  * permission modes, enhanced built-in tool output, syntax-highlighted diffs,
- * self-hosted web search, rtk shell-command rewriting, and ast-grep structural search.
+ * self-hosted web search, rtk shell-command rewriting, ast-grep structural
+ * search, and a message-queue UI with Enter-to-interrupt.
  *
  * Effort and permission modes are based on @pandi-coding-agent/pandi-effort
  * and @aprimediet/permission-modes. The questionnaire implementation is based
@@ -19,6 +20,7 @@ import { registerInit } from "./init/index.js";
 import registerGoalLoop from "./goal-loop/index.js";
 import { registerPermissionModes } from "./permission-modes/index.js";
 import { registerRtk } from "./rtk/index.js";
+import { registerQueue } from "./queue/index.js";
 import registerPrettyTools from "./pretty-tools/index.js";
 import { registerSubagents } from "./subagents/index.js";
 import { registerStatusLine } from "./status-line/index.js";
@@ -44,6 +46,9 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	registerSubagents(pi);
 	registerUserBash(pi);
 	registerRtk(pi);
+	// Queue installs its editor after user-bash so its factory wins; it
+	// extends BashHintEditor, keeping the !bash hint behavior intact.
+	registerQueue(pi);
 	await registerPrettyTools(pi);
 	registerStatusLine(pi);
 }

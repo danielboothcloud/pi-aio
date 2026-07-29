@@ -28,6 +28,8 @@
 		"word-diff",
 		"rtk",
 		"token-optimization",
+		"message-queue",
+		"queue",
 		"shell-rewrite",
 		"ast-grep",
 		"structural-search",
@@ -61,6 +63,8 @@
 		"!permission-modes/**/*.test.ts",
 		"status-line/**/*.ts",
 		"!status-line/**/*.test.ts",
+		"queue/**/*.ts",
+		"!queue/**/*.test.ts",
 		"pretty-tools/**/*.ts",
 		"!pretty-tools/**/*.test.ts",
 		"pretty-tools/LICENSE",
@@ -86,7 +90,7 @@
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
-		"test:node": "tsx --test ast-grep/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts goal-loop/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts rtk/*.test.ts status-line/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:node": "tsx --test ast-grep/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts goal-loop/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts rtk/*.test.ts status-line/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts"
 	},
 	"pi": {
