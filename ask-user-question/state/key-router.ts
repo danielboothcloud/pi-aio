@@ -19,7 +19,10 @@ function matchesSelectUp(data: string, kb: QuestionnaireKeybindings): boolean {
 	return kb.matches(data, KEYBIND_UP) || data === VIM_UP;
 }
 
-function matchesSelectDown(data: string, kb: QuestionnaireKeybindings): boolean {
+function matchesSelectDown(
+	data: string,
+	kb: QuestionnaireKeybindings,
+): boolean {
 	return kb.matches(data, KEYBIND_DOWN) || data === VIM_DOWN;
 }
 
@@ -35,6 +38,15 @@ export type QuestionnaireAction =
 	| { kind: "submit" }
 	| { kind: "submit_nav"; nextIndex: 0 | 1 }
 	| { kind: "notes_forward"; data: string }
+	/**
+	 * Leave the inline-input ("Type something.") box and return focus to the option
+	 * list so navigation keybindings (j/k, arrows) work again. Emitted by Escape
+	 * while `state.inputMode` — Escape does NOT cancel the whole questionnaire from
+	 * the typing box (press Escape again from the option list to cancel). Vim nav
+	 * keys (j/k) and arrows are deliberately NOT intercepted in inputMode, so they
+	 * flow through to `ignore` → `handleIgnoreInline` and get typed as letters.
+	 */
+	| { kind: "exit_input_mode" }
 	/** Flip `state.collapsed`. Always available, regardless of inner mode (see top intercept in `routeKey`). */
 	| { kind: "toggle_collapsed" }
 	| { kind: "ignore" };
@@ -48,7 +60,10 @@ export function wrapTab(index: number, total: number): number {
 	return ((index % total) + total) % total;
 }
 
-export function allAnswered(state: QuestionnaireState, runtime: QuestionnaireRuntime): boolean {
+export function allAnswered(
+	state: QuestionnaireState,
+	runtime: QuestionnaireRuntime,
+): boolean {
 	if (runtime.questions.length === 0) return false;
 	for (let i = 0; i < runtime.questions.length; i++) {
 		if (!state.answers.has(i)) return false;
@@ -60,13 +75,20 @@ function totalTabs(runtime: QuestionnaireRuntime): number {
 	return runtime.isMulti ? runtime.questions.length + 1 : 1;
 }
 
-function computeAutoAdvanceTab(state: QuestionnaireState, runtime: QuestionnaireRuntime): number | undefined {
+function computeAutoAdvanceTab(
+	state: QuestionnaireState,
+	runtime: QuestionnaireRuntime,
+): number | undefined {
 	if (!runtime.isMulti) return undefined;
-	if (state.currentTab < runtime.questions.length - 1) return state.currentTab + 1;
+	if (state.currentTab < runtime.questions.length - 1)
+		return state.currentTab + 1;
 	return runtime.questions.length;
 }
 
-function buildSingleSelectAnswer(state: QuestionnaireState, runtime: QuestionnaireRuntime): QuestionAnswer | null {
+function buildSingleSelectAnswer(
+	state: QuestionnaireState,
+	runtime: QuestionnaireRuntime,
+): QuestionAnswer | null {
 	const q = runtime.questions[state.currentTab];
 	if (!q) return null;
 
@@ -96,7 +118,10 @@ function buildSingleSelectAnswer(state: QuestionnaireState, runtime: Questionnai
 	};
 }
 
-function buildMultiSelected(state: QuestionnaireState, runtime: QuestionnaireRuntime): string[] {
+function buildMultiSelected(
+	state: QuestionnaireState,
+	runtime: QuestionnaireRuntime,
+): string[] {
 	const q = runtime.questions[state.currentTab];
 	if (!q) return [];
 	const out: string[] = [];
@@ -116,26 +141,62 @@ function tabSwitchAction(
 ): QuestionnaireAction | null {
 	if (!runtime.isMulti) return null;
 	const total = totalTabs(runtime);
-	if (matchesKey(data, Key.tab) || matchesKey(data, Key.right) || data === VIM_TAB_FORWARD) {
-		return { kind: "tab_switch", nextTab: wrapTab(state.currentTab + 1, total) };
+	if (
+		matchesKey(data, Key.tab) ||
+		matchesKey(data, Key.right) ||
+		data === VIM_TAB_FORWARD
+	) {
+		return {
+			kind: "tab_switch",
+			nextTab: wrapTab(state.currentTab + 1, total),
+		};
 	}
-	if (matchesKey(data, Key.shift("tab")) || matchesKey(data, Key.left) || data === VIM_TAB_BACK) {
-		return { kind: "tab_switch", nextTab: wrapTab(state.currentTab - 1, total) };
+	if (
+		matchesKey(data, Key.shift("tab")) ||
+		matchesKey(data, Key.left) ||
+		data === VIM_TAB_BACK
+	) {
+		return {
+			kind: "tab_switch",
+			nextTab: wrapTab(state.currentTab - 1, total),
+		};
 	}
 	return null;
 }
 
 // DOWN at the last item wraps to the first (cycle through [option0, …, optionLast]).
-function nextNavOnDown(state: QuestionnaireState, runtime: QuestionnaireRuntime): QuestionnaireAction {
-	return { kind: "nav", nextIndex: wrapTab(state.optionIndex + 1, Math.max(1, runtime.items.length)) };
+function nextNavOnDown(
+	state: QuestionnaireState,
+	runtime: QuestionnaireRuntime,
+): QuestionnaireAction {
+	return {
+		kind: "nav",
+		nextIndex: wrapTab(
+			state.optionIndex + 1,
+			Math.max(1, runtime.items.length),
+		),
+	};
 }
 
 // UP at the first item wraps to the last (symmetric with nextNavOnDown).
-function prevNavOnUp(state: QuestionnaireState, runtime: QuestionnaireRuntime): QuestionnaireAction {
-	return { kind: "nav", nextIndex: wrapTab(state.optionIndex - 1, Math.max(1, runtime.items.length)) };
+function prevNavOnUp(
+	state: QuestionnaireState,
+	runtime: QuestionnaireRuntime,
+): QuestionnaireAction {
+	return {
+		kind: "nav",
+		nextIndex: wrapTab(
+			state.optionIndex - 1,
+			Math.max(1, runtime.items.length),
+		),
+	};
 }
 
-export function routeKey(data: string, state: QuestionnaireState, runtime: QuestionnaireRuntime): QuestionnaireAction {
+export function routeKey(
+	data: string,
+	state: QuestionnaireState,
+	runtime: QuestionnaireRuntime,
+): QuestionnaireAction {
 	const kb = runtime.keybindings;
 
 	// Collapse/expand toggle is a UI-level affordance — intercepted at the top so it
@@ -154,7 +215,10 @@ export function routeKey(data: string, state: QuestionnaireState, runtime: Quest
 	// in-process. It is, however, awkward on keyboard layouts where `]` is on the
 	// shifted layer (Latin American `es-AR`/`es-MX` require `Ctrl+Shift+}` for `Ctrl+]`)
 	// — use the `collapseKey` config field to override.
-	if (runtime.collapseKey !== "off" && matchesKey(data, runtime.collapseKey as Parameters<typeof matchesKey>[1])) {
+	if (
+		runtime.collapseKey !== "off" &&
+		matchesKey(data, runtime.collapseKey as Parameters<typeof matchesKey>[1])
+	) {
 		return { kind: "toggle_collapsed" };
 	}
 
@@ -176,15 +240,25 @@ export function routeKey(data: string, state: QuestionnaireState, runtime: Quest
 		if (kb.matches(data, KEYBIND_CONFIRM)) {
 			const answer = buildSingleSelectAnswer(state, runtime);
 			if (!answer) return { kind: "ignore" };
-			return { kind: "confirm", answer, autoAdvanceTab: computeAutoAdvanceTab(state, runtime) };
+			return {
+				kind: "confirm",
+				answer,
+				autoAdvanceTab: computeAutoAdvanceTab(state, runtime),
+			};
 		}
-		if (kb.matches(data, KEYBIND_CANCEL)) return { kind: "cancel" };
-		if (matchesSelectUp(data, kb)) {
-			return prevNavOnUp(state, runtime);
-		}
-		if (matchesSelectDown(data, kb)) {
-			return nextNavOnDown(state, runtime);
-		}
+		// Escape leaves the typing box and re-enables vim navigation. It does NOT cancel
+		// the questionnaire from here — press Escape again from the option list to cancel.
+		// Previously Escape cancelled the whole dialog even mid-typing, which was destructive.
+		if (kb.matches(data, KEYBIND_CANCEL)) return { kind: "exit_input_mode" };
+		// Arrow Up/Down (the configured `tui.select.up/down` keybindings) still navigate
+		// off the typing row so multi-select list traversal (Down through options → Next)
+		// keeps working without forcing Escape. The vim nav LETTERS (j/k) are deliberately
+		// NOT matched here — `matchesSelectUp/Down` would also catch them and steal them
+		// from the buffer. Instead j/k fall through to `ignore` and get typed as letters,
+		// which is the whole point: a vim user typing "j" or "k" expects the character, not
+		// to be yanked off the input box.
+		if (kb.matches(data, KEYBIND_UP)) return prevNavOnUp(state, runtime);
+		if (kb.matches(data, KEYBIND_DOWN)) return nextNavOnDown(state, runtime);
 		return { kind: "ignore" };
 	}
 
@@ -201,7 +275,9 @@ export function routeKey(data: string, state: QuestionnaireState, runtime: Quest
 			// D1 (revised): Submit always submits; Cancel always cancels. The warning header
 			// is informational only — `allAnswered(state)` no longer gates submission. Partial
 			// answers flow through `orderedAnswers()` in the host.
-			return state.submitChoiceIndex === 1 ? { kind: "cancel" } : { kind: "submit" };
+			return state.submitChoiceIndex === 1
+				? { kind: "cancel" }
+				: { kind: "submit" };
 		}
 		return { kind: "ignore" };
 	}
@@ -212,7 +288,11 @@ export function routeKey(data: string, state: QuestionnaireState, runtime: Quest
 	const q = runtime.questions[state.currentTab];
 	if (!q) return { kind: "ignore" };
 
-	if (data === NOTES_ACTIVATE_KEY && !q.multiSelect && state.focusedOptionHasPreview) {
+	if (
+		data === NOTES_ACTIVATE_KEY &&
+		!q.multiSelect &&
+		state.focusedOptionHasPreview
+	) {
 		return { kind: "notes_enter" };
 	}
 
@@ -243,7 +323,8 @@ export function routeKey(data: string, state: QuestionnaireState, runtime: Quest
 			// gated behind explicit focus on a row whose META declares `autoSubmitsInMulti`
 			// (the Next sentinel), so Enter on options is a no-cost way to flip checkboxes
 			// without leaving the keyboard home row.
-			if (!focusedMeta?.autoSubmitsInMulti) return { kind: "toggle", index: state.optionIndex };
+			if (!focusedMeta?.autoSubmitsInMulti)
+				return { kind: "toggle", index: state.optionIndex };
 			// Enter on Next: carry autoAdvanceTab so the host can advance to the next tab in
 			// multi-question mode, OR submit the dialog in single-question mode
 			// (autoAdvanceTab === undefined when !isMulti). Without this, a single multi-select
@@ -261,7 +342,11 @@ export function routeKey(data: string, state: QuestionnaireState, runtime: Quest
 	if (kb.matches(data, KEYBIND_CONFIRM)) {
 		const answer = buildSingleSelectAnswer(state, runtime);
 		if (!answer) return { kind: "ignore" };
-		return { kind: "confirm", answer, autoAdvanceTab: computeAutoAdvanceTab(state, runtime) };
+		return {
+			kind: "confirm",
+			answer,
+			autoAdvanceTab: computeAutoAdvanceTab(state, runtime),
+		};
 	}
 	if (kb.matches(data, KEYBIND_CANCEL)) return { kind: "cancel" };
 	return { kind: "ignore" };

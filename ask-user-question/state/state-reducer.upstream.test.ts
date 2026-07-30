@@ -20,10 +20,22 @@ describe("reduce — nav", () => {
 
 	it("nav onto kind:'other' row with prior kind:'custom' answer restores the buffer", () => {
 		const answers = new Map<number, QuestionAnswer>([
-			[0, { questionIndex: 0, question: "Pick one", kind: "custom", answer: "Hello" }],
+			[
+				0,
+				{
+					questionIndex: 0,
+					question: "Pick one",
+					kind: "custom",
+					answer: "Hello",
+				},
+			],
 		]);
 		const ctx = makeCtx({ itemsByTab: [itemsWithOther] });
-		const r = reduce(makeState({ answers }), { kind: "nav", nextIndex: 2 }, ctx);
+		const r = reduce(
+			makeState({ answers }),
+			{ kind: "nav", nextIndex: 2 },
+			ctx,
+		);
 		expect(r.state.inputMode).toBe(true);
 		expect(r.effects).toEqual([{ kind: "set_input_buffer", value: "Hello" }]);
 	});
@@ -41,7 +53,10 @@ describe("reduce — tab_switch", () => {
 		const r = reduce(
 			makeState(),
 			{ kind: "tab_switch", nextTab: 1 },
-			makeCtx({ questions: [makeQuestion(), makeQuestion()], itemsByTab: [itemsRegular, itemsRegular] }),
+			makeCtx({
+				questions: [makeQuestion(), makeQuestion()],
+				itemsByTab: [itemsRegular, itemsRegular],
+			}),
 		);
 		expect(r.state.currentTab).toBe(1);
 		expect(r.state.optionIndex).toBe(0);
@@ -57,11 +72,21 @@ describe("reduce — confirm", () => {
 	it("regular option without preview emits done with the answer", () => {
 		const action: QuestionnaireAction = {
 			kind: "confirm",
-			answer: { questionIndex: 0, question: "Pick one", kind: "option", answer: "A" },
+			answer: {
+				questionIndex: 0,
+				question: "Pick one",
+				kind: "option",
+				answer: "A",
+			},
 		};
 		const r = reduce(makeState(), action, makeCtx());
 		expect(r.state.answers.get(0)?.answer).toBe("A");
-		expect(r.effects).toEqual([{ kind: "done", result: { answers: [r.state.answers.get(0)!], cancelled: false } }]);
+		expect(r.effects).toEqual([
+			{
+				kind: "done",
+				result: { answers: [r.state.answers.get(0)!], cancelled: false },
+			},
+		]);
 	});
 
 	it("regular option matching a preview-bearing option augments answer.preview", () => {
@@ -75,7 +100,12 @@ describe("reduce — confirm", () => {
 		];
 		const action: QuestionnaireAction = {
 			kind: "confirm",
-			answer: { questionIndex: 0, question: "Pick one", kind: "option", answer: "A" },
+			answer: {
+				questionIndex: 0,
+				question: "Pick one",
+				kind: "option",
+				answer: "A",
+			},
 		};
 		const r = reduce(makeState(), action, makeCtx({ questions }));
 		expect(r.state.answers.get(0)?.preview).toBe("code");
@@ -84,7 +114,12 @@ describe("reduce — confirm", () => {
 	it("merges pendingNotes from notesByTab into the confirmed answer", () => {
 		const action: QuestionnaireAction = {
 			kind: "confirm",
-			answer: { questionIndex: 0, question: "Pick one", kind: "option", answer: "A" },
+			answer: {
+				questionIndex: 0,
+				question: "Pick one",
+				kind: "option",
+				answer: "A",
+			},
 		};
 		const state = makeState({ notesByTab: new Map([[0, "  side note  "]]) });
 		const r = reduce(state, action, makeCtx());
@@ -94,10 +129,18 @@ describe("reduce — confirm", () => {
 	it("autoAdvanceTab dispatches a tab_switch result instead of done", () => {
 		const action: QuestionnaireAction = {
 			kind: "confirm",
-			answer: { questionIndex: 0, question: "Pick one", kind: "option", answer: "A" },
+			answer: {
+				questionIndex: 0,
+				question: "Pick one",
+				kind: "option",
+				answer: "A",
+			},
 			autoAdvanceTab: 1,
 		};
-		const ctx = makeCtx({ questions: [makeQuestion(), makeQuestion()], itemsByTab: [itemsRegular, itemsRegular] });
+		const ctx = makeCtx({
+			questions: [makeQuestion(), makeQuestion()],
+			itemsByTab: [itemsRegular, itemsRegular],
+		});
 		const r = reduce(makeState(), action, ctx);
 		expect(r.state.currentTab).toBe(1);
 		expect(r.effects.some((e) => e.kind === "set_notes_focused")).toBe(true);
@@ -120,7 +163,10 @@ describe("reduce — toggle", () => {
 describe("reduce — round-trip property [toggle, tab_switch, tab_switch_back] preserves multiSelectChecked (precedent f4fdd25)", () => {
 	it("multiSelectChecked is reconstructed from answers on tab-back", () => {
 		const questions = [makeQuestion({ multiSelect: true }), makeQuestion()];
-		const ctx = makeCtx({ questions, itemsByTab: questions.map(() => itemsRegular) });
+		const ctx = makeCtx({
+			questions,
+			itemsByTab: questions.map(() => itemsRegular),
+		});
 
 		let s = makeState();
 		s = reduce(s, { kind: "toggle", index: 0 }, ctx).state;
@@ -139,7 +185,11 @@ describe("reduce — round-trip property [toggle, tab_switch, tab_switch_back] p
 describe("reduce — multi_confirm", () => {
 	it("persists answer + multiSelectChecked from action.selected", () => {
 		const ctx = makeCtx({ questions: [makeQuestion({ multiSelect: true })] });
-		const r = reduce(makeState(), { kind: "multi_confirm", selected: ["A", "B"] }, ctx);
+		const r = reduce(
+			makeState(),
+			{ kind: "multi_confirm", selected: ["A", "B"] },
+			ctx,
+		);
 		expect(r.state.answers.get(0)?.selected).toEqual(["A", "B"]);
 		expect([...r.state.multiSelectChecked].sort()).toEqual([0, 1]);
 		expect(r.effects.some((e) => e.kind === "done")).toBe(true);
@@ -149,20 +199,37 @@ describe("reduce — multi_confirm", () => {
 describe("reduce — cancel/submit", () => {
 	it("cancel emits done with cancelled: true", () => {
 		const r = reduce(makeState(), { kind: "cancel" }, makeCtx());
-		expect(r.effects).toEqual([{ kind: "done", result: { answers: [], cancelled: true } }]);
+		expect(r.effects).toEqual([
+			{ kind: "done", result: { answers: [], cancelled: true } },
+		]);
 	});
 	it("submit emits done with cancelled: false", () => {
 		const r = reduce(makeState(), { kind: "submit" }, makeCtx());
-		expect(r.effects).toEqual([{ kind: "done", result: { answers: [], cancelled: false } }]);
+		expect(r.effects).toEqual([
+			{ kind: "done", result: { answers: [], cancelled: false } },
+		]);
 	});
 });
 
 describe("reduce — notes_enter / notes_exit / notes_forward", () => {
 	it("notes_enter seeds state.notesDraft from existing answer.notes and emits set_notes_value", () => {
 		const answers = new Map<number, QuestionAnswer>([
-			[0, { questionIndex: 0, question: "q", kind: "option", answer: "A", notes: "old note" }],
+			[
+				0,
+				{
+					questionIndex: 0,
+					question: "q",
+					kind: "option",
+					answer: "A",
+					notes: "old note",
+				},
+			],
 		]);
-		const r = reduce(makeState({ answers }), { kind: "notes_enter" }, makeCtx());
+		const r = reduce(
+			makeState({ answers }),
+			{ kind: "notes_enter" },
+			makeCtx(),
+		);
 		expect(r.state.notesVisible).toBe(true);
 		expect(r.state.notesDraft).toBe("old note");
 		expect(r.effects).toEqual([
@@ -173,7 +240,16 @@ describe("reduce — notes_enter / notes_exit / notes_forward", () => {
 
 	it("notes_exit with empty notesDraft clears notesByTab + strips answer.notes", () => {
 		const answers = new Map<number, QuestionAnswer>([
-			[0, { questionIndex: 0, question: "q", kind: "option", answer: "A", notes: "old note" }],
+			[
+				0,
+				{
+					questionIndex: 0,
+					question: "q",
+					kind: "option",
+					answer: "A",
+					notes: "old note",
+				},
+			],
 		]);
 		const state = makeState({
 			answers,
@@ -202,7 +278,16 @@ describe("reduce — notes_enter / notes_exit / notes_forward", () => {
 
 	it("notes_exit with whitespace-only notesDraft clears notesByTab + strips answer.notes", () => {
 		const answers = new Map<number, QuestionAnswer>([
-			[0, { questionIndex: 0, question: "q", kind: "option", answer: "A", notes: "old note" }],
+			[
+				0,
+				{
+					questionIndex: 0,
+					question: "q",
+					kind: "option",
+					answer: "A",
+					notes: "old note",
+				},
+			],
 		]);
 		const r = reduce(
 			makeState({
@@ -228,7 +313,11 @@ describe("reduce — notes_enter / notes_exit / notes_forward", () => {
 
 describe("reduce — submit_nav / ignore", () => {
 	it("submit_nav updates submitChoiceIndex with no effects", () => {
-		const r = reduce(makeState(), { kind: "submit_nav", nextIndex: 1 }, makeCtx());
+		const r = reduce(
+			makeState(),
+			{ kind: "submit_nav", nextIndex: 1 },
+			makeCtx(),
+		);
 		expect(r.state.submitChoiceIndex).toBe(1);
 		expect(r.effects).toEqual([]);
 	});
@@ -260,7 +349,15 @@ describe("confirmHandler — custom answer clears multiSelectChecked (mutual exc
 		const ctx = makeCtx({ questions: [multiQ] });
 		const result = reduce(
 			state,
-			{ kind: "confirm", answer: { questionIndex: 0, question: "areas?", kind: "custom", answer: "custom-text" } },
+			{
+				kind: "confirm",
+				answer: {
+					questionIndex: 0,
+					question: "areas?",
+					kind: "custom",
+					answer: "custom-text",
+				},
+			},
 			ctx,
 		);
 		expect(result.state.multiSelectChecked.size).toBe(0);
@@ -268,15 +365,96 @@ describe("confirmHandler — custom answer clears multiSelectChecked (mutual exc
 	});
 
 	it("option confirm on a single-select tab leaves multiSelectChecked untouched (no spurious clear)", () => {
-		const singleQ: QuestionData = { question: "pick?", header: "H", options: [{ label: "A", description: "a" }] };
-		const state = makeState({ currentTab: 0, multiSelectChecked: new Set([0]) });
+		const singleQ: QuestionData = {
+			question: "pick?",
+			header: "H",
+			options: [{ label: "A", description: "a" }],
+		};
+		const state = makeState({
+			currentTab: 0,
+			multiSelectChecked: new Set([0]),
+		});
 		const ctx = makeCtx({ questions: [singleQ] });
 		const result = reduce(
 			state,
-			{ kind: "confirm", answer: { questionIndex: 0, question: "pick?", kind: "option", answer: "A" } },
+			{
+				kind: "confirm",
+				answer: {
+					questionIndex: 0,
+					question: "pick?",
+					kind: "option",
+					answer: "A",
+				},
+			},
 			ctx,
 		);
 		expect(result.state.multiSelectChecked.size).toBe(1);
+	});
+});
+
+describe("reduce — exit_input_mode", () => {
+	it("flips inputMode off, lands on the option before the 'other' row, and clears the buffer", () => {
+		// itemsWithOther = [A, B, other]; focus is on the 'other' row (index 2) mid-typing.
+		const ctx = makeCtx({ itemsByTab: [itemsWithOther] });
+		const r = reduce(
+			makeState({ optionIndex: 2, inputMode: true }),
+			{ kind: "exit_input_mode" },
+			ctx,
+		);
+		expect(r.state.inputMode).toBe(false);
+		expect(r.state.optionIndex).toBe(1); // option immediately preceding 'other'
+		expect(r.effects).toEqual([{ kind: "clear_input_buffer" }]);
+	});
+
+	it("preserves answers/notes and recomputes focusedOptionHasPreview for the new option", () => {
+		const answers = new Map<number, QuestionAnswer>([
+			[
+				0,
+				{ questionIndex: 0, question: "Pick one", kind: "option", answer: "A" },
+			],
+		]);
+		const ctx = makeCtx({
+			itemsByTab: [
+				[
+					{ kind: "option", label: "A" },
+					{ kind: "option", label: "B" },
+					{ kind: "other", label: "Type something." },
+				],
+			],
+		});
+		// Force a preview onto option B (index 1) so we can observe the recompute.
+		const questions = [
+			makeQuestion({
+				options: [
+					{ label: "A", description: "a" },
+					{ label: "B", description: "b", preview: "preview-for-B" },
+				],
+			}),
+		];
+		const ctxWithPreview = { ...ctx, questions };
+		const r = reduce(
+			makeState({ optionIndex: 2, inputMode: true, answers }),
+			{ kind: "exit_input_mode" },
+			ctxWithPreview,
+		);
+		expect(r.state.optionIndex).toBe(1);
+		expect(r.state.focusedOptionHasPreview).toBe(true);
+		expect(r.state.answers).toBe(answers);
+	});
+
+	it("with no option preceding 'other', keeps optionIndex and only flips inputMode off", () => {
+		// Edge: a question whose only row is the 'other' sentinel.
+		const ctx = makeCtx({
+			itemsByTab: [[{ kind: "other", label: "Type something." }]],
+		});
+		const r = reduce(
+			makeState({ optionIndex: 0, inputMode: true }),
+			{ kind: "exit_input_mode" },
+			ctx,
+		);
+		expect(r.state.inputMode).toBe(false);
+		expect(r.state.optionIndex).toBe(0);
+		expect(r.effects).toEqual([{ kind: "clear_input_buffer" }]);
 	});
 });
 
@@ -288,7 +466,11 @@ describe("reduce — toggle_collapsed", () => {
 	});
 
 	it("flips true → false (expand round-trip) and emits set_overlay_hidden(false)", () => {
-		const r = reduce(makeState({ collapsed: true }), { kind: "toggle_collapsed" }, makeCtx());
+		const r = reduce(
+			makeState({ collapsed: true }),
+			{ kind: "toggle_collapsed" },
+			makeCtx(),
+		);
 		expect(r.state.collapsed).toBe(false);
 		expect(r.effects).toEqual([{ kind: "set_overlay_hidden", hidden: false }]);
 	});
@@ -297,9 +479,17 @@ describe("reduce — toggle_collapsed", () => {
 		// Regression guard: a future refactor that resets nav/notes on collapse would silently
 		// drop the user's mid-edit work. The collapse toggle must be additive only.
 		const answers = new Map<QuestionAnswer["questionIndex"], QuestionAnswer>([
-			[0, { questionIndex: 0, question: "Pick one", kind: "option", answer: "A" }],
+			[
+				0,
+				{ questionIndex: 0, question: "Pick one", kind: "option", answer: "A" },
+			],
 		]);
-		const s = makeState({ optionIndex: 1, notesVisible: true, notesDraft: "in-flight", answers });
+		const s = makeState({
+			optionIndex: 1,
+			notesVisible: true,
+			notesDraft: "in-flight",
+			answers,
+		});
 		const r = reduce(s, { kind: "toggle_collapsed" }, makeCtx());
 		expect(r.state.collapsed).toBe(true);
 		expect(r.state.optionIndex).toBe(1);
