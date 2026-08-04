@@ -53,6 +53,7 @@
 		"diff-tools/CONFIG.md",
 		"diff-tools/LICENSE",
 		"effort/**/*.ts",
+		"!effort/**/*.test.ts",
 		"init/**/*.ts",
 		"!init/**/*.test.ts",
 		"goal-loop/**/*.ts",
@@ -90,7 +91,7 @@
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
-		"test:node": "tsx --test ast-grep/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts goal-loop/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts rtk/*.test.ts status-line/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:node": "tsx --test ast-grep/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts effort/*.test.ts goal-loop/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts rtk/*.test.ts status-line/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts"
 	},
 	"pi": {

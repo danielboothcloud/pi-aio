@@ -1,5 +1,13 @@
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { safeCurrentLevel, updateEffortStatus } from "./effort-status.js";
+import type {
+	ExtensionAPI,
+	ExtensionContext,
+} from "@earendil-works/pi-coding-agent";
+import { effectiveEffortLevel } from "./capability.js";
+import {
+	safeCurrentLevel,
+	setEffectiveLevel,
+	updateEffortStatus,
+} from "./effort-status.js";
 import { notify } from "./notify.js";
 import type { ThinkingLevel } from "./parse.js";
 
@@ -20,7 +28,9 @@ export function setThinkingEffort(
 	const before = safeCurrentLevel(pi);
 	let actual: ThinkingLevel | "unknown";
 	try {
-		pi.setThinkingLevel(level as Parameters<ExtensionAPI["setThinkingLevel"]>[0]);
+		pi.setThinkingLevel(
+			level as Parameters<ExtensionAPI["setThinkingLevel"]>[0],
+		);
 		actual = safeCurrentLevel(pi);
 		if (level === "max" && actual === "off") {
 			pi.setThinkingLevel("xhigh");
@@ -31,17 +41,25 @@ export function setThinkingEffort(
 		return before;
 	}
 
-	updateEffortStatus(pi, ctx, actual);
+	// Reconcile: when pi clamps xhigh/max down but pi-aio can still send the
+	// requested level on the wire, report that requested level so the status
+	// line and notification match what actually goes to the provider.
+	const model = ctx.getModel();
+	const effective =
+		actual === "unknown" ? actual : effectiveEffortLevel(model, level, actual);
+
+	setEffectiveLevel(effective);
+	updateEffortStatus(pi, ctx, effective);
 	if (options.announce !== false) {
-		if (actual === level) {
-			notify(ctx, `Thinking effort set to ${actual}.`, "info");
+		if (effective === level) {
+			notify(ctx, `Thinking effort set to ${effective}.`, "info");
 		} else {
 			notify(
 				ctx,
-				`Requested effort ${level}; active effort is ${actual} (current model may limit thinking).`,
+				`Requested effort ${level}; active effort is ${effective} (current model may limit thinking).`,
 				"warning",
 			);
 		}
 	}
-	return actual;
+	return effective;
 }
