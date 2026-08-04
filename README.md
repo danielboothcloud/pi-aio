@@ -285,6 +285,43 @@ While typing a `!` command, aio shows live feedback:
 - Hint line below the editor with the parsed command preview
 - Footer status: `!bash`
 
+## Command blocklist
+
+`aio` ships a hard blocklist: shell commands you list in it NEVER run, no
+matter the permission mode (even `auto`), and for both agent `bash` tool calls
+and your `!`/`!!` commands. A blocked command fails with an error explaining
+which rule matched — it cannot be approved, and the model is told about the
+blocklist at the start of every turn so it does not waste attempts on it.
+
+Config is two-tier JSON with union semantics (both files apply):
+
+- Global: `~/.pi/agent/aio-blocklist.json`
+- Project: `<project>/.pi/aio-blocklist.json`
+
+```json
+{
+  "enabled": true,
+  "entries": [
+    "rm -rf /",
+    { "pattern": "kubectl delete", "reason": "no cluster deletions" },
+    { "pattern": "\\bgit push --force\\b", "regex": true, "reason": "no force push" }
+  ]
+}
+```
+
+- Plain string entries match as case-insensitive substrings of the command.
+- Object entries take a `pattern`, an optional `regex: true` flag (the pattern
+  is then compiled as a case-insensitive regular expression), and an optional
+  `reason` shown in the block error.
+- Each file's `enabled` flag (default `true`) gates only that file's entries;
+  set it to `false` to disable a tier without deleting it.
+- Matching is case-insensitive: `RM -RF /` hits a `rm -rf /` rule.
+- Malformed JSON, entries, or regexes are skipped rather than fatal.
+
+The config is re-read on every check, so edits apply immediately — no reload
+needed. Cursor host replay calls (`cursor-replay-*`) are exempt because they
+only display work that already ran outside Pi's gate.
+
 ## Permission modes (Shift+Tab)
 
 Cycle with **Shift+Tab**: default → ask → plan → auto → default

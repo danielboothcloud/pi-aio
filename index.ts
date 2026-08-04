@@ -12,6 +12,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import registerAskUserQuestion from "./ask-user-question/index.js";
 import { registerAstGrep } from "./ast-grep/index.js";
+import { registerBlocklist } from "./blocklist/index.js";
 import { registerBrowserSearch } from "./browser-search/index.js";
 import { registerCopyWidget } from "./copy-widget/index.js";
 import registerDiffTools from "./diff-tools/index.js";
@@ -42,6 +43,10 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	registerEffort(pi);
 	registerInit(pi);
 	await registerDiffTools(pi);
+	// Blocklist gates must run before the permission-modes tool_call gate and
+	// the user-bash gate: the runner honors the first blocking handler, so a
+	// blocked command short-circuits mode checks (including auto approval).
+	registerBlocklist(pi);
 	registerPermissionModes(pi);
 	registerSubagents(pi);
 	registerUserBash(pi);
