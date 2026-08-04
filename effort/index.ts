@@ -41,7 +41,7 @@ export function registerEffort(pi: ExtensionAPI): void {
 	// the requested effort value into the outgoing provider payload so the
 	// level actually reaches the model.
 	pi.on("before_provider_request", (event, ctx) => {
-		const model = ctx.getModel();
+		const model = ctx.model;
 		const desired =
 			getEffectiveLevel() === "unknown" ? undefined : getEffectiveLevel();
 		return applyEffortOverride(model, desired, event.payload);

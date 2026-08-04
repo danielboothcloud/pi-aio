@@ -44,7 +44,7 @@ export function setThinkingEffort(
 	// Reconcile: when pi clamps xhigh/max down but pi-aio can still send the
 	// requested level on the wire, report that requested level so the status
 	// line and notification match what actually goes to the provider.
-	const model = ctx.getModel();
+	const model = ctx.model;
 	const effective =
 		actual === "unknown" ? actual : effectiveEffortLevel(model, level, actual);
 

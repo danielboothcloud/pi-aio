@@ -17,7 +17,7 @@ export function handleThinkingLevelSelect(
 	level: ThinkingLevel,
 ): void {
 	const clamped = safeCurrentLevel(pi);
-	const model = ctx.getModel();
+	const model = ctx.model;
 	const effective =
 		clamped === "unknown"
 			? clamped
