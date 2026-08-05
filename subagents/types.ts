@@ -20,6 +20,7 @@ export interface AgentConfig {
 	tools?: string[];
 	model?: string;
 	thinking?: SubagentThinking;
+	timeoutMs?: number;
 	source: "builtin" | "user" | "project";
 	filePath: string;
 }

@@ -129,8 +129,7 @@ function resolvedModel(
 	agent: AgentConfig,
 	parent: ParentLaunchContext,
 ): string | undefined {
-	const model =
-		task.model ?? request.model ?? agent.model ?? parent.model;
+	const model = task.model ?? request.model ?? agent.model ?? parent.model;
 	if (!model) return undefined;
 	const extensionPaths =
 		parent.extensionPaths ??
@@ -373,7 +372,8 @@ async function runChild(input: {
 		stderr = `${stderr}${chunk.toString()}`.slice(-MAX_STDERR_CHARS);
 	});
 
-	const timeoutMs = input.request.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+	const timeoutMs =
+		input.request.timeoutMs ?? input.agent.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 	const terminationGraceMs =
 		input.deps?.terminationGraceMs ?? DEFAULT_TERMINATION_GRACE_MS;
 	const timeout = setTimeout(() => {

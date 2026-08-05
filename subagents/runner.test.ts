@@ -308,6 +308,44 @@ test("stop terminates an active background-style run", async () => {
 	assert.equal(run.results[0].state, "stopped");
 });
 
+test("agent timeoutMs applies when the request does not set one", async () => {
+	const run = await executeSubagentRun({
+		request: { agent: "reviewer", task: "ignore-term review" },
+		agents: [agent({ timeoutMs: 200 })],
+		parent: parent(),
+		deps: {
+			piBinary: process.execPath,
+			piArgsPrefix: [fixture],
+			runsBaseDir: temporaryDirectory(),
+			terminationGraceMs: 20,
+		},
+	});
+	assert.equal(run.state, "failed");
+	assert.equal(run.results[0].state, "failed");
+	assert.match(run.results[0].error ?? "", /timed out after 200ms/);
+});
+
+test("request timeoutMs overrides the agent's declared timeout", async () => {
+	const run = await executeSubagentRun({
+		request: {
+			agent: "reviewer",
+			task: "ignore-term review",
+			timeoutMs: 150,
+		},
+		agents: [agent({ timeoutMs: 5_000 })],
+		parent: parent(),
+		deps: {
+			piBinary: process.execPath,
+			piArgsPrefix: [fixture],
+			runsBaseDir: temporaryDirectory(),
+			terminationGraceMs: 20,
+		},
+	});
+	assert.equal(run.state, "failed");
+	assert.equal(run.results[0].state, "failed");
+	assert.match(run.results[0].error ?? "", /timed out after 150ms/);
+});
+
 test("cursor parent models include pi-cursor-sdk when it is installed", () => {
 	const cursorExtension = resolveCursorExtensionPath();
 	if (!cursorExtension) return;

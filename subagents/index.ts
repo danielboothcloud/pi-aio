@@ -76,7 +76,14 @@ const SubagentSchema = Type.Object({
 		}),
 	),
 	thinking: Type.Optional(StringEnum(THINKING_VALUES)),
-	timeoutMs: Type.Optional(Type.Integer({ minimum: 1000, maximum: 3_600_000 })),
+	timeoutMs: Type.Optional(
+		Type.Integer({
+			minimum: 1000,
+			maximum: 21_600_000,
+			description:
+				"Hard budget per child in milliseconds (1s to 6h). Defaults to the agent's declared timeoutMs, or 15 minutes when unset.",
+		}),
+	),
 });
 
 type SubagentParams = Static<typeof SubagentSchema>;

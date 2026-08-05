@@ -231,7 +231,14 @@ file and line references. Do not modify files.
 ```
 
 Supported frontmatter fields are `name`, `description`, `tools`, `model`,
-`thinking`, `systemPromptMode`, `inheritProjectContext`, and `inheritSkills`.
+`thinking`, `timeoutMs`, `systemPromptMode`, `inheritProjectContext`, and
+`inheritSkills`.
+
+Child runs have a hard time budget: the per-run `timeoutMs` parameter wins,
+then the agent's frontmatter `timeoutMs`, then a 15-minute default. The
+`researcher`, `reviewer`, and `validator` agents declare 30 minutes for
+evidence-gathering work that queries live sources; pass `timeoutMs` (up to 6
+hours) to extend an individual run beyond its agent default.
 Trusted project definitions override user definitions, which override bundled
 agents. Project agent files are ignored until Pi trusts the checkout.
 

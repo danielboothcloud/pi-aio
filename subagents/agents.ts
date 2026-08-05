@@ -25,6 +25,7 @@ interface AgentFrontmatter {
 	description?: unknown;
 	model?: unknown;
 	thinking?: unknown;
+	timeoutMs?: unknown;
 	tools?: unknown;
 	systemPromptMode?: unknown;
 	inheritProjectContext?: unknown;
@@ -115,6 +116,17 @@ function parseAgent(
 	) {
 		throw new Error(`Agent '${filePath}' has an invalid thinking level.`);
 	}
+	const timeoutMs = frontmatter.timeoutMs;
+	if (
+		timeoutMs !== undefined &&
+		(typeof timeoutMs !== "number" ||
+			!Number.isInteger(timeoutMs) ||
+			timeoutMs < 1000)
+	) {
+		throw new Error(
+			`Agent '${filePath}' timeoutMs must be an integer of at least 1000 (milliseconds).`,
+		);
+	}
 	const systemPromptMode = frontmatter.systemPromptMode ?? "replace";
 	if (systemPromptMode !== "append" && systemPromptMode !== "replace") {
 		throw new Error(
@@ -137,6 +149,7 @@ function parseAgent(
 				? frontmatter.model.trim()
 				: undefined,
 		thinking: thinking as SubagentThinking | undefined,
+		timeoutMs: timeoutMs as number | undefined,
 		source,
 		filePath,
 	};
