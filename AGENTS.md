@@ -46,9 +46,10 @@ generated `dist/` tree without changing the package contract.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
   `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/` and
   `user-bash/` gate those mutations. Changes can cross feature boundaries.
-- `browser-search/` owns the `web_search` and `fetch_content` names. It talks to
-  external SearXNG/Camofox services and lazily loads optional CloakBrowser;
-  tests must use injected/mocked backends rather than live network services.
+- `browser-search/` owns the `web_search` and `fetch_content` names. Search is
+  opt-in through `aio.browserSearch` in Pi settings and routes to Exa or
+  SearXNG; browsing uses Camofox and lazily loads optional CloakBrowser. Tests
+  must use injected/mocked backends rather than live network services.
 - `ask-user-question/` is vendored code. Follow
   `ask-user-question/UPSTREAM.md`: preserve its license, config/event
   namespaces, sequential execution, soft i18n peer, and

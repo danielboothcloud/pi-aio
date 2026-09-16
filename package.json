@@ -1,7 +1,7 @@
 {
 	"name": "aio",
 	"version": "0.6.0",
-	"description": "Combined Pi extension for structured questions, permission modes, subagents, enhanced tools and diffs, shell rewriting, structural search, and self-hosted web browsing.",
+	"description": "Combined Pi extension for structured questions, permission modes, subagents, enhanced tools and diffs, shell rewriting, structural search, and configurable web browsing.",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
@@ -37,6 +37,7 @@
 		"codemod",
 		"web-search",
 		"searxng",
+		"exa",
 		"camofox",
 		"cloakbrowser"
 	],

@@ -68,6 +68,13 @@ test("searxngSearch maps options, normalizes hits, and applies result limits", a
 	assert.equal(result.results[0].title, "One");
 });
 
+test("searxngSearch reports a configured base URL on connection failure", async () => {
+	await assert.rejects(
+		searxngSearch("offline", { baseUrl: "http://127.0.0.1:0" }),
+		/Connection to SearXNG failed at http:\/\/127\.0\.0\.1:0/,
+	);
+});
+
 test("searxngSearch honors cancellation while awaiting the backend", async () => {
 	delayMs = 1_000;
 	const controller = new AbortController();

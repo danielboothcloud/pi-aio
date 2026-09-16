@@ -1,10 +1,11 @@
 /**
- * Self-hosted web search + browsing for Pi.
+ * Configurable web search + browsing for Pi.
  *
- * `web_search` routes to SearXNG. `fetch_content` validates each initial URL,
- * then tries Camofox Readability/snapshot extraction before escalating blocked
- * or empty pages to CloakBrowser. Results are returned inline; this intentionally
- * does not provide pi-web-access's curator or response-id storage workflow.
+ * `web_search` routes to the SearXNG or Exa provider selected in Pi settings.
+ * `fetch_content` validates each initial URL, then tries Camofox
+ * Readability/snapshot extraction before escalating blocked or empty pages to
+ * CloakBrowser. Results are returned inline; this intentionally does not provide
+ * pi-web-access's curator or response-id storage workflow.
  */
 
 import { StringEnum } from "@earendil-works/pi-ai";
@@ -19,23 +20,29 @@ import {
 } from "./camofox.js";
 import { detectChallenge } from "./challenges.js";
 import { cloakFetch, type CloakFetchOptions } from "./cloak.js";
-import { MAX_INLINE_CONTENT } from "./config.js";
-import { searxngSearch, SearxngError } from "./searxng.js";
+import {
+	type BrowserSearchConfig,
+	loadBrowserSearchConfig,
+	MAX_INLINE_CONTENT,
+	type SearchProvider,
+} from "./config.js";
+import { exaSearch } from "./exa.js";
+import { searxngSearch } from "./searxng.js";
 import type {
 	FetchResult,
 	ReadabilityArticle,
+	SearchOptions,
+	SearchOutcome,
 	SearchResult,
-	SearxngOptions,
-	SearxngSearchOutcome,
 } from "./types.js";
 import { validateUrlWithDns } from "./url-validation.js";
 
 type OutputFormat = "markdown" | "text" | "html";
 type SearchFn = (
 	query: string,
-	opts?: SearxngOptions,
+	opts?: SearchOptions,
 	signal?: AbortSignal,
-) => Promise<SearxngSearchOutcome>;
+) => Promise<SearchOutcome>;
 type FetchUrlFn = (
 	url: string,
 	format: OutputFormat,
@@ -45,6 +52,9 @@ type FetchUrlFn = (
 export interface BrowserSearchDependencies {
 	search?: SearchFn;
 	fetchUrl?: FetchUrlFn;
+	provider?: SearchProvider;
+	config?: BrowserSearchConfig;
+	loadConfig?: (cwd: string, projectTrusted: boolean) => BrowserSearchConfig;
 }
 
 function toolResult(text: string, details: Record<string, unknown> = {}) {
@@ -275,6 +285,41 @@ function applyDomainFilters(query: string, filters: string[]): string {
 	return `${query} ${terms.filter(Boolean).join(" ")}`.trim();
 }
 
+function splitDomainFilters(filters: string[]): {
+	includeDomains: string[];
+	excludeDomains: string[];
+} {
+	const includeDomains: string[] = [];
+	const excludeDomains: string[] = [];
+	for (const filter of filters) {
+		const trimmed = filter.trim();
+		if (!trimmed) continue;
+		if (trimmed.startsWith("-")) {
+			const domain = trimmed.slice(1).trim();
+			if (domain) excludeDomains.push(domain);
+		} else {
+			includeDomains.push(trimmed);
+		}
+	}
+	return { includeDomains, excludeDomains };
+}
+
+function configuredSearch(
+	provider: SearchProvider,
+	config: BrowserSearchConfig,
+): SearchFn {
+	if (provider === "exa") {
+		return (query, options, signal) =>
+			exaSearch(query, options, signal, config.exa);
+	}
+	return (query, options, signal) =>
+		searxngSearch(
+			query,
+			{ ...options, baseUrl: config.searxng?.baseUrl },
+			signal,
+		);
+}
+
 function formatFetchedSources(results: FetchResult[]): string {
 	if (results.length === 0) return "";
 	const available = results.filter((result) => result.content && !result.error);
@@ -300,215 +345,242 @@ export function registerBrowserSearch(
 	pi: ExtensionAPI,
 	dependencies: BrowserSearchDependencies = {},
 ): void {
-	const search = dependencies.search ?? searxngSearch;
 	const fetchUrl = dependencies.fetchUrl ?? fetchSingleUrl;
+	let webSearchRegistered = false;
 
-	pi.registerTool({
-		name: "web_search",
-		label: "Web Search",
-		description:
-			"Search via a self-hosted SearXNG metasearch instance. Returns raw source hits rather than a provider-generated answer. Supports the common pi-web-access query/provider/filter fields for call compatibility; every provider value routes to SearXNG. Set includeContent to browse returned hits through Camofox with CloakBrowser fallback.",
-		promptSnippet:
-			"Use for web research through self-hosted SearXNG. Prefer queries with 2-4 varied angles.",
-		promptGuidelines: [
-			"web_search uses the configured SearXNG backend; use varied queries for broad research.",
-			"Use includeContent only when the search snippets are insufficient because it launches a browser for each returned hit.",
-			"Use fetch_content for specific result URLs that need full in-page extraction.",
-		],
-		parameters: Type.Object({
-			query: Type.Optional(
-				Type.String({
-					description:
-						"Single search query. For research, prefer queries with several varied angles.",
-				}),
-			),
-			queries: Type.Optional(
-				Type.Array(Type.String(), {
-					description: "Multiple queries searched sequentially.",
-				}),
-			),
-			numResults: Type.Optional(
-				Type.Integer({
-					minimum: 1,
-					maximum: 20,
-					description: "Maximum hits per query (default 5).",
-				}),
-			),
-			includeContent: Type.Optional(
-				Type.Boolean({
-					description: "Browse each returned hit and append extracted content.",
-				}),
-			),
-			recencyFilter: Type.Optional(
-				StringEnum(["day", "week", "month", "year"] as const),
-			),
-			domainFilter: Type.Optional(
-				Type.Array(Type.String(), {
-					description:
-						"Limit to domains; prefix a domain with - to exclude it.",
-				}),
-			),
-			provider: Type.Optional(
-				StringEnum(
-					[
-						"auto",
-						"searxng",
-						"openai",
-						"brave",
-						"parallel",
-						"tavily",
-						"exa",
-						"perplexity",
-						"gemini",
-					] as const,
-					{
+	const registerSearchProvider = (
+		provider: SearchProvider,
+		search: SearchFn,
+	): void => {
+		if (webSearchRegistered) return;
+		webSearchRegistered = true;
+		const providerLabel = provider === "exa" ? "Exa" : "SearXNG";
+
+		pi.registerTool({
+			name: "web_search",
+			label: "Web Search",
+			description: `Search via the configured ${providerLabel} backend. Returns raw source hits rather than a provider-generated answer. Supports common pi-web-access query/provider/filter fields for call compatibility; the provider field does not override the backend selected in Pi settings. Set includeContent to browse returned hits through Camofox with CloakBrowser fallback.`,
+			promptSnippet: `Use for web research through configured ${providerLabel}. Prefer queries with 2-4 varied angles.`,
+			promptGuidelines: [
+				`web_search uses the configured ${providerLabel} backend; use varied queries for broad research.`,
+				"Use includeContent only when the search snippets are insufficient because it launches a browser for each returned hit.",
+				"Use fetch_content for specific result URLs that need full in-page extraction.",
+			],
+			parameters: Type.Object({
+				query: Type.Optional(
+					Type.String({
 						description:
-							"Accepted for pi-web-access compatibility; all values use SearXNG.",
-					},
+							"Single search query. For research, prefer queries with several varied angles.",
+					}),
 				),
-			),
-			workflow: Type.Optional(
-				StringEnum(["none", "summary-review", "auto-summary"] as const, {
-					description:
-						"Accepted for compatibility; self-hosted search returns raw hits without a curator workflow.",
-				}),
-			),
-			lang: Type.Optional(
-				Type.String({ description: "SearXNG language code." }),
-			),
-			categories: Type.Optional(
-				Type.String({ description: "SearXNG categories CSV." }),
-			),
-			timeRange: Type.Optional(
-				StringEnum(["day", "week", "month", "year"] as const, {
-					description: "SearXNG-native alias for recencyFilter.",
-				}),
-			),
-			engines: Type.Optional(
-				Type.String({ description: "Restrict to SearXNG engines (CSV)." }),
-			),
-			page: Type.Optional(
-				Type.Integer({ minimum: 1, description: "Result page." }),
-			),
-		}),
-
-		async execute(_callId, params, signal, onUpdate) {
-			throwIfAborted(signal);
-			const queryList = normalizeInputList(params.queries, params.query);
-			if (queryList.length === 0) {
-				throw new Error("No query provided. Use query or queries.");
-			}
-
-			const domainFilters = normalizeStringList(params.domainFilter);
-			const options: SearxngOptions = {
-				lang: params.lang as string | undefined,
-				categories: params.categories as string | undefined,
-				timeRange: (params.recencyFilter ?? params.timeRange) as
-					| string
-					| undefined,
-				engines: params.engines as string | undefined,
-				page: params.page as number | undefined,
-				numResults: (params.numResults as number | undefined) ?? 5,
-			};
-			const includeContent = params.includeContent === true;
-			const perQuery: Array<{
-				query: string;
-				resultCount: number;
-				results: SearchResult[];
-				fetched: FetchResult[];
-				error?: string;
-			}> = [];
-
-			for (let index = 0; index < queryList.length; index++) {
-				throwIfAborted(signal);
-				const query = queryList[index];
-				onUpdate?.({
-					content: [
+				queries: Type.Optional(
+					Type.Array(Type.String(), {
+						description: "Multiple queries searched sequentially.",
+					}),
+				),
+				numResults: Type.Optional(
+					Type.Integer({
+						minimum: 1,
+						maximum: 20,
+						description: "Maximum hits per query (default 5).",
+					}),
+				),
+				includeContent: Type.Optional(
+					Type.Boolean({
+						description: "Browse each returned hit and append extracted content.",
+					}),
+				),
+				recencyFilter: Type.Optional(
+					StringEnum(["day", "week", "month", "year"] as const),
+				),
+				domainFilter: Type.Optional(
+					Type.Array(Type.String(), {
+						description: "Limit to domains; prefix a domain with - to exclude it.",
+					}),
+				),
+				provider: Type.Optional(
+					StringEnum(
+						[
+							"auto",
+							"searxng",
+							"openai",
+							"brave",
+							"parallel",
+							"tavily",
+							"exa",
+							"perplexity",
+							"gemini",
+						] as const,
 						{
-							type: "text",
-							text: `Searching SearXNG (${index + 1}/${queryList.length}): ${query}`,
+							description:
+								"Accepted for pi-web-access compatibility; does not override the backend selected in Pi settings.",
 						},
-					],
-					details: { phase: "search", query, index },
-				});
-				try {
-					const outcome = await search(
-						applyDomainFilters(query, domainFilters),
-						options,
-						signal,
-					);
-					const fetched: FetchResult[] = [];
-					if (includeContent) {
-						for (const result of outcome.results) {
-							throwIfAborted(signal);
-							try {
-								fetched.push(await fetchUrl(result.url, "markdown", signal));
-							} catch (error) {
-								if (signal?.aborted) throw abortError(signal);
-								fetched.push(
-									failedFetch(result.url, "markdown", errorMessage(error)),
-								);
+					),
+				),
+				workflow: Type.Optional(
+					StringEnum(["none", "summary-review", "auto-summary"] as const, {
+						description:
+							"Accepted for compatibility; self-hosted search returns raw hits without a curator workflow.",
+					}),
+				),
+				lang: Type.Optional(Type.String({ description: "SearXNG language code." })),
+				categories: Type.Optional(
+					Type.String({ description: "SearXNG categories CSV." }),
+				),
+				timeRange: Type.Optional(
+					StringEnum(["day", "week", "month", "year"] as const, {
+						description: "SearXNG-native alias for recencyFilter.",
+					}),
+				),
+				engines: Type.Optional(
+					Type.String({ description: "Restrict to SearXNG engines (CSV)." }),
+				),
+				page: Type.Optional(
+					Type.Integer({ minimum: 1, description: "Result page." }),
+				),
+			}),
+
+			async execute(_callId, params, signal, onUpdate) {
+				throwIfAborted(signal);
+				const queryList = normalizeInputList(params.queries, params.query);
+				if (queryList.length === 0) {
+					throw new Error("No query provided. Use query or queries.");
+				}
+
+				const domainFilters = normalizeStringList(params.domainFilter);
+				const { includeDomains, excludeDomains } =
+					splitDomainFilters(domainFilters);
+				const options: SearchOptions = {
+					lang: params.lang as string | undefined,
+					categories: params.categories as string | undefined,
+					timeRange: (params.recencyFilter ?? params.timeRange) as
+						| string
+						| undefined,
+					engines: params.engines as string | undefined,
+					page: params.page as number | undefined,
+					numResults: (params.numResults as number | undefined) ?? 5,
+					includeDomains,
+					excludeDomains,
+				};
+				const includeContent = params.includeContent === true;
+				const perQuery: Array<{
+					query: string;
+					resultCount: number;
+					results: SearchResult[];
+					fetched: FetchResult[];
+					error?: string;
+				}> = [];
+
+				for (let index = 0; index < queryList.length; index++) {
+					throwIfAborted(signal);
+					const query = queryList[index];
+					onUpdate?.({
+						content: [
+							{
+								type: "text",
+								text: `Searching ${providerLabel} (${index + 1}/${queryList.length}): ${query}`,
+							},
+						],
+						details: { phase: "search", query, index },
+					});
+					try {
+						const outcome = await search(
+							provider === "searxng"
+								? applyDomainFilters(query, domainFilters)
+								: query,
+							options,
+							signal,
+						);
+						const fetched: FetchResult[] = [];
+						if (includeContent) {
+							for (const result of outcome.results) {
+								throwIfAborted(signal);
+								try {
+									fetched.push(await fetchUrl(result.url, "markdown", signal));
+								} catch (error) {
+									if (signal?.aborted) throw abortError(signal);
+									fetched.push(failedFetch(result.url, "markdown", errorMessage(error)));
+								}
 							}
 						}
+						perQuery.push({
+							query,
+							resultCount: outcome.resultCount,
+							results: outcome.results,
+							fetched,
+						});
+					} catch (error) {
+						if (signal?.aborted) throw abortError(signal);
+						perQuery.push({
+							query,
+							resultCount: 0,
+							results: [],
+							fetched: [],
+							error: errorMessage(error),
+						});
 					}
-					perQuery.push({
-						query,
-						resultCount: outcome.resultCount,
-						results: outcome.results,
-						fetched,
-					});
-				} catch (error) {
-					if (signal?.aborted) throw abortError(signal);
-					perQuery.push({
-						query,
-						resultCount: 0,
-						results: [],
-						fetched: [],
-						error:
-							error instanceof SearxngError
-								? error.message
-								: errorMessage(error),
-					});
 				}
-			}
 
-			const successfulQueries = perQuery.filter((result) => !result.error);
-			if (successfulQueries.length === 0) {
-				throw new Error(
-					`SearXNG search failed for all ${queryList.length} query(ies): ${perQuery[0]?.error ?? "unknown error"}`,
+				const successfulQueries = perQuery.filter((result) => !result.error);
+				if (successfulQueries.length === 0) {
+					throw new Error(
+						`${providerLabel} search failed for all ${queryList.length} query(ies): ${perQuery[0]?.error ?? "unknown error"}`,
+					);
+				}
+
+				const output = perQuery
+					.map((result) =>
+						result.error
+							? `## "${result.query}" — error\n\n${result.error}`
+							: `${formatSearchHits(result.query, result.results)}${formatFetchedSources(result.fetched)}`,
+					)
+					.join("\n\n---\n\n");
+				const inline = truncateForInline(output);
+				const totalHits = perQuery.reduce(
+					(total, result) => total + result.resultCount,
+					0,
 				);
-			}
 
-			const output = perQuery
-				.map((result) =>
-					result.error
-						? `## "${result.query}" — error\n\n${result.error}`
-						: `${formatSearchHits(result.query, result.results)}${formatFetchedSources(result.fetched)}`,
-				)
-				.join("\n\n---\n\n");
-			const inline = truncateForInline(output);
-			const totalHits = perQuery.reduce(
-				(total, result) => total + result.resultCount,
-				0,
+				return toolResult(inline.text, {
+					tier: provider,
+					provider,
+					requestedProvider: params.provider,
+					queryCount: perQuery.length,
+					totalHits,
+					includeContent,
+					truncated: inline.truncated,
+					queries: perQuery.map((result) => ({
+						query: result.query,
+						resultCount: result.resultCount,
+						fetched: result.fetched.length,
+						...(result.error ? { error: result.error } : {}),
+					})),
+				});
+			},
+		});
+	};
+
+	const immediateProvider =
+		dependencies.provider ??
+		dependencies.config?.provider ??
+		(dependencies.search ? "searxng" : undefined);
+	if (immediateProvider) {
+		registerSearchProvider(
+			immediateProvider,
+			dependencies.search ??
+				configuredSearch(immediateProvider, dependencies.config ?? {}),
+		);
+	} else if (!("config" in dependencies)) {
+		const loadConfig = dependencies.loadConfig ?? loadBrowserSearchConfig;
+		pi.on("session_start", (_event, ctx) => {
+			const config = loadConfig(ctx.cwd, ctx.isProjectTrusted());
+			if (!config.provider) return;
+			registerSearchProvider(
+				config.provider,
+				configuredSearch(config.provider, config),
 			);
-
-			return toolResult(inline.text, {
-				tier: "searxng",
-				provider: "searxng",
-				requestedProvider: params.provider,
-				queryCount: perQuery.length,
-				totalHits,
-				includeContent,
-				truncated: inline.truncated,
-				queries: perQuery.map((result) => ({
-					query: result.query,
-					resultCount: result.resultCount,
-					fetched: result.fetched.length,
-					...(result.error ? { error: result.error } : {}),
-				})),
-			});
-		},
-	});
+		});
+	}
 
 	pi.registerTool({
 		name: "fetch_content",
@@ -651,9 +723,7 @@ export function registerBrowserSearch(
 
 			const perUrlLimit = Math.max(
 				1_000,
-				Math.floor(
-					(MAX_INLINE_CONTENT - 2_000) / Math.max(successful.length, 1),
-				),
+				Math.floor((MAX_INLINE_CONTENT - 2_000) / Math.max(successful.length, 1)),
 			);
 			const sections = results.map((result) => {
 				if (result.error || !result.content) {
@@ -672,8 +742,7 @@ export function registerBrowserSearch(
 			return toolResult(combined.text, {
 				urlCount: urlList.length,
 				successful: successful.length,
-				truncated:
-					combined.truncated || results.some((result) => result.truncated),
+				truncated: combined.truncated || results.some((result) => result.truncated),
 				results: results.map((result) => ({
 					url: result.url,
 					finalUrl: result.finalUrl,

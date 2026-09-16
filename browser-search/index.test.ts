@@ -9,7 +9,11 @@ import {
 	registerBrowserSearch,
 	type BrowserSearchDependencies,
 } from "./index.ts";
-import type { FetchResult, SearxngSearchOutcome } from "./types.ts";
+import type {
+	FetchResult,
+	SearchOptions,
+	SearxngSearchOutcome,
+} from "./types.ts";
 
 interface TestTool {
 	name: string;
@@ -77,13 +81,28 @@ function failed(url: string, message = "backend down"): FetchResult {
 
 function createHarness(dependencies: BrowserSearchDependencies = {}) {
 	const tools = new Map<string, TestTool>();
+	let sessionStart: ((event: unknown, ctx: unknown) => void) | undefined;
 	const pi = {
 		registerTool(tool: TestTool) {
 			tools.set(tool.name, tool);
 		},
+		on(event: string, handler: (event: unknown, ctx: unknown) => void) {
+			if (event === "session_start") sessionStart = handler;
+		},
 	} as unknown as ExtensionAPI;
 	registerBrowserSearch(pi, dependencies);
-	return { tools };
+	return {
+		tools,
+		startSession() {
+			sessionStart?.(
+				{},
+				{
+					cwd: process.cwd(),
+					isProjectTrusted: () => true,
+				},
+			);
+		},
+	};
 }
 
 function getTool(tools: Map<string, TestTool>, name: string): TestTool {
@@ -92,9 +111,26 @@ function getTool(tools: Map<string, TestTool>, name: string): TestTool {
 	return tool;
 }
 
-test("registerBrowserSearch exposes only the two drop-in tool names", () => {
-	const { tools } = createHarness();
+test("web_search is optional when no provider is configured", () => {
+	const { tools } = createHarness({ config: {} });
+	assert.deepEqual([...tools.keys()], ["fetch_content"]);
+});
+
+test("an explicitly configured provider registers both drop-in tools", () => {
+	const { tools } = createHarness({
+		provider: "searxng",
+		search: async (query) => searchOutcome(query),
+	});
 	assert.deepEqual([...tools.keys()], ["web_search", "fetch_content"]);
+});
+
+test("session startup loads the provider from Pi settings", () => {
+	const { tools, startSession } = createHarness({
+		loadConfig: () => ({ provider: "exa" }),
+	});
+	assert.deepEqual([...tools.keys()], ["fetch_content"]);
+	startSession();
+	assert.deepEqual([...tools.keys()], ["fetch_content", "web_search"]);
 });
 
 test("the root AIO extension wires browser-search registration", () => {
@@ -107,7 +143,10 @@ test("the root AIO extension wires browser-search registration", () => {
 });
 
 test("schemas retain pi-web-access compatibility fields", () => {
-	const { tools } = createHarness();
+	const { tools } = createHarness({
+		provider: "searxng",
+		search: async (query) => searchOutcome(query),
+	});
 	const searchProperties = getTool(tools, "web_search").parameters.properties;
 	for (const field of [
 		"query",
@@ -198,12 +237,9 @@ test("multi-URL fetch preserves successful content alongside per-URL errors", as
 		fetchUrl: async (url) =>
 			url.endsWith("/a") ? fetched(url) : failed(url, "blocked"),
 	});
-	const result = await getTool(tools, "fetch_content").execute(
-		"fetch-partial",
-		{
-			urls: ["https://8.8.8.8/a", "https://8.8.8.8/b"],
-		},
-	);
+	const result = await getTool(tools, "fetch_content").execute("fetch-partial", {
+		urls: ["https://8.8.8.8/a", "https://8.8.8.8/b"],
+	});
 
 	assert.match(result.content[0].text, /Body for https:\/\/8\.8\.8\.8\/a/);
 	assert.match(result.content[0].text, /Error: blocked/);
@@ -212,13 +248,13 @@ test("multi-URL fetch preserves successful content alongside per-URL errors", as
 
 test("web_search applies compatibility filters and can include fetched content", async () => {
 	let receivedQuery = "";
-	let receivedOptions: Record<string, unknown> = {};
+	let receivedOptions: SearchOptions = {};
 	const search: NonNullable<BrowserSearchDependencies["search"]> = async (
 		query,
 		options,
 	) => {
 		receivedQuery = query;
-		receivedOptions = options;
+		receivedOptions = options ?? {};
 		return searchOutcome(query);
 	};
 	const { tools } = createHarness({
@@ -238,6 +274,30 @@ test("web_search applies compatibility filters and can include fetched content",
 	assert.equal(receivedOptions.timeRange, "month");
 	assert.match(result.content[0].text, /Fetched article/);
 	assert.equal(result.details.provider, "searxng");
+	assert.equal(result.details.requestedProvider, "brave");
+});
+
+test("Exa receives native domain filters without rewriting the query", async () => {
+	let receivedQuery = "";
+	let receivedOptions: SearchOptions = {};
+	const { tools } = createHarness({
+		provider: "exa",
+		search: async (query, options) => {
+			receivedQuery = query;
+			receivedOptions = options ?? {};
+			return searchOutcome(query);
+		},
+	});
+	const result = await getTool(tools, "web_search").execute("search-exa", {
+		query: "release notes",
+		domainFilter: ["example.com", "-ads.example.com"],
+		provider: "brave",
+	});
+
+	assert.equal(receivedQuery, "release notes");
+	assert.deepEqual(receivedOptions.includeDomains, ["example.com"]);
+	assert.deepEqual(receivedOptions.excludeDomains, ["ads.example.com"]);
+	assert.equal(result.details.provider, "exa");
 	assert.equal(result.details.requestedProvider, "brave");
 });
 
@@ -272,7 +332,8 @@ test("challenge detection recognizes anti-bot pages and ignores articles", () =>
 		detectChallenge({
 			url: "https://example.com/cdn-cgi/challenge",
 			cookies: [{ name: "__cf_bm" }],
-			html: "<title>Just a moment</title><script src='/cdn-cgi/challenge-platform/x.js'></script>",
+			html:
+				"<title>Just a moment</title><script src='/cdn-cgi/challenge-platform/x.js'></script>",
 		})?.name,
 		"cloudflare",
 	);

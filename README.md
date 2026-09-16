@@ -2,7 +2,7 @@
 
 Combined Pi extension: structured **`ask_user_question`** dialogs, a **`/pick`**
 code picker, **`/init`** AGENTS.md bootstrap, **`/effort`** thinking control,
-generic **subagent delegation**, self-hosted **`web_search`** and
+generic **subagent delegation**, configurable **`web_search`** and
 **`fetch_content`**, **`!` bash shortcuts**, **Shift+Tab** permission modes,
 enhanced built-in output with FFF-backed search, **rtk** shell-command rewriting,
 and syntax-highlighted write/edit/patch diffs.
@@ -148,20 +148,21 @@ Analyze the codebase and create or update `AGENTS.md` for Pi and other coding ag
 - `force` regenerates even when `AGENTS.md` already exists; `dry-run` shows the proposed content without writing files.
 - Run `/reload` after writing so Pi loads the new context.
 
-## Self-hosted web search
+## Web search
 
-AIO provides `web_search` and `fetch_content` using the native TypeScript port
-in [`browser-search/`](browser-search/README.md):
+AIO provides `web_search` and `fetch_content` through
+[`browser-search/`](browser-search/README.md):
 
-- SearXNG supplies raw multi-engine search hits.
-- Camofox extracts readable page content through headless Firefox.
-- CloakBrowser is an optional stealth fallback for blocked or empty pages.
+- `web_search` is opt-in and uses the Exa or SearXNG provider selected under
+  `aio.browserSearch` in Pi settings.
+- `fetch_content` uses Camofox with an optional CloakBrowser fallback and stays
+  available even when search is disabled.
 - Results are returned inline; there is no curator, response-id store, or
   `get_search_content` tool.
 
-SearXNG and Camofox must be running separately. See the
-[browser-search setup and configuration](browser-search/README.md), including
-how to disable pi-web-access's overlapping extension while retaining its skills.
+No search provider is selected by default. See the
+[browser-search setup and configuration](browser-search/README.md) for Exa API
+keys, the optional self-hosted stack, and pi-web-access coexistence.
 
 ## Subagent delegation
 

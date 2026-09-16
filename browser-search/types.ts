@@ -1,11 +1,6 @@
-/**
- * Shared types for the browser-search module.
- *
- * These mirror the field names the upstream `browser-search` scripts emit on
- * stdout, so anything consuming the original JSON output sees a familiar shape.
- */
+/** Shared normalized types for the browser-search module. */
 
-/** A single SearXNG search hit. */
+/** A single normalized search hit from any configured provider. */
 export interface SearchResult {
 	title: string | null;
 	url: string;
@@ -15,8 +10,21 @@ export interface SearchResult {
 	publishedDate: string | null;
 }
 
-/** Normalized result of a SearXNG search call. */
-export interface SearxngSearchOutcome {
+/** Search options shared by provider adapters. */
+export interface SearchOptions {
+	lang?: string;
+	categories?: string;
+	timeRange?: string;
+	engines?: string;
+	page?: number;
+	numResults?: number;
+	includeDomains?: string[];
+	excludeDomains?: string[];
+	baseUrl?: string;
+}
+
+/** Normalized result of a provider search call. */
+export interface SearchOutcome {
 	ok: true;
 	query: string;
 	parameters: {
@@ -29,6 +37,10 @@ export interface SearxngSearchOutcome {
 	resultCount: number;
 	results: SearchResult[];
 }
+
+/** Backward-compatible names for the SearXNG adapter's public types. */
+export type SearxngOptions = SearchOptions;
+export type SearxngSearchOutcome = SearchOutcome;
 
 /** Output of the Readability extraction (matches Mozilla Readability's Article). */
 export interface ReadabilityArticle {
@@ -57,14 +69,4 @@ export interface FetchResult {
 	challengeStrategy?: string | null;
 	challengeResolved?: boolean;
 	error?: string;
-}
-
-/** Search options accepted by the SearXNG client. */
-export interface SearxngOptions {
-	lang?: string;
-	categories?: string;
-	timeRange?: string;
-	engines?: string;
-	page?: number;
-	numResults?: number;
 }

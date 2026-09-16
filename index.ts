@@ -1,7 +1,7 @@
 /**
  * Combined Pi extension: ask_user_question, /pick, /effort, Shift+Tab
  * permission modes, enhanced built-in tool output, syntax-highlighted diffs,
- * self-hosted web search, rtk shell-command rewriting, ast-grep structural
+ * configurable web search, rtk shell-command rewriting, ast-grep structural
  * search, and a message-queue UI with Enter-to-interrupt.
  *
  * Effort and permission modes are based on @pandi-coding-agent/pandi-effort
