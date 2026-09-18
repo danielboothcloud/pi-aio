@@ -34,7 +34,7 @@ import { homedir } from "node:os";
 
 import { abortable, abortError, sleep, throwIfAborted } from "./abort.js";
 import { waitForChallenge, type ChallengePage } from "./challenges.js";
-import { CLOAK_MAX_CHARS } from "./config.js";
+import { BROWSER_SEARCH_DEBUG, CLOAK_MAX_CHARS } from "./config.js";
 import { extractMarkdownFromHtml, textFromHtml } from "./readability.js";
 import type { FetchResult } from "./types.js";
 import { validateUrlWithDns } from "./url-validation.js";
@@ -214,7 +214,7 @@ interface CloakbrowserModule {
 function pageToChallengePage(page: CloakPage): ChallengePage {
 	return {
 		url: () => page.url(),
-		evaluate: (fn) => page.evaluate<string>(fn as string),
+		evaluate: <T>(fn: string | (() => T)) => page.evaluate<T>(fn),
 		context: () => ({
 			cookies: () => page.context().cookies(),
 		}),
@@ -277,13 +277,15 @@ async function fetchPageOnce(
 			));
 		} else if (opts.session) {
 			session = await abortable(acquireSession(opts.url), opts.signal);
-			process.stderr.write(
-				`${JSON.stringify({
-					session: "acquired",
-					origin: session.origin,
-					userDataDir: session.userDataDir,
-				})}\n`,
-			);
+			if (BROWSER_SEARCH_DEBUG) {
+				process.stderr.write(
+					`${JSON.stringify({
+						session: "acquired",
+						origin: session.origin,
+						userDataDir: session.userDataDir,
+					})}\n`,
+				);
+			}
 			({ context, page } = await openPersistentPage(
 				cloak,
 				session.userDataDir,
@@ -347,9 +349,12 @@ async function fetchPageOnce(
 			const html = await abortable(page.content(), opts.signal);
 			raw = extractMarkdownFromHtml(html).content;
 		} else {
-			raw = await page
+			// Narrow `page` into a const so the catch callback below keeps the
+			// null-check guarantee (narrowing is lost inside closures).
+			const activePage: CloakPage = page;
+			raw = await activePage
 				.evaluate<string>(() => document.body?.innerText || "")
-				.catch(async () => textFromHtml(await page.content()));
+				.catch(async () => textFromHtml(await activePage.content()));
 		}
 
 		const truncated = raw.length > maxChars;
@@ -420,6 +425,9 @@ export async function cloakFetch(
 
 async function importCloak(): Promise<unknown | null> {
 	try {
+		// The module prints an npm-update notice on stderr at first use — noise
+		// for a tool run. Default it off unless the user opted in explicitly.
+		process.env.CLOAKBROWSER_AUTO_UPDATE ??= "false";
 		return await import("cloakbrowser");
 	} catch {
 		return null;

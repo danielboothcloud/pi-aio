@@ -93,12 +93,20 @@ Chromium binary on first use.
 - `CAMOFOX_API_KEY` (empty) — Camofox API bearer token.
 - `CAMOFOX_USER_ID` (`pi-bot`) — Camofox session identity.
 - `BROWSER_SEARCH_CAMOFOX_AUTO_RESTART` (disabled) — set to `1`, `true`, or
-  `yes` to permit `docker restart camofox-browser` after a recovering 503.
+  `yes` to permit a container restart after a recovering 503.
+- `BROWSER_SEARCH_CAMOFOX_RESTART_CMD` (`docker restart camofox-browser`) —
+  restart command used when auto-restart engages; override for podman.
+- `BROWSER_SEARCH_DEBUG` (disabled) — set to `1`, `true`, or `yes` to print
+  per-call backend chatter ([camofox] HTTP lines, per-hit fetch progress) to
+  stderr. Off by default so the TUI spinner stays quiet; failures still surface
+  via tool output.
 - `BROWSER_SEARCH_EXA_TIMEOUT_MS` (`20000`) — Exa request timeout.
 - `BROWSER_SEARCH_SEARXNG_TIMEOUT_MS` (`20000`) — SearXNG request timeout.
 - `BROWSER_SEARCH_CAMOFOX_TIMEOUT_MS` (`30000`) — Camofox request timeout.
 - `BROWSER_SEARCH_MAX_INLINE_CONTENT` (`40000`) — model-facing result cap.
 - `BROWSER_SEARCH_CLOAK_MAX_CHARS` (`100000`) — CloakBrowser extraction cap.
+- `CLOAKBROWSER_AUTO_UPDATE` — cloakbrowser's own opt-in npm-update notice;
+  AIO defaults it to `false` unless you set it explicitly.
 
 The SSRF guard rejects unsafe initial URLs and private DNS results before either
 browser tier starts navigation. As with any remote browser service, deploy

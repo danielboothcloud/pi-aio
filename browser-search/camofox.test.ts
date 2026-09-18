@@ -3,7 +3,10 @@ import { createServer } from "node:http";
 import { after, test } from "node:test";
 
 let healthDelayMs = 0;
+let healthStatus = 200;
+let healthBody: Record<string, unknown> = { browserRunning: true };
 let closedTabs = 0;
+let startedBrowsers = 0;
 const server = createServer(async (request, response) => {
 	const chunks: Buffer[] = [];
 	for await (const chunk of request) chunks.push(Buffer.from(chunk));
@@ -11,7 +14,7 @@ const server = createServer(async (request, response) => {
 		? (JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<
 				string,
 				unknown
-			>)
+		  >)
 		: {};
 	response.setHeader("content-type", "application/json");
 
@@ -19,7 +22,13 @@ const server = createServer(async (request, response) => {
 		if (healthDelayMs > 0) {
 			await new Promise((resolve) => setTimeout(resolve, healthDelayMs));
 		}
-		response.end(JSON.stringify({ browserRunning: true }));
+		response.statusCode = healthStatus;
+		response.end(JSON.stringify(healthBody));
+		return;
+	}
+	if (request.method === "POST" && request.url === "/start") {
+		startedBrowsers++;
+		response.end(JSON.stringify({ ok: true, profile: "camoufox" }));
 		return;
 	}
 	if (request.method === "POST" && request.url === "/tabs") {
@@ -69,6 +78,29 @@ test("Camofox readability extracts an article and closes its tab", async () => {
 	assert.equal(result.readability?.title, "Mock article");
 	assert.equal(result.readability?.text, "Readable body");
 	assert.equal(closedTabs, 1);
+});
+
+test("Camofox treats browserRunning:false as a normal lazy launch", async () => {
+	// Upstream boots the engine lazily on first tab creation and documents
+	// browserRunning:false as normal — the client must proceed to createTab.
+	healthBody = { browserRunning: false };
+	const [result] = await readability(["https://8.8.8.8/lazy"]);
+	healthBody = { browserRunning: true };
+	assert.equal(result.error, undefined);
+	assert.equal(result.readability?.title, "Mock article");
+});
+
+test("Camofox still creates tabs while /health reports 503 recovering", async () => {
+	// A wedged container can serve 503 recovering:true for days while tab
+	// creation succeeds — the client must not throw "Unable to start".
+	healthStatus = 503;
+	healthBody = { ok: false, engine: "camoufox", recovering: true };
+	const [result] = await readability(["https://8.8.8.8/wedge"]);
+	healthStatus = 200;
+	healthBody = { browserRunning: true };
+	assert.equal(result.error, undefined);
+	assert.equal(result.readability?.title, "Mock article");
+	assert.ok(startedBrowsers >= 1); // best-effort idempotent /start fired
 });
 
 test("Camofox HTTP calls honor cancellation", async () => {

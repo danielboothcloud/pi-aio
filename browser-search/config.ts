@@ -173,6 +173,22 @@ export const CAMOFOX_AUTO_RESTART = /^(1|true|yes)$/i.test(
 	process.env.BROWSER_SEARCH_CAMOFOX_AUTO_RESTART ?? "",
 );
 
+/**
+ * Container restart command used when CAMOFOX_AUTO_RESTART engages. Override
+ * for other runtimes (e.g. podman).
+ */
+export const CAMOFOX_RESTART_CMD =
+	process.env.BROWSER_SEARCH_CAMOFOX_RESTART_CMD?.trim() ?? "";
+
+/**
+ * Opt-in debug chatter for browser-search backends (per-call HTTP lines,
+ * challenge polling, per-hit fetch progress). Off by default so the TUI
+ * spinner stays quiet; failures still surface via tool output.
+ */
+export const BROWSER_SEARCH_DEBUG = /^(1|true|yes)$/i.test(
+	process.env.BROWSER_SEARCH_DEBUG ?? "",
+);
+
 /** Network timeout for SearXNG HTTP calls. */
 export const SEARXNG_REQUEST_TIMEOUT_MS = positiveInteger(
 	process.env.BROWSER_SEARCH_SEARXNG_TIMEOUT_MS,

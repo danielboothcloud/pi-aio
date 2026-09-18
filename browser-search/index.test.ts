@@ -277,6 +277,30 @@ test("web_search applies compatibility filters and can include fetched content",
 	assert.equal(result.details.requestedProvider, "brave");
 });
 
+test("web_search includeContent reports per-hit progress via onUpdate", async () => {
+	const { tools } = createHarness({
+		search: async (query) => searchOutcome(query),
+		fetchUrl: async (url) => fetched(url, "Fetched article"),
+	});
+	const updates: Array<{ content: Array<{ text: string }> }> = [];
+	await getTool(tools, "web_search").execute(
+		"search-progress",
+		{ query: "release notes", includeContent: true },
+		undefined,
+		(update: unknown) => {
+			// SAFETY: onUpdate payloads here are tool-authored
+			// {content:[{type:"text",text}]} shapes emitted by web_search itself.
+			updates.push(update as { content: Array<{ text: string }> });
+		},
+	);
+	// One phase update per query, plus one per fetched hit.
+	assert.match(updates[0]?.content[0]?.text ?? "", /Searching/);
+	assert.match(
+		updates[1]?.content[0]?.text ?? "",
+		/Browsing hit 1\/1 \(query 1\/1\): https:\/\/8\.8\.8\.8\/a/,
+	);
+});
+
 test("Exa receives native domain filters without rewriting the query", async () => {
 	let receivedQuery = "";
 	let receivedOptions: SearchOptions = {};

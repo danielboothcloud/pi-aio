@@ -493,13 +493,33 @@ export function registerBrowserSearch(
 						);
 						const fetched: FetchResult[] = [];
 						if (includeContent) {
-							for (const result of outcome.results) {
+							const hits = outcome.results;
+							for (const [hitIndex, result] of hits.entries()) {
 								throwIfAborted(signal);
+								onUpdate?.({
+									content: [
+										{
+											type: "text",
+											text: `Browsing hit ${hitIndex + 1}/${hits.length} (query ${index + 1}/${queryList.length}): ${result.url}`,
+										},
+									],
+									details: {
+										phase: "fetch",
+										query,
+										url: result.url,
+										index,
+										hitIndex,
+									},
+								});
 								try {
-									fetched.push(await fetchUrl(result.url, "markdown", signal));
+									fetched.push(
+										await fetchUrl(result.url, "markdown", signal),
+									);
 								} catch (error) {
 									if (signal?.aborted) throw abortError(signal);
-									fetched.push(failedFetch(result.url, "markdown", errorMessage(error)));
+									fetched.push(
+										failedFetch(result.url, "markdown", errorMessage(error)),
+									);
 								}
 							}
 						}
