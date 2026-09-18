@@ -143,15 +143,29 @@ test("loadStatusLineConfig merges project and global aio.statusLine settings", (
 test("renderStatusLine shows mapped provider quota", () => {
 	const [line] = renderStatusLine(
 		baseInput({
-			providerUsage: {
-				provider: "synthetic",
-				label: "synthetic",
-				used: 0,
-				limit: 135,
-				remaining: 135,
-				remainingPercent: 100,
-			},
+			providerUsage: [
+				{
+					provider: "synthetic",
+					label: "synthetic",
+					used: 0,
+					limit: 135,
+					remaining: 135,
+					remainingPercent: 100,
+				},
+			],
 		}),
 	);
 	assert.match(line, /◴ synthetic 100% left/);
+});
+
+test("renderStatusLine joins provider quota windows", () => {
+	const [line] = renderStatusLine(
+		baseInput({
+			providerUsage: [
+				{ provider: "synthetic", label: "synthetic", remainingPercent: 100 },
+				{ provider: "synthetic", label: "wk", text: "$23.21" },
+			],
+		}),
+	);
+	assert.match(line, /◴ synthetic 100% left · wk \$23\.21/);
 });

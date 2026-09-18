@@ -434,7 +434,8 @@ have a bounded timeout, fail silently, and keep the last successful value on a
 transient error. Header values support `$VAR` and `${VAR}` environment
 references (but never shell commands).
 
-For example, a custom provider named `synthetic` can use Synthetic's quota API:
+For example, a custom provider named `synthetic` can use Synthetic's quota API,
+showing both the request quota and the weekly credit window from one response:
 
 ```json
 {
@@ -446,14 +447,25 @@ For example, a custom provider named `synthetic` can use Synthetic's quota API:
         "providers": {
           "synthetic": {
             "endpoint": "https://api.synthetic.new/v2/quotas",
-            "label": "Synthetic",
             "headers": {
               "Authorization": "Bearer ${SYNTHETIC_API_KEY}"
             },
-            "mapping": {
-              "used": "subscription.requests",
-              "limit": "subscription.limit",
-              "renewsAt": "subscription.renewsAt"
+            "windows": {
+              "requests": {
+                "label": "synthetic",
+                "mapping": {
+                  "used": "subscription.requests",
+                  "limit": "subscription.limit",
+                  "renewsAt": "subscription.renewsAt"
+                }
+              },
+              "weekly": {
+                "label": "wk",
+                "mapping": {
+                  "text": "weeklyTokenLimit.remainingCredits",
+                  "renewsAt": "weeklyTokenLimit.nextRegenAt"
+                }
+              }
             }
           }
         }
@@ -463,11 +475,14 @@ For example, a custom provider named `synthetic` can use Synthetic's quota API:
 }
 ```
 
-Mappings may provide `used`, `limit`, `remaining`, `renewsAt`, and/or `text`.
-When `used` and `limit` are available, aio computes the remaining percentage.
-`text` can map a provider-formatted quota string directly. The `quota` segment
-is omitted when the active provider has no configuration or a value has not
-been fetched successfully.
+Each mapping may provide `used`, `limit`, `remaining`, `renewsAt`, and/or
+`text`. When `used` and `limit` are available, aio computes the remaining
+percentage. `text` can map a provider-formatted quota string (for example
+`"$23.21"`) verbatim. Windows render inside one `quota` segment, joined by
+`·`, and the segment colors by the window closest to exhaustion. A provider
+entry with a single top-level `mapping` instead of `windows` keeps working as
+a one-window shorthand. The `quota` segment is omitted when the active
+provider has no configuration or nothing has been fetched successfully.
 
 To migrate off `pi-powerline-footer`, remove it from `packages` in Pi settings,
 delete any `powerline` block, and reload extensions.

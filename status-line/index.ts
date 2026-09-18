@@ -22,7 +22,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	let streamStart = 0;
 	let outputAtTurnStart = 0;
 	let currentCtx: ExtensionContext | null = null;
-	let providerUsage: ProviderUsage | undefined;
+	let providerUsage: ProviderUsage[] = [];
 	let providerUsageFetchedAt = 0;
 	let providerUsageRequest: Promise<void> | undefined;
 	let providerUsageAbort: AbortController | undefined;
@@ -33,7 +33,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 		providerUsageAbort = undefined;
 		providerUsageRequest = undefined;
 		if (clearValue) {
-			providerUsage = undefined;
+			providerUsage = [];
 			providerUsageFetchedAt = 0;
 			requestFooterRender?.();
 		}
@@ -55,7 +55,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 			? usageConfig?.providers[provider]
 			: undefined;
 		if (!provider || !usageConfig || !endpointConfig) {
-			providerUsage = undefined;
+			providerUsage = [];
 			providerUsageFetchedAt = 0;
 			requestFooterRender?.();
 			return Promise.resolve();
@@ -63,7 +63,8 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 		if (providerUsageRequest) return providerUsageRequest;
 		if (
 			!force &&
-			providerUsage?.provider === provider &&
+			providerUsage.length > 0 &&
+			providerUsage[0]?.provider === provider &&
 			Date.now() - providerUsageFetchedAt < usageConfig.refreshIntervalMs
 		) {
 			return Promise.resolve();

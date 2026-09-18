@@ -135,3 +135,53 @@ test("loadStatusLineConfig parses provider usage endpoints and mappings", () => 
 		rmSync(tmpDir, { recursive: true, force: true });
 	}
 });
+
+test("loadStatusLineConfig parses named provider usage windows", () => {
+	const tmpDir = mkdtempSync(join(tmpdir(), "aio-status-line-usage-windows-"));
+	try {
+		mkdirSync(join(tmpDir, ".pi"), { recursive: true });
+		writeFileSync(
+			join(tmpDir, ".pi", "settings.json"),
+			JSON.stringify({
+				aio: {
+					statusLine: {
+						providerUsage: {
+							providers: {
+								custom: {
+									endpoint: "https://quota.custom.dev/v2/usage",
+									headers: { Authorization: "Bearer ${CUSTOM_KEY}" },
+									windows: {
+										credits: {
+											label: "credits",
+											mapping: { text: "wallet.remaining" },
+										},
+										rate: {
+											mapping: {
+												used: "limits.used",
+												limit: "limits.max",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}),
+			"utf-8",
+		);
+
+		const config = loadStatusLineConfig(tmpDir, { includeGlobal: false });
+		assert.deepEqual(
+			config.providerUsage?.providers.custom?.windows?.credits,
+			{ label: "credits", mapping: { text: "wallet.remaining" } },
+		);
+		assert.deepEqual(
+			config.providerUsage?.providers.custom?.windows?.rate?.mapping,
+			{ used: "limits.used", limit: "limits.max" },
+		);
+		assert.equal(config.providerUsage?.providers.custom?.mapping, undefined);
+	} finally {
+		rmSync(tmpDir, { recursive: true, force: true });
+	}
+});

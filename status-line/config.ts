@@ -28,11 +28,19 @@ export interface ProviderUsageMapping {
 	text?: string;
 }
 
+export interface ProviderUsageWindowConfig {
+	label?: string;
+	mapping: ProviderUsageMapping;
+}
+
 export interface ProviderUsageEndpointConfig {
 	endpoint: string;
 	label?: string;
 	headers: Record<string, string>;
-	mapping: ProviderUsageMapping;
+	/** Single-window shorthand; ignored when `windows` is set. */
+	mapping?: ProviderUsageMapping;
+	/** Multiple named displays mapped from one endpoint response. */
+	windows?: Record<string, ProviderUsageWindowConfig>;
 }
 
 export interface ProviderUsageConfig {
@@ -124,6 +132,25 @@ function boundedNumber(
 		: undefined;
 }
 
+const USAGE_MAPPING_KEYS = [
+	"used",
+	"limit",
+	"remaining",
+	"renewsAt",
+	"text",
+] as const;
+
+function parseUsageMapping(raw: unknown): ProviderUsageMapping | undefined {
+	if (typeof raw !== "object" || raw === null) return undefined;
+	const rawMapping = raw as Record<string, unknown>;
+	const mapping: ProviderUsageMapping = {};
+	for (const key of USAGE_MAPPING_KEYS) {
+		const path = nonEmptyString(rawMapping[key]);
+		if (path) mapping[key] = path;
+	}
+	return Object.keys(mapping).length > 0 ? mapping : undefined;
+}
+
 function parseProviderUsage(
 	raw: unknown,
 ): ParsedProviderUsageConfig | undefined {
@@ -151,20 +178,26 @@ function parseProviderUsage(
 			continue;
 		}
 
-		if (typeof entry.mapping !== "object" || entry.mapping === null) continue;
-		const rawMapping = entry.mapping as Record<string, unknown>;
-		const mapping: ProviderUsageMapping = {};
-		for (const key of [
-			"used",
-			"limit",
-			"remaining",
-			"renewsAt",
-			"text",
-		] as const) {
-			const path = nonEmptyString(rawMapping[key]);
-			if (path) mapping[key] = path;
+		const windows = Object.create(
+			null,
+		) as Record<string, ProviderUsageWindowConfig>;
+		if (typeof entry.windows === "object" && entry.windows !== null) {
+			for (const [name, rawWindow] of Object.entries(entry.windows)) {
+				if (!nonEmptyString(name)) continue;
+				if (typeof rawWindow !== "object" || rawWindow === null) continue;
+				const window = rawWindow as Record<string, unknown>;
+				const windowMapping = parseUsageMapping(window.mapping);
+				if (!windowMapping) continue;
+				windows[name] = {
+					label: nonEmptyString(window.label),
+					mapping: windowMapping,
+				};
+			}
 		}
-		if (Object.keys(mapping).length === 0) continue;
+		const mapping = Object.keys(windows).length > 0
+			? undefined
+			: parseUsageMapping(entry.mapping);
+		if (!mapping && Object.keys(windows).length === 0) continue;
 
 		const headers = Object.create(null) as Record<string, string>;
 		if (typeof entry.headers === "object" && entry.headers !== null) {
@@ -180,6 +213,7 @@ function parseProviderUsage(
 			label: nonEmptyString(entry.label),
 			headers,
 			mapping,
+			windows: Object.keys(windows).length > 0 ? windows : undefined,
 		};
 	}
 

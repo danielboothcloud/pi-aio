@@ -31,7 +31,7 @@ export interface StatusLineRenderInput {
 	contextPercent: number;
 	extensionStatuses: ReadonlyMap<string, string>;
 	usageStats: UsageStats;
-	providerUsage?: ProviderUsage;
+	providerUsage?: ProviderUsage[];
 }
 
 const STATUS_KEY_ORDER = ["rtk", "user-bash", "fff", "codex-quota"] as const;
@@ -175,12 +175,20 @@ function renderSegment(
 		case "model":
 			return labeled(theme, ICONS.model, formatModel(input.model), "accent");
 		case "quota": {
-			if (!input.providerUsage) return undefined;
-			return labeled(
-				theme,
-				ICONS.quota,
-				formatProviderUsage(input.providerUsage),
-				quotaRole(input.providerUsage.remainingPercent),
+			const usages = input.providerUsage ?? [];
+			if (usages.length === 0) return undefined;
+			const percents = usages
+				.map((usage) => usage.remainingPercent)
+				.filter((percent): percent is number => percent !== undefined);
+			const role = quotaRole(
+				percents.length > 0 ? Math.min(...percents) : undefined,
+			);
+			const innerSep = theme.fg("muted", " · ");
+			return (
+				`${theme.fg("dim", ICONS.quota)} `
+				+ usages
+					.map((usage) => theme.fg(role, formatProviderUsage(usage)))
+					.join(innerSep)
 			);
 		}
 		case "tokens":

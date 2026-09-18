@@ -1,4 +1,8 @@
-import type { ProviderUsageEndpointConfig } from "./config.js";
+import type {
+	ProviderUsageEndpointConfig,
+	ProviderUsageMapping,
+	ProviderUsageWindowConfig,
+} from "./config.js";
 
 export interface ProviderUsage {
 	provider: string;
@@ -9,6 +13,26 @@ export interface ProviderUsage {
 	remainingPercent?: number;
 	renewsAt?: string;
 	text?: string;
+}
+
+export interface ProviderUsageWindow extends ProviderUsageWindowConfig {
+	name: string;
+}
+
+/** Expand legacy single `mapping` and named `windows` into a uniform list. */
+export function providerUsageWindows(
+	config: ProviderUsageEndpointConfig,
+): ProviderUsageWindow[] {
+	if (config.windows && Object.keys(config.windows).length > 0) {
+		return Object.entries(config.windows).map(([name, window]) => ({
+			name,
+			label: window.label ?? config.label,
+			mapping: window.mapping,
+		}));
+	}
+	return config.mapping
+		? [{ name: "default", label: config.label, mapping: config.mapping }]
+		: [];
 }
 
 function readScalarPath(
@@ -69,10 +93,10 @@ export function resolveEnvironmentTemplate(value: string): string | undefined {
 
 export function mapProviderUsage(
 	provider: string,
-	config: ProviderUsageEndpointConfig,
+	label: string | undefined,
+	mapping: ProviderUsageMapping,
 	payload: unknown,
 ): ProviderUsage | undefined {
-	const { mapping } = config;
 	const used = mapping.used
 		? finiteNumber(readScalarPath(payload, mapping.used))
 		: undefined;
@@ -106,7 +130,7 @@ export function mapProviderUsage(
 			: undefined;
 	return {
 		provider,
-		label: config.label ?? provider,
+		label: label ?? provider,
 		used,
 		limit,
 		remaining,
@@ -122,7 +146,7 @@ export async function fetchProviderUsage(
 	timeoutMs: number,
 	request: typeof fetch = fetch,
 	signal?: AbortSignal,
-): Promise<ProviderUsage | undefined> {
+): Promise<ProviderUsage[]> {
 	const headers: Record<string, string> = {};
 	for (const [name, template] of Object.entries(config.headers)) {
 		const value = resolveEnvironmentTemplate(template);
@@ -150,7 +174,16 @@ export async function fetchProviderUsage(
 				`Provider usage request failed with HTTP ${response.status}`,
 			);
 		}
-		return mapProviderUsage(provider, config, await response.json());
+		const payload: unknown = await response.json();
+		return providerUsageWindows(config).flatMap((window) => {
+			const usage = mapProviderUsage(
+				provider,
+				window.label,
+				window.mapping,
+				payload,
+			);
+			return usage ? [usage] : [];
+		});
 	} finally {
 		clearTimeout(timeout);
 		signal?.removeEventListener("abort", abort);
