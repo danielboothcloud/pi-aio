@@ -398,7 +398,7 @@ Configure it in Pi settings (`~/.pi/agent/settings.json` or project
   "aio": {
     "statusLine": {
       "enabled": true,
-      "segments": ["mode", "path", "git", "context", "effort", "statuses", "cursor", "model"],
+      "segments": ["mode", "path", "git", "context", "effort", "statuses", "cursor", "quota", "model"],
       "path": "basename",
       "workingMessage": "minimal"
     }
@@ -409,10 +409,11 @@ Configure it in Pi settings (`~/.pi/agent/settings.json` or project
 | Field | Purpose |
 | ----- | ------- |
 | `enabled` | Master toggle; `false` restores Pi's default footer |
-| `segments` | Ordered list: `mode`, `path`, `git`, `context`, `effort`, `statuses`, `cursor`, `model`, `tokens`, `cost` |
+| `segments` | Ordered list: `mode`, `path`, `git`, `context`, `effort`, `statuses`, `cursor`, `quota`, `model`, `tokens`, `cost` |
 | `path` | `basename`, `abbreviated`, or `full` |
 | `workingMessage` | `minimal` (default), `verbose` (streaming stats), or `off` |
 | `statusKeys` | Optional allowlist for extension status keys |
+| `providerUsage` | Optional per-provider quota endpoint, headers, and response mappings |
 
 Quick toggles:
 
@@ -423,6 +424,50 @@ Extension statuses (`rtk`, `!bash`, `fff`, `codex-quota`, etc.) appear in the
 `statuses` segment when active. Thinking effort (`effort`) and Cursor runtime
 (`cursor:local · fast:on`) get their own segments so they do not blend with the
 model name. Context percentage turns warning/error at 70%/90%.
+
+### Custom provider quota usage
+
+The optional `providerUsage` block fetches a quota endpoint for the active
+model provider. Provider keys must match the provider id shown in the model
+segment. Response mappings are dot-separated JSON paths. Requests are cached,
+have a bounded timeout, fail silently, and keep the last successful value on a
+transient error. Header values support `$VAR` and `${VAR}` environment
+references (but never shell commands).
+
+For example, a custom provider named `synthetic` can use Synthetic's quota API:
+
+```json
+{
+  "aio": {
+    "statusLine": {
+      "providerUsage": {
+        "refreshIntervalMs": 60000,
+        "timeoutMs": 5000,
+        "providers": {
+          "synthetic": {
+            "endpoint": "https://api.synthetic.new/v2/quotas",
+            "label": "Synthetic",
+            "headers": {
+              "Authorization": "Bearer ${SYNTHETIC_API_KEY}"
+            },
+            "mapping": {
+              "used": "subscription.requests",
+              "limit": "subscription.limit",
+              "renewsAt": "subscription.renewsAt"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Mappings may provide `used`, `limit`, `remaining`, `renewsAt`, and/or `text`.
+When `used` and `limit` are available, aio computes the remaining percentage.
+`text` can map a provider-formatted quota string directly. The `quota` segment
+is omitted when the active provider has no configuration or a value has not
+been fetched successfully.
 
 To migrate off `pi-powerline-footer`, remove it from `packages` in Pi settings,
 delete any `powerline` block, and reload extensions.

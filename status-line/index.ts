@@ -9,6 +9,7 @@ import {
 	type StatusLineConfig,
 	type WorkingMessageMode,
 } from "./config.js";
+import { fetchProviderUsage, type ProviderUsage } from "./provider-usage.js";
 import {
 	computeContextPercent,
 	computeUsageStats,
@@ -21,6 +22,81 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	let streamStart = 0;
 	let outputAtTurnStart = 0;
 	let currentCtx: ExtensionContext | null = null;
+	let providerUsage: ProviderUsage | undefined;
+	let providerUsageFetchedAt = 0;
+	let providerUsageRequest: Promise<void> | undefined;
+	let providerUsageAbort: AbortController | undefined;
+	let requestFooterRender: (() => void) | undefined;
+
+	function resetProviderUsage(clearValue = false): void {
+		providerUsageAbort?.abort();
+		providerUsageAbort = undefined;
+		providerUsageRequest = undefined;
+		if (clearValue) {
+			providerUsage = undefined;
+			providerUsageFetchedAt = 0;
+			requestFooterRender?.();
+		}
+	}
+
+	function shouldFetchProviderUsage(ctx: ExtensionContext): boolean {
+		return (
+			ctx.mode === "tui" && config.enabled && config.segments.includes("quota")
+		);
+	}
+
+	function refreshProviderUsage(
+		ctx: ExtensionContext,
+		force = false,
+	): Promise<void> {
+		const provider = ctx.model?.provider;
+		const usageConfig = config.providerUsage;
+		const endpointConfig = provider
+			? usageConfig?.providers[provider]
+			: undefined;
+		if (!provider || !usageConfig || !endpointConfig) {
+			providerUsage = undefined;
+			providerUsageFetchedAt = 0;
+			requestFooterRender?.();
+			return Promise.resolve();
+		}
+		if (providerUsageRequest) return providerUsageRequest;
+		if (
+			!force &&
+			providerUsage?.provider === provider &&
+			Date.now() - providerUsageFetchedAt < usageConfig.refreshIntervalMs
+		) {
+			return Promise.resolve();
+		}
+
+		providerUsageAbort?.abort();
+		const controller = new AbortController();
+		providerUsageAbort = controller;
+		providerUsageRequest = fetchProviderUsage(
+			provider,
+			endpointConfig,
+			usageConfig.timeoutMs,
+			fetch,
+			controller.signal,
+		)
+			.then((usage) => {
+				if (controller.signal.aborted || currentCtx?.model?.provider !== provider)
+					return;
+				providerUsage = usage;
+				providerUsageFetchedAt = Date.now();
+				requestFooterRender?.();
+			})
+			.catch(() => {
+				// Quota display is best-effort. Keep stale data on transient failures.
+			})
+			.finally(() => {
+				if (providerUsageAbort === controller) {
+					providerUsageAbort = undefined;
+					providerUsageRequest = undefined;
+				}
+			});
+		return providerUsageRequest;
+	}
 
 	function applyWorkingMessage(ctx: ExtensionContext): void {
 		if (!ctx.hasUI || config.workingMessage === "off") {
@@ -54,9 +130,12 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 
 		ctx.ui.setFooter((_tui, theme, footerData) => {
 			const unsub = footerData.onBranchChange(() => _tui.requestRender());
+			const renderRequest = () => _tui.requestRender();
+			requestFooterRender = renderRequest;
 			return {
 				dispose() {
 					if (typeof unsub === "function") unsub();
+					if (requestFooterRender === renderRequest) requestFooterRender = undefined;
 				},
 				invalidate() {},
 				render(width: number): string[] {
@@ -73,13 +152,17 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 						contextPercent: computeContextPercent(liveCtx),
 						extensionStatuses: footerData.getExtensionStatuses(),
 						usageStats: computeUsageStats(liveCtx.sessionManager.getBranch()),
+						providerUsage,
 					});
 				},
 			};
 		});
 	}
 
-	function setWorkingMessageMode(mode: WorkingMessageMode, ctx: ExtensionContext): void {
+	function setWorkingMessageMode(
+		mode: WorkingMessageMode,
+		ctx: ExtensionContext,
+	): void {
 		config = { ...config, workingMessage: mode };
 		applyWorkingMessage(ctx);
 		ctx.ui.notify(`Status line working message: ${mode}`, "info");
@@ -88,6 +171,11 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	function setEnabled(enabled: boolean, ctx: ExtensionContext): void {
 		config = { ...config, enabled };
 		installFooter(ctx);
+		if (enabled && shouldFetchProviderUsage(ctx)) {
+			void refreshProviderUsage(ctx, true);
+		} else if (!enabled) {
+			resetProviderUsage();
+		}
 		ctx.ui.notify(`Status line ${enabled ? "enabled" : "disabled"}`, "info");
 	}
 
@@ -119,34 +207,47 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 					setWorkingMessageMode("verbose", ctx);
 					return;
 				default:
-					ctx.ui.notify(
-						"Usage: /status-line [on|off|minimal|verbose]",
-						"warning",
-					);
+					ctx.ui.notify("Usage: /status-line [on|off|minimal|verbose]", "warning");
 			}
 		},
 	});
 
 	pi.on("session_start", async (_event, ctx) => {
-		config = loadStatusLineConfig(ctx.cwd);
+		config = loadStatusLineConfig(ctx.cwd, {
+			includeProject: ctx.isProjectTrusted(),
+		});
 		currentCtx = ctx;
 		installFooter(ctx);
+		if (shouldFetchProviderUsage(ctx)) void refreshProviderUsage(ctx, true);
 	});
 
 	pi.on("session_tree", async (_event, ctx) => {
-		config = loadStatusLineConfig(ctx.cwd);
+		config = loadStatusLineConfig(ctx.cwd, {
+			includeProject: ctx.isProjectTrusted(),
+		});
 		currentCtx = ctx;
+		resetProviderUsage(true);
 		installFooter(ctx);
+		if (shouldFetchProviderUsage(ctx)) void refreshProviderUsage(ctx, true);
 	});
 
 	pi.on("session_shutdown", async () => {
+		resetProviderUsage();
+		requestFooterRender = undefined;
 		currentCtx = null;
+	});
+
+	pi.on("model_select", async (_event, ctx) => {
+		currentCtx = ctx;
+		resetProviderUsage(true);
+		if (shouldFetchProviderUsage(ctx)) void refreshProviderUsage(ctx, true);
 	});
 
 	pi.on("turn_start", async (_event, ctx) => {
 		streamStart = Date.now();
 		outputAtTurnStart = computeUsageStats(ctx.sessionManager.getBranch()).output;
 		applyWorkingMessage(ctx);
+		if (shouldFetchProviderUsage(ctx)) void refreshProviderUsage(ctx);
 	});
 
 	pi.on("before_provider_request", async (_event, ctx) => {
@@ -161,6 +262,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	pi.on("agent_end", async (_event, ctx) => {
 		streamStart = 0;
 		if (ctx.hasUI) ctx.ui.setWorkingMessage();
+		if (shouldFetchProviderUsage(ctx)) void refreshProviderUsage(ctx);
 	});
 }
 

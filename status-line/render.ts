@@ -1,8 +1,14 @@
-import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { truncateToWidth } from "@earendil-works/pi-tui";
 import { modeMetadata } from "../permission-modes/index.js";
 import type { PermissionMode } from "../permission-modes/mode-access.js";
 import { formatCount } from "../permission-modes/utils.js";
-import type { PathDisplay, StatusLineConfig, StatusLineSegment, WorkingMessageMode } from "./config.js";
+import type {
+	PathDisplay,
+	StatusLineConfig,
+	StatusLineSegment,
+	WorkingMessageMode,
+} from "./config.js";
+import { formatProviderUsage, type ProviderUsage } from "./provider-usage.js";
 
 export interface PiTheme {
 	fg(name: string, text: string): string;
@@ -25,6 +31,7 @@ export interface StatusLineRenderInput {
 	contextPercent: number;
 	extensionStatuses: ReadonlyMap<string, string>;
 	usageStats: UsageStats;
+	providerUsage?: ProviderUsage;
 }
 
 const STATUS_KEY_ORDER = ["rtk", "user-bash", "fff", "codex-quota"] as const;
@@ -39,6 +46,7 @@ const ICONS = {
 	effort: "⚡",
 	cursor: "◈",
 	model: "◇",
+	quota: "◴",
 	tokens: "⊛",
 	cost: "$",
 } as const;
@@ -62,9 +70,8 @@ function formatPath(cwd: string, display: PathDisplay): string {
 	if (display === "full") return cwd;
 	const home = process.env.HOME;
 	if (display === "abbreviated") {
-		const normalized = home && cwd.startsWith(home)
-			? `~${cwd.slice(home.length)}`
-			: cwd;
+		const normalized =
+			home && cwd.startsWith(home) ? `~${cwd.slice(home.length)}` : cwd;
 		const parts = normalized.split(/[/\\]/).filter(Boolean);
 		if (parts.length <= 2) return normalized;
 		return `…/${parts.slice(-2).join("/")}`;
@@ -76,6 +83,12 @@ function formatPath(cwd: string, display: PathDisplay): string {
 function contextRole(percent: number): "muted" | "warning" | "error" {
 	if (percent >= 90) return "error";
 	if (percent >= 70) return "warning";
+	return "muted";
+}
+
+function quotaRole(percent: number | undefined): "muted" | "warning" | "error" {
+	if (percent !== undefined && percent <= 10) return "error";
+	if (percent !== undefined && percent <= 25) return "warning";
 	return "muted";
 }
 
@@ -91,10 +104,10 @@ function orderedStatusEntries(
 ): Array<[string, string]> {
 	const entries = [...statuses.entries()].filter(
 		([key, value]) =>
-			!HIDDEN_STATUS_KEYS.has(key)
-			&& !DEDICATED_STATUS_KEYS.has(key)
-			&& typeof value === "string"
-			&& value.length > 0,
+			!HIDDEN_STATUS_KEYS.has(key) &&
+			!DEDICATED_STATUS_KEYS.has(key) &&
+			typeof value === "string" &&
+			value.length > 0,
 	);
 	if (statusKeys && statusKeys.length > 0) {
 		const allow = new Set(statusKeys);
@@ -161,6 +174,15 @@ function renderSegment(
 		}
 		case "model":
 			return labeled(theme, ICONS.model, formatModel(input.model), "accent");
+		case "quota": {
+			if (!input.providerUsage) return undefined;
+			return labeled(
+				theme,
+				ICONS.quota,
+				formatProviderUsage(input.providerUsage),
+				quotaRole(input.providerUsage.remainingPercent),
+			);
+		}
 		case "tokens":
 			return labeled(
 				theme,
@@ -189,7 +211,12 @@ export function renderStatusLine(input: StatusLineRenderInput): string[] {
 }
 
 export function computeContextPercent(ctx: {
-	getContextUsage?: () => { tokens?: number; contextWindow?: number } | undefined;
+	getContextUsage?: () =>
+		| {
+				tokens?: number | null;
+				contextWindow?: number;
+		  }
+		| undefined;
 }): number {
 	const usage = ctx.getContextUsage?.();
 	const tokens = usage?.tokens ?? 0;
@@ -199,11 +226,17 @@ export function computeContextPercent(ctx: {
 }
 
 export function computeUsageStats(
-	branch: Iterable<{ type?: string; message?: { role?: string; usage?: {
-		input?: number;
-		output?: number;
-		cost?: { total?: number };
-	} } }>,
+	branch: Iterable<{
+		type?: string;
+		message?: {
+			role?: string;
+			usage?: {
+				input?: number;
+				output?: number;
+				cost?: { total?: number };
+			};
+		};
+	}>,
 ): UsageStats {
 	let input = 0;
 	let output = 0;
@@ -220,7 +253,11 @@ export function computeUsageStats(
 
 export function formatWorkingMessage(
 	mode: WorkingMessageMode,
-	stats: UsageStats & { contextPercent: number; elapsedSec: number; tps: number },
+	stats: UsageStats & {
+		contextPercent: number;
+		elapsedSec: number;
+		tps: number;
+	},
 ): string | undefined {
 	if (mode === "off") return undefined;
 	if (mode === "minimal") return "Working…";

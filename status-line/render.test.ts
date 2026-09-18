@@ -4,10 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { visibleWidth } from "@earendil-works/pi-tui";
-import {
-	DEFAULT_STATUS_LINE_CONFIG,
-	loadStatusLineConfig,
-} from "./config.ts";
+import { DEFAULT_STATUS_LINE_CONFIG, loadStatusLineConfig } from "./config.ts";
 import {
 	formatWorkingMessage,
 	renderStatusLine,
@@ -134,11 +131,27 @@ test("loadStatusLineConfig merges project and global aio.statusLine settings", (
 			"utf-8",
 		);
 
-		const config = loadStatusLineConfig(tmpDir);
+		const config = loadStatusLineConfig(tmpDir, { includeGlobal: false });
 		assert.equal(config.enabled, false);
 		assert.equal(config.workingMessage, "verbose");
 		assert.deepEqual(config.segments, DEFAULT_STATUS_LINE_CONFIG.segments);
 	} finally {
 		rmSync(tmpDir, { recursive: true, force: true });
 	}
+});
+
+test("renderStatusLine shows mapped provider quota", () => {
+	const [line] = renderStatusLine(
+		baseInput({
+			providerUsage: {
+				provider: "synthetic",
+				label: "synthetic",
+				used: 0,
+				limit: 135,
+				remaining: 135,
+				remainingPercent: 100,
+			},
+		}),
+	);
+	assert.match(line, /◴ synthetic 100% left/);
 });
