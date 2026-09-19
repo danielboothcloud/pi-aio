@@ -51,6 +51,10 @@ export function registerLsTool(
 	const home = process.env.HOME ?? "";
 	const TC = resolveTextCtor(TextComp);
 
+	// SAFETY: the definition mirrors the SDK builtin ls's runtime shape — its own
+	// parameters schema and execute contract — plus duck-typed renderCall/renderResult
+	// extensions Pi accepts at runtime but ToolDefinition's generics cannot express,
+	// so the literal is widened once at this boundary (asserted at its end below).
 	pi.registerTool({
 		name: "ls",
 		label: "List",

@@ -41,8 +41,9 @@ generated `dist/` tree without changing the package contract.
 
 - `index.ts` is the sole package entry point and composes feature-level
   registrars. Preserve registration order unless deliberately changing event
-  interception: `registerUserBash` must run before `registerRtk`, and pretty
-  tools are registered last to wrap the final bash behavior.
+  interception: `registerUserBash` must run before `registerRtk`, and hypa
+  must register after rtk (rtk precedence) but before queue and pretty tools,
+  which own the final bash behavior.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
   `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/` and
   `user-bash/` gate those mutations. Changes can cross feature boundaries.
@@ -50,6 +51,12 @@ generated `dist/` tree without changing the package contract.
   opt-in through `aio.browserSearch` in Pi settings and routes to Exa or
   SearXNG; browsing uses Camofox and lazily loads optional CloakBrowser. Tests
   must use injected/mocked backends rather than live network services.
+- `hypa/` is vendored from @hypabolic/pi-hypa (FSL-1.1-ALv2 — see
+  `hypa/LICENSE-FSL` and `hypa/UPSTREAM.md`). It registers the `hypa_*`
+  shell/file tools, bash rewrite interception, the optional `hypa_mcp_proxy`
+  bridge (off by default), and the `/hypa` diagnostics command. Composition
+  rule: it registers after rtk and never rewrites commands rtk already claimed
+  (`rtk ...`) — rtk precedence, see `isRtkClaimedCommand`.
 - `ask-user-question/` is vendored code. Follow
   `ask-user-question/UPSTREAM.md`: preserve its license, config/event
   namespaces, sequential execution, soft i18n peer, and
@@ -102,10 +109,11 @@ generated `dist/` tree without changing the package contract.
   directory must be wired into `index.ts`, included in `files`, and covered by
   a test command.
 - Optional integrations must remain optional: missing
-  `@juicesharp/rpiv-i18n`, `rtk`, or CloakBrowser must not prevent the extension
-  from loading.
+  `@juicesharp/rpiv-i18n`, `rtk`, CloakBrowser, or the `hypa` binary must not
+  prevent the extension from loading (hypa resolves its bundled
+  `@hypabolic/hypa` dependency and fails open on rewrite errors).
 - Pi keeps the first tool registration by name. Loading pi-web-access before AIO
   prevents AIO's `web_search` and `fetch_content` from becoming active.
 - Do not smoke-test with standalone packages that register the same tools or
-  hooks (`rpiv-ask-user-question`, `pi-pretty`, `pi-diff`, `pi-subagents`, or
-  `pi-rtk`); duplicate registrations change behavior.
+  hooks (`rpiv-ask-user-question`, `pi-pretty`, `pi-diff`, `pi-subagents`,
+  `pi-rtk`, or `@hypabolic/pi-hypa`); duplicate registrations change behavior.

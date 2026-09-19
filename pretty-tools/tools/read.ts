@@ -91,6 +91,10 @@ export function registerReadTool(
 	const TC = resolveTextCtor(TextComp);
 	const home = process.env.HOME ?? "";
 
+	// SAFETY: the definition mirrors the SDK builtin read's runtime shape — its own
+	// parameters schema and execute contract — plus duck-typed renderCall/renderResult
+	// extensions Pi accepts at runtime but ToolDefinition's generics cannot express,
+	// so the literal is widened once at this boundary (asserted at its end below).
 	pi.registerTool({
 		name: "read",
 		label: "Read",

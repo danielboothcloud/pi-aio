@@ -49,6 +49,12 @@ export function registerBashTool(
 ): void {
 	const TC = resolveTextCtor(TextComp);
 
+	// SAFETY: the definition mirrors the SDK builtin bash's runtime shape — its own
+	// parameters schema and execute contract — plus duck-typed renderCall/renderResult
+	// extensions Pi accepts at runtime but ToolDefinition's generics cannot express.
+	// Two deliberate widenings inside: the cached Text component carries a host-specific
+	// `render(w)` member the SDK d.ts does not declare, and the literal is widened
+	// once at its end (both covered by pretty-tools bash tests).
 	pi.registerTool({
 		name: "bash",
 		label: "Bash",

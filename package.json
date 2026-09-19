@@ -1,7 +1,7 @@
 {
 	"name": "aio",
-	"version": "0.6.0",
-	"description": "Combined Pi extension for structured questions, permission modes, subagents, enhanced tools and diffs, shell rewriting, structural search, and configurable web browsing.",
+	"version": "0.7.0",
+	"description": "Combined Pi extension for structured questions, permission modes, subagents, enhanced tools and diffs, shell rewriting, structural search, configurable web browsing, and Hypa-backed context compression.",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
@@ -28,6 +28,10 @@
 		"word-diff",
 		"rtk",
 		"token-optimization",
+		"hypa",
+		"token-compression",
+		"context-compression",
+		"mcp-proxy",
 		"message-queue",
 		"queue",
 		"shell-rewrite",
@@ -72,6 +76,11 @@
 		"pretty-tools/LICENSE",
 		"rtk/**/*.ts",
 		"!rtk/**/*.test.ts",
+		"hypa/**/*.ts",
+		"!hypa/**/*.test.ts",
+		"hypa/scripts/postinstall.js",
+		"hypa/LICENSE-FSL",
+		"hypa/UPSTREAM.md",
 		"subagents/**/*.ts",
 		"subagents/agents/**/*.md",
 		"!subagents/**/*.test.ts",
@@ -94,8 +103,9 @@
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
-		"test:node": "tsx --test ast-grep/*.test.ts blocklist/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts effort/*.test.ts goal-loop/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts rtk/*.test.ts status-line/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
-		"test:upstream": "vitest run --config vitest.config.ts"
+		"test:node": "tsx --test ast-grep/*.test.ts blocklist/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts effort/*.test.ts goal-loop/*.test.ts hypa/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts rtk/*.test.ts status-line/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:upstream": "vitest run --config vitest.config.ts",
+		"postinstall": "node hypa/scripts/postinstall.js"
 	},
 	"pi": {
 		"extensions": [
@@ -105,6 +115,7 @@
 	"dependencies": {
 		"@ast-grep/cli": "0.43.0",
 		"@ff-labs/fff-node": "^0.10.0",
+		"@hypabolic/hypa": "0.1.15",
 		"@juicesharp/rpiv-config": "2.0.0",
 		"@mozilla/readability": "^0.6.0",
 		"@shikijs/cli": "4.0.2",

@@ -19,6 +19,7 @@ import registerDiffTools from "./diff-tools/index.js";
 import { registerEffort } from "./effort/index.js";
 import { registerInit } from "./init/index.js";
 import registerGoalLoop from "./goal-loop/index.js";
+import { registerHypa } from "./hypa/index.js";
 import { registerPermissionModes } from "./permission-modes/index.js";
 import { registerRtk } from "./rtk/index.js";
 import { registerQueue } from "./queue/index.js";
@@ -51,6 +52,11 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	registerSubagents(pi);
 	registerUserBash(pi);
 	registerRtk(pi);
+	// Hypa compliments rtk: it registers after rtk so commands rtk already
+	// rewrote (`rtk ...`) are never rewritten again by hypa (rtk precedence —
+	// see hypa/index.ts isRtkClaimedCommand). It must also run before the queue
+	// and pretty-tools registrations, which own the final bash tool surface.
+	registerHypa(pi);
 	// Queue installs its editor after user-bash so its factory wins; it
 	// extends BashHintEditor, keeping the !bash hint behavior intact.
 	registerQueue(pi);

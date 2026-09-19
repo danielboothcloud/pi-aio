@@ -623,6 +623,67 @@ gracefully without it.
 Do not load standalone `@sherif-fanous/pi-rtk` alongside `aio`; both rewrite
 shell commands and would double-rewrite the same command.
 
+## Hypa context compression
+
+`aio` also routes tool output through [Hypa](https://github.com/Hypabolic/Hypa),
+a local, deterministic context runtime. It compliments rtk rather than competing
+with it:
+
+- **rtk precedence** — hypa's bash rewrite registers after rtk's and skips
+  commands rtk already claimed (`rtk ...`). It engages only where rtk has no
+  equivalent, GenericWrapping those commands (`hypa -c "…"`) so their output is
+  compressed with deterministic reducers and recorded as recoverable evidence.
+- **`hypa_*` tools** — `hypa_shell`, `hypa_read`, `hypa_grep`, `hypa_find`, and
+  `hypa_ls` run shell/file tools directly through the Hypa CLI with compression,
+  evidence recording, and 50KB/2000-line output caps (truncated full output is
+  saved to a temp file). In the default additive mode they sit alongside aio's
+  pretty built-in tools; `HYPA_PI_MODE=replace` disables each builtin only while
+  its matching `hypa_*` replacement is active.
+- **`hypa_read` images** — png/jpeg/gif/webp files are sniffed by magic bytes and
+  attached as vision content; opaque binary gets a sized notice instead of
+  mojibake.
+- **Optional MCP proxy bridge** — with `HYPA_PI_ENABLE_MCP_PROXY=1`, one compact
+  `hypa_mcp_proxy` tool discovers (`list`/`search`), inspects (`schema`),
+  invokes, and auth-checks upstream MCP servers configured in Hypa instead of
+  dumping every upstream tool into context. Servers already configured directly
+  in Pi are deduplicated by default.
+- **Diagnostics** — `/hypa` shows extension mode, binary resolution, MCP proxy
+  settings, and the last rewrite status.
+- **Fail-open** — rewrite parse, timeout, and process errors pass the original
+  command through unchanged; `Deny` blocks the tool call; `Ask` confirms in UI
+  mode and follows `HYPA_PI_ASK_NON_INTERACTIVE` (`deny`/`allow`) otherwise.
+
+### Hypa configuration
+
+Environment variables override values in the optional JSON config file
+(`HYPA_PI_CONFIG`, default `~/.hypa-pi/config.json`; `none`/empty disables file
+loading). JSON fields are camelCase: `mode`, `binary`, `rewriteTimeoutMs`,
+`askNonInteractive`, `mcpProxyEnabled`, `mcpProxyTimeoutMs`, `piMcpConfigPath`.
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `HYPA_BIN` | bundled `@hypabolic/hypa`, then `hypa` | Hypa executable or absolute path |
+| `HYPA_PI_MODE` | `additive` | `replace` disables builtins while their `hypa_*` replacement is active |
+| `HYPA_PI_REWRITE_TIMEOUT_MS` | `5000` | `hypa rewrite` timeout |
+| `HYPA_PI_ASK_NON_INTERACTIVE` | `deny` | Ask fallback when `ctx.hasUI === false` |
+| `HYPA_PI_ENABLE_MCP_PROXY` | `0` | Enable `hypa_mcp_proxy` discovery/invocation |
+| `HYPA_PI_MCP_PROXY_TIMEOUT_MS` | `10000` | Per-call proxy timeout |
+| `HYPA_PI_MCP_CONFIG` | `~/.pi/agent/mcp.json` | Pi MCP config used for dedup |
+
+### Hypa prerequisites
+
+aio bundles [`@hypabolic/hypa`](https://www.npmjs.com/package/@hypabolic/hypa) as
+a dependency, so Node.js 18+ (or Bun) with Linux/macOS/Windows on x64/arm64 is
+enough — the platform-native binary is selected automatically, with `bin.js` via
+the host runtime as fallback. Installing aio also runs a best-effort
+`hypa/scripts/postinstall.js` that creates a user-level `hypa` shim in
+`~/.local/bin` when no `hypa` is already on `PATH` (set `HYPA_PI_SKIP_CLI_INSTALL=1`
+to skip).
+
+Do not load standalone `@hypabolic/pi-hypa` alongside `aio`; its tools, hooks,
+and `/hypa` command are absorbed here. Upstream is FSL-1.1-ALv2 licensed — see
+`hypa/LICENSE-FSL` and `hypa/UPSTREAM.md`.
+
 ## Syntax-highlighted diffs
 
 `aio` also owns the `write`, `edit`, and `apply_patch` tools and renders mutations
