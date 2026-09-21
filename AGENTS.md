@@ -43,7 +43,9 @@ generated `dist/` tree without changing the package contract.
   registrars. Preserve registration order unless deliberately changing event
   interception: `registerUserBash` must run before `registerRtk`, and hypa
   must register after rtk (rtk precedence) but before queue and pretty tools,
-  which own the final bash behavior. `registerYamlHooks` runs LAST so its
+  which own the final bash behavior. `registerLoopPolice` sits between
+  blocklist and permission-modes (loop blocks preempt mode checks; the hard
+  blocklist wins over loop blocks). `registerYamlHooks` runs LAST so its
   opt-in `user_bash` interception wraps the earlier gates.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
   `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/` and
@@ -102,6 +104,24 @@ generated `dist/` tree without changing the package contract.
   file and redirected through `sh -c` (the shared exec surface has no
   stdin). Tests must use injected fake exec seams, never a live hunk
   daemon.
+- `loop-police/` is ported from pi-loop-police (MIT, sebaxzero — see
+  `loop-police/LICENSE` and `loop-police/UPSTREAM.md`). It detects and
+  breaks infinite reasoning/tool loops in real time: streaming tail +
+  semantic detectors (abort via `ctx.abort()` from `message_update` —
+  notify-only in the Pi SDK — sanitize via `message_end` same-role
+  replacement, recovery via `before_agent_start` message injection),
+  cross-turn stagnation + re-derived-reasoning scrubs (via the `context`
+  event), and blocked-in-place tool gates (tool-call cycle, file ceiling,
+  re-read window, search spiral — the recovery message is the block
+  reason). REGISTRATION ORDER IS LOAD-BEARING: it sits between blocklist
+  and permission-modes (loop block preempts mode checks; the hard
+  blocklist wins over a loop block). Its context scrub composes with
+  blocklist's context dedupe — it only touches assistant thinking blocks.
+  Config lives at `getAgentDir()/aio-loop-police.json` (aio pattern),
+  loads tolerant-and-fail-open, all `PI_*`-style config keys are
+  append-only contracts. Detectors stay ACTIVE in
+  `AIO_SUBAGENT_CHILD=1` processes; blocked calls never enter executed
+  histories. Emits `loop-police:detection` on the shared event bus.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

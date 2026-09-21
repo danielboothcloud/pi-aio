@@ -20,6 +20,7 @@ import registerDiffTools from "./diff-tools/index.js";
 import { registerEffort } from "./effort/index.js";
 import registerHunk from "./hunk/index.js";
 import { registerInit } from "./init/index.js";
+import registerLoopPolice from "./loop-police/index.js";
 import registerGoalLoop from "./goal-loop/index.js";
 import { registerHypa } from "./hypa/index.js";
 import { registerPermissionModes } from "./permission-modes/index.js";
@@ -51,6 +52,11 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// the user-bash gate: the runner honors the first blocking handler, so a
 	// blocked command short-circuits mode checks (including auto approval).
 	registerBlocklist(pi);
+	// Loop-police sits between blocklist and permission-modes: a loop block
+	// preempts mode checks, while the hard blocklist still wins over a loop
+	// block (blocked commands stay blocked). Its context scrub composes with
+	// blocklist's context dedupe — it only touches assistant thinking blocks.
+	registerLoopPolice(pi);
 	registerPermissionModes(pi);
 	registerSubagents(pi);
 	registerUserBash(pi);
