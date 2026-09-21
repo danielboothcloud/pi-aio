@@ -61,7 +61,7 @@ Hunk is an interactive terminal diff viewer the user opens themselves (with /hun
 
 Workflow: start with action "review" to see the file/hunk structure (includePatch only when you truly need raw unified diff text), then "navigate" to line up the user's view, then "comment_add" (or one "comment_apply" batch for several notes) explaining what matters, and "highlight_add" to light up the exact expression while explaining it. Use "comment_list" to find note ids, "comment_rm" for cleanup, and "highlight_clear" when moving to the next topic.
 
-Notes render beside the rows they explain: comments need filePath plus exactly one anchor (oldLine, newLine — 1-based; hunkNumber works too) or replyTo to inherit an existing note's anchor. Highlight offsets are [start, end) in UTF-16 code units into the line text, end exclusive. Use focus sparingly — it actively moves the user's viewport. If no session is running, ask the user to open Hunk first (for example /hunk).`;
+Notes render beside the rows they explain: comments need filePath plus exactly one anchor (oldLine, newLine — 1-based; hunkNumber works too) or replyTo to inherit an existing note's anchor. Highlight offsets are [start, end) in UTF-16 code units into the line text, end exclusive. Use focus sparingly — it actively moves the user's viewport. If no session is running, ask the user to open Hunk first (for example /hunk, which can also /hunk enforce automatic annotations).`;
 
 export const HunkCommentBatchItem = Type.Object({
 	filePath: Type.Optional(Type.String({ description: "Diff file path (required unless replyTo is set)." })),
@@ -220,7 +220,9 @@ export function createHunkTool(pi: ExtensionAPI): ToolDefinition<typeof HunkTool
 			"Use to inspect and steer a live Hunk diff review: navigate, add inline AI annotations, and highlight exact code ranges.",
 		promptGuidelines: [
 			"Start with the review action to see the loaded changeset structure before navigating or annotating.",
-			"Use comment_apply with a comments array for several notes at once; comment_add for one-off notes.",
+			"Leave inline annotations proactively after your mutations: one comment_apply batch per changeset explains what you changed and why (set author to your agent name so notes are attributable in parallel reviews).",
+			"When /hunk enforce is ON, aio auto-annotates mutations mechanically (change maps); use the hunk tool for the narrative — intent, risks, and follow-ups.",
+			"Use comment_apply with a comments array for several notes at once; comment_add for one-off notes. Use highlight_add --focus to steer the user's eyes while explaining.",
 			"The Hunk TUI belongs to the user — never run interactive hunk diff/show commands yourself.",
 		],
 		parameters: HunkToolParameters,

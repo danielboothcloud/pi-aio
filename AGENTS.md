@@ -104,6 +104,20 @@ generated `dist/` tree without changing the package contract.
   file and redirected through `sh -c` (the shared exec surface has no
   stdin). Tests must use injected fake exec seams, never a live hunk
   daemon.
+- `hunk enforce` (in `hunk/`) auto-annotates the live review after mutation
+  batches. `/hunk enforce` persists the toggle in
+  `getAgentDir()/aio-hunk-enforce.json`; the `tool_result` watcher maps
+  write/edit/apply_patch/bash mutations onto `MutationRecord`s (reusing
+  yaml-hooks' extractor — but parsing aio's structured `apply_patch`
+  `changes` array directly, which yaml-hooks deliberately ignores) and a
+  400 ms-debounced `EnforceRuntime` leaves ONE comment batch per file set
+  (bounded: 6 comments/batch, 12-annotation bash budget). Anchors:
+  `edit` → `firstChangedLine`, `write` → line 1, `apply_patch` and bash →
+  file-anchored only. The enforced path is mechanical (change maps, never
+  invented rationale — the model's narrative stays in the tool-call path);
+  it probes the live review before queueing (silent without one), degrades
+  best-effort (never blocks or delays mutations), and clears state on
+  `session_shutdown`.
 - `loop-police/` is ported from pi-loop-police (MIT, sebaxzero — see
   `loop-police/LICENSE` and `loop-police/UPSTREAM.md`). It detects and
   breaks infinite reasoning/tool loops in real time: streaming tail +

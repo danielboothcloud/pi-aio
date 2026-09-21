@@ -840,6 +840,46 @@ one. The bundled `hunk-review` skill is surfaced natively through
 `resources_discover`, so the model loads Hunk's authoritative agent
 workflows without you pasting anything.
 
+### `/hunk enforce` — automatic inline annotations
+
+By default annotations appear only when the model decides to call the
+`hunk` tool. **`/hunk enforce`** turns ON automatic inline AI annotations:
+after each meaningful mutation batch (`write`, `edit`, `apply_patch`, or
+mutation-shaped `bash`), aio maps the change onto the live review and
+leaves bounded, file-anchored comments automatically — `author: aio`,
+change-map summaries (`modify ×2, create`), highlights riding along for
+anchored create/modify changes, and a quiet `hunk: N note(s)` status chip
+when notes land. **`/hunk enforce off`** returns to inert. State persists
+in `~/.pi/agent/aio-hunk-enforce.json`.
+
+Enforcement design:
+
+- **Debounced** — a multi-file `apply_patch` lands as several
+  `tool_result`s in quick succession; annotations aggregate over a 400 ms
+  window and land as one comment batch per file set, never per call.
+- **Mechanical by design** — the enforced path annotates what changed
+  (paths, operations, anchors from `EditToolDetails.firstChangedLine` and
+  write top-of-file); the model's own narrative (intent, risks,
+  follow-ups) stays in the tool-call path, where rationale is real. The
+  enforced path never invents rationale it did not derive from the tool
+  result.
+- **Bounded** — max 6 comments per batch and a 12-annotation bash budget
+  (configurable in the state file), so a sweeping refactor cannot flood
+  the review.
+- **Invisible without a review** — before queueing, the driver probes the
+  live review; with none open, enforcement stays silent (annotations never
+  open windows on their own).
+- **Best effort** — a closed review or rejected batch degrades to a
+  descriptive outcome; enforcement never breaks or blocks the mutation
+  flow.
+
+Anchors: `edit` uses the result's `firstChangedLine`, `write` anchors at
+line 1, `apply_patch` stays file-anchored (aio's tool reports counts, not
+lines), and bash-derived mutations are file-level only (parsed shell line
+numbers would be guesses). aio's structured `apply_patch` `changes` array
+is parsed directly by the annotator (yaml-hooks' extractor deliberately
+reads only the unified-diff string for `file.changed` semantics).
+
 Note the division of labor: aio's syntax-highlighted transcript diffs (above)
 render individual `write`/`edit`/`apply_patch` calls inline as they happen;
 Hunk is the interactive changeset review with navigation and annotations.
