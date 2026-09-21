@@ -892,6 +892,32 @@ Hunk is the interactive changeset review with navigation and annotations.
 Hunk's own renderer is an OpenTUI component and cannot be embedded in Pi's
 transcript, so the two surfaces complement rather than replace each other.
 
+## Open in Neovim
+
+`aio` opens files in Neovim in a new Otty pane beside this session — for
+when you want an agent-touched file in your editor immediately.
+
+```text
+/nvim src/index.ts          open at the top
+/nvim src/index.ts:42       open with the cursor on line 42
+/nvim src/index.ts:42:7     line 42, column 7
+/nvim -r src/index.ts:42    read-only view (nvim -R)
+```
+
+The launcher chain matches the hunk launcher: an Otty pane split anchored
+to this session's pane (`$OTTY_PANE_ID`) → tmux window → Otty tab →
+macOS Terminal.app → the printed command. Neovim owns the pane afterward
+(the pane runs `exec nvim`, so it stays in the editor until `:q`), and the
+pane title is `nvim <basename>[:line]` so several open files are tellable
+apart in the tab bar.
+
+The agent can open files for you too, through the **`open_nvim` tool**:
+after a `write`/`edit` it can hand you the changed file at the changed
+line (`firstChangedLine` for edits), and it can open anything you ask to
+"see in the editor". `path:line` and `path:line:col` shorthand work; the
+guidance asks the agent to offer an open rather than opening files
+unprompted on every edit.
+
 ## Loop police
 
 `aio` detects and breaks infinite reasoning/tool loops in real time, ported
@@ -964,6 +990,7 @@ blocklist still wins over a loop block.
 ├── effort/                  # /effort command + status
 ├── hunk/                    # live hunk diff-review control + AI annotations
 ├── init/                    # /init AGENTS.md bootstrap
+├── nvim/                    # open files in Neovim in a new otty pane
 ├── loop-police/             # reasoning/tool loop detection + recovery (ported)
 ├── permission-modes/        # Shift+Tab modes + plan flow
 ├── queue/                   # message-queue widget + Enter-to-interrupt

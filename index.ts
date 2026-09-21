@@ -21,6 +21,7 @@ import { registerEffort } from "./effort/index.js";
 import registerHunk from "./hunk/index.js";
 import { registerInit } from "./init/index.js";
 import registerLoopPolice from "./loop-police/index.js";
+import registerNvim from "./nvim/index.js";
 import registerGoalLoop from "./goal-loop/index.js";
 import { registerHypa } from "./hypa/index.js";
 import { registerPermissionModes } from "./permission-modes/index.js";
@@ -57,6 +58,9 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// block (blocked commands stay blocked). Its context scrub composes with
 	// blocklist's context dedupe — it only touches assistant thinking blocks.
 	registerLoopPolice(pi);
+	// Nvim owns the open_nvim tool and /nvim command; registers after the
+	// gates (it opens editor panes, it never gates anything).
+	registerNvim(pi);
 	registerPermissionModes(pi);
 	registerSubagents(pi);
 	registerUserBash(pi);
