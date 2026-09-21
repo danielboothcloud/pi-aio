@@ -117,7 +117,11 @@ generated `dist/` tree without changing the package contract.
   invented rationale — the model's narrative stays in the tool-call path);
   it probes the live review before queueing (silent without one), degrades
   best-effort (never blocks or delays mutations), and clears state on
-  `session_shutdown`.
+  `session_shutdown`. Enforce is VCS-GATED: hunk reviews git/jj/sapling
+  changesets, so `/hunk enforce` refuses to enable outside a checkout and
+  the runtime re-checks the cwd (`git rev-parse --is-inside-work-tree`,
+  then `.jj`/`.sl` markers; cached per cwd, reset on clear) — a persisted
+  ON state from another repo never annotates in a plain directory.
 - `loop-police/` is ported from pi-loop-police (MIT, sebaxzero — see
   `loop-police/LICENSE` and `loop-police/UPSTREAM.md`). It detects and
   breaks infinite reasoning/tool loops in real time: streaming tail +

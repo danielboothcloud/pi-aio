@@ -12,8 +12,9 @@
 // ---------------------------------------------------------------------------
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
+import type { HunkExec } from "./cli.js";
 
 export const HUNK_ENFORCE_FILE_NAME = "aio-hunk-enforce.json";
 
@@ -70,4 +71,58 @@ export function writeHunkEnforceState(state: HunkEnforceState, file: string = hu
 		encoding: "utf8",
 		mode: 0o600,
 	});
+}
+
+// ---- VCS checkout detection ----
+
+/**
+ * Hunk reviews VCS changesets (git, jujutsu, sapling — hunk auto-detects
+ * all three), so enforce is meaningless outside a checkout: there is no
+ * diff to annotate. Enforce stays OFF in a plain directory.
+ */
+export type VcsKind = "git" | "jj" | "sl" | "none";
+
+const VCS_MARKERS: ReadonlyArray<readonly [marker: string, kind: VcsKind]> = [
+	[".jj", "jj"],
+	[".sl", "sl"],
+	[".git", "git"],
+];
+
+/**
+ * Marker walk from cwd up to the filesystem root: the primary check for
+ * jj/sapling (whose CLIs aio does not assume) and the fallback when the
+ * git binary is unavailable. Injected `exists` keeps this pure for tests.
+ */
+export function detectVcsByMarkers(startDir: string, exists: (filePath: string) => boolean = existsSync): VcsKind {
+	let current = resolve(startDir);
+	while (true) {
+		for (const [marker, kind] of VCS_MARKERS) {
+			if (exists(join(current, marker))) return kind;
+		}
+		const parent = resolve(current, "..");
+		if (parent === current) return "none";
+		current = parent;
+	}
+}
+
+/**
+ * Detect the VCS kind for a cwd. `git rev-parse --is-inside-work-tree` is
+ * authoritative for git (worktrees, subdirectories); markers cover
+ * jj/sapling and the git-binary-missing case. A bare repo ("false") and a
+ * plain directory both degrade to the marker walk (no .git marker in a
+ * bare repo's top level → "none").
+ */
+export async function detectVcs(ex: HunkExec, cwd: string): Promise<VcsKind> {
+	try {
+		const result = await ex("git", ["rev-parse", "--is-inside-work-tree"], {
+			cwd,
+			timeout: 3_000,
+		});
+		if (result.code === 0 && result.stdout.trim() === "true") {
+			return "git";
+		}
+	} catch {
+		// git missing or spawn failure — fall through to markers.
+	}
+	return detectVcsByMarkers(cwd);
 }

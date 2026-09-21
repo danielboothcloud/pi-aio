@@ -17,6 +17,7 @@ import type { ToolResultEvent } from "@earendil-works/pi-coding-agent";
 import type { HunkExec } from "./cli.js";
 import type { MutationRecord, AnnotateOutcome } from "./annotator.js";
 import { annotateMutations, buildMutationComments, buildMutationHighlights, hasLiveSession, highlightMutation } from "./annotator.js";
+import { detectVcs, type VcsKind } from "./enforce.js";
 import { throwIfAborted } from "./abort.js";
 import { getToolFileChanges, getChangedPaths, type FileChange } from "../yaml-hooks/tool-paths.js";
 
@@ -164,6 +165,20 @@ export class EnforceRuntime {
 	/** Live review probe cache (refreshed before each queue). */
 	private liveReviewState: LiveReviewState = "unknown";
 
+	/** VCS checkout cache: enforce only runs inside a hunk-supported checkout. */
+	private vcsState: "unknown" | "available" | "unavailable" = "unknown";
+	private vcsKind: VcsKind | undefined;
+
+	/** Detected VCS kind for the last-probed cwd (status output). */
+	get currentVcsKind(): VcsKind | undefined {
+		return this.vcsKind;
+	}
+
+	/** True when the cwd probe found a hunk-supported VCS checkout. */
+	get vcsReady(): boolean {
+		return this.vcsState === "available";
+	}
+
 	/** True when the enforce budget for bash annotations is spent. */
 	get bashBudgetSpent(): boolean {
 		return this.bashAnnotationCount >= this.options.maxBashAnnotations;
@@ -175,13 +190,21 @@ export class EnforceRuntime {
 	}
 
 	/**
-	 * Queue a mutation batch and schedule the debounced flush. Probes the
-	 * live review first (best effort) and skips queueing entirely when no
-	 * review is open — annotation must stay invisible when enforce is on
-	 * but no review is running.
+	 * Queue a mutation batch and schedule the debounced flush. Two gates run
+	 * before queueing (both cached per cwd until clear()):
+	 *
+	 *   1. VCS checkout — hunk reviews VCS changesets, so enforce is always
+			 OFF in a plain directory (no diff exists to annotate).
+	 *   2. live review — annotation must stay invisible when no review is
+			 open; enforcement never opens windows on its own.
 	 */
 	async queue(mutations: readonly MutationRecord[], target: { sessionId?: string; repo?: string }, cwd: string, signal: AbortSignal | undefined, onOutcome?: (outcome: AnnotateOutcome) => void): Promise<void> {
 		if (mutations.length === 0) return;
+		if (this.vcsState === "unknown") {
+			this.vcsKind = await detectVcs(this.ex, cwd);
+			this.vcsState = this.vcsKind === "none" ? "unavailable" : "available";
+		}
+		if (this.vcsState !== "available") return;
 		if (this.liveReviewState !== "available") {
 			this.liveReviewState = (await liveReviewAvailable(this.ex, cwd)) ? "available" : "unavailable";
 		}
@@ -242,8 +265,11 @@ export class EnforceRuntime {
 			this.timer = undefined;
 		}
 		this.pending.length = 0;
-		// Reset the probe cache: a review may have opened or closed since.
+		// Reset both probe caches: a review may have opened or closed, and the
+		// cwd may have moved in or out of a VCS checkout since.
 		this.liveReviewState = "unknown";
+		this.vcsState = "unknown";
+		this.vcsKind = undefined;
 	}
 }
 

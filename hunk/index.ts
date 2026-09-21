@@ -23,7 +23,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { createHunkTool } from "./tool.js";
 import { formatHunkCommand, launchHunkInteractive, planLaunchAttempts } from "./launcher.js";
 import { resolveHunkSkillPath, resetHunkSkillPathForTests } from "./skill.js";
-import { readHunkEnforceState, writeHunkEnforceState, hunkEnforceFilePath } from "./enforce.js";
+import { readHunkEnforceState, writeHunkEnforceState, hunkEnforceFilePath, detectVcs } from "./enforce.js";
 import { EnforceRuntime, mutationsFromToolResult, bashMutationsFromToolResult } from "./enforce-runtime.js";
 
 export type { HunkToolParams, HunkToolDetails } from "./tool.js";
@@ -106,10 +106,22 @@ export default function registerHunk(pi: ExtensionAPI): void {
 			if (trimmed === "enforce" || trimmed.startsWith("enforce ")) {
 				const rest = trimmed === "enforce" ? "" : trimmed.slice("enforce".length).trim();
 				if (rest.length === 0 || rest === "on") {
+					// Enforce is meaningless outside a hunk-supported checkout:
+					// hunk reviews VCS changesets, so a plain directory has no
+					// diff to annotate. Stay OFF there.
+					const vcsKind = await detectVcs((command, args, options) => pi.exec(command, args, options), ctx.cwd);
+					if (vcsKind === "none") {
+						notifyCommand(
+							ctx,
+							`Hunk enforce stays OFF: ${ctx.cwd} is not a git, jujutsu, or sapling checkout — hunk has no diff to review in a plain directory. cd into a repository and run /hunk enforce again.`,
+							"warning",
+						);
+						return;
+					}
 					enforceState = { ...enforceState, enforce: true };
 					writeHunkEnforceState(enforceState);
 					runtime.clear();
-					notifyCommand(ctx, "Hunk enforce ON: mutations will be auto-annotated on the live review. Open one with /hunk if none is running.");
+					notifyCommand(ctx, `Hunk enforce ON (${vcsKind} checkout detected): mutations will be auto-annotated on the live review. Open one with /hunk if none is running.`);
 					return;
 				}
 				if (rest === "off") {
@@ -120,9 +132,12 @@ export default function registerHunk(pi: ExtensionAPI): void {
 					return;
 				}
 				if (rest === "status") {
+					const vcsKind = await detectVcs((command, args, options) => pi.exec(command, args, options), ctx.cwd);
 					notifyCommand(
 						ctx,
-						`Hunk enforce: ${enforceState.enforce ? "ON" : "OFF"} (max ${enforceState.maxCommentsPerBatch} comments/batch, bash budget ${enforceState.maxBashAnnotations}).\nState file: ${hunkEnforceFilePath()}`,
+						`Hunk enforce: ${enforceState.enforce ? "ON" : "OFF"} (max ${enforceState.maxCommentsPerBatch} comments/batch, bash budget ${enforceState.maxBashAnnotations}).
+VCS checkout: ${vcsKind === "none" ? "none — enforce is disabled outside repositories" : vcsKind}
+State file: ${hunkEnforceFilePath()}`,
 					);
 					return;
 				}

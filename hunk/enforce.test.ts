@@ -2,15 +2,18 @@
 // anchors from tool_result events, debounce aggregation, and budgets.
 
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import {
 	DEFAULT_ENFORCE_STATE,
 	HUNK_ENFORCE_FILE_NAME,
+	detectVcs,
+	detectVcsByMarkers,
 	readHunkEnforceState,
 	writeHunkEnforceState,
+	type VcsKind,
 } from "./enforce.js";
 import {
 	buildMutationComments,
@@ -165,12 +168,19 @@ test("bashMutationsFromToolResult: rm/touch map unanchored; plain bash stays sil
 
 // ---- debounced runtime ----
 
-function fakeEx(calls: Array<{ code: number; stdout: string }>): { ex: import("./cli.js").HunkExec; payloads: string[] } {
+function fakeEx(calls: Array<{ code: number; stdout: string }>, options: { insideGitRepo?: boolean } = {}): { ex: import("./cli.js").HunkExec; payloads: string[] } {
 	const queue = [...calls];
 	const payloads: string[] = [];
-	const ex: import("./cli.js").HunkExec = async (_command, args) => {
-		// The live-review probe (session list) always reports an available
-		// matching session; scripted results apply to the annotate calls.
+	const ex: import("./cli.js").HunkExec = async (command, args) => {
+		// The VCS gate probe (git rev-parse) reports a checkout unless the
+		// test opts out; the live-review probe (session list) always reports
+		// an available matching session. Scripted results apply to the
+		// annotate calls only.
+		if (command === "git" && args.includes("--is-inside-work-tree")) {
+			return options.insideGitRepo === false
+				? { code: 0, stdout: "false", stderr: "" }
+				: { code: 0, stdout: "true", stderr: "" };
+		}
 		if (args.includes("list")) {
 			return { code: 0, stdout: JSON.stringify({ sessions: [{ repoRoot: "/tmp" }] }), stderr: "" };
 		}
@@ -216,8 +226,84 @@ test("EnforceRuntime: clear drops pending and resets the probe cache", async () 
 	const { ex } = fakeEx([]);
 	const runtime = new EnforceRuntime(ex, { maxCommentsPerBatch: 6, maxBashAnnotations: 10, windowMs: 60_000 });
 	await runtime.queue([{ path: "src/a.ts", operation: "modify", anchorLine: 1 }], { repo: "." }, "/tmp", undefined);
+	assert.equal(runtime.vcsReady, true);
+	assert.equal(runtime.currentVcsKind, "git");
 	runtime.clear();
 	assert.equal(runtime.pendingCount, 0);
+	assert.equal(runtime.vcsReady, false, "clear resets the VCS probe cache");
+	assert.equal(runtime.currentVcsKind, undefined);
+});
+
+test("EnforceRuntime: skips queueing outside a VCS checkout (enforce always off there)", async () => {
+	const { ex } = fakeEx([{ code: 0, stdout: '{"applied":1}' }], { insideGitRepo: false });
+	const runtime = new EnforceRuntime(ex, { maxCommentsPerBatch: 6, maxBashAnnotations: 10, windowMs: 60_000 });
+	await runtime.queue([{ path: "src/a.ts", operation: "modify", anchorLine: 1 }], { repo: "." }, "/tmp", undefined);
+	assert.equal(runtime.pendingCount, 0, "no diff exists to annotate in a plain directory");
+	assert.equal(runtime.vcsReady, false);
+	assert.equal(runtime.currentVcsKind, "none");
+
+	// The gate is cached: a later queue does not re-probe and still skips.
+	await runtime.queue([{ path: "src/b.ts", operation: "create", anchorLine: 1 }], { repo: "." }, "/tmp", undefined);
+	assert.equal(runtime.pendingCount, 0);
+});
+
+// ---- VCS detection ----
+
+test("detectVcsByMarkers: jj/sapling/git markers, injected exists", () => {
+	const markerFs = (markers: readonly string[]) => (filePath: string): boolean =>
+		markers.some((marker) => filePath.endsWith(marker));
+	const kindOf = (markers: readonly string[]): VcsKind =>
+		detectVcsByMarkers("/repo/nested/dir", markerFs(markers));
+
+	assert.equal(kindOf(["/repo/.jj"]), "jj");
+	assert.equal(kindOf(["/repo/.sl"]), "sl");
+	assert.equal(kindOf(["/repo/.git"]), "git");
+	assert.equal(kindOf(["/repo/.jj", "/repo/.git"]), "jj", "jj takes precedence over the git marker");
+	assert.equal(kindOf([]), "none", "plain directory has no VCS");
+	// Marker above the start dir is found by the walk.
+	assert.equal(kindOf(["/.git"]), "git");
+});
+
+test("detectVcsByMarkers: real temp dirs (nested under a marker)", () => {
+	const dir = mkdtempSync(join(tmpdir(), "aio-hunk-vcs-"));
+	test.after(() => rmSync(dir, { recursive: true, force: true }));
+	const nested = join(dir, "deep", "deeper");
+	mkdirSync(nested, { recursive: true });
+	assert.equal(detectVcsByMarkers(nested), "none", "fresh tmp dir is not a checkout");
+	mkdirSync(join(dir, ".jj"), { recursive: true });
+	assert.equal(detectVcsByMarkers(nested), "jj");
+});
+
+test("detectVcs: git rev-parse authoritative when it answers", async () => {
+	const gitOk: import("./cli.js").HunkExec = async (command, args) => {
+		assert.equal(command, "git");
+		assert.deepEqual(args, ["rev-parse", "--is-inside-work-tree"]);
+		return { code: 0, stdout: "true\n", stderr: "" };
+	};
+	assert.equal(await detectVcs(gitOk, "/repo"), "git");
+
+	// Bare repo ("false"): the marker walk decides — no .git marker in a
+	// bare repo top level, so a plain tmp dir yields none.
+	const bare = mkdtempSync(join(tmpdir(), "aio-hunk-bare-"));
+	test.after(() => rmSync(bare, { recursive: true, force: true }));
+	const gitBare: import("./cli.js").HunkExec = async () => ({ code: 0, stdout: "false", stderr: "" });
+	assert.equal(await detectVcs(gitBare, bare), "none");
+});
+
+test("detectVcs: markers cover jj, sapling, and a missing git binary", async () => {
+	const dir = mkdtempSync(join(tmpdir(), "aio-hunk-detect-"));
+	test.after(() => rmSync(dir, { recursive: true, force: true }));
+
+	// git rev-parse fails (not a repo) and no marker exists → none.
+	const gitFail: import("./cli.js").HunkExec = async () => ({ code: 128, stdout: "", stderr: "not a git repository" });
+	assert.equal(await detectVcs(gitFail, dir), "none");
+
+	// git binary throws (ENOENT): marker walk still classifies.
+	const gitMissing: import("./cli.js").HunkExec = async () => {
+		throw new Error("spawn git ENOENT");
+	};
+	mkdirSync(join(dir, ".sl"), { recursive: true });
+	assert.equal(await detectVcs(gitMissing, dir), "sl");
 });
 
 test("hasLiveSession: true when a session matches this repo", async () => {

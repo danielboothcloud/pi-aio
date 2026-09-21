@@ -869,6 +869,12 @@ Enforcement design:
 - **Invisible without a review** — before queueing, the driver probes the
   live review; with none open, enforcement stays silent (annotations never
   open windows on their own).
+- **VCS-gated** — hunk reviews git/jujutsu/sapling changesets, so enforce
+  is always OFF in a plain directory: `/hunk enforce` refuses to enable
+  there, and the runtime re-checks the cwd (git via
+  `git rev-parse --is-inside-work-tree`, jj/sapling via `.jj`/`.sl`
+  markers, cached per cwd). A persisted ON state from another repo never
+  annotates in a non-checkout.
 - **Best effort** — a closed review or rejected batch degrades to a
   descriptive outcome; enforcement never breaks or blocks the mutation
   flow.
