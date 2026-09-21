@@ -17,7 +17,14 @@ import {
 	parseHunkJson,
 	sessionTargetArgs,
 } from "./cli.js";
-import { detectLaunchMode, formatHunkCommand } from "./launcher.js";
+import {
+	buildOttyCommand,
+	formatHunkCommand,
+	launchHunkInteractive,
+	planLaunchAttempts,
+	shellSingleQuote,
+	type HunkExecLike,
+} from "./launcher.js";
 import { resolveHunkSkillPath, resetHunkSkillPathForTests } from "./skill.js";
 import { HUNK_BINARY } from "./cli.js";
 
@@ -260,13 +267,95 @@ test("hunkCliError carries kind and stderr", () => {
 
 // ---- launcher ----
 
-test("detectLaunchMode: tmux, macOS, print fallback", () => {
-	assert.equal(detectLaunchMode({ TMUX: "/tmp/tmux-0/default,123,0" } as NodeJS.ProcessEnv).mode, "tmux");
-	assert.equal(detectLaunchMode({} as NodeJS.ProcessEnv).mode, "macos");
-	const windowsLike = { } as NodeJS.ProcessEnv;
-	void windowsLike;
-	assert.equal(detectLaunchMode({ TERM_PROGRAM: "iTerm.app" } as NodeJS.ProcessEnv).mode, "macos");
-	assert.match(detectLaunchMode({ TERM_PROGRAM: "iTerm.app" } as NodeJS.ProcessEnv).reason, /iTerm2/);
+type EnvLike = NodeJS.ProcessEnv;
+
+function envLike(values: Record<string, string>): EnvLike {
+	return values as EnvLike;
+}
+
+test("planLaunchAttempts: otty split first when OTTY_PANE_ID is set", () => {
+	const plan = planLaunchAttempts(envLike({ OTTY_PANE_ID: "p_1_2" }), "darwin");
+	assert.deepEqual(
+		plan.map((attempt) => attempt.mode),
+		["otty-split", "otty-tab", "macos", "print"],
+	);
+	assert.match(plan[0]?.reason ?? "", /Otty pane/);
+});
+
+test("planLaunchAttempts: tmux wins over the otty tab attempt", () => {
+	const plan = planLaunchAttempts(envLike({ TMUX: "/tmp/tmux-0/default,123,0" }), "darwin");
+	assert.deepEqual(
+		plan.map((attempt) => attempt.mode),
+		["tmux", "otty-tab", "macos", "print"],
+	);
+});
+
+test("planLaunchAttempts: otty tab attempt always present; macOS only on darwin", () => {
+	const bare = planLaunchAttempts(envLike({}), "darwin");
+	assert.deepEqual(bare.map((attempt) => attempt.mode), ["otty-tab", "macos", "print"]);
+	assert.match(bare[bare.length - 1]?.reason ?? "", /run this command yourself/);
+
+	const linux = planLaunchAttempts(envLike({}), "linux");
+	assert.deepEqual(linux.map((attempt) => attempt.mode), ["otty-tab", "print"]);
+});
+
+test("planLaunchAttempts: iTerm hint on the macOS attempt", () => {
+	const plan = planLaunchAttempts(envLike({ TERM_PROGRAM: "iTerm.app" }), "darwin");
+	const macos = plan.find((attempt) => attempt.mode === "macos");
+	assert.match(macos?.reason ?? "", /iTerm2/);
+});
+
+test("buildOttyCommand: hunk script with sh takeover on failure", () => {
+	const command = buildOttyCommand(["diff"]);
+	assert.match(command, /^sh -c /);
+	assert.match(command, /hunk diff/);
+	assert.match(command, /status=\$\?/);
+	assert.match(command, /exec sh/);
+
+	// Quoted args survive the single-quote escaping.
+	const withSpace = buildOttyCommand(["diff", "--", "my file.ts"]);
+	assert.match(withSpace, /"my file.ts"/);
+});
+
+test("shellSingleQuote: POSIX escaping for embedded quotes", () => {
+	assert.equal(shellSingleQuote("plain"), "'plain'");
+	assert.equal(shellSingleQuote("it's"), "'it'\\''s'");
+});
+
+test("launchHunkInteractive: otty split success returns pane output", async () => {
+	const ex = fakeLauncherExec({ otty: [{ code: 0, stdout: "p_x", stderr: "" }] });
+	const output = await launchHunkInteractive(ex, ctxLike(), ["diff"]);
+	assert.match(output, /Otty pane beside this session/);
+	assert.match(output, /hunk diff/);
+});
+
+test("launchHunkInteractive: anchored split passes --pane when OTTY_PANE_ID is set", async () => {
+	const calls: Array<{ command: string; args: string[] }> = [];
+	const ex: HunkExecLike = {
+		exec: async (command, args) => {
+			calls.push({ command, args });
+			return { code: 0, stdout: "", stderr: "" };
+		},
+	};
+	const previousPaneId = process.env.OTTY_PANE_ID;
+	process.env.OTTY_PANE_ID = "p_1a0bf8aaf9c_7";
+	try {
+		await launchHunkInteractive(ex, ctxLike(), ["diff"]);
+	} finally {
+		if (previousPaneId === undefined) {
+			delete process.env.OTTY_PANE_ID;
+		} else {
+			process.env.OTTY_PANE_ID = previousPaneId;
+		}
+	}
+	assert.equal(calls.length, 1);
+	assert.equal(calls[0]?.command, "otty");
+	const splitArgs = calls[0]?.args ?? [];
+	assert.deepEqual(splitArgs.slice(0, 6), ["pane", "split", "--direction", "right", "--size", "50"]);
+	assert.match(splitArgs.join(" "), /--pane p_1a0bf8aaf9c_7/);
+	assert.match(splitArgs.join(" "), /--cwd /);
+	assert.match(splitArgs.join(" "), /--title hunk/);
+	assert.match(splitArgs.join(" "), /--quiet/);
 });
 
 test("formatHunkCommand: quoting only when needed", () => {
@@ -309,4 +398,104 @@ test("resolveHunkSkillPath: resolves, caches, and degrades", async (t) => {
 	assert.equal(await resolveHunkSkillPath(missing), undefined);
 
 	resetHunkSkillPathForTests();
+});
+
+// ---- launcher helpers + fall-through integration ----
+
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+
+function ctxLike(): ExtensionContext {
+	return { cwd: "/tmp/aio-hunk-launch-test" } as ExtensionContext;
+}
+
+/**
+ * Scripted exec: each command gets a queue of results; an empty queue
+ * reports exit 127 (binary missing), which every launcher treats as a
+ * fall-through failure.
+ */
+function fakeLauncherExec(script: Record<string, Array<{ code: number; stdout?: string; stderr?: string }>>): HunkExecLike {
+	const queues = new Map(Object.entries(script));
+	return {
+		exec: async (command) => {
+			const queue = queues.get(command) ?? [];
+			const next = queue.shift();
+			if (!next) {
+				return { code: 127, stdout: "", stderr: "command not found" };
+			}
+			return { code: next.code, stdout: next.stdout ?? "", stderr: next.stderr ?? "" };
+		},
+	};
+}
+
+async function withPaneEnv<T>(paneId: string | undefined, run: () => Promise<T>): Promise<T> {
+	const previous = process.env.OTTY_PANE_ID;
+	if (paneId === undefined) {
+		delete process.env.OTTY_PANE_ID;
+	} else {
+		process.env.OTTY_PANE_ID = paneId;
+	}
+	try {
+		return await run();
+	} finally {
+		if (previous === undefined) {
+			delete process.env.OTTY_PANE_ID;
+		} else {
+			process.env.OTTY_PANE_ID = previous;
+		}
+	}
+}
+
+test("launchHunkInteractive: falls through otty split failure to the otty tab attempt", async () => {
+	const ex = fakeLauncherExec({
+		// Two otty calls: the anchored split fails (app not running), then the
+		// tab attempt succeeds.
+		otty: [{ code: 127 }, { code: 0 }],
+	});
+	const output = await withPaneEnv("p_1", async () => launchHunkInteractive(ex, ctxLike(), ["diff"]));
+	assert.match(output, /new Otty tab/);
+});
+
+test("launchHunkInteractive: tmux attempt sits between the otty attempts", async () => {
+	// Inside tmux but outside Otty: the split attempt is absent from the
+	// plan, the tmux attempt runs first and succeeds.
+	const previousTmux = process.env.TMUX;
+	process.env.TMUX = "/tmp/tmux-0/default,123,0";
+	try {
+		const ex = fakeLauncherExec({ tmux: [{ code: 0 }] });
+		const output = await withPaneEnv(undefined, async () => launchHunkInteractive(ex, ctxLike(), ["diff"]));
+		assert.match(output, /new tmux window/);
+	} finally {
+		if (previousTmux === undefined) {
+			delete process.env.TMUX;
+		} else {
+			process.env.TMUX = previousTmux;
+		}
+	}
+});
+
+test("launchHunkInteractive: falls through tmux to the otty tab attempt", async () => {
+	const ex = fakeLauncherExec({
+		tmux: [], // 127 — not inside tmux
+		otty: [{ code: 0 }],
+	});
+	const output = await withPaneEnv(undefined, async () => launchHunkInteractive(ex, ctxLike(), ["diff"]));
+	assert.match(output, /new Otty tab/);
+});
+
+test("launchHunkInteractive: falls through otty to macOS and ends at print", async () => {
+	const ex = fakeLauncherExec({
+		otty: [],
+		osascript: [], // 127 — no launcher permission
+	});
+	const output = await withPaneEnv(undefined, async () => launchHunkInteractive(ex, ctxLike(), ["diff", "--staged"]));
+	assert.match(output, /run this command yourself/);
+	assert.match(output, /hunk diff --staged/);
+});
+
+test("launchHunkInteractive: tab attempt never runs when the split attempt succeeds", async () => {
+	const ex = fakeLauncherExec({
+		otty: [{ code: 0 }, { code: 0 }],
+	});
+	const output = await withPaneEnv("p_1", async () => launchHunkInteractive(ex, ctxLike(), ["diff"]));
+	assert.match(output, /Otty pane beside this session/);
 });

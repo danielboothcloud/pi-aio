@@ -799,11 +799,23 @@ agent surfaces (no source vendored — see
 degrades silently when the binary is missing.
 
 Run `/hunk` (or `/hunk diff --staged`, `/hunk show HEAD~1`,
-`/hunk diff --watch`) to open an interactive review in a sibling terminal —
-inside tmux it opens a dedicated window beside the agent session, on macOS
-it opens Terminal.app, otherwise the exact command is printed for you to
-run. The TUI belongs to you; Pi's transcript cannot host a fullscreen
-review UI, which is why the review stream lives outside the agent.
+`/hunk diff --watch`) to open an interactive review beside this session.
+Launch attempts run in order and the first success wins:
+
+1. **Otty pane split** — when Pi runs inside Otty ($OTTY_PANE_ID), the
+   review opens anchored to the agent's pane (`--pane`), split right 50/50,
+   so the review stream lives beside the transcript with no focus jump
+2. **tmux window** — when Pi runs inside tmux
+3. **Otty tab** — Otty installed with the app running (fails fast to the
+   next attempt when the app is not running or the binary is absent)
+4. **macOS Terminal.app** — AppleScript (darwin)
+5. **Print** — always succeeds: hand the exact command to the user
+
+Every otty/tmux launcher runs the review with an `sh -c` script that drops
+into an interactive shell only when the hunk command fails, so launch errors
+stay visible instead of the pane silently disappearing. The TUI belongs to
+you; Pi's transcript cannot host a fullscreen review UI, which is why the
+review stream lives outside the agent.
 
 The **`hunk` tool** is the model's side of the workflow — it talks to your
 live review through Hunk's session daemon:

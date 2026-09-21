@@ -17,11 +17,15 @@ skill discovery.
   temp file and redirected through `sh -c` (the shared exec surface has no
   stdin). Payloads are parsed into a named JSON domain type and returned in
   tool details.
-- **`/hunk` command family** — opens the interactive review in a sibling
-  terminal: inside tmux (new window), on macOS via AppleScript into
-  Terminal.app, otherwise printing the exact command. The TUI belongs to the
-  user, matching Hunk's agent workflow; Pi owns the current terminal and can
-  never host a fullscreen OpenTUI app.
+- **`/hunk` command family** — opens the interactive review beside the
+  agent session through an ordered launcher attempt chain (first success
+  wins, failures fall through silently): an Otty pane split anchored to
+  `$OTTY_PANE_ID` when Pi runs inside Otty, then a tmux window, then a new
+  Otty tab, then macOS Terminal.app via AppleScript, then printing the
+  exact command. Otty's `--cwd`/`--command`/`--title`/`--quiet` flags and
+  `--pane` anchoring keep the review beside the agent pane without a focus
+  jump. The TUI belongs to the user, matching Hunk's agent workflow; Pi
+  owns the current terminal and can never host a fullscreen OpenTUI app.
 - **Skill discovery** — `hunk skill path` is resolved once at startup and fed
   into `resources_discover` so Pi loads the authoritative upstream
   `hunk-review` skill natively. A missing or broken hunk install contributes

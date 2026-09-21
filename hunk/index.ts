@@ -5,8 +5,9 @@
 //   1. The `hunk` model tool wraps the non-interactive `hunk session *` CLI
 //      (inspect / navigate / inline AI annotations / attention marks).
 //   2. The `/hunk` user command opens an interactive review in a sibling
-//      terminal — inside tmux when available, else macOS Terminal.app,
-//      else printing the exact command for the user to run.
+//      terminal — an Otty pane split beside this session when Pi runs
+//      inside Otty, else a tmux window, else a new Otty tab, else macOS
+//      Terminal.app, else printing the exact command for the user to run.
 //
 // The bundled hunk-review skill path is fed into resources_discover so the
 // model loads Hunk's authoritative agent guidance natively. Everything
@@ -16,12 +17,12 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { createHunkTool } from "./tool.js";
-import { detectLaunchMode, formatHunkCommand, launchHunkInteractive } from "./launcher.js";
+import { formatHunkCommand, launchHunkInteractive, planLaunchAttempts } from "./launcher.js";
 import { resolveHunkSkillPath, resetHunkSkillPathForTests } from "./skill.js";
 
 export type { HunkToolParams, HunkToolDetails } from "./tool.js";
 export type { HunkAction } from "./tool.js";
-export type { LaunchMode, LaunchDecision } from "./launcher.js";
+export type { LaunchMode, LaunchAttempt } from "./launcher.js";
 
 const OPEN_HELP =
 	"/hunk [args] — open an interactive Hunk review of this checkout in a sibling terminal.\n" +
@@ -81,4 +82,4 @@ export default function registerHunk(pi: ExtensionAPI): void {
 	});
 }
 
-export { detectLaunchMode, formatHunkCommand, resetHunkSkillPathForTests };
+export { formatHunkCommand, planLaunchAttempts, resetHunkSkillPathForTests };

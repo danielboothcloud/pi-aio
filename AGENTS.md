@@ -88,8 +88,13 @@ generated `dist/` tree without changing the package contract.
   (TypeBox-validated wrapper over the non-interactive `hunk session *` CLI:
   inspect/navigate/reload, inline AI annotations via `comment_add`/`apply`,
   attention marks via `highlight_add`/`clear`) plus the `/hunk` command that
-  opens the interactive review in a sibling terminal (tmux window, macOS
-  Terminal.app via AppleScript, or the printed command). The bundled
+  opens the interactive review beside the session through an ordered
+  launcher chain (Otty pane split anchored to `$OTTY_PANE_ID` → tmux
+  window → Otty tab → macOS Terminal.app → print the command; first
+  success wins, failures fall through). Otty launchers pass `--pane` so
+  the review anchors to the agent's pane even when focus moved, and wrap
+  the hunk command in an `sh -c` script that drops into a shell only on
+  failure so launch errors stay visible. The bundled
   `hunk-review` skill is surfaced through `resources_discover`. Hunk is
   OPTIONAL: a missing binary must not prevent loading — skill discovery
   returns nothing, the tool classifies spawn failures, `/hunk` prints the
