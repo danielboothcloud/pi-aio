@@ -43,7 +43,8 @@ generated `dist/` tree without changing the package contract.
   registrars. Preserve registration order unless deliberately changing event
   interception: `registerUserBash` must run before `registerRtk`, and hypa
   must register after rtk (rtk precedence) but before queue and pretty tools,
-  which own the final bash behavior.
+  which own the final bash behavior. `registerYamlHooks` runs LAST so its
+  opt-in `user_bash` interception wraps the earlier gates.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
   `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/` and
   `user-bash/` gate those mutations. Changes can cross feature boundaries.
@@ -70,6 +71,18 @@ generated `dist/` tree without changing the package contract.
   loop/list state were stripped. It drives `agent_end` continuations (the
   Two-Driver Rule) and is inert in aio subagent child processes
   (`AIO_SUBAGENT_CHILD=1`) so a child never restores the parent's goal.
+- `yaml-hooks/` is ported from pi-yaml-hooks (MIT, KristjanPikhof — see
+  `yaml-hooks/LICENSE` and `yaml-hooks/UPSTREAM.md`). It owns the
+  `hooks.yaml` automation surface: discovery + trust, bash/tool/notify/
+  confirm/setStatus actions, `/hooks-*` commands, prompt context injection,
+  and the opt-in `PI_YAML_HOOKS_ENABLE_USER_BASH=1` interception. It
+  registers LAST so its `user_bash` interception wraps the blocklist,
+  permission-modes, and user-bash gates (the runner honors the first
+  non-undefined `user_bash` result; the earlier gates win). It owns no tool
+  names. Failure semantics: prompt hooks fail-open, post-tool hooks
+  fail-open, user-bash interception fails closed, cleanup hooks are
+  best-effort. All `PI_YAML_HOOKS_*` env names and YAML validation error
+  codes are append-only contracts.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

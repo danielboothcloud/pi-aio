@@ -27,6 +27,7 @@ import registerPrettyTools from "./pretty-tools/index.js";
 import { registerSubagents } from "./subagents/index.js";
 import { registerStatusLine } from "./status-line/index.js";
 import { registerUserBash } from "./user-bash/index.js";
+import registerYamlHooks from "./yaml-hooks/index.js";
 
 export {
 	ASK_USER_PROMPT_EVENT,
@@ -62,4 +63,7 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	registerQueue(pi);
 	await registerPrettyTools(pi);
 	registerStatusLine(pi);
+	// Yaml hooks last: it owns no tool surface, but its user-bash interception
+	// (opt-in via env) must wrap the user-bash gate above.
+	registerYamlHooks(pi);
 }

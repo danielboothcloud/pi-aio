@@ -710,6 +710,85 @@ See [`diff-tools/CONFIG.md`](diff-tools/CONFIG.md) for the complete reference.
 Do not load standalone `@heyhuynhgiabuu/pi-diff` alongside `aio`, because both
 packages register `write`, `edit`, and `apply_patch`.
 
+## YAML hooks
+
+`aio` ships YAML-configured hooks: run bash around tool calls, block risky
+commands, add same-turn prompt context, and post UI notifications,
+confirmations, and status entries from one `hooks.yaml` file. The
+implementation is ported from
+[pi-yaml-hooks](https://github.com/KristjanPikhof/pi-yaml-hooks) (MIT — see
+[`yaml-hooks/UPSTREAM.md`](yaml-hooks/UPSTREAM.md)); the YAML contract and all
+`PI_YAML_HOOKS_*` environment variables are unchanged.
+
+Config is two-tier with global-first merge and project overrides by hook `id`:
+
+- Global: `~/.pi/agent/hook/hooks.yaml`
+- Project: `<project>/.pi/hook/hooks.yaml` (loads only after `/hooks-trust`)
+
+```yaml
+hooks:
+  - id: idle-notify
+    event: session.idle
+    actions:
+      - notify: "Agent is idle"
+  - id: guard-bash
+    event: tool.before.bash
+    conditions:
+      - matchesAnyPath: "**/*.sh"
+    actions:
+      - bash: "./scripts/check-command.sh"   # exit 2 blocks the tool
+```
+
+- **Events** — `user.prompt.submit`, `tool.before.*`/`tool.after.*` (exact
+  names or `*` wildcard), `file.changed` (synthesized from `write`, `edit`,
+  `apply_patch`, and mutation-shaped bash commands), `session.created`,
+  `session.idle`, and `session.deleted`.
+- **Actions** — `bash` (JSON context on stdin, `PI_*` env injected, exit 2
+  blocks on `tool.before.*`), `tool` (sends a follow-up prompt into the
+  current session), `notify`, `confirm` (blocks a pre-tool hook when
+  rejected), and `setStatus`.
+- **Conditions** — `matchesCodeFiles`, `matchesAnyPath`, and `matchesAllPaths`
+  over project-relative globs; `scope: all|main|child` filters session
+  lineage; `async: true` moves bash-only hooks onto background queues.
+- **Overrides** — a project file can replace (`override: <id>`) or disable
+  (`override: <id>` + `disable: true`) a global hook by `id`.
+- **Blocking** — a `tool.before.*` bash hook that exits 2, a rejected
+  `confirm`, or `action: stop` blocks the tool call. `user.prompt.submit`
+  hooks are synchronous, bash-only, and fail-open: successful stdout becomes
+  system context for the same turn, capped at 64 KiB.
+- **Async** — `async: true` (or `{ group, concurrency }`) queues bash-only
+  hooks off the dispatch loop; not allowed on `tool.before.*`,
+  `user.prompt.submit`, or `session.idle`.
+
+Slash commands:
+
+```text
+/hooks-status      # active files, hook counts, trust state, log path
+/hooks-validate    # validation errors grouped by global/project/imported
+/hooks-trust       # add the current repo/worktree anchor to the trust store
+/hooks-reload      # reload extensions; edits also refresh lazily per event
+/hooks-tail-log    # log path plus a ready-to-run tail -F command
+```
+
+Config files are watched by stat fingerprint; a valid edit applies on the
+next matching event without a reload, and an invalid edit keeps the last
+good hook set. Startup appends a short hook-awareness note to the system
+prompt (disable with `PI_YAML_HOOKS_PROMPT_AWARENESS=0`). Structured
+logs are opt-in via `PI_YAML_HOOKS_DEBUG=1` or `PI_YAML_HOOKS_LOG_LEVEL`.
+
+Important limitations (matching upstream):
+
+- `command:` actions are unsupported and rejected at load time.
+- `tool:` sends a follow-up prompt into the current session; it does not
+  execute a tool or target another session.
+- `action: stop` only takes effect on `tool.before.*`.
+- Prompt hooks receive the expanded text prompt only; they cannot rewrite or
+  block the submitted prompt.
+- Human `!`/`!!` commands are intercepted only when
+  `PI_YAML_HOOKS_ENABLE_USER_BASH=1` is set; every trusted-project hook can
+  then read and block typed commands, so enable it only when you trust every
+  loaded hook. The startup warning lists which projects will have access.
+
 ## Layout
 
 ```text
@@ -726,7 +805,8 @@ packages register `write`, `edit`, and `apply_patch`.
 ├── pretty-tools/            # pretty built-ins + FFF search
 ├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)
 ├── subagents/               # child-agent discovery, execution, and lifecycle
-└── user-bash/               # !/!! command permission gating
+├── user-bash/               # !/!! command permission gating
+└── yaml-hooks/              # hooks.yaml automation (ported from pi-yaml-hooks)
 ```
 
 ## Notes
