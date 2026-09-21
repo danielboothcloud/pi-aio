@@ -789,6 +789,51 @@ Important limitations (matching upstream):
   then read and block typed commands, so enable it only when you trust every
   loaded hook. The startup warning lists which projects will have access.
 
+## Hunk diff review
+
+`aio` integrates [hunk](https://hunk.dev), the review-first terminal diff
+viewer, so changesets get reviewed in Hunk's multi-file review stream with
+inline AI annotations beside the code. The integration wraps Hunk's public
+agent surfaces (no source vendored — see
+[`hunk/UPSTREAM.md`](hunk/UPSTREAM.md)); hunk is optional and everything
+degrades silently when the binary is missing.
+
+Run `/hunk` (or `/hunk diff --staged`, `/hunk show HEAD~1`,
+`/hunk diff --watch`) to open an interactive review in a sibling terminal —
+inside tmux it opens a dedicated window beside the agent session, on macOS
+it opens Terminal.app, otherwise the exact command is printed for you to
+run. The TUI belongs to you; Pi's transcript cannot host a fullscreen
+review UI, which is why the review stream lives outside the agent.
+
+The **`hunk` tool** is the model's side of the workflow — it talks to your
+live review through Hunk's session daemon:
+
+- **`review`** — inspect the loaded file/hunk structure
+  (`includePatch` opts into raw unified diff text only when needed)
+- **`navigate`** — move your viewport to a file/hunk/line, the next or
+  previous annotated hunk, or an exact comment id
+- **`comment_add` / `comment_apply`** — leave inline AI annotations beside
+  the rows they explain (one-off note or one stdin batch for several;
+  anchored by old/new line or hunk, with optional `rationale` and replies
+  to your notes)
+- **`highlight_add` / `highlight_clear`** — paint attention marks on exact
+  character ranges (`[start, end)` UTF-16 offsets; tones include `current`
+  for the range under discussion)
+- **`reload`** — swap the live window's contents (diff/show, refs, pathspec)
+- **`comment_list` / `comment_rm` / `comment_clear`** — find note ids and
+  clean up
+
+If no review is running, the tool result tells the model to ask you to open
+one. The bundled `hunk-review` skill is surfaced natively through
+`resources_discover`, so the model loads Hunk's authoritative agent
+workflows without you pasting anything.
+
+Note the division of labor: aio's syntax-highlighted transcript diffs (above)
+render individual `write`/`edit`/`apply_patch` calls inline as they happen;
+Hunk is the interactive changeset review with navigation and annotations.
+Hunk's own renderer is an OpenTUI component and cannot be embedded in Pi's
+transcript, so the two surfaces complement rather than replace each other.
+
 ## Layout
 
 ```text
@@ -798,6 +843,7 @@ Important limitations (matching upstream):
 ├── copy-widget/             # /pick parser + TUI overlay
 ├── diff-tools/              # write/edit/apply_patch diff rendering
 ├── effort/                  # /effort command + status
+├── hunk/                    # live hunk diff-review control + AI annotations
 ├── init/                    # /init AGENTS.md bootstrap
 ├── permission-modes/        # Shift+Tab modes + plan flow
 ├── queue/                   # message-queue widget + Enter-to-interrupt

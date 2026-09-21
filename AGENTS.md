@@ -83,6 +83,20 @@ generated `dist/` tree without changing the package contract.
   fail-open, user-bash interception fails closed, cleanup hooks are
   best-effort. All `PI_YAML_HOOKS_*` env names and YAML validation error
   codes are append-only contracts.
+- `hunk/` integrates the hunk terminal diff viewer (MIT, modem-dev — see
+  `hunk/UPSTREAM.md`; no source vendored). It registers the `hunk` tool
+  (TypeBox-validated wrapper over the non-interactive `hunk session *` CLI:
+  inspect/navigate/reload, inline AI annotations via `comment_add`/`apply`,
+  attention marks via `highlight_add`/`clear`) plus the `/hunk` command that
+  opens the interactive review in a sibling terminal (tmux window, macOS
+  Terminal.app via AppleScript, or the printed command). The bundled
+  `hunk-review` skill is surfaced through `resources_discover`. Hunk is
+  OPTIONAL: a missing binary must not prevent loading — skill discovery
+  returns nothing, the tool classifies spawn failures, `/hunk` prints the
+  command. `comment apply --stdin` batches are written to a mode-0600 temp
+  file and redirected through `sh -c` (the shared exec surface has no
+  stdin). Tests must use injected fake exec seams, never a live hunk
+  daemon.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

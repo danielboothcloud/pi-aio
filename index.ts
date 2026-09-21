@@ -2,7 +2,8 @@
  * Combined Pi extension: ask_user_question, /pick, /effort, Shift+Tab
  * permission modes, enhanced built-in tool output, syntax-highlighted diffs,
  * configurable web search, rtk shell-command rewriting, ast-grep structural
- * search, and a message-queue UI with Enter-to-interrupt.
+ * search, a message-queue UI with Enter-to-interrupt, YAML hook automation,
+ * and live Hunk diff-review control with inline AI annotations.
  *
  * Effort and permission modes are based on @pandi-coding-agent/pandi-effort
  * and @aprimediet/permission-modes. The questionnaire implementation is based
@@ -17,6 +18,7 @@ import { registerBrowserSearch } from "./browser-search/index.js";
 import { registerCopyWidget } from "./copy-widget/index.js";
 import registerDiffTools from "./diff-tools/index.js";
 import { registerEffort } from "./effort/index.js";
+import registerHunk from "./hunk/index.js";
 import { registerInit } from "./init/index.js";
 import registerGoalLoop from "./goal-loop/index.js";
 import { registerHypa } from "./hypa/index.js";
@@ -63,6 +65,10 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	registerQueue(pi);
 	await registerPrettyTools(pi);
 	registerStatusLine(pi);
+	// Hunk owns the `hunk` tool (live diff-review control) and surfaces the
+	// bundled hunk-review skill through resources_discover; optional when the
+	// hunk binary is not installed.
+	registerHunk(pi);
 	// Yaml hooks last: it owns no tool surface, but its user-bash interception
 	// (opt-in via env) must wrap the user-bash gate above.
 	registerYamlHooks(pi);
