@@ -217,6 +217,10 @@ export async function openInNvim(
 				break;
 			case "print":
 				return printFallbackNvim(command, attempt.reason);
+			default:
+				// Exhaustive over NvimLaunchMode today; an unknown future mode
+				// falls through to the next attempt like any failed launcher.
+				break;
 		}
 	}
 	return printFallbackNvim(command, "no terminal launcher available; run this command yourself");

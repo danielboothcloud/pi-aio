@@ -71,10 +71,11 @@ export default function registerLoopPolice(pi: ExtensionAPI): void {
 		const message = event.message;
 		if (message.role !== "assistant") return;
 		const thinking = (message.content as Array<{ type: string; thinking?: string }>)
-			.filter((block) => block.type === "thinking")
-			.map((block) => block.thinking ?? "")
+			.flatMap((block) => (block.type === "thinking" ? [block.thinking ?? ""] : []))
 			.join("\n");
-		runtime.onTurnEnd(thinkingTextOf(thinking));
+		// The thinking text is already extracted here; onTurnEnd takes the
+		// text (or undefined for a thinking-less turn, which disarms it).
+		runtime.onTurnEnd(thinking.length > 0 ? thinking : undefined);
 	});
 
 	// ---- cross-turn stagnation + recovery at the next agent start ----
@@ -205,8 +206,7 @@ function thinkingTextOf(message: AgentMessage): string {
 	if (message.role !== "assistant") return "";
 	const blocks = (message.content as Array<{ type: string; thinking?: string }>) ?? [];
 	return blocks
-		.filter((block) => block.type === "thinking")
-		.map((block) => block.thinking ?? "")
+		.flatMap((block) => (block.type === "thinking" ? [block.thinking ?? ""] : []))
 		.join("\n");
 }
 

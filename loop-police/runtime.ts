@@ -18,22 +18,23 @@
 // All tool detectors block in place on the tool_call gate (first block
 // wins) and hand the recovery message back as the tool's result in the same
 // turn — no duplicate sendMessage recovery enters context.
+//
+// A detector failure must never escape the streaming path: the runner
+// calls message_update inside its emit chain, so a throw from here
+// surfaces as a hard extension error and kills the turn. The watch is
+// guarded end-to-end — the abort runs before bookkeeping, and every
+// failure after detection degrades to a console warn.
 // ---------------------------------------------------------------------------
 
 import type {
-	AgentMessage,
-	ExtensionAPI,
 	ExtensionContext,
-	MessageEndEvent,
-	MessageEndEventResult,
-	MessageUpdateEvent,
 	ToolCallEvent,
 	ToolCallEventResult,
 } from "@earendil-works/pi-coding-agent";
+import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage, ThinkingContent } from "@earendil-works/pi-ai";
 import {
 	detectStreamLoop,
-	eventKindForStreamLoop,
 	textSimilarity,
 	wordTokens,
 	isReadTool,
@@ -58,9 +59,38 @@ import {
 	buildDetectionPayload,
 	buildRecoveryMessage,
 	emitDetectionObservers,
+	eventKindForStreamLoop,
 	type ObserverContext,
 } from "./messages.js";
 import { readLoopPoliceConfig, writeLoopPoliceConfig, isSettableKey, defaultConfig, type LoopPoliceConfig, type NumericKey } from "./config.js";
+
+// The SDK defines the streaming event surfaces in core/extensions but does
+// not re-export them from the package root (verified against
+// @earendil-works/pi-coding-agent@0.80.10), so the runtime mirrors the shapes
+// it consumes; AgentMessage comes from pi-agent-core, matching index.ts. The
+// loose assistant-event shape accepts every AssistantMessageEvent variant —
+// the watcher early-returns on stream types it does not track.
+interface AssistantMessageEventLike {
+	type: string;
+	contentIndex?: number;
+	delta?: string;
+	content?: string;
+}
+
+interface MessageUpdateEvent {
+	type: "message_update";
+	message: AgentMessage;
+	assistantMessageEvent: AssistantMessageEventLike;
+}
+
+interface MessageEndEvent {
+	type: "message_end";
+	message: AgentMessage;
+}
+
+interface MessageEndEventResult {
+	message?: AgentMessage;
+}
 
 /** Marker text replacing sanitized thinking (ordinary text, no signature). */
 export const SANITIZED_THINKING_MARKER =
@@ -154,12 +184,30 @@ export class LoopPoliceRuntime {
 	// ---- stream watchers (message_update is notify-only) ----
 
 	/**
-	 * Watch streaming thinking/text. Fires the char-level and semantic
-	 * detectors every STRIDE new characters; on detection calls ctx.abort()
-	 * (the stream aborts immediately) and records the pending sanitize +
-	 * recovery for message_end.
+	 * Watch streaming thinking/text (guarded entry).
+	 *
+	 * message_update is called on the runner's streaming path (emit →
+	 * streamAssistantResponse), so a throw from a detector would surface as
+	 * a hard extension error and kill the turn — exactly what a loop
+	 * breaker must never do. The whole watch degrades to a console warn
+	 * instead; nothing escapes the runner.
 	 */
 	watchMessageUpdate(event: MessageUpdateEvent, ctx: ExtensionContext): void {
+		try {
+			this.watchStreamText(event, ctx);
+		} catch (error) {
+			console.error("[loop-police] stream watch failed:", error);
+		}
+	}
+
+	/**
+	 * Fires the char-level and semantic detectors every STRIDE new
+	 * characters; on detection calls ctx.abort() (the stream aborts
+	 * immediately) and records the pending sanitize + recovery for
+	 * message_end. Post-abort bookkeeping is separately guarded: breaking
+	 * the loop is the only action that must always run.
+	 */
+	private watchStreamText(event: MessageUpdateEvent, ctx: ExtensionContext): void {
 		const cfg = this.config.numeric;
 		const delta = event.assistantMessageEvent;
 		let kind: "thinking" | "text" | undefined;
@@ -185,7 +233,7 @@ export class LoopPoliceRuntime {
 			stream.text = (stream.text + delta.delta).slice(-windowKey);
 		} else {
 			// *_end carries the full block content; authoritative snapshot.
-			stream.text = delta.content.slice(-windowKey);
+			stream.text = (delta.content ?? "").slice(-windowKey);
 		}
 
 		const newChars = stream.text.length - stream.checkedLength;
@@ -205,29 +253,39 @@ export class LoopPoliceRuntime {
 		const loop = detectStreamLoop(stream.text, charOptions, semanticOptions);
 		if (!loop) return;
 
-		const eventKind = eventKindForStreamLoop(kind, loop);
+		// The payload vocabulary calls a text stream "output"; the runtime's
+		// internal stream id is "text" (this mismatch was masked while the
+		// import above pointed at the wrong module).
+		const eventKind = eventKindForStreamLoop(kind === "thinking" ? "thinking" : "output", loop);
 		const boundaryInStream = loop.boundary;
 		const boundaryAbsolute = Math.max(0, boundaryInStream);
 
 		// Abort the running stream immediately (message_update is notify-only;
-		// ctx.abort() aborts the current agent operation).
+		// ctx.abort() aborts the current agent operation). Breaking the loop
+		// is the only action that must always run: everything after is
+		// metadata, so it is guarded separately and can only degrade to a
+		// console warn — it must not undo the abort or escape the watch.
 		ctx.abort();
 
-		this.pendingSanitize = {
-			contentIndex,
-			kind,
-			streamText: stream.text,
-			boundaryAbsolute,
-			eventKind,
-		};
-		this.streams.clear();
+		try {
+			this.pendingSanitize = {
+				contentIndex,
+				kind,
+				streamText: stream.text,
+				boundaryAbsolute,
+				eventKind,
+			};
+			this.streams.clear();
 
-		const escalated = this.registerDetection(eventKind, {
-			stream: kind,
-			kind: loop.kind,
-			...(loop.kind === "char_loop" ? { unit: loop.unit?.length } : { fingerprint: loop.fingerprint?.length }),
-		});
-		void escalated;
+			const escalated = this.registerDetection(eventKind, {
+				stream: kind,
+				kind: loop.kind,
+				...(loop.kind === "char_loop" ? { unit: loop.unit?.length } : { fingerprint: loop.fingerprint?.length }),
+			});
+			void escalated;
+		} catch (error) {
+			console.error("[loop-police] post-abort bookkeeping failed:", error);
+		}
 	}
 
 	/** Pending sanitize from a just-aborted stream (cleared by message_end). */

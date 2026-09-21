@@ -22,7 +22,6 @@ import type {
 	ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import {
-	buildNvimArgs,
 	formatNvimCommand,
 	openInNvim,
 	parseFileTarget,
