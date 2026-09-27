@@ -25,6 +25,8 @@ import { formatHunkCommand, launchHunkInteractive, planLaunchAttempts } from "./
 import { resolveHunkSkillPath, resetHunkSkillPathForTests } from "./skill.js";
 import { readHunkEnforceState, writeHunkEnforceState, hunkEnforceFilePath, detectVcs } from "./enforce.js";
 import { EnforceRuntime, mutationsFromToolResult, bashMutationsFromToolResult } from "./enforce-runtime.js";
+import { hasLiveSession } from "./annotator.js";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 export type { HunkToolParams, HunkToolDetails } from "./tool.js";
 export type { HunkAction } from "./tool.js";
@@ -40,21 +42,22 @@ const OPEN_HELP =
 	"  /hunk diff --staged      review staged changes\n" +
 	"  /hunk show HEAD~1        review an earlier commit\n" +
 	"  /hunk diff --watch       auto-reload as the working tree changes\n" +
-	"  /hunk enforce            auto-annotate after every mutation batch\n" +
-	"  /hunk enforce off        return to inert (tool-call-only) annotations\n" +
-	"  /hunk enforce status     show the current enforce state\n" +
+	"  /hunk on                 auto-annotate after every mutation batch\n" +
+	"  /hunk off                return to inert (tool-call-only) annotations\n" +
+	"  /hunk status             show enforce state, VCS, and live review\n" +
 	"Then use the hunk tool to inspect, navigate, annotate, and highlight.\n" +
 	"Launcher: " +
 	"Otty pane split (anchored to this session) → tmux window → Otty tab → macOS Terminal.app → the printed command.";
 
 const ENFORCE_HELP =
-	"/hunk enforce — turn ON automatic inline AI annotations: after each\n" +
-	"meaningful mutation batch (write / edit / apply_patch / mutation-shaped\n" +
-	"bash), aio leaves bounded, file-anchored comments on the live review\n" +
-	"automatically. Requires an open review (/hunk).\n" +
-	"/hunk enforce off — return to inert (annotations only when the model\n" +
-	"calls the hunk tool).\n" +
-	"/hunk enforce status — show the current state.\n" +
+	"/hunk on — turn ON automatic inline AI annotations: after each meaningful\n" +
+	"mutation batch (write / edit / apply_patch / mutation-shaped bash), aio\n" +
+	"leaves bounded, file-anchored comments on the live review automatically.\n" +
+	"Requires an open review (/hunk).\n" +
+	"/hunk off — return to inert (annotations only when the model calls the\n" +
+	"hunk tool).\n" +
+	"/hunk status — show the enforce state, VCS checkout, and live review.\n" +
+	"(/hunk enforce [on|off|status] still works as an alias.)\n" +
 	"State persists across sessions in ~/.pi/agent/aio-hunk-enforce.json.";
 
 function notifyCommand(
@@ -83,15 +86,68 @@ export default function registerHunk(pi: ExtensionAPI): void {
 		maxBashAnnotations: enforceState.maxBashAnnotations,
 	});
 
+	const hunkExec = (command: string, args: string[], options?: { timeout?: number; cwd?: string }) =>
+		pi.exec(command, args, options);
+
+	const setEnforce = async (on: boolean, ctx: ExtensionContext): Promise<void> => {
+		if (on) {
+			// Enforce is meaningless outside a hunk-supported checkout: hunk
+			// reviews VCS changesets, so a plain directory has no diff to
+			// annotate. Stay OFF there.
+			const vcsKind = await detectVcs(hunkExec, ctx.cwd);
+			if (vcsKind === "none") {
+				notifyCommand(
+					ctx,
+					`Hunk enforce stays OFF: ${ctx.cwd} is not a git, jujutsu, or sapling checkout — hunk has no diff to review in a plain directory. cd into a repository and run /hunk on again.`,
+					"warning",
+				);
+				return;
+			}
+			enforceState = { ...enforceState, enforce: true };
+			writeHunkEnforceState(enforceState);
+			runtime.clear();
+			notifyCommand(ctx, `Hunk enforce ON (${vcsKind} checkout detected): mutations will be auto-annotated on the live review. Open one with /hunk if none is running.`);
+			return;
+		}
+		enforceState = { ...enforceState, enforce: false };
+		writeHunkEnforceState(enforceState);
+		runtime.clear();
+		notifyCommand(ctx, "Hunk enforce OFF: annotations only when the model calls the hunk tool.");
+	};
+
+	const showEnforceStatus = async (ctx: ExtensionContext): Promise<void> => {
+		const vcsKind = await detectVcs(hunkExec, ctx.cwd);
+		const liveReview = enforceState.enforce ? await hasLiveSession(hunkExec, ctx.cwd) : false;
+		let liveReviewLine = "not probed (enforce is off)";
+		if (enforceState.enforce) {
+			liveReviewLine = liveReview ? "detected — annotations will land on it" : "none right now — open one with /hunk";
+		}
+		notifyCommand(
+			ctx,
+			`Hunk enforce: ${enforceState.enforce ? "ON" : "OFF"} (max ${enforceState.maxCommentsPerBatch} comments/batch, bash budget ${enforceState.maxBashAnnotations}).
+Live review: ${liveReviewLine}
+VCS checkout: ${vcsKind === "none" ? "none — enforce is disabled outside repositories" : vcsKind}
+State file: ${hunkEnforceFilePath()}`,
+		);
+	};
+
 	pi.registerCommand("hunk", {
 		description: "Open an interactive Hunk review in a sibling terminal",
 		getArgumentCompletions: (prefix: string) => {
 			const trimmed = prefix.trim();
-			if (trimmed.length === 0 || trimmed.startsWith("enforce")) {
+			if (trimmed.length === 0) {
 				return [
-					{ value: "enforce", label: "enforce — auto-annotate after mutations" },
-					{ value: "enforce off", label: "enforce off — inert annotations" },
-					{ value: "enforce status", label: "enforce status — current state" },
+					{ value: "on", label: "on — auto-annotate after mutations" },
+					{ value: "off", label: "off — inert annotations" },
+					{ value: "status", label: "status — enforce state, VCS, live review" },
+					{ value: "diff", label: "diff — review the working tree" },
+				];
+			}
+			if (/^(on|off|status|enforce)/.test(trimmed)) {
+				return [
+					{ value: "on", label: "on — auto-annotate after mutations" },
+					{ value: "off", label: "off — inert annotations" },
+					{ value: "status", label: "status — enforce state, VCS, live review" },
 				];
 			}
 			if (prefix.startsWith("diff") || prefix.startsWith("show") || prefix.startsWith("log") || prefix.startsWith("stash")) {
@@ -102,43 +158,26 @@ export default function registerHunk(pi: ExtensionAPI): void {
 		handler: async (args, ctx) => {
 			const trimmed = args.trim();
 
-			// ---- enforce subcommand family ----
-			if (trimmed === "enforce" || trimmed.startsWith("enforce ")) {
-				const rest = trimmed === "enforce" ? "" : trimmed.slice("enforce".length).trim();
-				if (rest.length === 0 || rest === "on") {
-					// Enforce is meaningless outside a hunk-supported checkout:
-					// hunk reviews VCS changesets, so a plain directory has no
-					// diff to annotate. Stay OFF there.
-					const vcsKind = await detectVcs((command, args, options) => pi.exec(command, args, options), ctx.cwd);
-					if (vcsKind === "none") {
-						notifyCommand(
-							ctx,
-							`Hunk enforce stays OFF: ${ctx.cwd} is not a git, jujutsu, or sapling checkout — hunk has no diff to review in a plain directory. cd into a repository and run /hunk enforce again.`,
-							"warning",
-						);
-						return;
-					}
-					enforceState = { ...enforceState, enforce: true };
-					writeHunkEnforceState(enforceState);
-					runtime.clear();
-					notifyCommand(ctx, `Hunk enforce ON (${vcsKind} checkout detected): mutations will be auto-annotated on the live review. Open one with /hunk if none is running.`);
+			// ---- enforce toggles: /hunk on|off|status (enforce = alias) ----
+			let enforceArg: string | undefined;
+			if (trimmed === "on" || trimmed === "off" || trimmed === "status") {
+				enforceArg = trimmed;
+			} else if (trimmed === "enforce") {
+				enforceArg = "on";
+			} else if (trimmed.startsWith("enforce ")) {
+				enforceArg = trimmed.slice("enforce".length).trim();
+			}
+			if (enforceArg !== undefined) {
+				if (enforceArg === "on") {
+					await setEnforce(true, ctx);
 					return;
 				}
-				if (rest === "off") {
-					enforceState = { ...enforceState, enforce: false };
-					writeHunkEnforceState(enforceState);
-					runtime.clear();
-					notifyCommand(ctx, "Hunk enforce OFF: annotations only when the model calls the hunk tool.");
+				if (enforceArg === "off") {
+					await setEnforce(false, ctx);
 					return;
 				}
-				if (rest === "status") {
-					const vcsKind = await detectVcs((command, args, options) => pi.exec(command, args, options), ctx.cwd);
-					notifyCommand(
-						ctx,
-						`Hunk enforce: ${enforceState.enforce ? "ON" : "OFF"} (max ${enforceState.maxCommentsPerBatch} comments/batch, bash budget ${enforceState.maxBashAnnotations}).
-VCS checkout: ${vcsKind === "none" ? "none — enforce is disabled outside repositories" : vcsKind}
-State file: ${hunkEnforceFilePath()}`,
-					);
+				if (enforceArg === "status") {
+					await showEnforceStatus(ctx);
 					return;
 				}
 				notifyCommand(ctx, ENFORCE_HELP, "warning");
@@ -175,9 +214,15 @@ State file: ${hunkEnforceFilePath()}`,
 		if (batch.length === 0) return undefined;
 
 		void runtime.queue(batch, { repo: ctx.cwd }, ctx.cwd, undefined, (outcome) => {
-			if (ctx.hasUI && outcome.left > 0) {
-				// Quiet confirmation: annotations reached the live review.
-				ctx.ui.setStatus("aio-hunk-enforce", `hunk: ${outcome.left} note(s)`);
+			if (ctx.hasUI) {
+				// Quiet confirmation — and failures surface here too: a swallowed
+				// annotation failure reads as "enforce silently does nothing".
+				ctx.ui.setStatus("aio-hunk-enforce", outcome.left > 0 ? `hunk: ${outcome.left} note(s)` : `hunk: ${outcome.text}`);
+			} else if (outcome.left === 0 && /^annotation failed/.test(outcome.text)) {
+				// Headless: only real failures are worth a stderr line; the
+				// "no review / nothing anchorable" cases stay silent.
+				// eslint-disable-next-line no-console
+				console.error(`[aio hunk] ${outcome.text}`);
 			}
 		});
 		return undefined;

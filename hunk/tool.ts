@@ -419,7 +419,10 @@ export async function applyCommentBatch(
 	const file = join(tmpdir(), `aio-hunk-batch-${Date.now()}-${Math.random().toString(36).slice(2)}.json`);
 	writeFileSync(file, `${payload}\n`, { encoding: "utf8", mode: 0o600 });
 	try {
-		const args = sessionTargeted(["session", "comment", "apply"], target);
+		// --stdin is required: hunk only reads the batch from stdin when the
+		// flag is present (verified against `hunk session comment apply --help`);
+		// a bare stdin redirect is silently ignored.
+		const args = sessionTargeted(["session", "comment", "apply", "--stdin"], target);
 		const quoted = ["hunk", ...args]
 			.map((arg) => (/^[A-Za-z0-9@._/-]+$/.test(arg) ? arg : JSON.stringify(arg)))
 			.join(" ");

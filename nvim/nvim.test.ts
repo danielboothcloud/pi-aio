@@ -6,7 +6,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	buildNvimArgs,
+	buildNvimCompletions,
 	buildOttyNvimCommand,
+	filePathsFromToolResult,
 	formatNvimCommand,
 	nvimTitle,
 	openInNvim,
@@ -14,8 +16,12 @@ import {
 	planNvimLaunchAttempts,
 	resolveNvimPath,
 	shellSingleQuoteNvim,
+	splitNvimTargets,
+	stripAtReference,
+	touchSessionFiles,
 	type NvimExecLike,
 	type NvimOpenRequest,
+	type SessionFileEntry,
 } from "./core.js";
 
 // ---- arg building ----
@@ -57,7 +63,79 @@ test("resolveNvimPath: relative resolves against cwd; absolute passes through", 
 	assert.equal(resolveNvimPath("/abs/a.ts", "/repo"), "/abs/a.ts");
 });
 
-// ---- command formatting ----
+// ---- @-reference handling ----
+
+test("stripAtReference: @path, quoted @path, and plain paths", () => {
+	assert.equal(stripAtReference("@src/index.ts"), "src/index.ts");
+	assert.equal(stripAtReference('@"my file.ts"'), "my file.ts");
+	assert.equal(stripAtReference("src/index.ts:42"), "src/index.ts:42");
+	assert.equal(stripAtReference("@"), "");
+});
+
+test("splitNvimTargets: @ tokens split; plain args stay one target", () => {
+	assert.deepEqual(splitNvimTargets("@a.ts @b.ts:3"), ["@a.ts", "@b.ts:3"]);
+	assert.deepEqual(splitNvimTargets("src/my file.ts"), ["src/my file.ts"], "no @: spaces survive");
+	assert.deepEqual(splitNvimTargets("  "), []);
+	assert.deepEqual(splitNvimTargets("src/a.ts"), ["src/a.ts"]);
+});
+
+// ---- session file MRU + completions ----
+
+const readEvent = (input: Record<string, unknown>, isError = false): Parameters<typeof filePathsFromToolResult>[0] =>
+	({ toolName: "read", isError, input, content: [], toolCallId: "t1", type: "tool_result" }) as Parameters<
+		typeof filePathsFromToolResult
+	>[0];
+
+const writeEvent = (input: Record<string, unknown>): Parameters<typeof filePathsFromToolResult>[0] =>
+	({ toolName: "write", isError: false, input, content: [], toolCallId: "t2", type: "tool_result" }) as Parameters<
+		typeof filePathsFromToolResult
+	>[0];
+
+test("filePathsFromToolResult: reads and writes; errors never count", () => {
+	assert.deepEqual(filePathsFromToolResult(readEvent({ path: "src/a.ts" })), { paths: ["src/a.ts"], edited: false });
+	assert.deepEqual(filePathsFromToolResult(writeEvent({ path: "src/b.ts" })), { paths: ["src/b.ts"], edited: true });
+	assert.deepEqual(filePathsFromToolResult(readEvent({ path: "x" }, true)), { paths: [], edited: false });
+	assert.deepEqual(filePathsFromToolResult(readEvent({})), { paths: [], edited: false });
+});
+
+test("touchSessionFiles: newest first, deduped, edited-ness sticky, bounded", () => {
+	let entries: SessionFileEntry[] = [];
+	entries = touchSessionFiles(entries, ["/r/a.ts"], false, 1);
+	entries = touchSessionFiles(entries, ["/r/b.ts"], true, 2);
+	assert.deepEqual(
+		entries.map((entry) => entry.path),
+		["/r/b.ts", "/r/a.ts"],
+	);
+	// Re-read keeps the sticky edited flag and bumps recency.
+	entries = touchSessionFiles(entries, ["/r/a.ts"], false, 3);
+	assert.equal(entries[0]?.edited, false);
+	assert.equal(entries[0]?.path, "/r/a.ts");
+	entries = touchSessionFiles(entries, ["/r/a.ts"], true, 4);
+	assert.equal(entries[0]?.edited, true, "edit upgrades a read entry");
+	const many = Array.from({ length: 50 }, (_, i) => `/f/${i}.ts`);
+	entries = touchSessionFiles(entries, many, false, 5);
+	assert.equal(entries.length, 40);
+});
+
+test("buildNvimCompletions: session first, @-prefixed values, prefix-filtered", () => {
+	const entries: SessionFileEntry[] = [
+		{ path: "/repo/src/index.ts", edited: true, touchedAt: 2 },
+		{ path: "/repo/README.md", edited: false, touchedAt: 1 },
+	];
+	const completions = buildNvimCompletions("", entries, ["package.json", "src/other.ts"], "/repo");
+	assert.equal(completions[0]?.value, "@src/index.ts");
+	assert.equal(completions[0]?.description, "edited this session");
+	assert.equal(completions[1]?.description, "read this session");
+	assert.ok(completions.some((item) => item.label === "package.json"));
+
+	const filtered = buildNvimCompletions("@src", entries, ["package.json"], "/repo");
+	assert.ok(filtered.every((item) => item.value.includes("src")));
+	assert.ok(!filtered.some((item) => item.label === "README.md"));
+
+	// Outside-cwd paths fall back to absolute display.
+	const outside = buildNvimCompletions("", [{ path: "/elsewhere/a.ts", edited: false, touchedAt: 1 }], [], "/repo");
+	assert.equal(outside[0]?.label, "/elsewhere/a.ts");
+});
 
 test("formatNvimCommand: quoting only when needed", () => {
 	assert.equal(formatNvimCommand({ path: "src/index.ts", line: 42 }), "nvim +42 -- src/index.ts");

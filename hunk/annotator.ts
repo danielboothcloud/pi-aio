@@ -16,13 +16,16 @@ import { execHunkSession, hunkCliError, type HunkExec, type HunkSessionPayload }
 import { applyCommentBatch } from "./tool.js";
 import type { CommentBatchItem } from "./cli.js";
 import { throwIfAborted } from "./abort.js";
+import { relative, isAbsolute } from "node:path";
 
 /** One annotated change: the diff file path plus per-file change summary. */
 export interface MutationRecord {
 	readonly path: string;
 	readonly operation: "create" | "modify" | "delete" | "rename";
-	/** 1-based new-side line to anchor the comment (best effort). */
+	/** 1-based line to anchor the comment (best effort). */
 	readonly anchorLine?: number;
+	/** Which diff side the anchor sits on (new-side by default). */
+	readonly anchorSide?: "old" | "new";
 	/** True when the change came from a bash mutation command (unanchored). */
 	readonly fromBash?: boolean;
 }
@@ -63,11 +66,129 @@ export async function hasLiveSession(
 	}
 }
 
+// ---- anchor resolution ----
+
+/** First anchorable line per diff file: newSide for edits/creates, oldSide for pure deletions. */
+export interface DiffAnchor {
+	readonly newLine?: number;
+	readonly oldLine?: number;
+}
+
 /**
- * Map mutation records to one bounded comment batch, grouped per file with
- * per-operation counts and a best-effort line anchor. Bash-derived changes
- * are left unanchored (file-level comment) because line numbers from a
- * parsed shell command would be guesses.
+ * Parse `git diff --unified=0` output into per-file anchors: the first
+ * hunk with new-side content gives newLine; a file whose hunks are all
+ * pure deletions anchors on the old side instead. Hunk comments require
+ * exactly one of oldLine/newLine, so bash-derived and patch-derived
+ * mutations must resolve to a line before they can be annotated.
+ */
+export function parseGitDiffAnchors(diffText: string): Map<string, DiffAnchor> {
+	const anchors = new Map<string, DiffAnchor>();
+	let currentFile: string | undefined;
+	let anchor: { newLine?: number; oldLine?: number } | undefined;
+
+	const flush = (): void => {
+		if (currentFile !== undefined && anchor !== undefined) {
+			anchors.set(currentFile, anchor);
+		}
+	};
+
+	for (const line of diffText.split("\n")) {
+		const gitLine = /^diff --git a\/(.+?) b\/(.+?)$/.exec(line);
+		if (gitLine) {
+			flush();
+			currentFile = gitLine[2];
+			anchor = undefined;
+			continue;
+		}
+		const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(line);
+		if (hunk && currentFile !== undefined) {
+			const newStart = Number.parseInt(hunk[1] ?? "0", 10);
+			const newCount = hunk[2] !== undefined ? Number.parseInt(hunk[2], 10) : 1;
+			anchor ??= {};
+			if (newCount > 0 && anchor.newLine === undefined) {
+				anchor.newLine = newStart;
+			} else if (newCount === 0 && anchor.newLine === undefined && anchor.oldLine === undefined) {
+				// Pure-deletion hunk: the new-side start is the line AFTER the
+				// deletion; hunk anchors comments on the old side there.
+				const oldMatch = /^@@ -(\d+)/.exec(line);
+				anchor.oldLine = Math.max(1, Number.parseInt(oldMatch?.[1] ?? "1", 10));
+			}
+		}
+	}
+	flush();
+	return anchors;
+}
+
+/** Normalize a mutation path against the cwd git runs in (absolute → relative). */
+function mutationPathRelativeTo(path: string, cwd: string): string {
+	if (!isAbsolute(path)) return path;
+	const rel = relative(cwd, path);
+	return rel.startsWith("..") ? path : rel;
+}
+
+/** Match a diff-header path (repo-root relative) onto a normalized mutation path. */
+function headerMatchesPath(headerPath: string, normalizedPath: string): boolean {
+	return normalizedPath === headerPath || normalizedPath.endsWith(`/${headerPath}`);
+}
+
+/**
+ * Resolve anchors for unanchored mutations with one `git diff HEAD -U0`
+ * call over the whole batch (working tree + index vs HEAD). Records that
+ * stay unanchored are dropped: Hunk validates that every comment item
+ * carries exactly one of hunk/hunkNumber/oldLine/newLine, and one invalid
+ * item fails the entire batch. Anchored records pass through untouched.
+ */
+export async function resolveMutationAnchors(
+	ex: HunkExec,
+	mutations: readonly MutationRecord[],
+	cwd: string,
+	signal: AbortSignal | undefined,
+): Promise<MutationRecord[]> {
+	const unanchored = mutations.filter((mutation) => mutation.anchorLine === undefined);
+	if (unanchored.length === 0) return [...mutations];
+	throwIfAborted(signal);
+
+	const pathspecs = [...new Set(unanchored.map((mutation) => mutationPathRelativeTo(mutation.path, cwd)))];
+	let diffText: string;
+	try {
+		const result = await ex("git", ["diff", "HEAD", "--unified=0", "--", ...pathspecs], {
+			cwd,
+			timeout: 5_000,
+			...(signal ? { signal } : {}),
+		});
+		if (result.code !== 0) return mutations.filter((mutation) => mutation.anchorLine !== undefined);
+		diffText = result.stdout;
+	} catch {
+		return mutations.filter((mutation) => mutation.anchorLine !== undefined);
+	}
+
+	const anchors = parseGitDiffAnchors(diffText);
+	return mutations.flatMap((mutation): MutationRecord[] => {
+		if (mutation.anchorLine !== undefined) return [mutation];
+		const normalized = mutationPathRelativeTo(mutation.path, cwd);
+		const hit = [...anchors.entries()].find(([headerPath]) => headerMatchesPath(headerPath, normalized));
+		if (!hit) return [];
+		const anchor = hit[1];
+		if (mutation.operation === "delete") {
+			if (anchor.oldLine === undefined) return [];
+			return [{ ...mutation, anchorLine: anchor.oldLine, anchorSide: "old" }];
+		}
+		if (anchor.newLine !== undefined) {
+			return [{ ...mutation, anchorLine: anchor.newLine, anchorSide: "new" }];
+		}
+		if (anchor.oldLine !== undefined) {
+			return [{ ...mutation, anchorLine: anchor.oldLine, anchorSide: "old" }];
+		}
+		return [];
+	});
+}
+
+/**
+ * Map resolved mutation records to one bounded comment batch, grouped per
+ * file with per-operation counts. Every item carries exactly one anchor
+ * (oldLine or newLine) — Hunk rejects any batch containing a target-less
+ * item. Callers must run resolveMutationAnchors first; unanchored records
+ * are dropped here as a final guard.
  */
 export function buildMutationComments(
 	mutations: readonly MutationRecord[],
@@ -75,6 +196,7 @@ export function buildMutationComments(
 ): CommentBatchItem[] {
 	const byPath = new Map<string, MutationRecord[]>();
 	for (const mutation of mutations) {
+		if (mutation.anchorLine === undefined) continue;
 		const list = byPath.get(mutation.path) ?? [];
 		list.push(mutation);
 		byPath.set(mutation.path, list);
@@ -89,13 +211,17 @@ export function buildMutationComments(
 		const summaryParts = [...operations.entries()]
 			.sort((a, b) => a[0].localeCompare(b[0]))
 			.map(([operation, count]) => (count === 1 ? operation : `${operation} ×${count}`));
-		const fromBash = records.every((record) => record.fromBash);
-		const anchor = fromBash ? undefined : records.find((record) => record.anchorLine !== undefined)?.anchorLine;
+		// One comment per file; anchor from the first record that has one.
+		// byPath only stores anchored records, but narrow explicitly so the
+		// compiler sees the line number too.
+		const anchored = records.find((record) => record.anchorLine !== undefined);
+		if (anchored === undefined || anchored.anchorLine === undefined) continue;
+		const anchorLine = anchored.anchorLine;
 		comments.push({
 			filePath: path,
 			summary: `Agent change: ${summaryParts.join(", ")}`,
 			author: "aio",
-			...(anchor !== undefined ? { newLine: anchor } : {}),
+			...(anchored.anchorSide === "old" ? { oldLine: anchorLine } : { newLine: anchorLine }),
 		});
 	}
 
@@ -105,8 +231,6 @@ export function buildMutationComments(
 	}
 	return comments;
 }
-
-/** Highlight span for one mutation: the anchor line, word 0..N bounded. */
 export interface MutationHighlight {
 	readonly filePath: string;
 	readonly newLine: number;
@@ -121,9 +245,8 @@ export function buildMutationHighlights(
 ): MutationHighlight[] {
 	const highlights: MutationHighlight[] = [];
 	for (const mutation of mutations) {
-		if (mutation.fromBash) continue;
 		if (mutation.operation !== "create" && mutation.operation !== "modify") continue;
-		if (mutation.anchorLine === undefined) continue;
+		if (mutation.anchorLine === undefined || mutation.anchorSide === "old") continue;
 		highlights.push({
 			filePath: mutation.path,
 			newLine: mutation.anchorLine,
@@ -153,7 +276,10 @@ export async function annotateMutations(
 		return { text: "no mutations to annotate", left: 0 };
 	}
 
-	const comments = buildMutationComments(mutations, options);
+	// Hunk requires every comment to sit on a line: resolve anchors from
+	// the working-tree diff first, dropping mutations that stay unanchored.
+	const resolved = await resolveMutationAnchors(ex, mutations, cwd, signal);
+	const comments = buildMutationComments(resolved, options);
 	if (comments.length === 0) {
 		return { text: "no comments derived from mutations", left: 0 };
 	}

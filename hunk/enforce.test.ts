@@ -19,7 +19,10 @@ import {
 	buildMutationComments,
 	buildMutationHighlights,
 	hasLiveSession,
+	parseGitDiffAnchors,
+	resolveMutationAnchors,
 } from "./annotator.js";
+import { hunkCliError } from "./cli.js";
 import {
 	EnforceRuntime,
 	bashMutationsFromToolResult,
@@ -76,19 +79,82 @@ test("buildMutationComments: groups per file with operation counts", () => {
 	assert.equal(n?.author, "aio");
 });
 
-test("buildMutationComments: bash mutations stay unanchored", () => {
+test("buildMutationComments: drops unanchored records (hunk needs exactly one anchor)", () => {
 	const mutations: MutationRecord[] = [
 		{ path: "src/old.ts", operation: "delete", fromBash: true },
+		{ path: "src/new.ts", operation: "create", anchorLine: 1 },
+	];
+	const comments = buildMutationComments(mutations, { maxCommentsPerBatch: 6 });
+	assert.equal(comments.length, 1, "unanchored records are dropped after anchor resolution fails");
+	assert.equal(comments[0]?.filePath, "src/new.ts");
+});
+
+test("buildMutationComments: old-side anchors map to oldLine", () => {
+	const mutations: MutationRecord[] = [
+		{ path: "src/gone.ts", operation: "delete", anchorLine: 7, anchorSide: "old" },
 	];
 	const comments = buildMutationComments(mutations, { maxCommentsPerBatch: 6 });
 	assert.equal(comments.length, 1);
-	assert.equal(comments[0]?.newLine, undefined, "parsed shell lines are guesses; file-level only");
+	assert.equal(comments[0]?.oldLine, 7);
+	assert.equal(comments[0]?.newLine, undefined);
+});
+
+test("parseGitDiffAnchors: first new-side hunk wins; pure deletions anchor old-side", () => {
+	const diff = [
+		"diff --git a/src/a.ts b/src/a.ts",
+		"--- a/src/a.ts",
+		"+++ b/src/a.ts",
+		"@@ -12,0 +13,1 @@ context",
+		"+added line",
+		"diff --git a/src/gone.ts b/src/gone.ts",
+		"--- a/src/gone.ts",
+		"+++ /dev/null",
+		"@@ -4,3 +0,0 @@ boom",
+		"-one",
+		"-two",
+		"-three",
+	].join("\n");
+	const anchors = parseGitDiffAnchors(diff);
+	assert.equal(anchors.get("src/a.ts")?.newLine, 13);
+	assert.equal(anchors.get("src/gone.ts")?.oldLine, 4);
+});
+
+test("resolveMutationAnchors: git diff fills anchors, drops the unresolvable", async () => {
+	const diff = [
+		"diff --git a/src/b.ts b/src/b.ts",
+		"--- a/src/b.ts",
+		"+++ b/src/b.ts",
+		"@@ -2,0 +3,2 @@ ctx",
+		"+new one",
+		"+new two",
+	].join("\n");
+	const ex: import("./cli.js").HunkExec = async (command, args) => {
+		if (command === "git" && args.includes("diff")) {
+			return { code: 0, stdout: diff, stderr: "" };
+		}
+		throw hunkCliError("failed", `unexpected exec: ${command} ${args.join(" ")}`);
+	};
+	const resolved = await resolveMutationAnchors(
+		ex,
+		[
+			{ path: "src/b.ts", operation: "modify", fromBash: true },
+			{ path: "src/missing-everywhere.ts", operation: "modify", fromBash: true },
+			{ path: "src/anchored.ts", operation: "create", anchorLine: 1 },
+		],
+		"/repo",
+		undefined,
+	);
+	assert.equal(resolved.length, 2, "anchored passthrough + git-resolved; unresolvable dropped");
+	const b = resolved.find((mutation) => mutation.path === "src/b.ts");
+	assert.equal(b?.anchorLine, 3);
+	assert.equal(b?.anchorSide, "new");
 });
 
 test("buildMutationComments: bounded by maxCommentsPerBatch", () => {
 	const mutations: MutationRecord[] = Array.from({ length: 10 }, (_, i) => ({
 		path: `src/f${i}.ts`,
 		operation: "modify" as const,
+		anchorLine: i + 1,
 	}));
 	const comments = buildMutationComments(mutations, { maxCommentsPerBatch: 3 });
 	assert.equal(comments.length, 3);

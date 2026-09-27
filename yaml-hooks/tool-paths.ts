@@ -102,6 +102,35 @@ function pickString(...values: unknown[]): string | undefined {
 	return typeof value === "string" ? value : undefined;
 }
 
+/**
+ * Parse aio apply_patch's structured `changes` array, which the unified-diff
+ * parsers deliberately ignore (they read the patch string). aio uses the
+ * Cursor-style add/update/delete/move operations with per-file paths.
+ */
+export function applyPatchStructuredChanges(args: Record<string, unknown>): FileChange[] {
+	const raw = args.changes;
+	if (!Array.isArray(raw) || raw.length === 0) return [];
+	const changes: FileChange[] = [];
+	for (const entry of raw) {
+		if (typeof entry !== "object" || entry === null || Array.isArray(entry)) continue;
+		const record = entry as Record<string, unknown>;
+		const path = pickString(record.path, record.movePath);
+		if (path === undefined) continue;
+		const action = pickString(record.action) ?? "update";
+		const fromPath = pickString(record.fromPath);
+		if (action === "move" && fromPath !== undefined && fromPath !== path) {
+			changes.push({ operation: "rename", fromPath, toPath: path });
+		} else if (action === "add") {
+			changes.push({ operation: "create", path });
+		} else if (action === "delete") {
+			changes.push({ operation: "delete", path });
+		} else {
+			changes.push({ operation: "modify", path });
+		}
+	}
+	return changes;
+}
+
 function extractEditsArrayChanges(args: Record<string, unknown>): FileChange[] {
 	const editsRaw = args.edits;
 	if (!Array.isArray(editsRaw) || editsRaw.length === 0) {

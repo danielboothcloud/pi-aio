@@ -203,7 +203,8 @@ test("comment_apply redirects the batch JSON through sh -c", async () => {
 	);
 	assert.deepEqual(outcome, { applied: 2 });
 	assert.equal(seenSh.length, 1);
-	assert.match(seenSh[0] ?? "", /hunk session comment apply --repo \./);
+	assert.match(seenSh[0] ?? "", /hunk session comment apply --stdin/);
+	assert.match(seenSh[0] ?? "", /--repo \./);
 	assert.match(seenSh[0] ?? "", /< "/);
 });
 

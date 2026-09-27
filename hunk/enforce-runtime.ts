@@ -19,53 +19,15 @@ import type { MutationRecord, AnnotateOutcome } from "./annotator.js";
 import { annotateMutations, buildMutationComments, buildMutationHighlights, hasLiveSession, highlightMutation } from "./annotator.js";
 import { detectVcs, type VcsKind } from "./enforce.js";
 import { throwIfAborted } from "./abort.js";
-import { getToolFileChanges, getChangedPaths, type FileChange } from "../yaml-hooks/tool-paths.js";
+import { applyPatchStructuredChanges, getToolFileChanges, getChangedPaths } from "../yaml-hooks/tool-paths.js";
 
 const AGGREGATION_WINDOW_MS = 400;
 
+/** Re-probe cadence when the last probe found no live review (ms). */
+const LIVE_REPROBE_MS = 30_000;
+
 /** Live review state: whether enforce probes found a review to annotate. */
 export type LiveReviewState = "unknown" | "available" | "unavailable";
-
-/** Pick a string field (mirrors yaml-hooks' pickString). */
-function pickString(...values: unknown[]): string | undefined {
-	const value = values.find((candidate) => typeof candidate === "string" && candidate.trim().length > 0);
-	return typeof value === "string" ? value : undefined;
-}
-
-/**
- * Parse aio apply_patch's structured `changes` array (which yaml-hooks'
- * extractor deliberately ignores — it reads the unified-diff string). The
- * hunk annotator owns aio's own tool schema, so it parses the structured
- * shape directly: add/update/delete/move with per-file paths.
- */
-
-/**
- * Apply_patch's structured `changes` array maps operation names onto the
- * FileChange union: aio uses add/update/delete/move (Cursor-style).
- */
-export function applyPatchStructuredChanges(args: Record<string, unknown>): FileChange[] {
-	const raw = args.changes;
-	if (!Array.isArray(raw) || raw.length === 0) return [];
-	const changes: FileChange[] = [];
-	for (const entry of raw) {
-		if (typeof entry !== "object" || entry === null || Array.isArray(entry)) continue;
-		const record = entry as Record<string, unknown>;
-		const path = pickString(record.path, record.movePath);
-		if (path === undefined) continue;
-		const action = pickString(record.action) ?? "update";
-		const fromPath = pickString(record.fromPath);
-		if (action === "move" && fromPath !== undefined && fromPath !== path) {
-			changes.push({ operation: "rename", fromPath, toPath: path });
-		} else if (action === "add") {
-			changes.push({ operation: "create", path });
-		} else if (action === "delete") {
-			changes.push({ operation: "delete", path });
-		} else {
-			changes.push({ operation: "modify", path });
-		}
-	}
-	return changes;
-}
 
 /** Extract anchors from an edit result: EditToolDetails.firstChangedLine. */
 function editAnchorFromDetails(details: unknown): number | undefined {
@@ -164,6 +126,8 @@ export class EnforceRuntime {
 
 	/** Live review probe cache (refreshed before each queue). */
 	private liveReviewState: LiveReviewState = "unknown";
+	/** Timestamp of the last live-review probe (drives re-probing). */
+	private lastProbeMs = 0;
 
 	/** VCS checkout cache: enforce only runs inside a hunk-supported checkout. */
 	private vcsState: "unknown" | "available" | "unavailable" = "unknown";
@@ -205,7 +169,14 @@ export class EnforceRuntime {
 			this.vcsState = this.vcsKind === "none" ? "unavailable" : "available";
 		}
 		if (this.vcsState !== "available") return;
-		if (this.liveReviewState !== "available") {
+		// Probe when unknown, or re-probe a stale "unavailable": the user may
+		// have opened the review after mutations started, and a cache frozen
+		// at "unavailable" would silence enforce until the next /hunk.
+		const now = Date.now();
+		const staleUnavailable =
+			this.liveReviewState === "unavailable" && now - this.lastProbeMs > LIVE_REPROBE_MS;
+		if (this.liveReviewState === "unknown" || staleUnavailable) {
+			this.lastProbeMs = now;
 			this.liveReviewState = (await liveReviewAvailable(this.ex, cwd)) ? "available" : "unavailable";
 		}
 		if (this.liveReviewState !== "available") return;
@@ -281,3 +252,4 @@ export async function liveReviewAvailable(ex: HunkExec, repo: string): Promise<b
 
 // Re-exports for tests (single import surface).
 export { buildMutationComments };
+export { applyPatchStructuredChanges } from "../yaml-hooks/tool-paths.js";
