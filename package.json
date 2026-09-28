@@ -1,13 +1,16 @@
 {
 	"name": "aio",
 	"version": "0.7.0",
-	"description": "Combined Pi extension for structured questions, permission modes, subagents, enhanced tools and diffs, shell rewriting, structural search, configurable web browsing, and Hypa-backed context compression.",
+	"description": "Combined Pi extension with a Zentui-powered interface, structured questions, permission modes, subagents, enhanced tools and diffs, shell rewriting, structural search, web browsing, and context compression.",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
 		"pi-package",
 		"pi",
 		"pi-extension",
+		"zentui",
+		"terminal-ui",
+		"statusline",
 		"questionnaire",
 		"clarifying-questions",
 		"clipboard",
@@ -98,6 +101,8 @@
 		"!permission-modes/**/*.test.ts",
 		"status-line/**/*.ts",
 		"!status-line/**/*.test.ts",
+		"zentui/**/*.ts",
+		"!zentui/**/*.test.ts",
 		"queue/**/*.ts",
 		"!queue/**/*.test.ts",
 		"pretty-tools/**/*.ts",
@@ -136,7 +141,7 @@
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
-		"test:node": "tsx --test ast-grep/*.test.ts blocklist/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts effort/*.test.ts goal-loop/*.test.ts hunk/*.test.ts hypa/*.test.ts init/*.test.ts loop-police/*.test.ts nvim/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts rtk/*.test.ts status-line/*.test.ts subagents/*.test.ts user-bash/*.test.ts yaml-hooks/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:node": "tsx --test ast-grep/*.test.ts blocklist/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts effort/*.test.ts goal-loop/*.test.ts hunk/*.test.ts hypa/*.test.ts init/*.test.ts loop-police/*.test.ts nvim/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts rtk/*.test.ts status-line/*.test.ts subagents/*.test.ts user-bash/*.test.ts yaml-hooks/*.test.ts zentui/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts",
 		"postinstall": "node hypa/scripts/postinstall.js"
 	},
@@ -155,10 +160,11 @@
 		"diff": "^7.0.0",
 		"linkedom": "^0.18.0",
 		"marked": "18.0.5",
+		"pi-zentui": "0.26.1",
 		"shiki": "4.0.2",
 		"turndown": "^7.2.0",
-		"xxhash-wasm": "^1.1.0",
 		"typebox": "^1.1.24",
+		"xxhash-wasm": "^1.1.0",
 		"yaml": "^2.8.3"
 	},
 	"devDependencies": {

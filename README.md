@@ -1,11 +1,11 @@
 # aio
 
-Combined Pi extension: structured **`ask_user_question`** dialogs, a **`/pick`**
-code picker, **`/init`** AGENTS.md bootstrap, **`/effort`** thinking control,
-generic **subagent delegation**, configurable **`web_search`** and
-**`fetch_content`**, **`!` bash shortcuts**, **Shift+Tab** permission modes,
-enhanced built-in output with FFF-backed search, **rtk** shell-command rewriting,
-and syntax-highlighted write/edit/patch diffs.
+Combined Pi extension with a **Zentui-powered terminal interface**, structured
+**`ask_user_question`** dialogs, a **`/pick`** code picker, **`/init`** AGENTS.md
+bootstrap, **`/effort`** thinking control, generic **subagent delegation**,
+configurable **`web_search`** and **`fetch_content`**, **`!` bash shortcuts**,
+**Shift+Tab** permission modes, enhanced built-in output with FFF-backed search,
+**rtk** shell-command rewriting, and syntax-highlighted write/edit/patch diffs.
 
 The questionnaire implementation is based on
 [@juicesharp/rpiv-ask-user-question](https://www.npmjs.com/package/@juicesharp/rpiv-ask-user-question),
@@ -381,10 +381,46 @@ pi --permission-mode ask
 pi --permission-mode plan
 ```
 
-## Status line
+## Zentui interface
 
-`aio` installs a quiet single-row footer that replaces noisy packages like
-`pi-powerline-footer`. The default layout is:
+`aio` bundles [pi-zentui](https://pi.dev/packages/pi-zentui) as its final visual
+layer. On a fresh setup its defaults replace Pi's editor, user-message cards,
+selector borders, and footer with an Opencode-inspired editor and responsive
+Starship-style statusline. Zentui wraps aio's queue/`!bash` editor rather than
+replacing its behavior, so autocomplete, queue interruption, and bash hints keep
+working.
+
+Run `/zentui` to tune each surface independently. Useful starting points:
+
+```text
+/zentui preset opencode
+/zentui preset opencode-copy-friendly
+/zentui preset rail
+/zentui preset minimalist
+/zentui working-line
+/zentui footer
+/zentui extensions
+```
+
+Zentui stores optional user choices in `~/.pi/agent/zentui.json`; aio does not
+overwrite or preseed that user-owned file. The experimental private Thinking
+renderer stays off unless you explicitly enable it. Fullscreen mode can be
+enabled through Pi's `/settings` for the most app-like layout.
+
+Aio's mode and effort state are bridged into Zentui's keyed Working line when
+that component is enabled. Existing extension statuses—including goals, RTK,
+`!bash`, hooks, Hunk, mode, and effort—flow into Zentui's configurable status
+placements. When a separately installed Zentui is already active, aio detects it
+and skips the bundled factory to avoid duplicate commands and UI owners. Remove a
+standalone `pi-zentui` package from Pi settings when possible. A predecessor's
+editor is preserved but cannot wrap AIO's later queue/`!bash` editor layers, and
+a package loaded after aio cannot be detected in advance.
+
+## Legacy status line and provider quotas
+
+Zentui is the primary footer owner. Aio retains its former quiet single-row
+footer as a compatibility fallback only when Zentui is unavailable. Its layout
+is:
 
 ```text
 Plan · ⌂ pi-aio · ⎇ main · ◫ 42% · ⚡ effort:max · rtk✓ · ◈ cursor:local · fast:on · ◇ cursor/composer-2.5
@@ -408,22 +444,22 @@ Configure it in Pi settings (`~/.pi/agent/settings.json` or project
 
 | Field | Purpose |
 | ----- | ------- |
-| `enabled` | Master toggle; `false` restores Pi's default footer |
+| `enabled` | Enables aio fallback/status data; Zentui still owns its footer when present |
 | `segments` | Ordered list: `mode`, `path`, `git`, `context`, `effort`, `statuses`, `cursor`, `quota`, `model`, `tokens`, `cost` |
 | `path` | `basename`, `abbreviated`, or `full` |
 | `workingMessage` | `minimal` (default), `verbose` (streaming stats), or `off` |
 | `statusKeys` | Optional allowlist for extension status keys |
 | `providerUsage` | Optional per-provider quota endpoint, headers, and response mappings |
 
-Quick toggles:
+Quick toggles for the fallback/data layer:
 
-- `/status-line` — enable/disable
-- `/status-line minimal` or `/status-line verbose` — working message style
+- `/status-line` — enable/disable aio's legacy status data
+- `/status-line minimal` or `/status-line verbose` — fallback working-message style when Zentui's Working line is off
 
-Extension statuses (`rtk`, `!bash`, `fff`, `codex-quota`, etc.) appear in the
-`statuses` segment when active. Thinking effort (`effort`) and Cursor runtime
-(`cursor:local · fast:on`) get their own segments so they do not blend with the
-model name. Context percentage turns warning/error at 70%/90%.
+With Zentui active, extension statuses (`rtk`, `!bash`, goals, hooks, etc.) are
+placed by `/zentui extensions`. Thinking effort and permission mode also appear
+in Zentui's Working line while an agent run is active. Without Zentui, the legacy
+footer keeps its dedicated effort/Cursor segments and 70%/90% context coloring.
 
 ### Custom provider quota usage
 
@@ -478,11 +514,13 @@ showing both the request quota and the weekly credit window from one response:
 Each mapping may provide `used`, `limit`, `remaining`, `renewsAt`, and/or
 `text`. When `used` and `limit` are available, aio computes the remaining
 percentage. `text` can map a provider-formatted quota string (for example
-`"$23.21"`) verbatim. Windows render inside one `quota` segment, joined by
-`·`, and the segment colors by the window closest to exhaustion. A provider
-entry with a single top-level `mapping` instead of `windows` keeps working as
-a one-window shorthand. The `quota` segment is omitted when the active
-provider has no configuration or nothing has been fetched successfully.
+`"$23.21"`) verbatim. With Zentui active, windows render as the keyed `aio-provider-usage` extension
+status and can be positioned through `/zentui extensions`. In fallback mode they
+render inside one `quota` segment. Values are joined by `·` and color by the
+window closest to exhaustion. A provider entry with a single top-level `mapping`
+instead of `windows` keeps working as a one-window shorthand. Quota output is
+omitted when the active provider has no configuration or nothing has been fetched
+successfully.
 
 To migrate off `pi-powerline-footer`, remove it from `packages` in Pi settings,
 delete any `powerline` block, and reload extensions.
@@ -994,7 +1032,8 @@ blocklist still wins over a loop block.
 ├── loop-police/             # reasoning/tool loop detection + recovery (ported)
 ├── permission-modes/        # Shift+Tab modes + plan flow
 ├── queue/                   # message-queue widget + Enter-to-interrupt
-├── status-line/             # quiet footer + working message
+├── status-line/             # provider quota + legacy footer fallback
+├── zentui/                  # bundled visual layer + AIO state bridge
 ├── pretty-tools/            # pretty built-ins + FFF search
 ├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)
 ├── subagents/               # child-agent discovery, execution, and lifecycle
@@ -1007,11 +1046,11 @@ blocklist still wins over a loop block.
 - Remove standalone `@juicesharp/rpiv-ask-user-question`,
   `@pandi-coding-agent/pandi-effort`, `@aprimediet/permission-modes`,
   `@heyhuynhgiabuu/pi-pretty`, `@heyhuynhgiabuu/pi-diff`, `pi-subagents`,
-  and `@sherif-fanous/pi-rtk`
+  `pi-zentui`, and `@sherif-fanous/pi-rtk`
   packages from settings when installing this combined package, to avoid
   duplicate tools, commands, and shortcuts.
-- Effort status (`effort:…`), rtk, and `!bash` appear in the aio status line
-  when active; the footer shows mode, path, git, context, and model.
+- Effort, permission mode, rtk, goals, hooks, Hunk, and `!bash` appear through
+  Zentui's Working line or extension-status placements when active.
 - The vendored questionnaire source remains covered by its original MIT license
   in [`ask-user-question/LICENSE`](ask-user-question/LICENSE).
 - The pretty-tool implementation is based on `@heyhuynhgiabuu/pi-pretty` and

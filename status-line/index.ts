@@ -3,13 +3,18 @@ import type {
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
+import { probeZentuiWorkingLine } from "../zentui/protocol.js";
 import {
 	DEFAULT_STATUS_LINE_CONFIG,
 	loadStatusLineConfig,
 	type StatusLineConfig,
 	type WorkingMessageMode,
 } from "./config.js";
-import { fetchProviderUsage, type ProviderUsage } from "./provider-usage.js";
+import {
+	fetchProviderUsage,
+	formatProviderUsage,
+	type ProviderUsage,
+} from "./provider-usage.js";
 import {
 	computeContextPercent,
 	computeUsageStats,
@@ -28,6 +33,30 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	let providerUsageAbort: AbortController | undefined;
 	let requestFooterRender: (() => void) | undefined;
 
+	const zentuiCapability = () => probeZentuiWorkingLine(pi);
+
+	function syncProviderUsageStatus(ctx: ExtensionContext | null = currentCtx): void {
+		if (!ctx?.hasUI) return;
+		if (!zentuiCapability().supported || providerUsage.length === 0) {
+			ctx.ui.setStatus("aio-provider-usage", undefined);
+			return;
+		}
+		const remaining = providerUsage
+			.map((usage) => usage.remainingPercent)
+			.filter((value): value is number => value !== undefined);
+		const lowest = remaining.length > 0 ? Math.min(...remaining) : undefined;
+		let role: "error" | "warning" | "muted" = "muted";
+		if (lowest !== undefined && lowest <= 20) role = "error";
+		else if (lowest !== undefined && lowest <= 50) role = "warning";
+		const text = providerUsage
+			.map((usage) => formatProviderUsage(usage))
+			.join(" · ");
+		ctx.ui.setStatus(
+			"aio-provider-usage",
+			ctx.ui.theme.fg(role, `◴ ${text}`),
+		);
+	}
+
 	function resetProviderUsage(clearValue = false): void {
 		providerUsageAbort?.abort();
 		providerUsageAbort = undefined;
@@ -36,6 +65,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 			providerUsage = [];
 			providerUsageFetchedAt = 0;
 			requestFooterRender?.();
+			syncProviderUsageStatus();
 		}
 	}
 
@@ -58,6 +88,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 			providerUsage = [];
 			providerUsageFetchedAt = 0;
 			requestFooterRender?.();
+			syncProviderUsageStatus(ctx);
 			return Promise.resolve();
 		}
 		if (providerUsageRequest) return providerUsageRequest;
@@ -86,6 +117,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 				providerUsage = usage;
 				providerUsageFetchedAt = Date.now();
 				requestFooterRender?.();
+				syncProviderUsageStatus(ctx);
 			})
 			.catch(() => {
 				// Quota display is best-effort. Keep stale data on transient failures.
@@ -100,6 +132,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	}
 
 	function applyWorkingMessage(ctx: ExtensionContext): void {
+		if (zentuiCapability().active) return;
 		if (!ctx.hasUI || config.workingMessage === "off") {
 			ctx.ui.setWorkingMessage();
 			return;
@@ -123,6 +156,10 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	function installFooter(ctx: ExtensionContext): void {
 		if (!ctx.hasUI) return;
 		currentCtx = ctx;
+
+		// Zentui is the primary visual owner. The legacy footer remains available
+		// only when Zentui is absent, avoiding two extensions fighting setFooter().
+		if (zentuiCapability().supported) return;
 
 		if (!config.enabled) {
 			ctx.ui.setFooter(undefined);
@@ -175,9 +212,10 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 		if (enabled && shouldFetchProviderUsage(ctx)) {
 			void refreshProviderUsage(ctx, true);
 		} else if (!enabled) {
-			resetProviderUsage();
+			resetProviderUsage(true);
 		}
-		ctx.ui.notify(`Status line ${enabled ? "enabled" : "disabled"}`, "info");
+		const owner = zentuiCapability().supported ? " data (Zentui owns the footer)" : "";
+		ctx.ui.notify(`Status line${owner} ${enabled ? "enabled" : "disabled"}`, "info");
 	}
 
 	pi.registerCommand("status-line", {
@@ -233,6 +271,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	});
 
 	pi.on("session_shutdown", async () => {
+		if (currentCtx?.hasUI) currentCtx.ui.setStatus("aio-provider-usage", undefined);
 		resetProviderUsage();
 		requestFooterRender = undefined;
 		currentCtx = null;
@@ -262,7 +301,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 
 	pi.on("agent_end", async (_event, ctx) => {
 		streamStart = 0;
-		if (ctx.hasUI) ctx.ui.setWorkingMessage();
+		if (ctx.hasUI && !zentuiCapability().active) ctx.ui.setWorkingMessage();
 		if (shouldFetchProviderUsage(ctx)) void refreshProviderUsage(ctx);
 	});
 }

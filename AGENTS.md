@@ -45,8 +45,12 @@ generated `dist/` tree without changing the package contract.
   must register after rtk (rtk precedence) but before queue and pretty tools,
   which own the final bash behavior. `registerLoopPolice` sits between
   blocklist and permission-modes (loop blocks preempt mode checks; the hard
-  blocklist wins over loop blocks). `registerYamlHooks` runs LAST so its
-  opt-in `user_bash` interception wraps the earlier gates.
+  blocklist wins over loop blocks). `registerAioZentui` runs after queue,
+  pretty-tools, status-line, and Hunk so it can wrap the final editor and own
+  the visual surfaces. Preloaded standalone Zentui editors are preserved by the
+  user-bash and queue registrars rather than overwritten. `registerYamlHooks`
+  runs LAST so its opt-in `user_bash`
+  interception wraps the earlier gates.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
   `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/` and
   `user-bash/` gate those mutations. Changes can cross feature boundaries.
@@ -122,6 +126,19 @@ generated `dist/` tree without changing the package contract.
   the runtime re-checks the cwd (`git rev-parse --is-inside-work-tree`,
   then `.jj`/`.sl` markers; cached per cwd, reset on clear) — a persisted
   ON state from another repo never annotates in a plain directory.
+- `zentui/` integrates the bundled `pi-zentui` dependency as AIO's final
+  visual owner (Opencode/rail/minimalist editor styles, user-message frames,
+  selector borders, Working line, and Starship Footer). It probes Zentui's
+  synchronous capability event before registration so a predecessor standalone
+  install wins instead of double-registering `/zentui`; later duplicate package
+  loads remain a documented ordering limitation. Register it after queue so
+  Zentui wraps `QueueEditor`/`BashHintEditor`, and after status-line so only one
+  Footer owner remains. A package-qualified event bridge publishes permission
+  mode and effort into the keyed Working-line protocol and removes both segments
+  on inactive ownership/shutdown. The legacy status-line never writes the shared
+  working message/indicator while Zentui owns the row, and exposes generic
+  provider quota as an extension status. Zentui's user-owned
+  `<agent-dir>/zentui.json` is never auto-seeded by AIO.
 - `nvim/` opens files in Neovim in a new Otty pane beside the session (same
   launcher chain as hunk: otty split anchored to `$OTTY_PANE_ID` → tmux →
   otty tab → Terminal.app → print). `/nvim <path>[:line[:col]]` (`-r` for
@@ -195,6 +212,8 @@ generated `dist/` tree without changing the package contract.
   `@hypabolic/hypa` dependency and fails open on rewrite errors).
 - Pi keeps the first tool registration by name. Loading pi-web-access before AIO
   prevents AIO's `web_search` and `fetch_content` from becoming active.
-- Do not smoke-test with standalone packages that register the same tools or
-  hooks (`rpiv-ask-user-question`, `pi-pretty`, `pi-diff`, `pi-subagents`,
-  `pi-rtk`, or `@hypabolic/pi-hypa`); duplicate registrations change behavior.
+- Do not smoke-test with standalone packages that register the same tools,
+  hooks, or UI owners (`rpiv-ask-user-question`, `pi-pretty`, `pi-diff`,
+  `pi-subagents`, `pi-rtk`, `pi-zentui`, or `@hypabolic/pi-hypa`); duplicate
+  registrations change behavior. AIO can skip a Zentui predecessor but cannot
+  prevent a separately configured Zentui package from loading afterward.

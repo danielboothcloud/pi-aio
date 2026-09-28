@@ -2,6 +2,7 @@ import type {
 	ExtensionAPI,
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
+import { emitAioUiState } from "../zentui/protocol.js";
 import type { ThinkingLevel } from "./parse.js";
 import { THINKING_LEVELS } from "./parse.js";
 
@@ -52,6 +53,7 @@ export function updateEffortStatus(
 		? safeCurrentLevel(pi)
 		: getEffectiveLevel(),
 ): void {
+	emitAioUiState(pi, { effort: level });
 	if (!ctx.hasUI) return;
 	ctx.ui.setStatus(EFFORT_STATUS_KEY, formatEffortStatus(ctx, level));
 }

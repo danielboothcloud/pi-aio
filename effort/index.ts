@@ -1,7 +1,4 @@
-import type {
-	ExtensionAPI,
-	ExtensionContext,
-} from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { applyEffortOverride } from "./capability.js";
 import { handleEffortTarget } from "./command-handler.js";
 import {
@@ -42,8 +39,8 @@ export function registerEffort(pi: ExtensionAPI): void {
 	// level actually reaches the model.
 	pi.on("before_provider_request", (event, ctx) => {
 		const model = ctx.model;
-		const desired =
-			getEffectiveLevel() === "unknown" ? undefined : getEffectiveLevel();
+		const effective = getEffectiveLevel();
+		const desired = effective === "unknown" ? undefined : effective;
 		return applyEffortOverride(model, desired, event.payload);
 	});
 }

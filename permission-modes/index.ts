@@ -18,6 +18,10 @@ import type {
 	WorkingIndicatorOptions,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import {
+	emitAioUiState,
+	probeZentuiWorkingLine,
+} from "../zentui/protocol.js";
 import { setPermissionModeAccess } from "./mode-access.js";
 import { showMutationApproval } from "./approval-dialog.js";
 import {
@@ -492,8 +496,10 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 
 		syncCursorPermissionBridge(ctx);
 
-		// Update status pill + working indicator
+		// Update status pill + working indicator, then let Zentui's keyed
+		// Working-line bridge mirror the new mode without touching global slots.
 		updateStatus(ctx);
+		emitAioUiState(pi, { mode: currentMode });
 
 		persistState();
 	}
@@ -510,13 +516,15 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			"modes",
 			ctx.ui.theme.fg(meta.role, `${meta.icon} ${meta.label}`),
 		);
-		const indicator: WorkingIndicatorOptions = {
-			frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"].map((f) =>
-				ctx.ui.theme.fg(meta.role, f),
-			),
-			intervalMs: 80,
-		};
-		ctx.ui.setWorkingIndicator(indicator);
+		if (!probeZentuiWorkingLine(pi).active) {
+			const indicator: WorkingIndicatorOptions = {
+				frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"].map((f) =>
+					ctx.ui.theme.fg(meta.role, f),
+				),
+				intervalMs: 80,
+			};
+			ctx.ui.setWorkingIndicator(indicator);
+		}
 	}
 
 	function persistState(): void {
@@ -790,6 +798,7 @@ If a todo list is active, toggle each finished step with the todo tool before co
 			toolsBeforePassiveMode = undefined;
 			currentMode = "auto";
 			updateStatus(ctx);
+			emitAioUiState(pi, { mode: currentMode });
 			persistState();
 
 			// Initial widget
@@ -928,8 +937,9 @@ If a todo list is active, toggle each finished step with the todo tool before co
 
 		syncCursorPermissionBridge(ctx);
 
-		// 6) Restore status pill
+		// 6) Restore status pill and any keyed Working-line integration.
 		updateStatus(ctx);
+		emitAioUiState(pi, { mode: currentMode });
 	}
 
 	pi.on("session_start", async (_event, ctx) => {

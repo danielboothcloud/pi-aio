@@ -1,8 +1,9 @@
+import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type {
-	AgentMessage,
 	ExtensionAPI,
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
+import { isZentuiEditorFactory } from "../zentui/protocol.js";
 import { QueueController } from "./controller.js";
 import { buildQueueLines } from "./lines.js";
 import { QueueEditor } from "./queue-editor.js";
@@ -69,14 +70,19 @@ export function registerQueue(pi: ExtensionAPI): void {
 			notify: (message, type) => ctx.ui.notify(message, type),
 			updateWidget: () => updateWidget(ctx),
 		});
-		ctx.ui.setEditorComponent((tui, theme, keybindings) => {
-			const editor = new QueueEditor(tui, theme, keybindings, ctx, {
-				onEmptySubmit: () =>
-					enabled ? (controller?.onEmptySubmit() ?? false) : false,
+		// A standalone Zentui loaded before AIO already owns the editor. Keep it
+		// intact; the bundled registration runs later and wraps QueueEditor instead.
+		const existingEditor = ctx.ui.getEditorComponent?.();
+		if (!isZentuiEditorFactory(existingEditor)) {
+			ctx.ui.setEditorComponent((tui, theme, keybindings) => {
+				const editor = new QueueEditor(tui, theme, keybindings, ctx, {
+					onEmptySubmit: () =>
+						enabled ? (controller?.onEmptySubmit() ?? false) : false,
+				});
+				activeEditor = editor;
+				return editor;
 			});
-			activeEditor = editor;
-			return editor;
-		});
+		}
 		updateWidget(ctx);
 	});
 
