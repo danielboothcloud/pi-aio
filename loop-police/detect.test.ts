@@ -13,7 +13,6 @@ import {
 	isWriteTool,
 	paragraphFingerprint,
 	pickToolPath,
-	toolCallKey,
 	wordTokens,
 	jaccardSimilarity,
 	textSimilarity,
@@ -24,17 +23,16 @@ import {
 	parseConfigText,
 	readLoopPoliceConfig,
 	substitutePlaceholders,
+	isSettableKey,
 	LOOP_POLICE_FILE_NAME,
 } from "./config.js";
 import {
 	checkRead,
 	checkSearch,
-	checkToolCallSequence,
 	clearReadWindow,
 	createLoopPoliceState,
 	recordRead,
 	recordSearch,
-	recordToolCall,
 	resetLoopPoliceState,
 } from "./state.js";
 import {
@@ -152,7 +150,7 @@ test("wordTokens + jaccard + textSimilarity", () => {
 	assert.ok(textSimilarity("completely unrelated words here", "totally different vocabulary used") < 0.2);
 });
 
-// ---- tool classification + keys ----
+// ---- tool classification ----
 
 test("tool classification and path picking", () => {
 	assert.ok(isReadTool("read"));
@@ -166,12 +164,6 @@ test("tool classification and path picking", () => {
 	assert.equal(pickToolPath({ path: "src/a.ts", pattern: "p" }), "src/a.ts");
 	assert.equal(pickToolPath({ pattern: "needle" }), "needle");
 	assert.equal(pickToolPath({ command: "npm test" }), undefined);
-});
-
-test("toolCallKey: name + sorted-args JSON", () => {
-	assert.equal(toolCallKey("read", { path: "a.ts", offset: 1 }), toolCallKey("read", { offset: 1, path: "a.ts" }));
-	assert.notEqual(toolCallKey("read", { path: "a.ts" }), toolCallKey("read", { path: "b.ts" }));
-	assert.notEqual(toolCallKey("read", { path: "a.ts" }), toolCallKey("grep", { path: "a.ts" }));
 });
 
 // ---- config ----
@@ -243,60 +235,19 @@ test("LOOP_POLICE_FILE_NAME follows the aio agent-file pattern", () => {
 	assert.equal(LOOP_POLICE_FILE_NAME, "aio-loop-police.json");
 });
 
-// ---- state: tool-call sequence loop ----
+// ---- state: identical tool-call repetition is allowed ----
 
-test("checkToolCallSequence: back-to-back repeat blocked (ban=1)", () => {
-	const state = createLoopPoliceState();
-
-	// read → edit → read → edit: cycle length 2 on the second read.
-	const read = { path: "a.ts" };
-	const edit = { path: "a.ts" };
-	recordToolCall(state, "read", read);
-	recordToolCall(state, "edit", edit);
-	assert.equal(checkToolCallSequence(state, "read", read, 1).looped, false, "first read of the cycle is fine");
-	// The gate records the call after a non-block; simulate the executed read.
-	recordToolCall(state, "read", read);
-	assert.equal(checkToolCallSequence(state, "edit", edit, 1).looped, true, "second edit completes the cycle");
-});
-
-test("checkToolCallSequence: interleaved different action breaks adjacency", () => {
-	const state = createLoopPoliceState();
-	// Upstream's guarantee: build → edit → build never trips. History
-	// [build, edit] + pending build: the last 1 call (edit) does not repeat
-	// the 1 before it (build) → legal.
-	recordToolCall(state, "bash", { command: "npm test" });
-	recordToolCall(state, "edit", { path: "a.ts" });
-	assert.equal(checkToolCallSequence(state, "bash", { command: "npm test" }, 1).looped, false);
-
-	// But build → edit → build → edit → build IS a [build,edit]×3 cycle:
-	// the last 2 calls (edit, build) repeat the 2 before them — blocked.
-	recordToolCall(state, "bash", { command: "npm test" });
-	recordToolCall(state, "edit", { path: "a.ts" });
-	assert.equal(checkToolCallSequence(state, "bash", { command: "npm test" }, 1).looped, true);
-});
-
-test("checkToolCallSequence: ban=2 permanently bans a looping call", () => {
-	const state = createLoopPoliceState();
-	const args = { command: "kubectl delete pod x" };
-	// Two back-to-back identical calls complete a length-1 cycle; the gate
-	// bans the exact call (TOOL_LOOP_BAN=2) and blocks it.
-	recordToolCall(state, "bash", args);
-	assert.equal(checkToolCallSequence(state, "bash", args, 2).looped, true);
-	state.bannedToolCalls.add(toolCallKey("bash", args));
-
-	// Even with a different action in between, the exact call stays blocked.
-	recordToolCall(state, "edit", { path: "a.ts" });
-	const banned = checkToolCallSequence(state, "bash", args, 2);
-	assert.equal(banned.looped, true);
-	assert.equal(banned.banned, true);
-});
-
-test("checkToolCallSequence: ban=0 disables the detector", () => {
+test("identical tool-call sequences are never blocked (detector removed)", () => {
 	const state = createLoopPoliceState();
 	const args = { command: "npm test" };
-	recordToolCall(state, "bash", args);
-	recordToolCall(state, "bash", args);
-	assert.equal(checkToolCallSequence(state, "bash", args, 0).looped, false);
+	// The state store no longer tracks a call history at all: repeated
+	// identical calls are legitimate work and must run every time.
+	assert.equal(state.toolCallHistory, undefined);
+	assert.equal(state.bannedToolCalls, undefined);
+	// The legacy keys are config no-ops: TOOL_LOOP_BAN is not settable.
+	assert.equal(isSettableKey("TOOL_LOOP_BAN"), false);
+	assert.equal(isSettableKey("TOOL_LOOP_EXEMPT"), false);
+	assert.equal(isSettableKey("FILE_SCAN_LIMIT"), true);
 });
 
 // ---- state: file ceiling + re-read window ----
@@ -356,13 +307,11 @@ test("clearReadWindow prevents chained blocks", () => {
 test("resetLoopPoliceState clears everything", () => {
 	const state = createLoopPoliceState();
 	recordRead(state, "a.ts", { reReadWindow: 10 });
-	recordToolCall(state, "read", { path: "a.ts" });
 	recordSearch(state, "needle", "read");
 	state.consecutiveLoops = 5;
 	state.rederiveStreak = 3;
 	resetLoopPoliceState(state);
 	assert.equal(state.readWindow.length, 0);
-	assert.equal(state.toolCallHistory.length, 0);
 	assert.equal(state.searchPathsByPattern.size, 0);
 	assert.equal(state.consecutiveLoops, 0);
 	assert.equal(state.rederiveStreak, 0);

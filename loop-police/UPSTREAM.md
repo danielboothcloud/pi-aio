@@ -7,7 +7,7 @@ reasoning/tool loops in real time, before they waste the context window.
 
 ## What was kept
 
-- The complete detector set (all enabled out of the box):
+- The detector set, except upstream's identical tool-call sequence detector:
   - **Streaming** (thinking + output, re-checked every STRIDE chars):
     character-level tail repetition and semantic paragraph fingerprinting
     (ordered-list counters normalized, code fences skipped). The semantic
@@ -17,12 +17,12 @@ reasoning/tool loops in real time, before they waste the context window.
     guard (post-detection thinking ≥ REDERIVE_THRESHOLD similar to the
     blocked plan is trimmed — interrupting the action is not enough for
     small models; the reasoning itself has to go).
-  - **Tool traffic**: identical tool-call sequence repeating back-to-back
-    (any cycle length; adjacency only, so build → edit → build never trips);
-    file read ceiling (real, non-blocked reads of the same path); redundant
-    re-read window (≥ REREAD_RATIO of the window re-reads of unchanged
-    files; read → edit → re-read counts as fresh); search expansion spiral
-    (same pattern across SEARCH_EXPAND_LIMIT locations).
+  - **Tool traffic**: file read ceiling (real, non-blocked reads of the same
+    path); redundant re-read window (≥ REREAD_RATIO of the window re-reads
+    of unchanged files; read → edit → re-read counts as fresh); search
+    expansion spiral (same pattern across SEARCH_EXPAND_LIMIT locations).
+    aio intentionally removed upstream's identical tool-call sequence gate
+    because legitimate repeated actions tripped it too often.
 - The blocked-in-place tool semantics: a blocked call never reached the
   tool, so it never spends a budget, never enters an executed history, and
   the recovery message is handed back as the tool's result in the same turn
@@ -37,6 +37,8 @@ reasoning/tool loops in real time, before they waste the context window.
   {token} substitution where unknown tokens stay visible so typos show.
 - All config key names, defaults, ranges, and the 0-disables-a-detector
   convention (append-only contract for existing loop-police.json files).
+  `TOOL_LOOP_BAN`, `TOOL_LOOP_EXEMPT`, and `MSG_TOOL_LOOP` remain accepted
+  legacy no-ops so existing files continue to load and round-trip.
 - The structured detection payload (metadata only — never thinking text or
   tool arguments) and the observer channels: `loop-police:detection` on the
   shared extension event bus, HOOK_LOG JSONL statistics, HOOK_CMD external

@@ -981,14 +981,13 @@ unprompted on every edit.
 from [pi-loop-police](https://github.com/sebaxzero/pi-loop-police) (MIT —
 see [`loop-police/UPSTREAM.md`](loop-police/UPSTREAM.md)). Reasoning models
 get stuck in characteristic ways: repeating the same phrases inside the
-thinking block, re-emitting the same paragraph in the answer, re-reading
-the same file over and over, or cycling through an identical sequence of
-tool calls until the context runs out. Loop police watches for all of it as
-it happens: it aborts looping output mid-stream, trims the repetition out
+thinking block, re-emitting the same paragraph in the answer, or re-reading
+the same file over and over. Loop police watches for these patterns as they
+happen: it aborts looping output mid-stream, trims the repetition out
 of your context, and injects a recovery message so the model continues with
 a fresh perspective — you keep the tokens the loop would have burned.
 
-Ten detectors, all enabled out of the box:
+Nine detectors, all enabled out of the box:
 
 - **Streaming loops** (thinking + output, re-checked every 50 chars): a
   character-level tail detector (the text ends in two adjacent verbatim
@@ -1006,11 +1005,6 @@ Ten detectors, all enabled out of the box:
   the blocked plan is trimmed — interrupting the action is not enough for
   small models; the reasoning itself has to go. Escalates to ⚠️ STUCK when
   the same blocked plan re-derives in a row.
-- **Tool-call sequence loop**: an identical sequence of calls repeating
-  back-to-back is blocked in place — any cycle length, adjacency only, so
-  build → edit → build never trips and legitimate re-runs after real
-  changes are fine. `TOOL_LOOP_BAN=2` bans a looping call permanently;
-  `TOOL_LOOP_EXEMPT` exempts polling tools.
 - **File read ceiling** (20 real reads of one path), **redundant re-read
   window** (≥ 40% of the last 10 reads are re-reads of unchanged files;
   read → edit → re-read counts as fresh), and **search expansion spiral**
@@ -1025,8 +1019,11 @@ Ten detectors, all enabled out of the box:
 ```
 
 Set a detector's key to 0 to disable it (`SEMANTIC_THRESHOLD=0`,
-`REREAD_WINDOW=0`, `TOOL_LOOP_BAN=0`, …). Custom `MSG_*` templates and the
-`MSG_SUFFIX` rider (e.g. pointing at an advisor) are edited in the JSON
+`REREAD_WINDOW=0`, …). The legacy `TOOL_LOOP_BAN`, `TOOL_LOOP_EXEMPT`, and
+`MSG_TOOL_LOOP` config keys are accepted for compatibility but ignored —
+the identical tool-call sequence detector was removed because legitimate
+repeated actions tripped it too often. Custom `MSG_*` templates and the
+`MSG_SUFFIX` rider are edited in the JSON
 file. Every detection also emits a metadata-only payload to
 `loop-police:detection` on the extension event bus, `HOOK_LOG` JSONL
 statistics, and `HOOK_CMD` — all observational, never blocking.

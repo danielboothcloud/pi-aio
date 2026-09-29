@@ -45,12 +45,10 @@ import {
 import {
 	checkRead,
 	checkSearch,
-	checkToolCallSequence,
 	clearReadWindow,
 	createLoopPoliceState,
 	recordRead,
 	recordSearch,
-	recordToolCall,
 	recordWrite,
 	resetLoopPoliceState,
 	type DetectionEventKind,
@@ -152,13 +150,12 @@ export class LoopPoliceRuntime {
 			}
 			const key = assignment.slice(0, eq);
 			const value = assignment.slice(eq + 1);
-			if (!isSettableKey(key)) {
-				errors.push(`${key} is not settable with set (MSG_* keys are edited in the JSON file)`);
+			if (key === "TOOL_LOOP_BAN" || key === "TOOL_LOOP_EXEMPT") {
+				errors.push(`${key} is obsolete; identical tool-call sequence detection has been removed`);
 				continue;
 			}
-			if (key === "TOOL_LOOP_EXEMPT") {
-				strings[key] = value;
-				applied.push(`${key}=${value}`);
+			if (!isSettableKey(key)) {
+				errors.push(`${key} is not settable with set (MSG_* keys are edited in the JSON file)`);
 				continue;
 			}
 			const numericValue = Number.parseFloat(value);
@@ -336,35 +333,16 @@ export class LoopPoliceRuntime {
 		return undefined;
 	}
 
-	// ---- tool_call gate: block loops in place ----
+	// ---- tool_call gate: block runaway reads and searches in place ----
 
 	/**
-	 * Gate a pending tool call. Returns block results for the tool-loop,
-	 * file-ceiling, re-read-window, and search-spiral detectors; the recovery
-	 * message is the block reason, so it becomes the tool's result in the
-	 * same turn without a duplicate recovery message in context.
+	 * Gate a pending tool call. Returns block results for the file-ceiling,
+	 * re-read-window, and search-spiral detectors; the recovery message is the
+	 * block reason, so it becomes the tool's result in the same turn without a
+	 * duplicate recovery message in context.
 	 */
 	async gateToolCall(event: ToolCallEvent, pi: { sendMessage(message: unknown, options?: unknown): void }): Promise<ToolCallEventResult | undefined> {
 		const cfg = this.config.numeric;
-		const exempt = this.config.strings.TOOL_LOOP_EXEMPT.split(",")
-			.map((name) => name.trim().toLowerCase())
-			.filter((name) => name.length > 0);
-		const isExempt = exempt.includes(event.toolName.toLowerCase());
-
-		// Tool call sequence loop (any cycle length; adjacency only).
-		const sequence = checkToolCallSequence(this.state, event.toolName, event.input as Record<string, unknown>, cfg.TOOL_LOOP_BAN);
-		if (sequence.looped) {
-			if (sequence.banned) {
-				this.state.bannedToolCalls.add(toolCallKeyOf(event));
-			}
-			const message = buildRecoveryMessage(this.config, "tool_loop", { windowSize: sequence.windowSize });
-			this.registerDetection("tool_loop", {
-				toolName: event.toolName,
-				windowSize: sequence.windowSize,
-				banned: sequence.banned,
-			});
-			return { block: true, reason: message };
-		}
 
 		if (isReadTool(event.toolName)) {
 			const read = checkRead(this.state, event.toolName, event.input as Record<string, unknown>, {
@@ -407,11 +385,8 @@ export class LoopPoliceRuntime {
 			return { block: true, reason: message };
 		}
 
-		// Executed (non-blocked) calls enter the histories here — blocked
-		// calls never reached the tool, so they never spend a budget.
-		if (!isExempt) {
-			recordToolCall(this.state, event.toolName, event.input as Record<string, unknown>);
-		}
+		// Executed (non-blocked) calls enter detector-specific histories here —
+		// blocked calls never reached the tool, so they never spend a budget.
 		if (isReadTool(event.toolName)) {
 			const path = pickToolPath((event.input ?? {}) as Record<string, unknown>) ?? "";
 			recordRead(this.state, path, { reReadWindow: cfg.REREAD_WINDOW });
@@ -537,14 +512,9 @@ export class LoopPoliceRuntime {
 			`executed read totals: ${this.state.executedReadsByPath.size} paths`,
 			`re-read window: ${this.state.readWindow.length}/${cfg.REREAD_WINDOW}`,
 			`search patterns tracked: ${this.state.searchPathsByPattern.size}`,
-			`tool history: ${this.state.toolCallHistory.length} calls, ${this.state.bannedToolCalls.size} banned`,
 			`thinking window: ${this.state.turnThinking.length}/${cfg.STAGNATION_WINDOW} turns`,
 		].join("\n");
 	}
-}
-
-function toolCallKeyOf(event: ToolCallEvent): string {
-	return `${event.toolName}:${JSON.stringify(event.input ?? {})}`;
 }
 
 // Re-export for the index wiring (single import surface).

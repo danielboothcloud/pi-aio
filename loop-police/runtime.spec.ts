@@ -56,6 +56,26 @@ describe("loop-police runtime watch", () => {
 		expect(content?.[0]).toEqual({ type: "thinking", thinking: SANITIZED_THINKING_MARKER });
 	});
 
+	test("identical tool calls are allowed to run repeatedly", async () => {
+		const detectionEvents: Array<{ event: string; payload: { event: string } }> = [];
+		const runtime = new LoopPoliceRuntime({
+			bus: {
+				emit: (event: string, payload: unknown) => {
+					detectionEvents.push({ event, payload: payload as { event: string } });
+				},
+			},
+		});
+		const event = { toolName: "edit", input: { path: "src/a.ts", oldText: "a", newText: "b" } } as unknown as Parameters<LoopPoliceRuntime["gateToolCall"]>[0];
+		const pi = { sendMessage: () => undefined };
+
+		// Repeating the exact same call back-to-back is legitimate work
+		// (the identical-sequence detector was removed) — it must never block.
+		expect(await runtime.gateToolCall(event, pi)).toBeUndefined();
+		expect(await runtime.gateToolCall(event, pi)).toBeUndefined();
+		expect(await runtime.gateToolCall(event, pi)).toBeUndefined();
+		expect(detectionEvents.some((entry) => entry.payload.event === "tool_loop")).toBe(false);
+	});
+
 	test("eventKindForStreamLoop maps stream + loop kind (the mis-imported symbol)", () => {
 		expect(eventKindForStreamLoop("thinking", { kind: "char_loop", boundary: 0, count: 2 })).toBe("thinking_loop");
 		expect(eventKindForStreamLoop("thinking", { kind: "semantic_loop", boundary: 0, count: 3 })).toBe("semantic_loop");

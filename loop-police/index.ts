@@ -28,7 +28,7 @@ export { DETECTION_EVENT } from "./messages.js";
 export { NUMERIC_DEFAULTS, NUMERIC_RANGES, defaultConfig, loopPoliceFilePath };
 
 const SET_HELP =
-	"/loop-police set KEY=VAL [KEY=VAL …] — tune config values live. Numeric keys are range-checked; TOOL_LOOP_EXEMPT is a comma-separated tool-name list. MSG_* keys are edited in the JSON file only.";
+	"/loop-police set KEY=VAL [KEY=VAL …] — tune active config values live. Numeric keys are range-checked; MSG_* keys are edited in the JSON file only.";
 
 export default function registerLoopPolice(pi: ExtensionAPI): void {
 	const runtime = new LoopPoliceRuntime({
@@ -40,7 +40,7 @@ export default function registerLoopPolice(pi: ExtensionAPI): void {
 		},
 	});
 
-	// ---- tool_call gate: block looped calls in place ----
+	// ---- tool_call gate: block runaway reads and searches in place ----
 
 	pi.on("tool_call", async (event) => {
 		return runtime.gateToolCall(event, pi);
@@ -155,6 +155,7 @@ export default function registerLoopPolice(pi: ExtensionAPI): void {
 			const trimmed = args.trim();
 			if (trimmed.length === 0) {
 				const configLines = (Object.keys(NUMERIC_DEFAULTS) as NumericKey[])
+					.filter((key) => key !== "TOOL_LOOP_BAN")
 					.map((key) => `${key}: ${runtime.config.numeric[key]}`)
 					.join("\n");
 				const status = `loop-police detection state\n${runtime.status()}\n\nconfig (${loopPoliceFilePath()}):\n${configLines}\n\n${SET_HELP}`;

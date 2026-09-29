@@ -163,8 +163,8 @@ generated `dist/` tree without changing the package contract.
   notify-only in the Pi SDK — sanitize via `message_end` same-role
   replacement, recovery via `before_agent_start` message injection),
   cross-turn stagnation + re-derived-reasoning scrubs (via the `context`
-  event), and blocked-in-place tool gates (tool-call cycle, file ceiling,
-  re-read window, search spiral — the recovery message is the block
+  event), and blocked-in-place tool gates (file ceiling, re-read window,
+  search spiral — the recovery message is the block
   reason). REGISTRATION ORDER IS LOAD-BEARING: it sits between blocklist
   and permission-modes (loop block preempts mode checks; the hard
   blocklist wins over a loop block). Its context scrub composes with

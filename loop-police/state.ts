@@ -11,7 +11,7 @@
 // back-to-back.
 // ---------------------------------------------------------------------------
 
-import { toolCallKey, isReadTool, isSearchTool, isWriteTool, pickToolPath } from "./detect.js";
+import { isReadTool, isSearchTool, isWriteTool, pickToolPath } from "./detect.js";
 
 /** One executed read in the re-read window. */
 export interface ReadRecord {
@@ -39,10 +39,6 @@ export interface LoopPoliceState {
 	readonly readWindow: ReadRecord[];
 	/** Per-pattern set of distinct paths a search pattern reached. */
 	readonly searchPathsByPattern: Map<string, Set<string>>;
-	/** Cycle-key history of executed tool calls. */
-	readonly toolCallHistory: string[];
-	/** Session-banned cycle keys (TOOL_LOOP_BAN=2). */
-	readonly bannedToolCalls: Set<string>;
 	/** Word-token sets of the last N turns' thinking. */
 	readonly turnThinking: string[];
 	/** Consecutive looped turns (escalation counter). */
@@ -58,8 +54,6 @@ export function createLoopPoliceState(): LoopPoliceState {
 		executedReadsByPath: new Map(),
 		readWindow: [],
 		searchPathsByPattern: new Map(),
-		toolCallHistory: [],
-		bannedToolCalls: new Set(),
 		turnThinking: [],
 		consecutiveLoops: 0,
 		rederiveStreak: 0,
@@ -72,68 +66,10 @@ export function resetLoopPoliceState(state: LoopPoliceState): void {
 	state.executedReadsByPath.clear();
 	state.readWindow.length = 0;
 	state.searchPathsByPattern.clear();
-	state.toolCallHistory.length = 0;
-	state.bannedToolCalls.clear();
 	state.turnThinking.length = 0;
 	state.consecutiveLoops = 0;
 	state.rederiveStreak = 0;
 	state.rederiveGuardArmed = false;
-}
-
-// ---- tool-call sequence loop ----
-
-export interface ToolLoopDecision {
-	/** True when the identical call sequence repeats back-to-back. */
-	readonly looped: boolean;
-	/** Cycle length when looped (number of repeated calls). */
-	readonly windowSize: number;
-	/** True when this exact call is session-banned (TOOL_LOOP_BAN=2). */
-	readonly banned: boolean;
-}
-
-/**
- * Check the pending call against the history and ban set. An interleaved
- * different action breaks adjacency: build → edit → build never trips, so
- * legitimate re-runs after real changes are fine.
- */
-export function checkToolCallSequence(
-	state: LoopPoliceState,
-	toolName: string,
-	args: Record<string, unknown> | undefined,
-	ban: number,
-): ToolLoopDecision {
-	if (ban <= 0) return { looped: false, windowSize: 0, banned: false };
-	const key = toolCallKey(toolName, args);
-	const banned = ban >= 2 && state.bannedToolCalls.has(key);
-	if (banned) {
-		return { looped: true, windowSize: 1, banned };
-	}
-
-	// Any cycle length: the last W history entries must exactly repeat the
-	// W entries before them once the pending key is appended.
-	const history = state.toolCallHistory;
-	for (let w = 1; w <= Math.floor(history.length / 2) + 1; w++) {
-		if (history.length < w * 2 - 1) continue;
-		const prior = history.slice(history.length - (w * 2 - 1), history.length - (w - 1));
-		const recent = history.slice(history.length - (w - 1));
-		const pending = [...recent, key];
-		if (
-			prior.length === w &&
-			pending.length === w &&
-			prior.every((entry, i) => entry === pending[i])
-		) {
-			return { looped: true, windowSize: w, banned: false };
-		}
-	}
-	return { looped: false, windowSize: 0, banned: false };
-}
-
-/** Record an executed (non-blocked) call; exempt calls also break adjacency. */
-export function recordToolCall(state: LoopPoliceState, toolName: string, args: Record<string, unknown> | undefined): void {
-	state.toolCallHistory.push(toolCallKey(toolName, args));
-	if (state.toolCallHistory.length > 64) {
-		state.toolCallHistory.splice(0, state.toolCallHistory.length - 64);
-	}
 }
 
 // ---- file read ceiling + redundant re-read window ----

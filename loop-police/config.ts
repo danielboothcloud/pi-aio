@@ -31,6 +31,7 @@ export const NUMERIC_DEFAULTS = {
 	REREAD_WINDOW: 10,
 	REREAD_RATIO: 0.4,
 	CONSECUTIVE_LOOP_LIMIT: 2,
+	// Legacy no-op retained so existing aio-loop-police.json files round-trip.
 	TOOL_LOOP_BAN: 1,
 	REDERIVE_THRESHOLD: 0.85,
 	HOOK_TIMEOUT_MS: 5000,
@@ -59,7 +60,7 @@ export const NUMERIC_RANGES: Record<NumericKey, [number, number]> = {
 	HOOK_TIMEOUT_MS: [100, 60_000],
 };
 
-/** String config keys; TOOL_LOOP_EXEMPT is live-tunable, HOOK_* are file-only. */
+/** String config keys; TOOL_LOOP_EXEMPT is a legacy no-op, HOOK_* are file-only. */
 export const STRING_KEYS = ["TOOL_LOOP_EXEMPT", "HOOK_CMD", "HOOK_LOG"] as const;
 export type StringKey = (typeof STRING_KEYS)[number];
 
@@ -74,6 +75,7 @@ export const MSG_KEYS = [
 	"MSG_FILE_SCAN_LOOP",
 	"MSG_SEARCH_SPIRAL",
 	"MSG_REREAD",
+	// Legacy no-op retained for config compatibility.
 	"MSG_TOOL_LOOP",
 	"MSG_REDERIVED",
 	"MSG_STUCK",
@@ -212,9 +214,9 @@ export function writeLoopPoliceConfig(config: LoopPoliceConfig, file: string = l
 	});
 }
 
-/** True when the key is live-tunable through /loop-police set. */
-export function isSettableKey(key: string): key is NumericKey | "TOOL_LOOP_EXEMPT" {
-	return key in NUMERIC_DEFAULTS || key === "TOOL_LOOP_EXEMPT";
+/** True when the active key is live-tunable through /loop-police set. */
+export function isSettableKey(key: string): key is NumericKey {
+	return key in NUMERIC_DEFAULTS && key !== "TOOL_LOOP_BAN";
 }
 
 /** Substitute {token} placeholders; unknown tokens stay visible so typos show. */

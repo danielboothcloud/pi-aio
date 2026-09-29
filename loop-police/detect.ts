@@ -246,13 +246,3 @@ export function pickToolPath(args: Record<string, unknown>): string | undefined 
 	return undefined;
 }
 
-/** Hash a tool call into a cycle key (name + JSON args) for the loop history. */
-export function toolCallKey(toolName: string, args: Record<string, unknown> | undefined): string {
-	let serialized: string;
-	try {
-		serialized = JSON.stringify(args ?? {}, Object.keys(args ?? {}).sort());
-	} catch {
-		serialized = String(args);
-	}
-	return `${toolName}:${serialized}`;
-}
