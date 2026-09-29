@@ -207,14 +207,19 @@ function formatReset(
 	const timestamp = Date.parse(renewsAt);
 	if (!Number.isFinite(timestamp)) return undefined;
 	const remainingMs = timestamp - now;
-	if (remainingMs <= 0) return "reset due";
+	if (remainingMs <= 0) return "→now";
 	const minutes = Math.ceil(remainingMs / 60_000);
-	if (minutes < 60) return `resets ${minutes}m`;
+	if (minutes < 60) return `→${minutes}m`;
 	const hours = Math.ceil(minutes / 60);
-	if (hours < 48) return `resets ${hours}h`;
-	return `resets ${Math.ceil(hours / 24)}d`;
+	if (hours < 48) return `→${hours}h`;
+	return `→${Math.ceil(hours / 24)}d`;
 }
 
+/**
+ * Compact, minimalist-style tokens: the Zentui status row sits beside terse
+ * editor metadata, so avoid prose like "left"/"resets". Renewal timing uses a
+ * bare arrow unit (e.g. "→5h") matching the "· "-separated visual language.
+ */
 export function formatProviderUsage(
 	usage: ProviderUsage,
 	now = Date.now(),
@@ -222,13 +227,13 @@ export function formatProviderUsage(
 	let value: string;
 	if (usage.text) value = sanitizeDisplayText(usage.text);
 	else if (usage.remainingPercent !== undefined)
-		value = `${usage.remainingPercent}% left`;
-	else if (usage.remaining !== undefined) value = `${usage.remaining} left`;
+		value = `${usage.remainingPercent}%`;
+	else if (usage.remaining !== undefined) value = `${usage.remaining}`;
 	else if (usage.used !== undefined && usage.limit !== undefined) {
-		value = `${usage.used}/${usage.limit} used`;
+		value = `${usage.used}/${usage.limit}`;
 	} else if (usage.used === undefined) value = `limit ${usage.limit}`;
 	else value = `${usage.used} used`;
 
 	const reset = formatReset(usage.renewsAt, now);
-	return `${sanitizeDisplayText(usage.label)} ${value}${reset ? `, ${reset}` : ""}`;
+	return `${sanitizeDisplayText(usage.label)} ${value}${reset ? ` ${reset}` : ""}`;
 }

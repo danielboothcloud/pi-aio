@@ -132,6 +132,6 @@ test("formatProviderUsage includes compact reset timing", () => {
 			remainingPercent: 25,
 			renewsAt: "2030-01-03T00:00:00.000Z",
 		}, Date.parse("2030-01-01T00:00:00.000Z")),
-		"Custom 25% left, resets 2d",
+		"Custom 25% →2d",
 	);
 });

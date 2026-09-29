@@ -155,7 +155,7 @@ test("renderStatusLine shows mapped provider quota", () => {
 			],
 		}),
 	);
-	assert.match(line, /◴ synthetic 100% left/);
+	assert.match(line, /◴ synthetic 100%/);
 });
 
 test("renderStatusLine joins provider quota windows", () => {
@@ -167,5 +167,5 @@ test("renderStatusLine joins provider quota windows", () => {
 			],
 		}),
 	);
-	assert.match(line, /◴ synthetic 100% left · wk \$23\.21/);
+	assert.match(line, /◴ synthetic 100% · wk \$23\.21/);
 });
