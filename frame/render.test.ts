@@ -89,3 +89,35 @@ test("thinking level off and missing cost/model are omitted", () => {
 	assert.doesNotMatch(lines[0]!, /off/);
 	assert.doesNotMatch(lines[0]!, /no-model/);
 });
+
+test("context percent is tier-colored: green < 50, yellow 50-74, red >= 75", () => {
+	const seen: string[] = [];
+	const capturingTheme = {
+		fg: (name: string, text: string) => {
+			seen.push(name);
+			return text;
+		},
+		bold: (text: string) => text,
+	};
+	const render = (percent: number) =>
+		renderMinimalistFrame({
+			width: 60,
+			editorLines: ["x"],
+			inputText: "",
+			metadata: { ...metadata, contextPercent: percent },
+			uiTheme: capturingTheme,
+			style: DEFAULT_FRAME_STYLE,
+		})[0] ?? "";
+
+	seen.length = 0;
+	assert.match(render(40), /40%/);
+	assert.ok(seen.includes("success"), `green below 50, saw: ${seen.join(",")}`);
+
+	seen.length = 0;
+	assert.match(render(60), /60%/);
+	assert.ok(seen.includes("warning"), `yellow at 50-74, saw: ${seen.join(",")}`);
+
+	seen.length = 0;
+	assert.match(render(80), /80%/);
+	assert.ok(seen.includes("error"), `red at >= 75, saw: ${seen.join(",")}`);
+});
