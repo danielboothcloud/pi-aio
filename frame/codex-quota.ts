@@ -97,36 +97,38 @@ export function hasNativeCodexRoute(
 }
 
 /**
- * Resolve the routed Codex OAuth token. `getProviderAuth` is optional on the
- * host surface — when it is unavailable the quota stays hidden rather than
- * reaching into private credential storage.
+ * Resolve the routed Codex OAuth token via the host's auth surface.
+ * `getApiKeyForAuth` never touches private credential storage: both accessors
+ * are the same ones Pi uses to authenticate the model's own requests, so the
+ * token returned is exactly the bearer the codex route already uses.
  */
 export async function resolveCodexToken(
 	registry: ExtensionContext["modelRegistry"] | undefined,
 	model: ExtensionContext["model"] | undefined,
 ): Promise<string | undefined> {
+	if (!hasNativeCodexRoute(registry, model)) return undefined;
+	// SAFETY: the registry class exposes these auth accessors at runtime;
+	// the host's public .d.ts surface is thinner than the implementation,
+	// so the optional-accessor shape is declared here.
 	const withAuth = registry as
-		| (ExtensionContext["modelRegistry"] & {
-				getProviderAuth?: (id: string) => Promise<
-					{ auth?: { apiKey?: unknown; baseUrl?: unknown } } | undefined
+		| {
+				getApiKeyAndHeaders?: (model: unknown) => Promise<
+					{ ok: boolean; apiKey?: unknown } | undefined
 				>;
-		  })
+				getApiKeyForProvider?: (provider: string) => Promise<unknown>;
+		  }
 		| undefined;
-	if (!hasNativeCodexRoute(registry, model) || typeof withAuth?.getProviderAuth !== "function") {
-		return undefined;
+	if (typeof withAuth?.getApiKeyAndHeaders === "function") {
+		const result = await withAuth.getApiKeyAndHeaders(model);
+		return result?.ok && typeof result.apiKey === "string" && result.apiKey
+			? result.apiKey
+			: undefined;
 	}
-	const result = await withAuth.getProviderAuth("openai-codex");
-	// Auth can override both model and provider routing. Native OAuth omits this field.
-	if (
-		!hasNativeCodexRoute(registry, model) ||
-		!result?.auth ||
-		(result.auth.baseUrl !== undefined && !isNativeCodexUrl(result.auth.baseUrl))
-	) {
-		return undefined;
+	if (typeof withAuth?.getApiKeyForProvider === "function") {
+		const key = await withAuth.getApiKeyForProvider("openai-codex");
+		return typeof key === "string" && key ? key : undefined;
 	}
-	return typeof result.auth.apiKey === "string" && result.auth.apiKey
-		? result.auth.apiKey
-		: undefined;
+	return undefined;
 }
 
 function accountId(token: string): string | undefined {

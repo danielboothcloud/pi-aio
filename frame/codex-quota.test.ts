@@ -5,6 +5,7 @@ import {
 	codexQuotaText,
 	hasNativeCodexRoute,
 	parseCodexQuota,
+	resolveCodexToken,
 } from "./codex-quota.ts";
 
 function payload(usedPercent: number, seconds: number): unknown {
@@ -75,5 +76,47 @@ test("hasNativeCodexRoute requires provider id, api, and both native base URLs",
 	assert.equal(
 		hasNativeCodexRoute(native("https://chatgpt.com/x") as never, { ...model, api: "openai-responses" } as never),
 		false,
+	);
+});
+
+function nativeModel() {
+	return {
+		provider: "openai-codex",
+		api: "openai-codex-responses",
+		baseUrl: "https://chatgpt.com/backend-api/codex",
+	};
+}
+
+function nativeRegistry(apiKey?: string) {
+	return {
+		getProvider: () => ({ id: "openai-codex", baseUrl: "https://chatgpt.com/backend-api/codex" }),
+		getApiKeyAndHeaders: async () =>
+			apiKey ? { ok: true, apiKey, headers: undefined } : { ok: false, error: "none" },
+	};
+}
+
+test("resolveCodexToken reads the OAuth bearer from the host auth surface", async () => {
+	const token = await resolveCodexToken(
+		nativeRegistry("oauth-access-token") as never,
+		nativeModel() as never,
+	);
+	assert.equal(token, "oauth-access-token");
+
+	// No auth resolved: no token, no fallback into private storage.
+	assert.equal(
+		await resolveCodexToken(nativeRegistry(undefined) as never, nativeModel() as never),
+		undefined,
+	);
+	// A non-native (proxied) route never yields the token.
+	const proxied = nativeRegistry("secret");
+	(proxied.getProvider as () => unknown) = () => ({
+		id: "openai-codex",
+		baseUrl: "https://proxy.example.com",
+	});
+	assert.equal(await resolveCodexToken(proxied as never, nativeModel() as never), undefined);
+	// Registry without auth accessors (older/foreign surface): undefined.
+	assert.equal(
+		await resolveCodexToken({ getProvider: () => ({ id: "openai-codex", baseUrl: "https://chatgpt.com/x" }) } as never, nativeModel() as never),
+		undefined,
 	);
 });

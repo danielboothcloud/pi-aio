@@ -20,5 +20,7 @@ UI) remains upstream and is not used by AIO.
   bottom border) — an AIO-specific integration.
 - Codex quota is retained (`codex-quota.ts`) and always on: upstream gates it
   behind a `codexQuota` setting, AIO renders the 5h/weekly windows whenever
-  the native `openai-codex` route is active. `getProviderAuth` is treated as
-  optional on the host surface; without it the windows stay hidden.
+  the native `openai-codex` route is active. Upstream's `getProviderAuth`
+  does not exist on the host surface, so the token resolves through the
+  registry's own auth accessors (`getApiKeyAndHeaders`, falling back to
+  `getApiKeyForProvider`) — the same bearer Pi uses for the codex route.
