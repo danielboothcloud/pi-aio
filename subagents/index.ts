@@ -2,9 +2,18 @@ import { StringEnum } from "@earendil-works/pi-ai";
 import type {
 	ExtensionAPI,
 	ExtensionContext,
+	Theme,
 } from "@earendil-works/pi-coding-agent";
+import type { TUI } from "@earendil-works/pi-tui";
 import { Type, type Static } from "typebox";
 import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
+import {
+	chromeHeader,
+	chromeHint,
+	chromeItem,
+	plural,
+	type ChromeTheme,
+} from "../ui/chrome.js";
 import { discoverAgents } from "./agents.js";
 import { resolveChildExtensionPaths } from "./extensions.js";
 import { clearRuns, getRun, listRuns, stopRun } from "./registry.js";
@@ -135,23 +144,58 @@ function publicRun(run: SubagentRun): Record<string, unknown> {
 	};
 }
 
-function activeWidgetLines(): string[] | undefined {
+export function buildSubagentWidgetLines(
+	active: readonly SubagentRun[],
+	width: number,
+	theme: ChromeTheme,
+	maxRows = 4,
+): string[] {
+	if (active.length === 0 || width <= 0) return [];
+	const lines = [
+		chromeHeader(
+			theme,
+			{ title: "subagents", meta: plural(active.length, "active run") },
+			width,
+		),
+	];
+	const visible = active.slice(0, Math.max(1, maxRows));
+	for (const run of visible) {
+		const done = run.children.filter(
+			(child) => child.state === "completed",
+		).length;
+		const failed = run.children.filter(
+			(child) => child.state === "failed",
+		).length;
+		lines.push(
+			chromeItem(
+				theme,
+				{
+					label: run.id.slice(0, 8),
+					meta: `${done}/${run.children.length} done${failed ? ` · ${failed} failed` : ""}`,
+					marker: run.state === "running" ? "◐" : "◌",
+					tone: failed ? "warning" : "accent",
+					indent: 1,
+				},
+				width,
+			),
+		);
+	}
+	const remaining = active.length - visible.length;
+	if (remaining > 0) lines.push(chromeHint(theme, `+${remaining} more runs`, width));
+	return lines;
+}
+
+function activeWidgetContent() {
 	const active = listRuns().filter(
 		(run) => run.state === "queued" || run.state === "running",
 	);
 	if (!active.length) return undefined;
-	return [
-		"Subagents",
-		...active.map((run) => {
-			const done = run.children.filter(
-				(child) => child.state === "completed",
-			).length;
-			const failed = run.children.filter(
-				(child) => child.state === "failed",
-			).length;
-			return `  ${run.id.slice(0, 8)}  ${done}/${run.children.length} done${failed ? `, ${failed} failed` : ""}`;
-		}),
-	];
+	return (_tui: TUI, theme: Theme) => ({
+		invalidate() {},
+		render(width: number): string[] {
+			return buildSubagentWidgetLines(active, width, theme);
+		},
+	});
 }
 
 function toolResult(text: string, details: Record<string, unknown> = {}) {
@@ -220,7 +264,7 @@ export function registerSubagents(
 			if (params.action === "stop") {
 				if (!params.id) throw new Error("Subagent stop requires an id.");
 				const run = stopRun(params.id);
-				ctx.ui.setWidget("aio-subagents", activeWidgetLines());
+				ctx.ui.setWidget("aio-subagents", activeWidgetContent());
 				return toolResult(`Subagent run ${run.id} is ${run.state}.`, {
 					run: publicRun(run),
 				});
@@ -243,7 +287,7 @@ export function registerSubagents(
 			const parent = parentContext(ctx, pi);
 			const updateWidget = () => {
 				if (!shuttingDown)
-					ctx.ui.setWidget("aio-subagents", activeWidgetLines());
+					ctx.ui.setWidget("aio-subagents", activeWidgetContent());
 			};
 			const updateForeground = (run: SubagentRun) => {
 				updateWidget();
@@ -323,10 +367,11 @@ export function registerSubagents(
 		clearRuns();
 	});
 
-	pi.on("session_shutdown", () => {
+	pi.on("session_shutdown", (_event, ctx) => {
 		shuttingDown = true;
 		for (const run of listRuns()) {
 			if (run.state === "queued" || run.state === "running") stopRun(run.id);
 		}
+		if (ctx.hasUI) ctx.ui.setWidget("aio-subagents", undefined);
 	});
 }

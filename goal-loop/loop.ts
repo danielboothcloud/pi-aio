@@ -24,6 +24,7 @@ import {
 	type ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { fitLine } from "../ui/chrome.js";
 
 import {
 	type Goal,
@@ -203,21 +204,45 @@ let uiTicker: NodeJS.Timeout | null = null;
 function refreshUI(ctx: ExtensionContext): void {
 	if (!ctx.hasUI) return;
 	try {
+		// SAFETY: DisplayTheme is the fg-only subset consumed by the pure display builder.
 		const theme = ctx.ui.theme as unknown as
 			| import("./goal-loop-display.js").DisplayTheme
 			| undefined;
-		const width = process.stdout.columns || 80;
 		ctx.ui.setStatus(
 			"aio-goal",
 			buildStatusText(state, latestAuditProgress, Date.now(), theme, {
 				stalls: consecutiveStalls,
 			}),
 		);
+		const snapshot = buildWidgetLines(
+			state,
+			latestAuditProgress,
+			Date.now(),
+			theme,
+			80,
+			{ stalls: consecutiveStalls },
+		);
 		ctx.ui.setWidget(
 			"aio-goal",
-			buildWidgetLines(state, latestAuditProgress, Date.now(), theme, width, {
-				stalls: consecutiveStalls,
-			}),
+			snapshot
+				? (_tui, liveTheme) => ({
+						invalidate() {},
+						render(width: number): string[] {
+							// SAFETY: DisplayTheme is the fg-only subset exposed by Pi's live theme.
+							const displayTheme = liveTheme as unknown as import("./goal-loop-display.js").DisplayTheme;
+							return (
+								buildWidgetLines(
+									state,
+									latestAuditProgress,
+									Date.now(),
+									displayTheme,
+									width,
+									{ stalls: consecutiveStalls },
+								) ?? []
+							).map((line) => fitLine(line, width));
+						},
+					})
+				: undefined,
 		);
 	} catch {
 		// stale ctx — next event refreshes

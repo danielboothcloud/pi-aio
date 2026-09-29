@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { Text, visibleWidth } from "@earendil-works/pi-tui";
 import { registerRtk, resetRtkState, setRtkRewriteFn } from "../rtk/index.ts";
 import registerPrettyTools from "./index.ts";
 import { renderGrepResults, renderTree } from "./render.ts";
@@ -22,7 +23,7 @@ class FakeText implements ComponentLike {
 		this.value = value;
 	}
 
-	render(): string[] {
+	render(_width?: number): string[] {
 		return this.value.split("\n");
 	}
 }
@@ -43,7 +44,9 @@ function sdkTool(name: string): SdkToolDef {
 	};
 }
 
-function createHarness() {
+function createHarness(
+	TextComponent: PiPrettyDeps["TextComponent"] = FakeText,
+) {
 	const tools = new Map<string, Record<string, unknown>>();
 	const commands = new Map<string, Record<string, unknown>>();
 	const handlers = new Map<string, Array<(...args: unknown[]) => unknown>>();
@@ -65,7 +68,7 @@ function createHarness() {
 		},
 	} as unknown as ExtensionAPI;
 	const deps: PiPrettyDeps = {
-		TextComponent: FakeText,
+		TextComponent,
 		sdk: {
 			getAgentDir: () => "/tmp/aio-pretty-test",
 			createReadToolDefinition: () => sdkTool("read"),
@@ -161,7 +164,121 @@ test("bash renderer includes a colored exit summary", async () => {
 	);
 
 	assert.match(rendered.value, /exit 0/);
-	assert.match(rendered.value, /1 lines/);
+	assert.match(rendered.value, /1 line/);
+	assert.match(rendered.value, /✓/);
+	for (const line of rendered.render(18)) {
+		assert.ok(visibleWidth(line) <= 18);
+	}
+});
+
+test("bash responsive renderer does not retain stale collapsed wrappers", async () => {
+	const harness = createHarness();
+	await registerPrettyTools(harness.pi, harness.deps);
+	const bash = harness.tools.get("bash") as {
+		renderResult: (
+			result: Record<string, unknown>,
+			options: Record<string, unknown>,
+			theme: ThemeLike,
+			context: Record<string, unknown>,
+		) => FakeText;
+	};
+	const result = {
+		content: [{ type: "text", text: "hello\nworld" }],
+		details: {
+			_type: "bashResult",
+			text: "hello\nworld",
+			exitCode: 0,
+			command: "printf",
+		},
+	};
+	const state = {};
+	const component = bash.renderResult(result, {}, theme, {
+		expanded: false,
+		isError: false,
+		state,
+	});
+	bash.renderResult(result, {}, theme, {
+		expanded: true,
+		isError: false,
+		state,
+		lastComponent: component,
+	});
+
+	const resized = component.render(10).join("\n");
+	assert.match(resized, /hello/);
+	assert.match(resized, /world/);
+	assert.doesNotMatch(resized, /ctrl\+o expand/);
+});
+
+test("read highlighting cannot overwrite a newer collapsed render", async () => {
+	const harness = createHarness();
+	await registerPrettyTools(harness.pi, harness.deps);
+	const read = harness.tools.get("read") as {
+		renderResult: (
+			result: Record<string, unknown>,
+			options: Record<string, unknown>,
+			theme: ThemeLike,
+			context: Record<string, unknown>,
+		) => FakeText;
+	};
+	const result = {
+		content: [{ type: "text", text: "first\nsecond" }],
+		details: {
+			_type: "readFile",
+			filePath: "notes.unknown",
+			content: "first\nsecond",
+			offset: 0,
+			lineCount: 2,
+		},
+	};
+	const state: Record<string, string | undefined> = {};
+	const component = read.renderResult(result, {}, theme, {
+		expanded: true,
+		isError: false,
+		state,
+	});
+	read.renderResult(result, {}, theme, {
+		expanded: false,
+		isError: false,
+		state,
+		lastComponent: component,
+	});
+	await new Promise<void>((resolve) => setImmediate(resolve));
+
+	assert.match(component.value, /ctrl\+o expand/);
+	assert.doesNotMatch(component.value, /│ first/);
+});
+
+test("expanded read rendering follows the component width before and after highlighting", async () => {
+	const harness = createHarness(Text);
+	await registerPrettyTools(harness.pi, harness.deps);
+	const read = harness.tools.get("read") as {
+		renderResult: (
+			result: Record<string, unknown>,
+			options: Record<string, unknown>,
+			theme: ThemeLike,
+			context: Record<string, unknown>,
+		) => { render(width: number): string[] };
+	};
+	const state: Record<string, string | undefined> = {};
+	const component = read.renderResult(
+		{
+			content: [{ type: "text", text: "a very long source line that must fit\nsecond" }],
+			details: {
+				_type: "readFile",
+				filePath: "notes.unknown",
+				content: "a very long source line that must fit\nsecond",
+				offset: 0,
+				lineCount: 2,
+			},
+		},
+		{},
+		theme,
+		{ expanded: true, isError: false, state },
+	);
+	for (const line of component.render(20)) assert.ok(visibleWidth(line) <= 20);
+	await new Promise<void>((resolve) => setImmediate(resolve));
+	for (const line of component.render(20)) assert.ok(visibleWidth(line) <= 20);
 });
 
 test("grep rendering groups files, shows line numbers, and highlights matches", () => {

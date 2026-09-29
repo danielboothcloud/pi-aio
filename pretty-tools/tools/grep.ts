@@ -21,8 +21,11 @@ import {
 import { normalizeLineEndings, shortPath } from "../helpers.js";
 import {
 	fillToolBackground,
+	plural,
 	renderGrepResults,
+	renderToolCallChrome,
 	renderToolError,
+	renderToolSummary,
 } from "../render.js";
 import { resolveTextCtor } from "../tui-text.js";
 import type {
@@ -151,12 +154,20 @@ export function registerGrepTool(
 			const literal = args.literal === true;
 			const caseInsensitive =
 				args.caseInsensitive === true || args.ignoreCase === true;
-			let out = `${theme.fg(ctx.isError ? "error" : "toolTitle", theme.bold("✱ grep"))} ${theme.fg("toolTitle", `/${pattern || ""}/`)}${theme.fg("toolOutput", ` in ${path}`)}`;
-			if (glob) out += theme.fg("dim", ` (${String(glob)})`);
-			if (limit !== undefined && limit !== null)
-				out += theme.fg("dim", ` limit ${limit}`);
-			if (literal) out += theme.fg("dim", ` (literal)`);
-			if (caseInsensitive) out += theme.fg("dim", ` (case-insensitive)`);
+			const meta = [
+				`/${pattern || ""}/`,
+				path,
+				glob ? String(glob) : undefined,
+				limit !== undefined && limit !== null ? `limit ${limit}` : undefined,
+				literal ? "literal" : undefined,
+				caseInsensitive ? "ignore case" : undefined,
+			]
+				.filter(Boolean)
+				.join(" · ");
+			const out = renderToolCallChrome(theme, "grep", meta, {
+				icon: "✱",
+				tone: ctx.isError ? "error" : "accent",
+			});
 			text.setText(
 				fillToolBackground(
 					`\n${TOOL_RESULT_INDENT}${out}\n`,
@@ -192,7 +203,7 @@ export function registerGrepTool(
 				if (!ctx.expanded) {
 					text.setText(
 						fillToolBackground(
-							`${TOOL_RESULT_INDENT}${FG_DIM}${lines.length} lines — ctrl+o to expand${RST}\n`,
+							`${renderToolSummary(theme, plural(lines.length, "line"), [], { hint: "ctrl+o expand" })}\n`,
 							ctx.isError ? BG_ERROR : undefined,
 						),
 					);

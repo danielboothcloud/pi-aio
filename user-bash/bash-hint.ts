@@ -12,18 +12,11 @@ export function syncBashHint(ctx: ExtensionContext, text: string): void {
 	}
 
 	const theme = ctx.ui.theme;
-	const modeLabel = state.hidden
-		? theme.fg("muted", "bash (hidden from model)")
-		: theme.fg("bashMode", "bash");
-	const commandPreview = state.command || theme.fg("dim", "type a command…");
-	const hint = theme.fg("dim", "Enter to run");
-
-	ctx.ui.setWidget(
-		"user-bash-hint",
-		[
-			`${theme.fg("bashMode", "$")} ${modeLabel} ${theme.fg("dim", "·")} ${commandPreview} ${theme.fg("dim", `(${hint})`)}`,
-		],
-		{ placement: "belowEditor" },
+	// The command and mode already live in the Zentui/BashHint editor chrome.
+	// Keep the below-editor region quiet and publish only one compact status.
+	ctx.ui.setWidget("user-bash-hint", undefined);
+	ctx.ui.setStatus(
+		"user-bash",
+		theme.fg("bashMode", state.hidden ? "!!bash" : "!bash"),
 	);
-	ctx.ui.setStatus("user-bash", theme.fg("bashMode", "!bash"));
 }

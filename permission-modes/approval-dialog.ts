@@ -18,9 +18,16 @@ import {
 	type Component,
 	getKeybindings,
 	type TUI,
-	visibleWidth,
 	wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
+import {
+	chromeDivider,
+	chromeHeader,
+	chromeHint,
+	chromeItem,
+	fitLine,
+	padToWidth,
+} from "../ui/chrome.js";
 import {
 	buildMutationApprovalPrompt,
 	formatMutationPreview,
@@ -43,6 +50,7 @@ const OVERLAY_MAX_CHARS = 200_000;
 interface ApprovalTheme {
 	fg(color: string, text: string): string;
 	bold(text: string): string;
+	bg?(color: string, text: string): string;
 }
 
 /** Color role assigned to a wrapped diff row. */
@@ -102,6 +110,8 @@ export async function showMutationApproval(
 		(tui, theme, _kb, done) =>
 			new ApprovalDialog({
 				tui,
+				// SAFETY: ApprovalTheme is the exact fg/bold/bg subset used from Pi's
+				// Theme; narrowing keeps this component independent of the full type.
 				theme: theme as unknown as ApprovalTheme,
 				header,
 				diff: preview,
@@ -227,8 +237,8 @@ export class ApprovalDialog implements Component {
 		const rows = this.ensureWrapped(width);
 		const termRows = this.tui.terminal.rows;
 
-		const topFixed = 4; // border + spacer + header + spacer
-		const bottomFixed = 8; // spacer + 3 options + spacer + hint + spacer + border
+		const topFixed = 3; // top rule + branded header + changes rule
+		const bottomFixed = 6; // decision rule + 3 options + hint + bottom rule
 		const available = Math.max(0, termRows - topFixed - bottomFixed);
 
 		const totalRows = rows.length;
@@ -240,9 +250,8 @@ export class ApprovalDialog implements Component {
 
 		const top = [
 			this.borderLine(width),
-			this.spacerLine(width),
 			this.headerLine(width),
-			this.spacerLine(width),
+			chromeDivider(this.theme, width, "changes"),
 		];
 
 		const body: string[] = [];
@@ -284,13 +293,11 @@ export class ApprovalDialog implements Component {
 		}
 
 		const bottom = [
-			this.spacerLine(width),
+			chromeDivider(this.theme, width, "decision"),
 			this.optionLine(0, width),
 			this.optionLine(1, width),
 			this.optionLine(2, width),
-			this.spacerLine(width),
 			this.hintLine(width),
-			this.spacerLine(width),
 			this.borderLine(width),
 		];
 
@@ -327,7 +334,7 @@ export class ApprovalDialog implements Component {
 
 	private windowRows(): number {
 		const termRows = this.tui.terminal.rows;
-		const available = Math.max(0, termRows - 4 - 8);
+		const available = Math.max(0, termRows - 3 - 6);
 		return Math.min(available, Math.max(this.wrappedRows.length, 1));
 	}
 
@@ -356,49 +363,43 @@ export class ApprovalDialog implements Component {
 	}
 
 	private padLine(colored: string, width: number): string {
-		const left = " ".repeat(PAD_X);
-		const line = left + colored;
-		const pad = Math.max(0, width - PAD_X - visibleWidth(colored));
-		return line + " ".repeat(pad);
-	}
-
-	private spacerLine(width: number): string {
-		return " ".repeat(width);
+		return padToWidth(fitLine(`${" ".repeat(PAD_X)}${colored}`, width), width);
 	}
 
 	private borderLine(width: number): string {
-		return this.theme.fg("border", "─".repeat(Math.max(0, width)));
+		return chromeDivider(this.theme, width);
 	}
 
 	private headerLine(width: number): string {
-		return this.padLine(
-			this.theme.fg("accent", this.theme.bold(this.header)),
+		return chromeHeader(
+			this.theme,
+			{ title: "Review mutation", meta: this.header },
 			width,
 		);
 	}
 
 	private optionLine(index: number, width: number): string {
-		const label = OPTIONS[index] ?? "";
-		const key = `${index + 1}`;
-		if (index === this.selected) {
-			return this.padLine(
-				this.theme.fg("accent", `→ ${key} ${this.theme.bold(label)}`),
-				width,
-			);
-		}
-		return this.padLine(
-			`  ${this.theme.fg("muted", key)} ${this.theme.fg("text", label)}`,
+		const labels = ["Allow once", "Enable auto", "Block"] as const;
+		const tones = ["success", "warning", "error"] as const;
+		return chromeItem(
+			this.theme,
+			{
+				label: `${index + 1} ${labels[index] ?? OPTIONS[index] ?? ""}`,
+				marker: index === this.selected ? "›" : "·",
+				tone: tones[index],
+				active: index === this.selected,
+				indent: 1,
+			},
 			width,
 		);
 	}
 
 	private hintLine(width: number): string {
-		return this.padLine(
-			this.theme.fg(
-				"muted",
-				"↑↓ scroll diff  j/k option  1/2/3 quick-pick  Enter confirm  Esc cancel",
-			),
+		return chromeHint(
+			this.theme,
+			"↑/↓ scroll · j/k decision · 1–3 pick · Enter confirm · Esc block",
 			width,
+			1,
 		);
 	}
 }

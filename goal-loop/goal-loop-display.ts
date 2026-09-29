@@ -49,7 +49,7 @@ function budgetFor(
 	floor: number,
 ): number {
 	if (!width || width <= 0) return floor;
-	return Math.max(floor, width - 1 - prefixCols);
+	return Math.max(1, width - 1 - prefixCols);
 }
 
 function sinceIso(iso: string): number {
@@ -106,15 +106,15 @@ export function buildStatusText(
 	if (!g) return undefined;
 	if (g.status === "auditing") {
 		const tool = audit?.currentTool ? ` · ${audit.currentTool}` : "";
-		return `glla: ${paint(theme, "accent", "auditing…")}${tool}`;
+		return `goal · ${paint(theme, "accent", "auditing")}${tool}`;
 	}
 	if (g.status === "paused") {
 		const label = `${g.policy} paused ⏸ ${truncate(g.pauseReason ?? "", 40)}`;
-		return `glla: ${paint(theme, pauseIsError(g) ? "error" : "warning", label)}`;
+		return `goal · ${paint(theme, pauseIsError(g) ? "error" : "warning", label)}`;
 	}
 	if (g.status === "active") {
 		const tasks = g.taskList ? ` ${countDone(g)}/${countTotal(g)} tasks ·` : "";
-		return `glla: goal ${paint(theme, "success", "●")}${tasks} ${fmtElapsed(now - Date.parse(g.createdAt))}`;
+		return `goal · ${paint(theme, "success", "active")}${tasks} ${fmtElapsed(now - Date.parse(g.createdAt))}`;
 	}
 	return undefined; // complete/aborted → clear
 }
@@ -181,7 +181,10 @@ function goalLines(
 			: g.status === "auditing"
 				? paint(theme, "accent", "⟡")
 				: paint(theme, "success", "●");
-	const head = `${icon} ${truncate(g.objective.replace(/\s+/g, " "), budgetFor(width, 3, 64))}`;
+	const objective = truncate(
+		g.objective.replace(/\s+/g, " "),
+		budgetFor(width, 2, 64),
+	);
 	const statusWord =
 		g.status === "active" ? paint(theme, "success", "active") : g.status;
 	// Token segment only when a budget is set (v0.22.0): the guard is opt-in,
@@ -191,13 +194,16 @@ function goalLines(
 		tokenLimit > 0
 			? ` · ${paint(theme, "dim", `${fmtTokens(g.usage?.tokensUsed ?? 0)}/${fmtTokens(tokenLimit)} tok`)}`
 			: "";
+	const taskProgress = g.taskList
+		? ` · ${countDone(g)}/${countTotal(g)} tasks`
+		: "";
 	const lines = [
-		head,
-		`├─ ${statusWord} · ${fmtElapsed(now - Date.parse(g.createdAt))}${tokens}`,
+		`${paint(theme, "accent", "▎")} ${icon} goal · ${statusWord}${taskProgress} · ${fmtElapsed(now - Date.parse(g.createdAt))}${tokens}`,
+		`  ${objective}`,
 	];
 	if (g.status === "auditing") {
 		lines.push(
-			`├─ auditor: ${audit?.label ?? "running"}${audit?.currentTool ? ` · ${truncate(audit.currentTool, 30)}` : ""}`,
+			`  ${paint(theme, "accent", "auditor")} · ${audit?.label ?? "running"}${audit?.currentTool ? ` · ${truncate(audit.currentTool, 30)}` : ""}`,
 		);
 		// v0.25.4: auditor-quiet stall — progress events stopped arriving
 		// while the audit is in flight (hung model call, stuck tool).
@@ -205,31 +211,31 @@ function goalLines(
 			audit?.lastEventAt !== undefined ? now - audit.lastEventAt : 0;
 		if (quietMs > 3 * 60_000) {
 			lines.push(
-				`└─ ${paint(theme, "warning", `auditor quiet ${fmtElapsed(quietMs)} — may be stuck; Esc aborts, verdict is not counted`)}`,
+				`  ${paint(theme, "warning", `quiet ${fmtElapsed(quietMs)} · may be stuck · Esc aborts`)}`,
 			);
 		} else if (audit?.elapsedMs)
 			lines.push(
-				`└─ ${paint(theme, "dim", `${fmtElapsed(audit.elapsedMs)} in isolated session`)}`,
+				`  ${paint(theme, "dim", `${fmtElapsed(audit.elapsedMs)} · isolated session`)}`,
 			);
 		else
 			lines.push(
-				`└─ ${paint(theme, "dim", "isolated session, read-only tools")}`,
+				`  ${paint(theme, "dim", "isolated session · read-only tools")}`,
 			);
 		return lines;
 	}
 	if (g.status === "paused" && g.pauseReason) {
 		lines.push(
-			`├─ ${paint(theme, pauseIsError(g) ? "error" : "warning", truncate(g.pauseReason, budgetFor(width, 3, 60)))}`,
+			`  ${paint(theme, pauseIsError(g) ? "error" : "warning", `paused · ${truncate(g.pauseReason, budgetFor(width, 11, 60))}`)}`,
 		);
 		if (g.pauseSuggestedAction)
 			lines.push(
-				`└─ ${paint(theme, "dim", truncate(g.pauseSuggestedAction, budgetFor(width, 3, 60)))}`,
+				`  ${paint(theme, "dim", `next · ${truncate(g.pauseSuggestedAction, budgetFor(width, 9, 60))}`)}`,
 			);
 		return lines;
 	}
 	const next = nextPending(g);
-	if (next) lines.push(`├─ next: ${truncate(next, budgetFor(width, 9, 56))}`);
-	lines.push(`└─ ${paint(theme, "dim", "/goal status")}`);
+	if (next) lines.push(`  next · ${truncate(next, budgetFor(width, 9, 56))}`);
+	lines.push(`  ${paint(theme, "dim", "/goal status")}`);
 	return lines;
 }
 

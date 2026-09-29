@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import type { TUI } from "@earendil-works/pi-tui";
+import { type TUI, visibleWidth } from "@earendil-works/pi-tui";
 import { ApprovalDialog, showMutationApproval } from "./approval-dialog.ts";
 
 /** Passthrough theme so rendered lines carry no ANSI — easy to assert on. */
@@ -57,15 +57,15 @@ test("render pins the file-path header, options, and hint within terminal rows",
 		"Allow option visible",
 	);
 	assert.ok(
-		lines.some((l) => l.includes("Allow all (enable auto)")),
-		"Allow-all option visible",
+		lines.some((l) => l.includes("Enable auto")),
+		"Enable-auto option visible",
 	);
 	assert.ok(
 		lines.some((l) => l.includes("Block")),
 		"Block option visible",
 	);
 	assert.ok(
-		lines.some((l) => l.includes("scroll diff") && l.includes("confirm")),
+		lines.some((l) => l.includes("scroll") && l.includes("confirm")),
 		"hint visible",
 	);
 	// Body shows the diff content (not truncated to a 40-line cap region).
@@ -164,16 +164,16 @@ test("Tab cycles option selection and renders the marker on the selected option"
 	const { dialog } = makeDialog("+ a\n- b", { rows: 24 });
 	const selectedLabel = (lines: string[]): string | undefined => {
 		const trimmed = trim(lines).map((l) => l.trim());
-		return trimmed.find((l) => l.startsWith("→ "));
+		return trimmed.find((l) => l.startsWith("› "));
 	};
 	let lines = dialog.render(80);
-	assert.equal(selectedLabel(lines), "→ 1 Allow", "Allow selected by default");
+	assert.equal(selectedLabel(lines), "› 1 Allow once", "Allow selected by default");
 
 	dialog.handleInput("\t"); // Tab → Allow all
 	lines = dialog.render(80);
 	assert.equal(
 		selectedLabel(lines),
-		"→ 2 Allow all (enable auto)",
+		"› 2 Enable auto",
 		"Allow all selected after Tab",
 	);
 
@@ -181,7 +181,7 @@ test("Tab cycles option selection and renders the marker on the selected option"
 	lines = dialog.render(80);
 	assert.equal(
 		selectedLabel(lines),
-		"→ 1 Allow",
+		"› 1 Allow once",
 		"Allow selected after back-Tab",
 	);
 });
@@ -191,21 +191,21 @@ test("j/k cycle options while arrow keys scroll the diff", () => {
 	const { dialog } = makeDialog(big, { rows: 20 });
 	const selectedLabel = (lines: string[]): string | undefined => {
 		const trimmed = trim(lines).map((l) => l.trim());
-		return trimmed.find((l) => l.startsWith("→ "));
+		return trimmed.find((l) => l.startsWith("› "));
 	};
 
 	// j moves the selection down to Allow all, then Block.
 	dialog.handleInput("j");
-	assert.equal(selectedLabel(dialog.render(80)), "→ 2 Allow all (enable auto)");
+	assert.equal(selectedLabel(dialog.render(80)), "› 2 Enable auto");
 	dialog.handleInput("j");
-	assert.equal(selectedLabel(dialog.render(80)), "→ 3 Block");
+	assert.equal(selectedLabel(dialog.render(80)), "› 3 Block");
 	// j wraps back to Allow.
 	dialog.handleInput("j");
-	assert.equal(selectedLabel(dialog.render(80)), "→ 1 Allow");
+	assert.equal(selectedLabel(dialog.render(80)), "› 1 Allow once");
 
 	// k moves the selection up (wraps from Allow to Block).
 	dialog.handleInput("k");
-	assert.equal(selectedLabel(dialog.render(80)), "→ 3 Block");
+	assert.equal(selectedLabel(dialog.render(80)), "› 3 Block");
 
 	// Arrow down scrolls the diff — it must NOT change the selection.
 	dialog.handleInput("\u001b[B"); // arrow down
@@ -215,8 +215,8 @@ test("j/k cycle options while arrow keys scroll the diff", () => {
 		"arrow down scrolled the diff",
 	);
 	assert.equal(
-		lines.map((l) => l.trim()).find((l) => l.startsWith("→ ")),
-		"→ 3 Block",
+		lines.map((l) => l.trim()).find((l) => l.startsWith("› ")),
+		"› 3 Block",
 		"arrow down did not move the selection",
 	);
 });
@@ -239,6 +239,17 @@ test("number keys 1/2/3 quick-pick the matching option", () => {
 	const { dialog: d2, doneCalls: c2 } = makeDialog("+ a", { rows: 24 });
 	d2.handleInput("3"); // Block
 	assert.deepEqual(c2, ["block"]);
+});
+
+test("every approval row fits narrow terminal widths", () => {
+	const { dialog } = makeDialog("+ const wide = '界'.repeat(20);\n- old value", {
+		rows: 24,
+	});
+	for (const width of [8, 16, 32, 80]) {
+		for (const line of dialog.render(width)) {
+			assert.ok(visibleWidth(line) <= width, `row exceeded ${width}: ${line}`);
+		}
+	}
 });
 
 test("render never exceeds terminal rows on a tiny terminal", () => {

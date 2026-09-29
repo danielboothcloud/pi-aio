@@ -54,6 +54,12 @@ generated `dist/` tree without changing the package contract.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
   `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/` and
   `user-bash/` gate those mutations. Changes can cross feature boundaries.
+- `ui/chrome.ts` is the shared visual vocabulary for AIO-owned surfaces:
+  theme-aware accent rails, headers, items, hints, dividers, pluralization, and
+  ANSI-aware width fitting. Diff/approval, pretty tools, copy picker, queue,
+  goals, and subagents should compose these primitives rather than inventing
+  new chrome. Preserve each component's behavioral and row-count contracts;
+  every returned line must fit its supplied width.
 - `browser-search/` owns the `web_search` and `fetch_content` names. Search is
   opt-in through `aio.browserSearch` in Pi settings and routes to Exa or
   SearXNG; browsing uses Camofox and lazily loads optional CloakBrowser. Tests

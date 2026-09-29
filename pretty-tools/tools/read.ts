@@ -26,11 +26,16 @@ import {
 import { normalizeLineEndings, shortPath } from "../helpers.js";
 import {
 	fillToolBackground,
+	plural,
 	renderFileContent,
+	renderToolCallChrome,
 	renderToolError,
+	renderToolSummary,
 } from "../render.js";
+import { fitLine } from "../../ui/chrome.js";
 import { resolveTextCtor } from "../tui-text.js";
 import type {
+	ComponentLike,
 	ReadDetails,
 	RenderCtxLike,
 	SdkToolDef,
@@ -40,6 +45,35 @@ import type {
 import { wrapExecuteWithMetrics } from "./metrics.js";
 
 type Result = AgentToolResult<Record<string, unknown>>;
+
+type ResponsiveReadState = {
+	baseRender: (width: number) => string[];
+	renderWidth: (width: number) => void;
+};
+
+const responsiveReadStates = new WeakMap<object, ResponsiveReadState>();
+
+function installResponsiveReadRender(
+	text: ComponentLike,
+	renderWidth: (width: number) => void,
+): void {
+	let state = responsiveReadStates.get(text);
+	if (!state) {
+		state = {
+			baseRender: text.render.bind(text),
+			renderWidth,
+		};
+		responsiveReadStates.set(text, state);
+		text.render = (width: number): string[] => {
+			const current = responsiveReadStates.get(text);
+			if (!current) return [];
+			const fittedWidth = Math.max(1, Math.floor(width || termWidth()));
+			current.renderWidth(fittedWidth);
+			return current.baseRender(fittedWidth);
+		};
+	}
+	state.renderWidth = renderWidth;
+}
 
 function getSkillName(filePath: string, content: string): string | undefined {
 	if (basename(filePath) !== "SKILL.md") return undefined;
@@ -236,76 +270,87 @@ export function registerReadTool(
 
 			// File content — line-numbered display
 			if (d?._type === "readFile" && d.content) {
-				const tw = termWidth();
 				const lines = d.content.split("\n");
 				const total = lines.length;
 				const filePath = String(d.filePath ?? "");
 				const skillName = getSkillName(filePath, d.content);
 				const p2 = shortPath(cwd, home, filePath);
 				const off2 = typeof d.offset === "number" ? `:${d.offset}` : "";
+				// Every render transition invalidates async work from the previous view.
+				ctx.state._readRenderGeneration = String(
+					Number(ctx.state._readRenderGeneration ?? "0") + 1,
+				);
 				if (!ctx.expanded) {
-					if (skillName) {
-						const header = renderSkillHeader(skillName, false, theme);
-						text.setText(
-							fillToolBackground(`\n${TOOL_RESULT_INDENT}${header}\n`, BG_BASE),
-						);
-						return text;
-					}
-					text.setText(
-						fillToolBackground(
-							`\n${TOOL_RESULT_INDENT}${theme.fg("toolTitle", theme.bold("→ read"))} ${theme.fg("toolTitle", p2)}${theme.fg("dim", off2)}\n${TOOL_RESULT_INDENT}${FG_DIM}${total} lines — ctrl+o to expand${RST}\n`,
-							BG_BASE,
-						),
-					);
+					const renderCollapsed = (width: number) => {
+						const content = skillName
+							? `\n${TOOL_RESULT_INDENT}${renderSkillHeader(skillName, false, theme)}\n`
+							: `\n${renderToolCallChrome(theme, "read", `${p2}${off2}`, { width })}\n${renderToolSummary(theme, plural(total, "line"), [], { hint: "ctrl+o expand", width })}\n`;
+						text.setText(fillToolBackground(content, BG_BASE, width));
+					};
+					installResponsiveReadRender(text as ComponentLike, renderCollapsed);
+					renderCollapsed(termWidth());
 					return text;
 				}
+
 				const maxShow = lines.length;
 				const show = lines.slice(0, maxShow);
-				const nw = Math.max(3, String(total).length);
-				const gw = nw + 3;
-				const cw = Math.max(1, tw - gw);
-
-				const header = skillName
-					? renderSkillHeader(skillName, true, theme)
-					: `${theme.fg("toolTitle", theme.bold("→ read"))} ${theme.fg("toolTitle", p2)}${theme.fg("dim", off2)}`;
-				const out: string[] = ["", `${TOOL_RESULT_INDENT}${header}`];
-				out.push(`${TOOL_RESULT_INDENT}${FG_RULE}${"─".repeat(tw - 1)}${RST}`);
-				for (let i = 0; i < show.length; i++) {
-					const ln = (d.offset || 0) + i + 1;
-					const code = show[i] ?? "";
-					const display =
-						code.length > cw ? code.slice(0, cw) + `${FG_DIM}›${RST}` : code;
-					const lineNo = String(ln);
-					out.push(
-						`${TOOL_RESULT_INDENT}${FG_LNUM}${" ".repeat(Math.max(0, nw - lineNo.length))}${lineNo}${RST} ${FG_RULE}│${RST} ${display}${RST}`,
+				const numberWidth = Math.max(3, String(total).length);
+				let lastWidth = -1;
+				const renderExpanded = (width: number) => {
+					if (width === lastWidth) return;
+					lastWidth = width;
+					const generation = String(
+						Number(ctx.state._readRenderGeneration ?? "0") + 1,
 					);
-				}
-				if (total > maxShow) {
+					ctx.state._readRenderGeneration = generation;
+					const gutterWidth = numberWidth + 4;
+					const codeWidth = Math.max(1, width - gutterWidth);
+					const header = skillName
+						? renderSkillHeader(skillName, true, theme)
+						: renderToolCallChrome(theme, "read", `${p2}${off2}`, { width });
+					const out: string[] = ["", header];
 					out.push(
-						`${TOOL_RESULT_INDENT}${FG_DIM}… ${total - maxShow} more lines (${total} total)${RST}`,
+						`${TOOL_RESULT_INDENT}${FG_RULE}${"─".repeat(Math.max(1, width - 1))}${RST}`,
 					);
-				}
-				out.push("");
-				const rendered = out.join("\n");
-				text.setText(fillToolBackground(rendered, BG_BASE));
-				(ctx as any).state._rt = rendered;
+					for (let i = 0; i < show.length; i++) {
+						const lineNo = String((d.offset || 0) + i + 1);
+						const display = fitLine(show[i] ?? "", codeWidth, `${FG_DIM}›${RST}`);
+						out.push(
+							`${TOOL_RESULT_INDENT}${FG_LNUM}${" ".repeat(Math.max(0, numberWidth - lineNo.length))}${lineNo}${RST} ${FG_RULE}│${RST} ${display}${RST}`,
+						);
+					}
+					out.push("");
+					const plain = out.join("\n");
+					text.setText(fillToolBackground(plain, BG_BASE, width));
+					ctx.state._rt = plain;
 
-				// Async syntax highlighting via Shiki
-				renderFileContent(d.content, d.filePath, d.offset || 0, maxShow, tw)
-					.then((hl) => {
-						const padded = hl
-							.split("\n")
-							.map((l) => `${TOOL_RESULT_INDENT}${l}`)
-							.join("\n");
-						const divider = skillName
-							? `${TOOL_RESULT_INDENT}${FG_RULE}${"─".repeat(Math.max(1, tw - 1))}${RST}\n`
-							: "";
-						const rendered = `\n${TOOL_RESULT_INDENT}${header}\n${divider}${padded}\n`;
-						text.setText(fillToolBackground(rendered, BG_BASE));
-						(ctx as any).state._rt = rendered;
-					})
-					.catch(() => {});
+					void renderFileContent(
+						d.content,
+						d.filePath,
+						d.offset || 0,
+						maxShow,
+						codeWidth,
+					)
+						.then((highlighted) => {
+							if (ctx.state._readRenderGeneration !== generation) return;
+							const padded = highlighted
+								.split("\n")
+								.map((line, index) => {
+									const lineNo = String((d.offset || 0) + index + 1);
+									return `${TOOL_RESULT_INDENT}${FG_LNUM}${" ".repeat(Math.max(0, numberWidth - lineNo.length))}${lineNo}${RST} ${FG_RULE}│${RST} ${line}${RST}`;
+								})
+								.join("\n");
+							const divider = `${TOOL_RESULT_INDENT}${FG_RULE}${"─".repeat(Math.max(1, width - 1))}${RST}\n`;
+							const rendered = `\n${header}\n${divider}${padded}\n`;
+							text.setText(fillToolBackground(rendered, BG_BASE, width));
+							ctx.state._rt = rendered;
+							text.invalidate?.();
+						})
+						.catch(() => {});
+				};
 
+				installResponsiveReadRender(text as ComponentLike, renderExpanded);
+				renderExpanded(termWidth());
 				return text;
 			}
 

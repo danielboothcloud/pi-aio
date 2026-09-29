@@ -8,6 +8,12 @@ import {
 	type Component,
 } from "@earendil-works/pi-tui";
 import type { CopyableCodeBlock } from "./parse.js";
+import {
+	chromeHeader,
+	chromeHint,
+	chromeItem,
+	plural,
+} from "../ui/chrome.js";
 
 const MAX_VISIBLE_ITEMS = 6;
 const MAX_PREVIEW_LINES = 8;
@@ -72,7 +78,7 @@ export class CodeBlockPicker implements Component {
 		let visibleItems = Math.min(MAX_VISIBLE_ITEMS, this.blocks.length);
 		while (visibleItems > 1) {
 			const hasScrollInfo = this.blocks.length > visibleItems;
-			const fixedRows = 7 + (hasScrollInfo ? 1 : 0);
+			const fixedRows = 6 + (hasScrollInfo ? 1 : 0);
 			if (maxRows - fixedRows - visibleItems >= 1) break;
 			visibleItems--;
 		}
@@ -124,12 +130,57 @@ export class CodeBlockPicker implements Component {
 			return `${border("│")}${body}${border("│")}`;
 		};
 
+		const maxRows = Math.max(1, this.getMaxRows());
+		const selectedBlock = this.blocks[this.selectedIndex];
+		if (maxRows < 9) {
+			const top = border(`╭${"─".repeat(innerWidth)}╮`);
+			const bottom = border(`╰${"─".repeat(innerWidth)}╯`);
+			const header = row(
+				chromeHeader(
+					this.theme,
+					{ title: "copy code", meta: plural(this.blocks.length, "block") },
+					innerWidth,
+				),
+			);
+			const item = selectedBlock
+				? row(
+						chromeItem(
+							this.theme,
+							{
+								label: blockLabel(selectedBlock),
+								active: true,
+								marker: "›",
+								indent: 1,
+							},
+							innerWidth,
+						),
+					)
+				: row(` ${this.theme.fg("warning", "No code block selected")}`);
+			const help = row(
+				chromeHint(this.theme, "j/k move · Enter copy · q cancel", innerWidth, 1),
+			);
+			if (maxRows === 1) return [item];
+			if (maxRows === 2) return [item, help];
+			if (maxRows === 3) return [item, help, bottom];
+			if (maxRows === 4) return [header, item, help, bottom];
+			return [top, header, item, help, bottom];
+		}
+
 		const lines: string[] = [];
 		lines.push(border(`╭${"─".repeat(innerWidth)}╮`));
-		lines.push(row(` ${this.theme.fg("accent", this.theme.bold("Copy code block"))}`));
-		lines.push(row(` ${this.theme.fg("dim", `${this.blocks.length} block${this.blocks.length === 1 ? "" : "s"} in the last response`)}`));
+		lines.push(
+			row(
+				chromeHeader(
+					this.theme,
+					{
+						title: "copy code",
+						meta: `${plural(this.blocks.length, "block")} in last response`,
+					},
+					innerWidth,
+				),
+			),
+		);
 
-		const maxRows = Math.max(1, this.getMaxRows());
 		const visibleItems = this.getVisibleItemCount();
 		const maxOffset = Math.max(0, this.blocks.length - visibleItems);
 		const offset = Math.min(maxOffset, Math.max(0, this.selectedIndex - Math.floor(visibleItems / 2)));
@@ -137,11 +188,20 @@ export class CodeBlockPicker implements Component {
 			const block = this.blocks[index];
 			if (!block) continue;
 			const selected = index === this.selectedIndex;
-			const prefix = selected ? " › " : "   ";
-			const label = selected
-				? this.theme.fg("accent", blockLabel(block))
-				: this.theme.fg("text", blockLabel(block));
-			lines.push(row(`${prefix}${label}`, selected));
+			lines.push(
+				row(
+					chromeItem(
+						this.theme,
+						{
+							label: blockLabel(block),
+							active: selected,
+							marker: selected ? "›" : "·",
+							indent: 1,
+						},
+						innerWidth,
+					),
+				),
+			);
 		}
 
 		if (this.blocks.length > visibleItems) {
@@ -149,13 +209,20 @@ export class CodeBlockPicker implements Component {
 		}
 
 		lines.push(border(`├${"─".repeat(innerWidth)}┤`));
-		const selectedBlock = this.blocks[this.selectedIndex];
 		if (!selectedBlock) {
 			lines.push(row(` ${this.theme.fg("warning", "No code block selected")}`));
 			lines.push(border(`╰${"─".repeat(innerWidth)}╯`));
 			return lines;
 		}
-		lines.push(row(` ${this.theme.fg("muted", `Preview · ${blockLabel(selectedBlock)}`)}`));
+		lines.push(
+			row(
+				chromeHeader(
+					this.theme,
+					{ title: "preview", meta: blockLabel(selectedBlock), tone: "muted" },
+					innerWidth,
+				),
+			),
+		);
 
 		const preview = new Markdown(asFencedMarkdown(selectedBlock), 1, 0, getMarkdownTheme()).render(innerWidth);
 		const remainingRows = maxRows - lines.length - 2; // Help row and closing border.
@@ -168,7 +235,16 @@ export class CodeBlockPicker implements Component {
 			lines.push(row(previewLine));
 		}
 
-		lines.push(row(` ${this.theme.fg("dim", "j/k move · Ctrl+u/d jump · g/G ends · Enter copy · q cancel")}`));
+		lines.push(
+			row(
+				chromeHint(
+					this.theme,
+					"j/k move · Ctrl+u/d jump · g/G ends · Enter copy · q cancel",
+					innerWidth,
+					1,
+				),
+			),
+		);
 		lines.push(border(`╰${"─".repeat(innerWidth)}╯`));
 		return lines;
 	}

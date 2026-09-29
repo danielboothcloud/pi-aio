@@ -58,6 +58,7 @@ import {
 } from "./core/cursor-compat.js";
 import { replace } from "./core/replace.js";
 import { registerEditGuard } from "./edit-guard.js";
+import { fitLine, padToWidth } from "../ui/chrome.js";
 
 import {
 	applyDiffPalette as applySharedDiffPalette,
@@ -1626,10 +1627,8 @@ export default async function diffRendererExtension(
 
 	function bgLine(content: string, width: number): string {
 		const renderWidth = Math.max(1, width);
-		const padding = " ".repeat(
-			Math.max(0, renderWidth - strip(content).length),
-		);
-		return injectBg(`${content}${padding}`, [], BG_BASE, BG_BASE);
+		const fitted = padToWidth(fitLine(content, renderWidth), renderWidth);
+		return injectBg(fitted, [], BG_BASE, BG_BASE);
 	}
 
 	type ToolFrameHeaderOpts = {
@@ -1658,16 +1657,27 @@ export default async function diffRendererExtension(
 			meta,
 		} = opts;
 		const leftPad = " ".repeat(headerLeftPad ?? TOOL_HEADER_LEFT_PAD);
-		const content =
+		const rail = theme?.fg ? theme.fg("accent", "▎") : "▎";
+		const header =
 			meta !== undefined && meta !== null
-				? `${leftPad}${meta}${suffix}`
-				: `${leftPad}${theme.fg("toolTitle", theme.bold(formatToolHeaderName(label ?? "")))} ${formatToolHeaderPath(theme, sp(filePath ?? ""))}${suffix}`;
+				? `${meta}${suffix}`
+				: `${theme.fg("toolTitle", theme.bold(formatToolHeaderName(label ?? "")))} ${formatToolHeaderPath(theme, sp(filePath ?? ""))}${suffix}`;
+		const content = `${leftPad}${rail} ${header}`;
 		return `${"\n".repeat(topPad)}${content}${"\n".repeat(bottomPad)}`;
 	}
 
 	function formatToolFrameHeader(opts: ToolFrameHeaderOpts): string {
-		const { width, ...rest } = opts;
-		return bgLine(formatToolFrameHeaderText(rest), width);
+		const {
+			width,
+			topPad = 0,
+			bottomPad = 0,
+			...rest
+		} = opts;
+		const content = bgLine(
+			formatToolFrameHeaderText({ ...rest, topPad: 0, bottomPad: 0 }),
+			width,
+		);
+		return `${"\n".repeat(topPad)}${content}${"\n".repeat(bottomPad)}`;
 	}
 
 	function setToolHeaderBg(text: any) {
@@ -1725,7 +1735,6 @@ export default async function diffRendererExtension(
 		const applied = Array.isArray(result?.applied) ? result.applied : [];
 		if (!applied.length) return false;
 
-		const w = termW();
 		const previewable = applied.filter((change: any) => {
 			if (typeof change?.path !== "string") return false;
 			if (change.action === "add") return typeof change.newContent === "string";
@@ -1741,29 +1750,33 @@ export default async function diffRendererExtension(
 			if (change.action === "add" && typeof change.newContent === "string") {
 				clearToolHeaderBg(text);
 				resolvePreviewDiffColors(theme);
-				const lineCount = change.newContent.split("\n").length;
-				const newHdr = bgLine(
-					`${theme.fg("success", `✓ new file (${lineCount} lines)`)}`,
-					w,
-				);
-				const fp = change.path;
-				const pk = `ap:nf:${sharedThemeCacheKey(theme)}:${fp}:${lineCount}`;
-				if (ctx.state._nfk !== pk) {
-					ctx.state._nfk = pk;
-					const lg = detectDiffLanguage(fp);
-					text.__piDiffTask = {
-						placeholder: `${newHdr}\n${padDiffBody(theme.fg("muted", "rendering file…"))}`,
-						fallback: `${newHdr}`,
-						invalidate: ctx.invalidate,
-						key: (width: number) =>
-							`ap:nf:${sharedThemeCacheKey(theme)}:${fp}:${lineCount}:${width}`,
-						render: async (_width: number) => {
-							const hlLines = await hlBlock(change.newContent, lg);
-							const preview = hlLines.join("\n").replace(/\n+$/, "");
-							return `${newHdr}\n${padDiffBody(preview)}`;
-						},
-					};
-				}
+				const content = change.newContent;
+				const lineCount = content.split("\n").length;
+				const filePath = change.path;
+				const language = detectDiffLanguage(filePath);
+				const header = (width: number) =>
+					bgLine(
+						theme.fg("success", `✓ new file (${lineCount} lines)`),
+						width,
+					);
+				const placeholder = (width: number) =>
+					`${header(width)}\n${padDiffBody(theme.fg("muted", "rendering file…"))}`;
+				text.__piDiffTask = {
+					placeholder,
+					fallback: header,
+					invalidate: ctx.invalidate,
+					key: (width: number) =>
+						`ap:nf:${sharedThemeCacheKey(theme)}:${filePath}:${lineCount}:${width}`,
+					render: async (width: number) => {
+						const highlighted = await hlBlock(content, language);
+						const preview = highlighted
+							.map((line: string) => fitLine(line, width))
+							.join("\n")
+							.replace(/\n+$/, "");
+						return `${header(width)}\n${padDiffBody(preview)}`;
+					},
+				};
+				text.setText(placeholder(termW()));
 				return true;
 			}
 
@@ -1861,39 +1874,6 @@ export default async function diffRendererExtension(
 		if (!raw) return "";
 		const count = editEditsCountLabel(raw.edits, raw.diffLines, theme);
 		return `${TOOL_RESULT_INDENT}${theme.fg("muted", count)} ${summarizeThemed(raw.added, raw.removed, theme)}`;
-	}
-
-	function formatEditDiffResultTitle(
-		d: {
-			summary?: string;
-			filePath?: string;
-			edits?: number;
-			linesAdded?: number;
-			linesRemoved?: number;
-			editCount?: number;
-			diffLineCount?: number;
-		},
-		theme: any,
-		width: number,
-		frame: { headerLeftPad?: number; topPad?: number; bottomPad?: number },
-	): string {
-		const fp = d.filePath ?? d.summary ?? "";
-		const edits = d.edits ?? d.editCount ?? 1;
-		const diffLines =
-			typeof d.diffLineCount === "number"
-				? d.diffLineCount
-				: (d.linesAdded ?? 0) + (d.linesRemoved ?? 0);
-		const suffix = `${TOOL_RESULT_INDENT}${theme.fg("muted", editEditsCountLabel(edits, diffLines, theme))} ${summarizeThemed(d.linesAdded ?? 0, d.linesRemoved ?? 0, theme)}`;
-		return formatToolFrameHeader({
-			width,
-			label: "edit",
-			filePath: fp,
-			suffix,
-			theme,
-			topPad: frame.topPad ?? 0,
-			bottomPad: frame.bottomPad ?? 0,
-			headerLeftPad: frame.headerLeftPad,
-		});
 	}
 
 	function writeCallStatsSuffix(
@@ -2010,11 +1990,15 @@ export default async function diffRendererExtension(
 			return bottom ? `${main}\n${bottom}` : main;
 		};
 		text.__piDiffTask = {
-			placeholder: joinHeaderBody(
-				termW(),
-				padDiffBody(theme.fg("muted", " rendering diff…"), frame?.bodyLeftPad),
-			),
-			fallback: header(termW()),
+			placeholder: (width: number) =>
+				joinHeaderBody(
+					width,
+					padDiffBody(
+						theme.fg("muted", " rendering diff…"),
+						frame?.bodyLeftPad,
+					),
+				),
+			fallback: (width: number) => header(width),
 			invalidate: ctx.invalidate,
 			key: (width: number) => {
 				const headerKey = frame?.omitHeader ? "" : header(width);
@@ -2052,8 +2036,8 @@ export default async function diffRendererExtension(
 		__piDiffRender?: (width: number) => string[];
 		__piDiffRenderedKey?: string;
 		__piDiffTask?: {
-			placeholder: string;
-			fallback: string;
+			placeholder: string | ((width: number) => string);
+			fallback: string | ((width: number) => string);
 			invalidate: () => void;
 			key: (width: number) => string;
 			render: (width: number) => Promise<string>;
@@ -2079,7 +2063,11 @@ export default async function diffRendererExtension(
 				const key = task.key(renderWidth);
 				if (text.__piDiffRenderedKey !== key) {
 					text.__piDiffRenderedKey = key;
-					text.setText(task.placeholder);
+					const placeholder =
+						typeof task.placeholder === "function"
+							? task.placeholder(renderWidth)
+							: task.placeholder;
+					text.setText(placeholder);
 					Promise.resolve(task.render(renderWidth))
 						.then((rendered: string) => {
 							if (text.__piDiffRenderedKey !== key) return;
@@ -2088,7 +2076,11 @@ export default async function diffRendererExtension(
 						})
 						.catch(() => {
 							if (text.__piDiffRenderedKey !== key) return;
-							text.setText(task.fallback);
+							const fallback =
+								typeof task.fallback === "function"
+									? task.fallback(renderWidth)
+									: task.fallback;
+							text.setText(fallback);
 							task.invalidate?.();
 						});
 				}
@@ -2153,9 +2145,8 @@ export default async function diffRendererExtension(
 			const fp = args?.path ?? args?.file_path ?? "";
 			const isNew = !fp || !existsSync(fp);
 			const label = isNew ? "create" : "write";
-			const text = ctx.lastComponent ?? new TextComponent("", 0, 0);
+			const text = getWidthAwareText(ctx.lastComponent);
 			resolveDiffColors(theme);
-			const w = termW();
 			const stats = writeCallStatsSuffix(ctx.toolCallId, theme);
 
 			if (args?.content && !ctx.argsComplete) {
@@ -2177,30 +2168,36 @@ export default async function diffRendererExtension(
 			}
 
 			if (args?.content && ctx.argsComplete && isNew) {
-				const title = formatToolFrameHeader({
-					label,
-					filePath: fp,
-					theme,
-					width: w,
-					topPad: 0,
-					bottomPad: 1,
-				});
-				const previewKey = `create:${sharedThemeCacheKey(theme)}:${fp}:${String(args.content).length}`;
-				if (ctx.state._previewKey !== previewKey) {
-					ctx.state._previewKey = previewKey;
-					ctx.state._previewText = title;
-					const lg = detectDiffLanguage(fp);
-					hlBlock(args.content, lg)
-						.then((lines: string[]) => {
-							if (ctx.state._previewKey !== previewKey) return;
-							ctx.state._previewText = `${title}\n${padDiffBody(lines.join("\n"))}`;
-							ctx.invalidate();
-						})
-						.catch(() => {});
-				}
+				const content = String(args.content);
+				const language = detectDiffLanguage(fp);
+				const header = (width: number) =>
+					formatToolFrameHeader({
+						label,
+						filePath: fp,
+						theme,
+						width,
+						topPad: 0,
+						bottomPad: 0,
+					});
+				const placeholder = (width: number) =>
+					`${header(width)}\n${padDiffBody(theme.fg("muted", "rendering file…"))}`;
+				text.__piDiffTask = {
+					placeholder,
+					fallback: header,
+					invalidate: ctx.invalidate,
+					key: (width: number) =>
+						`create:${sharedThemeCacheKey(theme)}:${fp}:${content.length}:${width}`,
+					render: async (width: number) => {
+						const highlighted = await hlBlock(content, language);
+						const preview = highlighted
+							.map((line: string) => fitLine(line, width))
+							.join("\n")
+							.replace(/\n+$/, "");
+						return `${header(width)}\n${padDiffBody(preview)}`;
+					},
+				};
 				clearToolHeaderBg(text);
-				text.__piDiffTask = undefined;
-				text.setText(ctx.state._previewText ?? title);
+				text.setText(placeholder(termW()));
 				return text;
 			}
 
@@ -2322,38 +2319,32 @@ export default async function diffRendererExtension(
 				const { lines: lineCount, content: rawContent, filePath: fp } = d;
 				clearToolHeaderBg(text);
 				resolvePreviewDiffColors(theme);
-				const w = termW();
-				const newHdr = bgLine(
-					`${theme.fg("success", `✓ new file (${lineCount} lines)`)}`,
-					w,
-				);
-				const pk = `nf:${sharedThemeCacheKey(theme)}:${fp}:${lineCount}`;
-				if (ctx.state._nfk !== pk) {
-					ctx.state._nfk = pk;
-					const lg = detectDiffLanguage(fp);
-					text.__piDiffTask = {
-						placeholder: `${newHdr}\n${padDiffBody(theme.fg("muted", "rendering file…"))}`,
-						fallback: `${newHdr}`,
-						invalidate: ctx.invalidate,
-						key: (width: number) =>
-							`nf:${sharedThemeCacheKey(theme)}:${fp}:${lineCount}:${width}`,
-						render: async (width: number) => {
-							if (!rawContent) return `${newHdr}`;
-							const hlLines = await hlBlock(rawContent, lg);
-							const maxShow = hlLines.length;
-							const preview = hlLines
-								.slice(0, maxShow)
-								.join("\n")
-								.replace(/\n+$/, "");
-							const rem = hlLines.length - maxShow;
-							const moreLine =
-								rem > 0
-									? `\n${bgLine(`${TOOL_RESULT_INDENT}${theme.fg("muted", `… ${rem} more lines`)}`, width)}`
-									: "";
-							return `${newHdr}\n${padDiffBody(preview)}${moreLine}`;
-						},
-					};
-				}
+				const language = detectDiffLanguage(fp);
+				const header = (width: number) =>
+					bgLine(
+						theme.fg("success", `✓ new file (${lineCount} lines)`),
+						width,
+					);
+				const placeholder = (width: number) =>
+					`${header(width)}\n${padDiffBody(theme.fg("muted", "rendering file…"))}`;
+				text.__piDiffTask = {
+					placeholder,
+					fallback: header,
+					invalidate: ctx.invalidate,
+					key: (width: number) =>
+						`nf:${sharedThemeCacheKey(theme)}:${fp}:${lineCount}:${width}`,
+					render: async (width: number) => {
+						const currentHeader = header(width);
+						if (!rawContent) return currentHeader;
+						const highlighted = await hlBlock(rawContent, language);
+						const preview = highlighted
+							.map((line: string) => fitLine(line, width))
+							.join("\n")
+							.replace(/\n+$/, "");
+						return `${currentHeader}\n${padDiffBody(preview)}`;
+					},
+				};
+				text.setText(placeholder(termW()));
 				return text;
 			}
 

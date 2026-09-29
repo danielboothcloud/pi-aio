@@ -86,6 +86,24 @@ test("Escape cancels without returning a block", () => {
 	assert.equal(selected, undefined);
 });
 
+test("compact rendering preserves controls within tiny row budgets", () => {
+	for (const maxRows of [1, 2, 3, 4, 8]) {
+		const picker = new CodeBlockPicker({
+			blocks: blocks(10),
+			theme,
+			requestRender: () => {},
+			getMaxRows: () => maxRows,
+			done: () => {},
+		});
+		const lines = picker.render(36);
+		assert.ok(lines.length <= maxRows);
+		assert.ok(lines.some((line) => line.includes("#1")));
+		if (maxRows >= 2) assert.ok(lines.some((line) => line.includes("Enter copy")));
+		if (maxRows >= 3) assert.match(lines.at(-1) ?? "", /╰/);
+		for (const line of lines) assert.ok(visibleWidth(line) <= 36);
+	}
+});
+
 test("render stays within the overlay row and column budgets", () => {
 	const maxRows = 18;
 	const width = 64;

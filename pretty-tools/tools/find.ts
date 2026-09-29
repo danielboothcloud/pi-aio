@@ -22,9 +22,12 @@ import {
 import { shortPath } from "../helpers.js";
 import {
 	fillToolBackground,
+	plural,
 	renderFindResults,
+	renderToolCallChrome,
 	renderToolDuration,
 	renderToolError,
+	renderToolSummary,
 } from "../render.js";
 import { resolveTextCtor } from "../tui-text.js";
 import type {
@@ -184,18 +187,17 @@ export function registerFindTool(
 			const pathArg =
 				a.path == null ? "<missing>" : shortPath(cwd, home, String(a.path));
 			const limit = a.limit;
-			const findLabel = theme.fg(
-				ctx.isError ? "error" : "toolTitle",
-				theme.bold("✱ find"),
-			);
-			const patternPart = pattern ? theme.fg("toolTitle", pattern) : "";
-			const inPart = theme.fg("dim", " in ");
-			const pathPart = theme.fg("toolOutput", pathArg);
-			const limitPart =
-				limit !== undefined && limit !== null
-					? theme.fg("dim", ` limit ${limit}`)
-					: "";
-			const out = `${findLabel} ${patternPart}${inPart}${pathPart}${limitPart}`;
+			const meta = [
+				pattern || "*",
+				pathArg,
+				limit !== undefined && limit !== null ? `limit ${limit}` : undefined,
+			]
+				.filter(Boolean)
+				.join(" · ");
+			const out = renderToolCallChrome(theme, "find", meta, {
+				icon: "✱",
+				tone: ctx.isError ? "error" : "accent",
+			});
 			text.setText(
 				fillToolBackground(
 					`\n${TOOL_RESULT_INDENT}${out}\n`,
@@ -235,7 +237,7 @@ export function registerFindTool(
 					const duration = renderToolDuration(r);
 					text.setText(
 						fillToolBackground(
-							`${TOOL_RESULT_INDENT}${FG_DIM}${d.matchCount} files — ctrl+o to expand${RST}${duration ? `${FG_DIM}· ${duration}${RST}` : ""}\n`,
+							`${renderToolSummary(theme, plural(d.matchCount, "file"), [duration], { hint: "ctrl+o expand" })}\n`,
 						),
 					);
 					return text;

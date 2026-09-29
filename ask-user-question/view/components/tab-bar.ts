@@ -32,7 +32,11 @@ export class TabBar implements StatefulView<TabBarProps> {
 	invalidate(): void {}
 
 	render(width: number): string[] {
-		const pieces: string[] = [" ← "];
+		const pieces: string[] = [
+			" ",
+			this.theme.fg("accent", "▎"),
+			this.theme.fg("muted", " ← "),
+		];
 
 		for (const tab of this.props.tabs) {
 			const box = tab.answered ? "■" : "□";
@@ -49,7 +53,7 @@ export class TabBar implements StatefulView<TabBarProps> {
 			? this.theme.bg("selectedBg", this.theme.fg("text", submitText))
 			: this.theme.fg(this.props.submit.allAnswered ? "success" : "dim", submitText);
 		pieces.push(submitStyled);
-		pieces.push(" →");
+		pieces.push(this.theme.fg("muted", " →"));
 
 		const tabLine = truncateToWidth(pieces.join(""), width, "");
 		return [tabLine, ""];

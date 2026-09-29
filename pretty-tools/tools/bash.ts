@@ -20,8 +20,11 @@ import {
 } from "../helpers.js";
 import {
 	fillToolBackground,
+	plural,
+	renderToolCallChrome,
 	renderToolDuration,
 	renderToolError,
+	renderToolSummary,
 } from "../render.js";
 import { resolveTextCtor } from "../tui-text.js";
 import type {
@@ -35,6 +38,35 @@ import type {
 import { wrapExecuteWithMetrics } from "./metrics.js";
 
 type Result = AgentToolResult<Record<string, unknown>>;
+
+type ResponsiveBashState = {
+	baseRender: (width: number) => string[];
+	renderText: (width: number) => string;
+};
+
+const responsiveBashStates = new WeakMap<object, ResponsiveBashState>();
+
+function installResponsiveBashRender(
+	text: ComponentLike,
+	renderText: (width: number) => string,
+): void {
+	let state = responsiveBashStates.get(text);
+	if (!state) {
+		state = {
+			baseRender: text.render.bind(text),
+			renderText,
+		};
+		responsiveBashStates.set(text, state);
+		text.render = (width: number): string[] => {
+			const current = responsiveBashStates.get(text);
+			if (!current) return [];
+			const fittedWidth = Math.max(1, Math.floor(width || termWidth()));
+			text.setText(current.renderText(fittedWidth));
+			return current.baseRender(fittedWidth);
+		};
+	}
+	state.renderText = renderText;
+}
 
 export function registerBashTool(
 	pi: ExtensionAPI,
@@ -120,30 +152,30 @@ export function registerBashTool(
 		renderCall(args: any, theme: ThemeLike, ctx: RenderCtxLike) {
 			resolveBaseBackground(theme);
 			const text = ctx.lastComponent ?? new TC("", 0, 0);
-			const t =
+			const timeout =
 				typeof args.timeout === "number"
-					? ` ${theme.fg("muted", `(timeout ${args.timeout}s)`)}`
-					: "";
+					? `timeout ${args.timeout}s`
+					: undefined;
 			const tw = termWidth() || 80;
 			const rawCmd = String(args.command ?? "");
 			const headerBudget = ctx.expanded ? tw : Math.max(8, tw - 20);
 			const cmd =
 				rawCmd.length === 0
-					? theme.fg("toolOutput", "...")
+					? "..."
 					: !ctx.expanded && rawCmd.length > headerBudget
 						? `${rawCmd.slice(0, Math.max(1, headerBudget))}…`
 						: rawCmd;
-			const commandLabel = theme.fg(
-				ctx.isError ? "error" : "toolTitle",
-				theme.bold(`$ ${cmd}`),
+			const call = renderToolCallChrome(
+				theme,
+				"bash",
+				[cmd, timeout].filter(Boolean).join(" · "),
+				{
+					icon: "$",
+					tone: ctx.isError ? "error" : "accent",
+					width: tw,
+				},
 			);
-			text.setText(
-				fillToolBackground(
-					`\n${TOOL_RESULT_INDENT}${commandLabel}${t}\n`,
-					undefined,
-					ctx.expanded ? undefined : tw,
-				),
-			);
+			text.setText(fillToolBackground(`\n${call}\n`, undefined, tw));
 			return text;
 		},
 
@@ -177,25 +209,20 @@ export function registerBashTool(
 				const output = isErr ? compactErrorLines(cleaned).join("\n") : cleaned;
 				const lineCount = output.split("\n").length;
 				const exitCode = d.exitCode ?? (isErr ? 1 : 0);
-				const exitSummary = theme.fg(
-					isErr ? "error" : "success",
-					`exit ${exitCode}`,
-				);
-				const metadata = [
-					`${lineCount} lines`,
-					renderToolDuration(result),
-					!ctx.expanded ? "ctrl+o to expand" : "",
-				]
-					.filter(Boolean)
-					.map((part) => theme.fg("dim", part))
-					.join(theme.fg("dim", " · "));
-				const info = metadata
-					? `${exitSummary}${theme.fg("dim", " · ")}${metadata}`
-					: exitSummary;
-				const header = `${TOOL_RESULT_INDENT}${info}`;
 				const rw = termWidth();
 
 				const renderFn = (w: number) => {
+					const header = renderToolSummary(
+						theme,
+						`exit ${exitCode}`,
+						[plural(lineCount, "line"), renderToolDuration(result)],
+						{
+							tone: isErr ? "error" : "success",
+							marker: isErr ? "✕" : "✓",
+							hint: !ctx.expanded ? "ctrl+o expand" : undefined,
+							width: w,
+						},
+					);
 					if (!ctx.expanded)
 						return fillToolBackground(`${header}\n`, undefined, w);
 					if (!output.trim())
@@ -210,22 +237,7 @@ export function registerBashTool(
 				};
 
 				text.setText(renderFn(rw));
-				const baseRender =
-					typeof (text as ComponentLike).render === "function"
-						? (text as ComponentLike).render.bind(text)
-						: null;
-				if (baseRender) {
-					let key: string | undefined;
-					(text as unknown as Record<string, unknown>).render = (w: number) => {
-						const width = Math.max(1, Math.floor(w || termWidth()));
-						const k = `bash:${ctx.expanded ? "1" : "0"}:${width}:${d.exitCode ?? "killed"}:${output.length}:${renderToolDuration(result)}`;
-						if (key !== k) {
-							text.setText(renderFn(width));
-							key = k;
-						}
-						return baseRender(width);
-					};
-				}
+				installResponsiveBashRender(text as ComponentLike, renderFn);
 				return text;
 			}
 

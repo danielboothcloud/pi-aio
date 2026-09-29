@@ -416,6 +416,25 @@ standalone `pi-zentui` package from Pi settings when possible. A predecessor's
 editor is preserved but cannot wrap AIO's later queue/`!bash` editor layers, and
 a package loaded after aio cannot be detected in advance.
 
+### Unified AIO visual system
+
+AIO's own custom surfaces use the same theme-aware visual language instead of
+looking like separate plugins:
+
+- Mutation reviews use pinned accent-rail headers, colored diff rows, explicit
+  allow-once/enable-auto/block tiers, sticky controls, and narrow-width fitting.
+- Write/edit/patch cards and Bash/read/ls/find/grep output share branded headers,
+  state glyphs, consistent metadata separators, and responsive summaries.
+- Queue, goal, and subagent widgets render compact live dashboards with bounded
+  rows and ANSI-aware width guarantees.
+- `/pick` uses framed preview sections and selected-row treatment matching the
+  editor; questionnaire tabs carry the same accent rail.
+- `!bash` keeps command text in the editor only and publishes one compact status,
+  eliminating the old repeated command echo below the editor.
+
+The shared primitives live in `ui/chrome.ts` and use Pi semantic theme roles, so
+custom themes and Zentui color sources remain authoritative.
+
 ## Legacy status line and provider quotas
 
 Zentui is the primary footer owner. Aio retains its former quiet single-row
@@ -1033,6 +1052,7 @@ blocklist still wins over a loop block.
 ├── permission-modes/        # Shift+Tab modes + plan flow
 ├── queue/                   # message-queue widget + Enter-to-interrupt
 ├── status-line/             # provider quota + legacy footer fallback
+├── ui/                      # shared responsive accent-rail chrome
 ├── zentui/                  # bundled visual layer + AIO state bridge
 ├── pretty-tools/            # pretty built-ins + FFF search
 ├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)
