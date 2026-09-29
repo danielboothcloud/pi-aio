@@ -3,7 +3,6 @@ import type {
 	ExtensionContext,
 	UserBashEventResult,
 } from "@earendil-works/pi-coding-agent";
-import { isZentuiEditorFactory } from "../zentui/protocol.js";
 import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
 import { isSafeCommand } from "../permission-modes/utils.js";
 import { BashHintEditor } from "./bash-hint-editor.js";
@@ -66,7 +65,7 @@ export function registerUserBash(pi: ExtensionAPI): void {
 
 	pi.on("session_start", (_event, ctx) => {
 		if (!ctx.hasUI || ctx.mode !== "tui") return;
-		if (isZentuiEditorFactory(ctx.ui.getEditorComponent?.())) return;
+		if (ctx.ui.getEditorComponent?.()) return;
 		ctx.ui.setEditorComponent(
 			(tui, theme, keybindings) =>
 				new BashHintEditor(tui, theme, keybindings, ctx),

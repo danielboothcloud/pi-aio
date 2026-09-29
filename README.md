@@ -1,6 +1,6 @@
 # aio
 
-Combined Pi extension with a **Zentui-powered terminal interface**, structured
+Combined Pi extension with a **minimalist editor frame**, structured
 **`ask_user_question`** dialogs, a **`/pick`** code picker, **`/init`** AGENTS.md
 bootstrap, **`/effort`** thinking control, generic **subagent delegation**,
 configurable **`web_search`** and **`fetch_content`**, **`!` bash shortcuts**,
@@ -381,40 +381,27 @@ pi --permission-mode ask
 pi --permission-mode plan
 ```
 
-## Zentui interface
+## Minimalist frame interface
 
-`aio` bundles [pi-zentui](https://pi.dev/packages/pi-zentui) as its final visual
-layer. On a fresh setup its defaults replace Pi's editor, user-message cards,
-selector borders, and footer with an Opencode-inspired editor and responsive
-Starship-style statusline. Zentui wraps aio's queue/`!bash` editor rather than
-replacing its behavior, so autocomplete, queue interruption, and bash hints keep
-working.
+`aio` ships its own proprietary minimalist editor frame (vendored from
+[pi-zentui](https://github.com/lmilojevicc/pi-zentui), MIT — see
+`frame/UPSTREAM.md`). It replaces Pi's editor with a labeled rounded frame
+embedding live metadata — session name, turn timer, cost, model, thinking
+level, context percent, git branch/dirty/ahead/behind, and path — directly in
+the border, in Pi's own theme colors. The frame wraps aio's queue/`!bash`
+editor rather than replacing its behavior, so autocomplete, queue
+interruption, and bash hints keep working, and pending queue rows render
+inside the frame above its bottom border.
 
-Run `/zentui` to tune each surface independently. Useful starting points:
+There is no configuration surface: the frame's style is code-owned
+(`frame/render.ts`). When a separately installed standalone Zentui already
+owns the editor, aio detects it and stays out to avoid duplicate UI owners;
+remove the standalone package from Pi settings when possible.
 
-```text
-/zentui preset opencode
-/zentui preset opencode-copy-friendly
-/zentui preset rail
-/zentui preset minimalist
-/zentui working-line
-/zentui footer
-/zentui extensions
-```
-
-Zentui stores optional user choices in `~/.pi/agent/zentui.json`; aio does not
-overwrite or preseed that user-owned file. The experimental private Thinking
-renderer stays off unless you explicitly enable it. Fullscreen mode can be
-enabled through Pi's `/settings` for the most app-like layout.
-
-Aio's mode and effort state are bridged into Zentui's keyed Working line when
-that component is enabled. Existing extension statuses—including goals, RTK,
-`!bash`, hooks, Hunk, mode, and effort—flow into Zentui's configurable status
-placements. When a separately installed Zentui is already active, aio detects it
-and skips the bundled factory to avoid duplicate commands and UI owners. Remove a
-standalone `pi-zentui` package from Pi settings when possible. A predecessor's
-editor is preserved but cannot wrap AIO's later queue/`!bash` editor layers, and
-a package loaded after aio cannot be detected in advance.
+Aio's mode, effort, and provider-quota state render as extension statuses (or,
+for quota, an above-editor widget) rather than duplicating what the frame
+already embeds. The former bundled Zentui integration, its `/zentui`
+command, and the zentui.json seeding contract are gone.
 
 ### Unified AIO visual system
 
@@ -433,16 +420,16 @@ looking like separate plugins:
   eliminating the old repeated command echo below the editor.
 
 The shared primitives live in `ui/chrome.ts` and use Pi semantic theme roles, so
-custom themes and Zentui color sources remain authoritative.
+custom themes remain authoritative.
 
 ## Legacy status line and provider quotas
 
-Zentui is the primary footer owner. Aio retains its former quiet single-row
-footer as a compatibility fallback only when Zentui is unavailable. Its layout
+The frame is the primary visual owner. Aio retains its former quiet single-row
+footer as a compatibility fallback only when the frame is absent. Its layout
 is:
 
 ```text
-Plan · ⌂ pi-aio · ⎇ main · ◫ 42% · ⚡ effort:max · rtk✓ · ◈ cursor:local · fast:on · ◇ cursor/composer-2.5
+Plan · ⌂ pi-aio · ⎇ main · ◫ 42% · ⚡ effort:max · ◈ cursor:local · fast:on · ◇ cursor/composer-2.5
 ```
 
 Configure it in Pi settings (`~/.pi/agent/settings.json` or project
@@ -463,7 +450,7 @@ Configure it in Pi settings (`~/.pi/agent/settings.json` or project
 
 | Field | Purpose |
 | ----- | ------- |
-| `enabled` | Enables aio fallback/status data; Zentui still owns its footer when present |
+| `enabled` | Enables aio fallback/status data; the frame still owns visuals when present |
 | `segments` | Ordered list: `mode`, `path`, `git`, `context`, `effort`, `statuses`, `cursor`, `quota`, `model`, `tokens`, `cost` |
 | `path` | `basename`, `abbreviated`, or `full` |
 | `workingMessage` | `minimal` (default), `verbose` (streaming stats), or `off` |
@@ -473,12 +460,14 @@ Configure it in Pi settings (`~/.pi/agent/settings.json` or project
 Quick toggles for the fallback/data layer:
 
 - `/status-line` — enable/disable aio's legacy status data
-- `/status-line minimal` or `/status-line verbose` — fallback working-message style when Zentui's Working line is off
+- `/status-line minimal` or `/status-line verbose` — fallback working-message style
 
-With Zentui active, extension statuses (`rtk`, `!bash`, goals, hooks, etc.) are
-placed by `/zentui extensions`. Thinking effort and permission mode also appear
-in Zentui's Working line while an agent run is active. Without Zentui, the legacy
-footer keeps its dedicated effort/Cursor segments and 70%/90% context coloring.
+With the frame active, extension statuses (`!bash`, goals, hooks, etc.) render
+in Zentui's statuses-only row below the editor when a standalone Zentui is
+installed, or via the muted status row otherwise. Thinking effort and
+permission mode are embedded in the frame's border metadata and are not
+duplicated as footer statuses. Without the frame, the legacy footer keeps its
+dedicated effort/Cursor segments and 70%/90% context coloring.
 
 ### Custom provider quota usage
 
@@ -533,9 +522,9 @@ showing both the request quota and the weekly credit window from one response:
 Each mapping may provide `used`, `limit`, `remaining`, `renewsAt`, and/or
 `text`. When `used` and `limit` are available, aio computes the remaining
 percentage. `text` can map a provider-formatted quota string (for example
-`"$23.21"`) verbatim. With Zentui active, windows render as the keyed `aio-provider-usage` extension
-status and can be positioned through `/zentui extensions`. In fallback mode they
-render inside one `quota` segment. Values are joined by `·` and color by the
+`"$23.21"`) verbatim. With the frame active, quota renders as a compact
+above-editor widget instead of a status row. In fallback mode it renders
+inside one `quota` segment. Values are joined by `·` and color by the
 window closest to exhaustion. A provider entry with a single top-level `mapping`
 instead of `windows` keeps working as a one-window shorthand. Quota output is
 omitted when the active provider has no configuration or nothing has been fetched
@@ -557,8 +546,8 @@ renders it as a numbered list below the input box:
   2 · then run the full test suite · follow
 ```
 
-With Zentui active, the queue renders as a frame panel attached to the
-editor in Zentui's minimalist style instead:
+With the frame active, the queue renders as framed rows inside the editor
+frame, above its bottom border:
 
 ```text
 ├─ queue · 2 pending messages · Enter sends next ─────┤
@@ -682,7 +671,7 @@ for command gating.
 
 - `/rtk status` or `/rtk` — show enforced routing state and the detected binary.
 
-The footer shows `rtk ✓` while the enforced integration is loaded.
+The footer shows no rtk status; `/rtk status` reports on demand.
 
 ### Prerequisites
 
@@ -1063,7 +1052,7 @@ blocklist still wins over a loop block.
 ├── queue/                   # message-queue widget + Enter-to-interrupt
 ├── status-line/             # provider quota + legacy footer fallback
 ├── ui/                      # shared responsive accent-rail chrome
-├── zentui/                  # bundled visual layer + AIO state bridge
+├── frame/                   # proprietary minimalist editor frame (vendored)
 ├── pretty-tools/            # pretty built-ins + FFF search
 ├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)
 ├── subagents/               # child-agent discovery, execution, and lifecycle
@@ -1079,8 +1068,9 @@ blocklist still wins over a loop block.
   `pi-zentui`, and `@sherif-fanous/pi-rtk`
   packages from settings when installing this combined package, to avoid
   duplicate tools, commands, and shortcuts.
-- Effort, permission mode, rtk, goals, hooks, Hunk, and `!bash` appear through
-  Zentui's Working line or extension-status placements when active.
+- Effort and permission mode are embedded in the frame's border metadata;
+  extension statuses (`!bash`, goals, hooks, Hunk) render in the muted status
+  row when active.
 - The vendored questionnaire source remains covered by its original MIT license
   in [`ask-user-question/LICENSE`](ask-user-question/LICENSE).
 - The pretty-tool implementation is based on `@heyhuynhgiabuu/pi-pretty` and

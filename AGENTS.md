@@ -132,27 +132,26 @@ generated `dist/` tree without changing the package contract.
   the runtime re-checks the cwd (`git rev-parse --is-inside-work-tree`,
   then `.jj`/`.sl` markers; cached per cwd, reset on clear) — a persisted
   ON state from another repo never annotates in a plain directory.
-- `zentui/` integrates the bundled `pi-zentui` dependency as AIO's final
-  visual owner (Opencode/rail/minimalist editor styles, user-message frames,
-  selector borders, Working line, and Starship Footer). It probes Zentui's
-  synchronous capability event before registration so a predecessor standalone
-  install wins instead of double-registering `/zentui`; later duplicate package
-  loads remain a documented ordering limitation. Register it after queue so
-  Zentui wraps `QueueEditor`/`BashHintEditor`, and after status-line so only one
-  Footer owner remains. A package-qualified event bridge publishes permission
-  mode and effort into the keyed Working-line protocol and removes both segments
-  on inactive ownership/shutdown. The legacy status-line never writes the shared
-  working message/indicator while Zentui owns the row, and exposes generic
-  provider quota as an extension status. AIO's only supported Zentui
-  presentation is the minimalist preset: `registerAioZentui` seeds
-  `<agent-dir>/zentui.json` with minimalist defaults (minimalist editor,
-  hidden footer, user messages off) exactly once — only when the file is
-  missing or completely empty, logging the write (`zentui/seed.ts`). An
-  existing file is never normalized, rewritten, or merged; user edits always
-  win. While Zentui owns the visuals (`supported` capability), AIO suppresses
-  its duplicate `effort` and `modes` footer statuses (the editor metadata and
-  the Working-line bridge carry both); without Zentui both statuses render
-  as before.
+- `frame/` is AIO's proprietary minimalist editor frame, vendored from
+  pi-zentui (MIT — see `frame/LICENSE` and `frame/UPSTREAM.md`). It replaces
+  the former bundled pi-zentui integration entirely: AIO wraps whatever
+  editor factory exists at `session_start` (normally the QueueEditor chain)
+  in `MinimalistFrameEditor`, which renders the base editor inside a labeled
+  minimalist border with live metadata (model, thinking level, context
+  percent, cost, git branch/dirty/ahead/behind, session name, timer).
+  Registration order is load-bearing: it registers after queue, pretty-tools,
+  status-line, and Hunk so it wraps the final editor chain. Standalone Zentui
+  factories (symbol `pi-zentui.editor-factory`) are never displaced; with no
+  factory at all the frame stays out (Pi's built-in editor is unwrappable).
+  Configuration is code-owned (`DEFAULT_FRAME_STYLE`) — there is no
+  zentui.json and no seeding. The frame answers a synchronous capability
+  probe (`frame/protocol.ts`, event `aio:minimal-frame-capability`) only
+  after a TUI session installed it; effort and permission-modes suppress
+  their duplicate footer statuses based on that probe. The queue feeds framed
+  rows into the frame via `setQueuePanelLinesProvider` and suppresses its
+  below-editor widget in any framed environment (AIO frame or standalone
+  Zentui). Status-line's provider-quota surface renders as an above-editor
+  widget when the probe reports support, and as a footer status otherwise.
 - `nvim/` opens files in Neovim in a new Otty pane beside the session (same
   launcher chain as hunk: otty split anchored to `$OTTY_PANE_ID` → tmux →
   otty tab → Terminal.app → print). `/nvim <path>[:line[:col]]` (`-r` for

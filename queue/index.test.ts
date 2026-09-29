@@ -102,7 +102,7 @@ async function renderQueuedWidget(harness: ReturnType<typeof makeHarness>) {
 	return component.render(80);
 }
 
-test("the widget renders in Zentui's frame style when Zentui owns the editor", async () => {
+test("the queue widget is suppressed while the frame owns the editor", async () => {
 	const factory = () => undefined;
 	Object.defineProperty(factory, Symbol.for("pi-zentui.editor-factory"), {
 		value: true,
@@ -111,9 +111,14 @@ test("the widget renders in Zentui's frame style when Zentui owns the editor", a
 	registerQueue(harness.pi);
 	await harness.start();
 
-	const lines = await renderQueuedWidget(harness);
-	assert.match(lines[0] ?? "", /^├─ queue · 1 pending message · Enter sends next ─+┤$/);
-	assert.match(lines[1] ?? "", /^│ 1 queued message\s+steer │$/);
+	await harness.fire("input", {
+		text: "queued message",
+		source: "interactive",
+		streamingBehavior: "steer",
+	});
+	// The frame renders queue rows inside the editor; the below-editor widget
+	// must stay cleared instead of duplicating them.
+	assert.equal(harness.widgetFactories.length, 0);
 });
 
 test("the widget renders in the chrome style when Zentui does not own the editor", async () => {

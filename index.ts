@@ -31,8 +31,8 @@ import registerPrettyTools from "./pretty-tools/index.js";
 import { registerSubagents } from "./subagents/index.js";
 import { registerStatusLine } from "./status-line/index.js";
 import { registerUserBash } from "./user-bash/index.js";
+import { registerFrameEditor } from "./frame/index.js";
 import registerYamlHooks from "./yaml-hooks/index.js";
-import { registerAioZentui } from "./zentui/index.js";
 
 export {
 	ASK_USER_PROMPT_EVENT,
@@ -80,10 +80,10 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// bundled hunk-review skill through resources_discover; optional when the
 	// hunk binary is not installed.
 	registerHunk(pi);
-	// Zentui registers after every editor/footer/status publisher so it can wrap
-	// AIO's QueueEditor and become the single final visual owner. It skips its
-	// bundled factory when a standalone Zentui was already loaded.
-	registerAioZentui(pi);
+	// The frame registers after every editor/status publisher so it can wrap
+	// AIO's QueueEditor and become the single final visual owner (minimalist
+	// editor frame, proprietary — see frame/UPSTREAM.md).
+	registerFrameEditor(pi);
 	// Yaml hooks last: it owns no tool surface, but its user-bash interception
 	// (opt-in via env) must wrap the user-bash gate above.
 	registerYamlHooks(pi);

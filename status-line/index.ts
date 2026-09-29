@@ -3,7 +3,7 @@ import type {
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
-import { probeZentuiWorkingLine } from "../zentui/protocol.js";
+import { probeFrameEditor } from "../frame/protocol.js";
 import {
 	DEFAULT_STATUS_LINE_CONFIG,
 	loadStatusLineConfig,
@@ -33,7 +33,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	let providerUsageAbort: AbortController | undefined;
 	let requestFooterRender: (() => void) | undefined;
 
-	const zentuiCapability = () => probeZentuiWorkingLine(pi);
+	const frameCapability = () => probeFrameEditor(pi);
 
 	const PROVIDER_USAGE_STATUS_KEY = "aio-provider-usage";
 	const PROVIDER_USAGE_WIDGET_KEY = "aio-provider-usage";
@@ -49,8 +49,8 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 			return;
 		}
 		const styled = ctx.ui.theme.fg(line.role, `◴ ${line.text}`);
-		if (zentuiCapability().supported) {
-			// Zentui owns the visuals: render above the editor frame instead of
+		if (frameCapability().supported) {
+			// AIO frame owns the visuals: render above the editor frame instead of
 			// the below-editor extension-status row, so quota reads as part of
 			// the minimalist widget like model/effort/context metadata.
 			ctx.ui.setWidget(PROVIDER_USAGE_WIDGET_KEY, [styled]);
@@ -135,7 +135,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	}
 
 	function applyWorkingMessage(ctx: ExtensionContext): void {
-		if (zentuiCapability().active) return;
+		if (frameCapability().active) return;
 		if (!ctx.hasUI || config.workingMessage === "off") {
 			ctx.ui.setWorkingMessage();
 			return;
@@ -162,7 +162,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 
 		// Zentui is the primary visual owner. The legacy footer remains available
 		// only when Zentui is absent, avoiding two extensions fighting setFooter().
-		if (zentuiCapability().supported) return;
+		if (frameCapability().supported) return;
 
 		if (!config.enabled) {
 			ctx.ui.setFooter(undefined);
@@ -217,7 +217,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 		} else if (!enabled) {
 			resetProviderUsage(true);
 		}
-		const owner = zentuiCapability().supported ? " data (Zentui owns the footer)" : "";
+		const owner = frameCapability().supported ? " data (frame owns the visuals)" : "";
 		ctx.ui.notify(`Status line${owner} ${enabled ? "enabled" : "disabled"}`, "info");
 	}
 
@@ -307,7 +307,7 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 
 	pi.on("agent_end", async (_event, ctx) => {
 		streamStart = 0;
-		if (ctx.hasUI && !zentuiCapability().active) ctx.ui.setWorkingMessage();
+		if (ctx.hasUI && !frameCapability().active) ctx.ui.setWorkingMessage();
 		if (shouldFetchProviderUsage(ctx)) void refreshProviderUsage(ctx);
 	});
 }

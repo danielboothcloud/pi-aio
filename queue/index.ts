@@ -3,18 +3,35 @@ import type {
 	ExtensionAPI,
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import { isZentuiEditorFactory } from "../zentui/protocol.js";
+import {
+	isFrameEditorFactory,
+	setQueuePanelLinesProvider,
+} from "../frame/protocol.js";
 import { QueueController } from "./controller.js";
-import { buildQueueLines } from "./lines.js";
+import { buildQueueLines, firstLinePreview, MAX_QUEUE_ROWS } from "./lines.js";
+import type { QueuedMessage } from "./mirror.js";
 import { QueueEditor } from "./queue-editor.js";
-import { buildZentuiQueueLines } from "./zentui-lines.js";
+import { plural } from "../ui/chrome.js";
 
 const WIDGET_KEY = "aio-queue";
 
-/** True when Zentui owns the editor (standalone, or wrapped around ours). */
-function isZentuiOwned(ctx: ExtensionContext): boolean {
+/**
+ * True when a framed editor environment owns the editor (AIO's frame, or a
+ * standalone Zentui install): the below-editor widget would clash with the
+ * frame, so the queue renders inside the frame (AIO) or yields (Zentui).
+ */
+function isFramedEditor(ctx: ExtensionContext): boolean {
 	try {
-		return isZentuiEditorFactory(ctx.ui.getEditorComponent?.());
+		const factory = ctx.ui.getEditorComponent?.();
+		if (!factory || typeof factory !== "function") return false;
+		// SAFETY: editor factories are branded with symbol properties by both
+		// AIO's frame and standalone Zentui; the type system cannot see symbol
+		// keys on a function, so a Record<symbol, unknown> view is required.
+		const branded = factory as unknown as Record<symbol, unknown>;
+		return (
+			isFrameEditorFactory(factory) ||
+			branded[Symbol.for("pi-zentui.editor-factory")] === true
+		);
 	} catch {
 		return false;
 	}
@@ -58,7 +75,15 @@ export function registerQueue(pi: ExtensionAPI): void {
 	function updateWidget(ctx: ExtensionContext): void {
 		if (!ctx.hasUI) return;
 		const entries = enabled ? (controller?.mirror.entries() ?? []) : [];
+		latestEntries = entries;
 		if (entries.length === 0) {
+			ctx.ui.setWidget(WIDGET_KEY, undefined);
+			return;
+		}
+		if (isFramedEditor(ctx)) {
+			// The frame renders the queue as rows inside the editor; a widget
+			// would duplicate it. Touch the (empty) widget anyway so the TUI
+			// repaints with the new frame rows.
 			ctx.ui.setWidget(WIDGET_KEY, undefined);
 			return;
 		}
@@ -67,17 +92,28 @@ export function registerQueue(pi: ExtensionAPI): void {
 			(_tui, theme) => ({
 				invalidate() {},
 				render(width: number): string[] {
-					// Render-time probe: the bundled Zentui installs its editor
-					// factory at its own session_start, after ours, so the queue
-					// panel must follow whatever owns the editor right now.
-					return isZentuiOwned(ctx)
-						? buildZentuiQueueLines({ entries, width, theme })
-						: buildQueueLines({ entries, width, theme });
+					return buildQueueLines({ entries, width, theme });
 				},
 			}),
 			{ placement: "belowEditor" },
 		);
 	}
+
+	// Feed the frame's in-editor queue panel: compact preview rows the frame
+	// renders above its bottom border when it owns the editor.
+	let latestEntries: QueuedMessage[] = [];
+	setQueuePanelLinesProvider(() => {
+		if (!enabled || latestEntries.length === 0) return [];
+		const lines: string[] = [
+			`queue · ${plural(latestEntries.length, "pending message")} · Enter sends next`,
+		];
+		for (const [index, entry] of latestEntries.slice(0, MAX_QUEUE_ROWS).entries()) {
+			const preview = firstLinePreview(entry.text);
+			const meta = entry.mode === "steer" ? " · steer" : "";
+			lines.push(`${index + 1} ${preview.line}${preview.truncated ? " …" : ""}${meta}`);
+		}
+		return lines;
+	});
 
 	pi.on("session_start", (_event, ctx) => {
 		if (ctx.mode !== "tui") {
@@ -96,10 +132,14 @@ export function registerQueue(pi: ExtensionAPI): void {
 			notify: (message, type) => ctx.ui.notify(message, type),
 			updateWidget: () => updateWidget(ctx),
 		});
-		// A standalone Zentui loaded before AIO already owns the editor. Keep it
-		// intact; the bundled registration runs later and wraps QueueEditor instead.
+		// Standalone Zentui (globally installed, separate from AIO) marks its
+		// editor factory with a well-known symbol; never displace it. Otherwise
+		// install our QueueEditor (extends the user-bash BashHintEditor).
 		const existingEditor = ctx.ui.getEditorComponent?.();
-		if (!isZentuiEditorFactory(existingEditor)) {
+		const standaloneZentui =
+			typeof existingEditor === "function" &&
+			(existingEditor as Record<symbol, unknown>)[Symbol.for("pi-zentui.editor-factory")] === true;
+		if (!standaloneZentui) {
 			ctx.ui.setEditorComponent((tui, theme, keybindings) => {
 				const editor = new QueueEditor(tui, theme, keybindings, ctx, {
 					onEmptySubmit: () =>

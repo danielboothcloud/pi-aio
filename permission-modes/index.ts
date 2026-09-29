@@ -20,8 +20,8 @@ import type {
 import { Type } from "typebox";
 import {
 	emitAioUiState,
-	probeZentuiWorkingLine,
-} from "../zentui/protocol.js";
+	probeFrameEditor,
+} from "../frame/protocol.js";
 import { setPermissionModeAccess } from "./mode-access.js";
 import { showMutationApproval } from "./approval-dialog.js";
 import {
@@ -514,13 +514,13 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		const meta = modeMetadata(currentMode);
 		// Zentui owns the visual surfaces; the mode lives in its Working-line
 		// bridge (via emitAioUiState) instead of a duplicate footer status.
-		if (!probeZentuiWorkingLine(pi).supported) {
+		if (!probeFrameEditor(pi).supported) {
 			ctx.ui.setStatus(
 				"modes",
 				ctx.ui.theme.fg(meta.role, `${meta.icon} ${meta.label}`),
 			);
 		}
-		if (!probeZentuiWorkingLine(pi).active) {
+		if (!probeFrameEditor(pi).active) {
 			const indicator: WorkingIndicatorOptions = {
 				frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"].map((f) =>
 					ctx.ui.theme.fg(meta.role, f),

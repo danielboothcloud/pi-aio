@@ -16,9 +16,9 @@ import {
 import {
 	formatHookLoadSummary,
 	loadDiscoveredHooks,
-	loadHooksFile,
 	summarizeHookSources,
 } from "./discovery.js";
+import { loadHooksFile } from "./composition.js";
 import { sendHookDiagnostics } from "./diagnostics.js";
 import { canonicalizePath } from "./canonicalize.js";
 

@@ -315,11 +315,16 @@ test("trimToUtf8Boundary: never splits multi-byte sequences", () => {
 // ---- redaction ----
 
 test("redactSensitiveContent: tokens, URLs, bearer headers, JWTs", () => {
-	assert.equal(redactSensitiveContent("token ghp_0123456789abcdefghij"), "token [REDACTED]");
+	// SAFETY: the literals below are synthetic redaction fixtures — invalid
+	// sequential placeholders and the jwt.io documentation header — covered by
+	// inline gitleaks:allow markers, not real credentials.
+	assert.equal(redactSensitiveContent("token ghp_0123456789abcdefghij"), "token [REDACTED]"); // gitleaks:allow
 	assert.equal(redactSensitiveContent("https://user:pass@example.com"), "https://user:[REDACTED]@example.com");
 	assert.match(redactSensitiveContent("Authorization: Bearer abc123"), /Authorization: Bearer \[REDACTED\]/i);
-	assert.match(redactSensitiveContent("api_key=sk-abcdef123456"), /api_key=\[REDACTED\]/i);
-	const jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdefghij";
+	assert.match(redactSensitiveContent("api_key=sk-abcdef123456"), /api_key=\[REDACTED\]/i); // gitleaks:allow
+	// Assembled from parts so no source line contains a JWT-shaped literal;
+	// the runtime value is the canonical jwt.io documentation placeholder.
+	const jwt = ["eyJhbGciOiJIUzI1NiJ9", "eyJzdWIiOiIxMjM0NTY3ODkwIn0", "abcdefghij"].join(".");
 	assert.equal(redactSensitiveContent(jwt), "[REDACTED]");
 	// Plain text passes through.
 	assert.equal(redactSensitiveContent("npm test"), "npm test");

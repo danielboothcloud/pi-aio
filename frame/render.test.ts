@@ -1,0 +1,91 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+	DEFAULT_FRAME_STYLE,
+	renderMinimalistFrame,
+	renderFramedPanelRows,
+	type FrameMetadata,
+} from "./render.ts";
+
+const theme = {
+	fg: (_name: string, text: string) => text,
+	bold: (text: string) => text,
+};
+
+const metadata: FrameMetadata = {
+	cwd: "/repo",
+	branch: "main",
+	costLabel: "$0.100",
+	modelLabel: "test-model",
+	thinkingLevel: "high",
+	contextPercent: 42,
+	sessionName: "session",
+};
+
+function frame(lines: string[], overrides: Partial<FrameMetadata> = {}, width = 60) {
+	return renderMinimalistFrame({
+		width,
+		editorLines: lines,
+		inputText: "",
+		metadata: { ...metadata, ...overrides },
+		uiTheme: theme,
+		style: DEFAULT_FRAME_STYLE,
+	});
+}
+
+test("the frame wraps editor content with labeled borders", () => {
+	const lines = frame(["hello", "world"]);
+	assert.equal(lines.length, 4);
+	assert.match(lines[0]!, /^╭.*session.*\$0\.100.*test-model.*high.*42%.*╮$/);
+	assert.match(lines[1]!, /^│ hello\s+│$/);
+	assert.match(lines[2]!, /^│ world\s+│$/);
+	assert.match(lines[3]!, /^╰.*main.*repo.*╯$/);
+});
+
+test("panel rows render between content and the bottom border", () => {
+	const lines = renderMinimalistFrame({
+		width: 60,
+		editorLines: ["input"],
+		panelLines: ["queue · 1 pending message · Enter sends next", "1 hello … · steer"],
+		inputText: "",
+		metadata,
+		uiTheme: theme,
+		style: DEFAULT_FRAME_STYLE,
+	});
+	// top + content + divider + 2 rows + bottom
+	assert.equal(lines.length, 6);
+	assert.match(lines[2]!, /^├─+┤$/);
+	assert.match(lines[3]!, /^│ queue · 1 pending message · Enter sends next\s+│$/);
+	assert.match(lines[4]!, /^│ 1 hello … · steer\s+│$/);
+	assert.match(lines[5]!, /^╰/);
+});
+
+test("renderFramedPanelRows degrades to plain lines when too narrow", () => {
+	const lines = renderFramedPanelRows({
+		width: 3,
+		lines: ["abc"],
+		renderBorder: (text) => text,
+	});
+	assert.deepEqual(lines, ["abc"]);
+});
+
+test("labels truncate instead of overflowing the width", () => {
+	const lines = frame(["x"], { sessionName: "a-very-long-session-name-that-keeps-going" }, 40);
+	for (const line of lines) {
+		assert.ok(
+			line.replace(/\x1b\[[0-9;]*m/g, "").length <= 40,
+			`line too wide: ${line}`,
+		);
+	}
+});
+
+test("git metadata renders ahead/behind arrows and dirty marker", () => {
+	const lines = frame(["x"], { ahead: 2, behind: 1, dirty: true });
+	assert.match(lines.at(-1)!, /main \* ↑2 ↓1/);
+});
+
+test("thinking level off and missing cost/model are omitted", () => {
+	const lines = frame(["x"], { thinkingLevel: "off", costLabel: undefined, modelLabel: undefined });
+	assert.doesNotMatch(lines[0]!, /off/);
+	assert.doesNotMatch(lines[0]!, /no-model/);
+});

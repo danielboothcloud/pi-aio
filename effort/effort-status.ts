@@ -2,7 +2,7 @@ import type {
 	ExtensionAPI,
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import { emitAioUiState, probeZentuiWorkingLine } from "../zentui/protocol.js";
+import { emitAioUiState, probeFrameEditor } from "../frame/protocol.js";
 import type { ThinkingLevel } from "./parse.js";
 import { THINKING_LEVELS } from "./parse.js";
 
@@ -58,7 +58,7 @@ export function updateEffortStatus(
 	// Zentui embeds the thinking level in its editor metadata; a footer status
 	// would duplicate it. The AIO_UI_STATE event above keeps the Working-line
 	// bridge informed.
-	if (probeZentuiWorkingLine(pi).supported) return;
+	if (probeFrameEditor(pi).supported) return;
 	ctx.ui.setStatus(EFFORT_STATUS_KEY, formatEffortStatus(ctx, level));
 }
 

@@ -1,4 +1,4 @@
-/* aio-rtk: /rtk slash command, status report, and footer indicator. */
+/* aio-rtk: /rtk slash command and status report. */
 
 import { spawnSync } from "node:child_process";
 import type {
@@ -7,7 +7,6 @@ import type {
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 const REWRITE_TIMEOUT_MS = 5000;
-const RTK_STATUS_KEY = "rtk";
 const VALID_RTK_SUBCOMMANDS = ["status"] as const;
 
 type RtkSubcommand = (typeof VALID_RTK_SUBCOMMANDS)[number];
@@ -20,20 +19,6 @@ interface StatusReport {
 
 function isRtkSubcommand(value: string): value is RtkSubcommand {
 	return (VALID_RTK_SUBCOMMANDS as readonly string[]).includes(value);
-}
-
-function renderStatusText(ctx: ExtensionContext): string {
-	return ctx.ui.theme.fg("success", "rtk ✓");
-}
-
-export function updateRtkFooter(ctx: ExtensionContext): void {
-	if (!ctx.hasUI) return;
-	ctx.ui.setStatus(RTK_STATUS_KEY, renderStatusText(ctx));
-}
-
-export function clearRtkFooter(ctx: ExtensionContext): void {
-	if (!ctx.hasUI) return;
-	ctx.ui.setStatus(RTK_STATUS_KEY, undefined);
 }
 
 function rtkStatusReport(ctx: ExtensionContext): StatusReport {
