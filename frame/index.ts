@@ -17,6 +17,11 @@ import {
 } from "./format.js";
 import { readGitFrameStatus, type GitFrameStatus } from "./git.js";
 import {
+	CodexQuotaCollector,
+	codexQuotaRole,
+	codexQuotaText,
+} from "./codex-quota.js";
+import {
 	MinimalistFrameEditor,
 	type FrameBaseEditor,
 } from "./editor.js";
@@ -75,6 +80,13 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 	let agentActive = false;
 	let gitTimer: ReturnType<typeof setInterval> | undefined;
 
+	// Codex (openai-codex) 5h/week windows, polled in-process. Inert unless the
+	// routed model is the native Codex route — no config required.
+	const codexQuota = new CodexQuotaCollector(
+		() => currentCtx ?? undefined,
+		() => requestRender?.(),
+	);
+
 	function emptyStatus(): GitFrameStatus {
 		return { branch: undefined, dirty: false, ahead: 0, behind: 0 };
 	}
@@ -101,7 +113,15 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 			// Feature contributions (mode, quota, …) merge last so embedded
 			// state stays live even between frame repaints.
 			...contributedFrameMetadata(),
+			...codexQuotaMetadata(),
 		};
+	}
+
+	function codexQuotaMetadata(): Partial<FrameMetadata> {
+		const quota = codexQuota.get();
+		if (!quota) return {};
+		const text = codexQuotaText(quota);
+		return text ? { codexQuota: { text, role: codexQuotaRole(quota) } } : {};
 	}
 
 	async function refreshGit(): Promise<void> {
@@ -143,10 +163,14 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 		// have claimed the editor). With no factory at all Pi uses its built-in
 		// editor, which we cannot wrap — it stays native.
 		const existingFactory = ctx.ui.getEditorComponent?.();
+		// SAFETY: editor factories are branded with symbol properties (both AIO's
+		// frame and standalone Zentui); the type system cannot see symbol keys on
+		// a function, so an unknown-bridged Record view is required.
+		const brandedFactory = existingFactory as unknown as Record<symbol, unknown> | undefined;
 		if (
 			!existingFactory ||
 			isFrameEditorFactory(existingFactory) ||
-			(existingFactory as Record<symbol, unknown>)[Symbol.for("pi-zentui.editor-factory")] === true
+			brandedFactory?.[Symbol.for("pi-zentui.editor-factory")] === true
 		) {
 			return;
 		}
@@ -186,10 +210,12 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 		void refreshGit();
 		startGitTimer();
 		probeActive = true;
+		codexQuota.reconcile();
 	});
 
 	pi.on("session_shutdown", async () => {
 		stopGitTimer();
+		codexQuota.stop();
 		currentCtx = null;
 		probeActive = false;
 		requestRender = undefined;
@@ -200,6 +226,8 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 
 	pi.on("model_select", async (_event, ctx) => {
 		currentCtx = ctx;
+		// Switching providers/accounts changes which quota applies.
+		codexQuota.reconcile();
 		requestRender?.();
 	});
 

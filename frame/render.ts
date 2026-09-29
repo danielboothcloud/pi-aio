@@ -60,6 +60,8 @@ export interface FrameMetadata {
 	mode?: { icon: string; label: string; role: string };
 	/** Provider quota line, contributed by status-line (pre-joined text + theme role). */
 	quota?: { text: string; role: string };
+	/** Codex 5h/week remaining windows, from the frame's own poller. */
+	codexQuota?: { text: string; role: string };
 }
 
 // Upstream default palette (theme source): shared colors + minimalist fallbacks.
@@ -211,7 +213,12 @@ function renderTopRight(
 	}
 	// Provider quota trails the context: it is the other live-consumption
 	// metric, and reading them together (39% ctx · synthetic 100% →5h) is
-	// the whole point of embedding it.
+	// the whole point of embedding it. The Codex 5h/week windows use the same
+	// slot — only one provider is ever active, so they never both appear.
+	const codex = metadata.codexQuota;
+	if (codex) {
+		parts.push(safeThemeFg(uiTheme, codex.role, codex.text));
+	}
 	const quota = metadata.quota;
 	if (quota) {
 		parts.push(safeThemeFg(uiTheme, quota.role, quota.text));

@@ -147,7 +147,12 @@ generated `dist/` tree without changing the package contract.
   zentui.json and no seeding. The frame answers a synchronous capability
   probe (`frame/protocol.ts`, event `aio:minimal-frame-capability`) only
   after a TUI session installed it; effort and permission-modes suppress
-  their duplicate footer statuses based on that probe. The queue feeds framed
+  their duplicate footer statuses based on that probe. `frame/codex-quota.ts`
+  (ported from pi-zentui) polls the native `openai-codex` usage endpoint for
+  the 5h/weekly remaining windows and renders them beside the context percent
+  — inert unless the routed model is the native Codex route, and it degrades
+  to nothing rather than falling back to private credential storage. The
+  queue feeds framed
   rows into the frame via `setQueuePanelLinesProvider` and suppresses its
   below-editor widget in any framed environment (AIO frame or standalone
   Zentui). Status-line's provider-quota surface renders as an above-editor

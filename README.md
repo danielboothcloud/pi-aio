@@ -386,12 +386,19 @@ pi --permission-mode plan
 `aio` ships its own proprietary minimalist editor frame (vendored from
 [pi-zentui](https://github.com/lmilojevicc/pi-zentui), MIT — see
 `frame/UPSTREAM.md`). It replaces Pi's editor with a labeled rounded frame
-embedding live metadata — session name, turn timer, cost, model, thinking
-level, context percent, git branch/dirty/ahead/behind, and path — directly in
-the border, in Pi's own theme colors. The frame wraps aio's queue/`!bash`
+embedding live metadata — permission mode, session name, turn timer, cost,
+model, thinking level, context percent, provider quota, git
+branch/dirty/ahead/behind, and path — directly in the border, in Pi's own
+theme colors. The frame wraps aio's queue/`!bash`
 editor rather than replacing its behavior, so autocomplete, queue
 interruption, and bash hints keep working, and pending queue rows render
 inside the frame above its bottom border.
+
+Quota appears automatically: the Codex 5-hour/weekly windows (`5h 88% | week
+97%`) poll the native `openai-codex` usage endpoint whenever that route is
+active — no configuration — and the generic `aio.statusLine.providerUsage`
+providers supply other providers. Both occupy the same slot after the context
+percent, and both disappear when their provider is not active.
 
 There is no configuration surface: the frame's style is code-owned
 (`frame/render.ts`). When a separately installed standalone Zentui already
@@ -522,9 +529,9 @@ showing both the request quota and the weekly credit window from one response:
 Each mapping may provide `used`, `limit`, `remaining`, `renewsAt`, and/or
 `text`. When `used` and `limit` are available, aio computes the remaining
 percentage. `text` can map a provider-formatted quota string (for example
-`"$23.21"`) verbatim. With the frame active, quota renders as a compact
-above-editor widget instead of a status row. In fallback mode it renders
-inside one `quota` segment. Values are joined by `·` and color by the
+`"$23.21"`) verbatim. With the frame active, quota embeds in the pill's top
+border right after the context percent. In fallback mode it renders inside
+one `quota` segment. Values are joined by `·` and color by the
 window closest to exhaustion. A provider entry with a single top-level `mapping`
 instead of `windows` keeps working as a one-window shorthand. Quota output is
 omitted when the active provider has no configuration or nothing has been fetched

@@ -18,3 +18,7 @@ UI) remains upstream and is not used by AIO.
 - Git probe is trimmed to branch/dirty/ahead/behind (porcelain v2).
 - Queue panel rows render inside the frame (as framed rows above the
   bottom border) — an AIO-specific integration.
+- Codex quota is retained (`codex-quota.ts`) and always on: upstream gates it
+  behind a `codexQuota` setting, AIO renders the 5h/weekly windows whenever
+  the native `openai-codex` route is active. `getProviderAuth` is treated as
+  optional on the host surface; without it the windows stay hidden.
