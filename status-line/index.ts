@@ -12,7 +12,7 @@ import {
 } from "./config.js";
 import {
 	fetchProviderUsage,
-	formatProviderUsage,
+	providerUsageLine,
 	type ProviderUsage,
 } from "./provider-usage.js";
 import {
@@ -35,26 +35,29 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 
 	const zentuiCapability = () => probeZentuiWorkingLine(pi);
 
-	function syncProviderUsageStatus(ctx: ExtensionContext | null = currentCtx): void {
+	const PROVIDER_USAGE_STATUS_KEY = "aio-provider-usage";
+	const PROVIDER_USAGE_WIDGET_KEY = "aio-provider-usage";
+
+	function syncProviderUsageStatus(
+		ctx: ExtensionContext | null = currentCtx,
+	): void {
 		if (!ctx?.hasUI) return;
-		if (!zentuiCapability().supported || providerUsage.length === 0) {
-			ctx.ui.setStatus("aio-provider-usage", undefined);
+		const line = providerUsageLine(providerUsage);
+		if (!line) {
+			ctx.ui.setStatus(PROVIDER_USAGE_STATUS_KEY, undefined);
+			ctx.ui.setWidget(PROVIDER_USAGE_WIDGET_KEY, undefined);
 			return;
 		}
-		const remaining = providerUsage
-			.map((usage) => usage.remainingPercent)
-			.filter((value): value is number => value !== undefined);
-		const lowest = remaining.length > 0 ? Math.min(...remaining) : undefined;
-		let role: "error" | "warning" | "muted" = "muted";
-		if (lowest !== undefined && lowest <= 20) role = "error";
-		else if (lowest !== undefined && lowest <= 50) role = "warning";
-		const text = providerUsage
-			.map((usage) => formatProviderUsage(usage))
-			.join(" · ");
-		ctx.ui.setStatus(
-			"aio-provider-usage",
-			ctx.ui.theme.fg(role, `◴ ${text}`),
-		);
+		const styled = ctx.ui.theme.fg(line.role, `◴ ${line.text}`);
+		if (zentuiCapability().supported) {
+			// Zentui owns the visuals: render above the editor frame instead of
+			// the below-editor extension-status row, so quota reads as part of
+			// the minimalist widget like model/effort/context metadata.
+			ctx.ui.setWidget(PROVIDER_USAGE_WIDGET_KEY, [styled]);
+			ctx.ui.setStatus(PROVIDER_USAGE_STATUS_KEY, undefined);
+		} else {
+			ctx.ui.setStatus(PROVIDER_USAGE_STATUS_KEY, styled);
+		}
 	}
 
 	function resetProviderUsage(clearValue = false): void {
@@ -271,7 +274,10 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	});
 
 	pi.on("session_shutdown", async () => {
-		if (currentCtx?.hasUI) currentCtx.ui.setStatus("aio-provider-usage", undefined);
+		if (currentCtx?.hasUI) {
+			currentCtx.ui.setStatus("aio-provider-usage", undefined);
+			currentCtx.ui.setWidget("aio-provider-usage", undefined);
+		}
 		resetProviderUsage();
 		requestFooterRender = undefined;
 		currentCtx = null;

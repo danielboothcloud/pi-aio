@@ -237,3 +237,25 @@ export function formatProviderUsage(
 	const reset = formatReset(usage.renewsAt, now);
 	return `${sanitizeDisplayText(usage.label)} ${value}${reset ? ` ${reset}` : ""}`;
 }
+
+/**
+ * Compose every window into one compact status line. The role drives theming;
+ * thresholds mirror the previous inline logic (≤20% error, ≤50% warning).
+ */
+export function providerUsageLine(
+	usages: ProviderUsage[],
+	now = Date.now(),
+): { text: string; role: "error" | "warning" | "muted" } | undefined {
+	if (usages.length === 0) return undefined;
+	const remaining = usages
+		.map((usage) => usage.remainingPercent)
+		.filter((value): value is number => value !== undefined);
+	const lowest = remaining.length > 0 ? Math.min(...remaining) : undefined;
+	let role: "error" | "warning" | "muted" = "muted";
+	if (lowest !== undefined && lowest <= 20) role = "error";
+	else if (lowest !== undefined && lowest <= 50) role = "warning";
+	return {
+		text: usages.map((usage) => formatProviderUsage(usage, now)).join(" · "),
+		role,
+	};
+}

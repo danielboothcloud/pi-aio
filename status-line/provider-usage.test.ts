@@ -5,6 +5,7 @@ import {
 	fetchProviderUsage,
 	formatProviderUsage,
 	mapProviderUsage,
+	providerUsageLine,
 	providerUsageWindows,
 	resolveEnvironmentTemplate,
 } from "./provider-usage.ts";
@@ -122,6 +123,26 @@ test("resolveEnvironmentTemplate fails closed for missing variables", () => {
 	} finally {
 		if (previous !== undefined) process.env[name] = previous;
 	}
+});
+
+test("providerUsageLine joins windows and tiers by lowest remaining", () => {
+	const now = Date.parse("2030-01-01T00:00:00.000Z");
+	assert.equal(providerUsageLine([], now), undefined);
+	assert.deepEqual(providerUsageLine([
+		{ provider: "synthetic", label: "synthetic", remainingPercent: 100, renewsAt: "2030-01-01T05:00:00.000Z" },
+		{ provider: "synthetic", label: "wk", text: "$23.88", renewsAt: "2030-01-01T02:00:00.000Z" },
+	], now), {
+		text: "synthetic 100% →5h · wk $23.88 →2h",
+		role: "muted",
+	});
+	assert.equal(
+		providerUsageLine([{ provider: "p", label: "p", remainingPercent: 10 }], now)?.role,
+		"error",
+	);
+	assert.equal(
+		providerUsageLine([{ provider: "p", label: "p", remainingPercent: 40 }], now)?.role,
+		"warning",
+	);
 });
 
 test("formatProviderUsage includes compact reset timing", () => {
