@@ -143,8 +143,16 @@ generated `dist/` tree without changing the package contract.
   mode and effort into the keyed Working-line protocol and removes both segments
   on inactive ownership/shutdown. The legacy status-line never writes the shared
   working message/indicator while Zentui owns the row, and exposes generic
-  provider quota as an extension status. Zentui's user-owned
-  `<agent-dir>/zentui.json` is never auto-seeded by AIO.
+  provider quota as an extension status. AIO's only supported Zentui
+  presentation is the minimalist preset: `registerAioZentui` seeds
+  `<agent-dir>/zentui.json` with minimalist defaults (minimalist editor,
+  hidden footer, user messages off) exactly once — only when the file is
+  missing or completely empty, logging the write (`zentui/seed.ts`). An
+  existing file is never normalized, rewritten, or merged; user edits always
+  win. While Zentui owns the visuals (`supported` capability), AIO suppresses
+  its duplicate `effort` and `modes` footer statuses (the editor metadata and
+  the Working-line bridge carry both); without Zentui both statuses render
+  as before.
 - `nvim/` opens files in Neovim in a new Otty pane beside the session (same
   launcher chain as hunk: otty split anchored to `$OTTY_PANE_ID` → tmux →
   otty tab → Terminal.app → print). `/nvim <path>[:line[:col]]` (`-r` for

@@ -2,9 +2,9 @@ import type {
 	ExtensionAPI,
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
+import { configPath } from "pi-zentui/extensions/zentui/config.ts";
 import registerZentui from "pi-zentui/extensions/zentui/index.ts";
 import {
-	formatEffortStatus,
 	getEffectiveLevel,
 } from "../effort/effort-status.js";
 import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
@@ -15,6 +15,7 @@ import {
 	publishZentuiWorkingLineSegment,
 	ZENTUI_WORKING_LINE_SEGMENT_PROTOCOL_VERSION,
 } from "./protocol.js";
+import { seedZentuiConfig } from "./seed.js";
 
 const MODE_SEGMENT_KEY = "aio:permission-mode";
 const EFFORT_SEGMENT_KEY = "aio:effort";
@@ -32,6 +33,8 @@ interface ZentuiIntegrationDependencies {
 	registerZentui?: (pi: ExtensionAPI) => void;
 	getMode?: () => PermissionMode;
 	getEffort?: () => string;
+	/** Test seam; defaults to the real seed-once-if-absent write. */
+	seedZentuiConfig?: () => void;
 }
 
 function isAioUiStateUpdate(value: unknown): value is AioUiStateUpdate {
@@ -96,21 +99,6 @@ function registerWorkingLineBridge(
 	pi.on("session_start", async (_event, ctx) => {
 		sessionActive = ctx.mode === "tui";
 		refreshState();
-		if (sessionActive && ctx.hasUI) {
-			// Zentui installs its status interceptor earlier in this same lifecycle.
-			// Republish AIO's startup statuses so saved hide/placement rules apply.
-			const mode = MODE_PRESENTATION[currentMode];
-			ctx.ui.setStatus(
-				"modes",
-				ctx.ui.theme.fg(mode.role, `${mode.icon} ${mode.label}`),
-			);
-			ctx.ui.setStatus(
-				"effort",
-				currentEffort === "unknown"
-					? undefined
-					: formatEffortStatus(ctx, currentEffort),
-			);
-		}
 		publish();
 	});
 	pi.on("session_tree", async () => refreshAndPublish());
@@ -132,6 +120,10 @@ export function registerAioZentui(
 	pi: ExtensionAPI,
 	dependencies: ZentuiIntegrationDependencies = {},
 ): { bundled: boolean } {
+	// Seed-once-if-absent: minimalist is AIO's only supported presentation. An
+	// existing zentui.json is never touched (see seed.ts and AGENTS.md).
+	(dependencies.seedZentuiConfig ?? (() => void seedZentuiConfig(configPath)))();
+
 	const existing = probeZentuiWorkingLine(pi);
 	const bundled = !existing.supported;
 	if (bundled) {

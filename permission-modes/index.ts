@@ -512,10 +512,14 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 	function updateStatus(ctx: ExtensionContext): void {
 		if (!ctx.hasUI) return;
 		const meta = modeMetadata(currentMode);
-		ctx.ui.setStatus(
-			"modes",
-			ctx.ui.theme.fg(meta.role, `${meta.icon} ${meta.label}`),
-		);
+		// Zentui owns the visual surfaces; the mode lives in its Working-line
+		// bridge (via emitAioUiState) instead of a duplicate footer status.
+		if (!probeZentuiWorkingLine(pi).supported) {
+			ctx.ui.setStatus(
+				"modes",
+				ctx.ui.theme.fg(meta.role, `${meta.icon} ${meta.label}`),
+			);
+		}
 		if (!probeZentuiWorkingLine(pi).active) {
 			const indicator: WorkingIndicatorOptions = {
 				frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"].map((f) =>

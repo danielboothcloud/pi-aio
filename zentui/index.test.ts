@@ -14,12 +14,15 @@ import {
 type Listener = (value: unknown) => void;
 type LifecycleHandler = (event: unknown, ctx: ExtensionContext) => Promise<void> | void;
 
-function makeHarness(options: { existing?: boolean; active?: boolean } = {}) {
+function makeHarness(
+	options: { existing?: boolean; active?: boolean; seed?: () => void } = {},
+) {
 	const listeners = new Map<string, Set<Listener>>();
 	const handlers = new Map<string, LifecycleHandler[]>();
 	const segments: Array<{ key: string; text?: string }> = [];
 	const statuses = new Map<string, string | undefined>();
 	let registerCalls = 0;
+	let seedCounter = 0;
 	let active = options.active ?? true;
 
 	const events = {
@@ -83,6 +86,12 @@ function makeHarness(options: { existing?: boolean; active?: boolean } = {}) {
 		get registerCalls() {
 			return registerCalls;
 		},
+		get seedCalls() {
+			return seedCounter;
+		},
+		set seedCalls(value: number) {
+			seedCounter = value;
+		},
 		pi,
 		registerZentui,
 		segments,
@@ -99,10 +108,14 @@ test("registerAioZentui loads bundled Zentui once and publishes AIO state", asyn
 		registerZentui: harness.registerZentui,
 		getMode: () => "auto",
 		getEffort: () => "xhigh",
+		seedZentuiConfig: () => {
+			harness.seedCalls++;
+		},
 	});
 
 	assert.deepEqual(result, { bundled: true });
 	assert.equal(harness.registerCalls, 1);
+	assert.equal(harness.seedCalls, 1);
 	await harness.emitLifecycle("session_start");
 	assert.deepEqual(harness.segments.slice(-2), [
 		{ key: "aio:permission-mode", text: "▶ Auto" },
@@ -114,10 +127,16 @@ test("registerAioZentui skips its bundled factory when Zentui already exists", (
 	const harness = makeHarness({ existing: true });
 	const result = registerAioZentui(harness.pi, {
 		registerZentui: harness.registerZentui,
+		seedZentuiConfig: () => {
+			harness.seedCalls++;
+		},
 	});
 
 	assert.deepEqual(result, { bundled: false });
 	assert.equal(harness.registerCalls, 0);
+	// Seeding happens regardless of ownership: a predecessor standalone install
+	// still benefits from AIO's seed-once-if-absent defaults.
+	assert.equal(harness.seedCalls, 1);
 });
 
 test("working-line bridge follows live mode and effort updates", async () => {
@@ -126,6 +145,9 @@ test("working-line bridge follows live mode and effort updates", async () => {
 		registerZentui: harness.registerZentui,
 		getMode: () => "default",
 		getEffort: () => "medium",
+		seedZentuiConfig: () => {
+			harness.seedCalls++;
+		},
 	});
 	await harness.emitLifecycle("session_start");
 
@@ -142,6 +164,9 @@ test("working-line bridge removes its segments when ownership is inactive", asyn
 		registerZentui: harness.registerZentui,
 		getMode: () => "ask",
 		getEffort: () => "low",
+		seedZentuiConfig: () => {
+			harness.seedCalls++;
+		},
 	});
 	await harness.emitLifecycle("session_start");
 
@@ -165,6 +190,9 @@ test("working-line bridge refreshes direct mode mutations at lifecycle boundarie
 		registerZentui: harness.registerZentui,
 		getMode: () => mode,
 		getEffort: () => "high",
+		seedZentuiConfig: () => {
+			harness.seedCalls++;
+		},
 	});
 	await harness.emitLifecycle("session_start");
 
@@ -176,23 +204,31 @@ test("working-line bridge refreshes direct mode mutations at lifecycle boundarie
 	]);
 });
 
-test("bridge republishes startup statuses after Zentui installs interception", async () => {
+test("bridge does not republish footer statuses when Zentui owns visuals", async () => {
 	const harness = makeHarness();
 	registerAioZentui(harness.pi, {
 		registerZentui: harness.registerZentui,
 		getMode: () => "ask",
 		getEffort: () => "low",
+		seedZentuiConfig: () => {
+			harness.seedCalls++;
+		},
 	});
 	await harness.emitLifecycle("session_start");
 
-	assert.equal(harness.statuses.get("modes"), "? Ask");
-	assert.equal(harness.statuses.get("effort"), "effort:low");
+	// Mode and effort are embedded in Zentui's editor metadata / Working line;
+	// duplicate footer statuses would render in the statuses-only row.
+	assert.equal(harness.statuses.get("modes"), undefined);
+	assert.equal(harness.statuses.get("effort"), undefined);
 });
 
 test("working-line bridge cleans up package-qualified segments on shutdown", async () => {
 	const harness = makeHarness();
 	registerAioZentui(harness.pi, {
 		registerZentui: harness.registerZentui,
+		seedZentuiConfig: () => {
+			harness.seedCalls++;
+		},
 	});
 	await harness.emitLifecycle("session_start");
 	await harness.emitLifecycle("session_shutdown");
