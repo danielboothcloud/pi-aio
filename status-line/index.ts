@@ -170,9 +170,20 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 		if (!ctx.hasUI) return;
 		currentCtx = ctx;
 
-		// Zentui is the primary visual owner. The legacy footer remains available
-		// only when Zentui is absent, avoiding two extensions fighting setFooter().
-		if (frameCapability().supported) return;
+		// The frame embeds every session stat in its border. Claim the footer
+		// with an intentionally quiet component anyway: skipping entirely lets
+		// Pi's native footer (path/branch, token/cache/cost rows, model line,
+		// extension statuses) show through and duplicate the pill.
+		if (frameCapability().supported) {
+			ctx.ui.setFooter(() => ({
+				dispose() {},
+				invalidate() {},
+				render() {
+					return [];
+				},
+			}));
+			return;
+		}
 
 		if (!config.enabled) {
 			ctx.ui.setFooter(undefined);

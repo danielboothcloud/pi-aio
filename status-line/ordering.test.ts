@@ -103,8 +103,16 @@ test("status-line before frame: legacy footer never installs, quota embeds once"
 	// Both lifecycle handlers fire in registration order (status-line first).
 	await harness.fireAll("session_start");
 
-	// The legacy footer must not install alongside the frame.
-	assert.equal(harness.footers.length, 0, "legacy footer must stay uninstalled");
+	// The footer is claimed with a quiet component (renders zero rows) so
+	// Pi's native footer — and any third-party footer — never duplicates the
+	// pill's path/token/cost/model lines or the extension-status row.
+	assert.equal(harness.footers.length, 1, "quiet footer claimed");
+	const quiet = harness.footers[0] as (
+		tui: unknown,
+		theme: unknown,
+		data: unknown,
+	) => { render(width: number): string[] };
+	assert.deepEqual(quiet(undefined, undefined, undefined).render(80), []);
 	assert.ok(harness.installed(), "frame editor installed");
 
 	// Quota surface: no widget, no footer status (data arrives via the
