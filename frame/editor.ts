@@ -303,10 +303,23 @@ export class MinimalistFrameEditor implements EditorComponent {
 
 		const autocompleteLines =
 			autocomplete.count > 0 ? baseRendered.slice(-autocomplete.count) : [];
-		const editorLines = baseRendered.slice(0, baseRendered.length - autocomplete.count);
-		if (editorLines.length < 1) {
+		const editorFrame = baseRendered.slice(0, baseRendered.length - autocomplete.count);
+		if (editorFrame.length < 1) {
 			return baseRendered.map((line) => truncateToWidth(line, width, ""));
 		}
+
+		// The base editor draws its own rule borders (plain `────` rows, with
+		// optional `─── ↑ N more ──` viewport indicators). Strip them so the
+		// frame does not double-border, and lift the viewport counts into the
+		// frame's labeled borders.
+		const top = parseBaseBorderRule(editorFrame[0] ?? "", "above");
+		const bottom = parseBaseBorderRule(editorFrame.at(-1) ?? "", "below");
+		const stripped = top !== undefined && bottom !== undefined;
+		const editorLines = stripped ? editorFrame.slice(1, -1) : editorFrame;
+		const viewport =
+			stripped && style.viewportIndicators
+				? { above: top?.count, below: bottom?.count }
+				: undefined;
 
 		const panelLines = [...autocompleteLines, ...(this.options.getPanelLines?.() ?? [])];
 		const metadata = this.options.getMetadata();
@@ -314,6 +327,7 @@ export class MinimalistFrameEditor implements EditorComponent {
 			width,
 			editorLines,
 			panelLines,
+			viewport,
 			inputText: this.base.getText(),
 			metadata,
 			uiTheme,
@@ -321,4 +335,26 @@ export class MinimalistFrameEditor implements EditorComponent {
 			borderColor: this.base.borderColor,
 		});
 	}
+}
+
+function plainText(line: string): string {
+	// eslint-disable-next-line no-control-regex -- SGR sequences only
+	return line.replace(/\x1b\[[0-9;]*m/g, "");
+}
+
+/**
+ * Recognize the base editor's border rows: a bare rule (`────`) or a rule
+ * carrying a scroll indicator (`─── ↑ 3 more ──`). Returns the indicator
+ * count when present, `{}` for a bare rule, undefined for non-border rows.
+ * Mirrors upstream's parseEditorBorder.
+ */
+export function parseBaseBorderRule(
+	line: string,
+	direction: "above" | "below",
+): { count?: string } | undefined {
+	const plain = plainText(line).trim();
+	if (/^─+$/.test(plain)) return {};
+	const arrow = direction === "above" ? "↑" : "↓";
+	const match = new RegExp(`^─{3,} ${arrow} ([1-9]\\d*) more ─*$`).exec(plain);
+	return match?.[1] ? { count: match[1] } : undefined;
 }

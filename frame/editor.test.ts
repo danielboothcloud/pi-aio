@@ -65,6 +65,43 @@ test("narrow widths fall through to the unframed base render", () => {
 	assert.deepEqual(lines, base.render(4));
 });
 
+test("the base editor's rule borders are stripped, not double-framed", () => {
+	// Regression: Pi's editor renders its own `────` rule rows; passing them
+	// through as content produced a border-inside-a-border. The frame must
+	// consume them.
+	const base = makeBase();
+	base.render = function (width: number) {
+		this.calls.push(`render:${width}`);
+		return ["─".repeat(width), "typing text".slice(0, width), "─".repeat(width)];
+	};
+	const editor = new MinimalistFrameEditor(base as never, editorOptions);
+	const lines = editor.render(60);
+
+	// Exactly one frame: top border, one content row, bottom border.
+	assert.equal(lines.length, 3);
+	assert.match(lines[0]!, /^╭/);
+	assert.match(lines[1]!, /^│ typing text\s+│$/);
+	assert.match(lines.at(-1)!, /^╰/);
+	assert.equal(lines.filter((line) => /^│ ─+ │$/.test(line)).length, 0);
+});
+
+test("viewport indicators from base rules surface in the frame borders", () => {
+	const base = makeBase();
+	base.render = function (width: number) {
+		this.calls.push(`render:${width}`);
+		return [
+			`─── ↑ 3 more ${"─".repeat(Math.max(0, width - 11))}`,
+			"typing text".slice(0, width),
+			`─── ↓ 2 more ${"─".repeat(Math.max(0, width - 11))}`,
+		];
+	};
+	const editor = new MinimalistFrameEditor(base as never, editorOptions);
+	const lines = editor.render(60);
+	assert.match(lines[0]!, /↑ 3 more/);
+	assert.match(lines.at(-1)!, /↓ 2 more/);
+	assert.doesNotMatch(lines[1]!, /─{3}/);
+});
+
 test("autocomplete rows are captured, re-framed, and stripped from the body", () => {
 	const rows = ["completion one", "completion two"];
 	const list = {
