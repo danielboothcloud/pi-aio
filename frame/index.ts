@@ -18,6 +18,7 @@ import {
 import { readGitFrameStatus, type GitFrameStatus } from "./git.js";
 import {
 	MinimalistFrameEditor,
+	type FrameBaseEditor,
 } from "./editor.js";
 import {
 	DEFAULT_FRAME_STYLE,
@@ -145,16 +146,27 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 
 		const previousText = ctx.ui.getEditorText?.() ?? "";
 		const factory = ((tui: unknown, theme: unknown, keybindings: unknown) => {
+			// SAFETY: the predecessor factory returns an EditorComponent; cast it
+			// to FrameBaseEditor because the frame's optional-extension surface
+			// (focused/onEscape/autocompleteList, …) is duck-typed at runtime.
 			const base = (
 				existingFactory as (t: unknown, th: unknown, k: unknown) => unknown
-			)(tui, theme, keybindings) as Parameters<typeof MinimalistFrameEditor>[0];
+			)(tui, theme, keybindings) as FrameBaseEditor;
 			const editor = new MinimalistFrameEditor(base, {
 				uiTheme: ctx.ui.theme as never,
 				style,
 				getMetadata,
 				getPanelLines: () => getQueuePanelLines(),
 			});
-			editor.setRequestRender(() => requestRender?.());
+			// SAFETY: Pi passes a TUI exposing requestRender(). The editor's
+			// repaint must go straight to the TUI — never back through the
+			// registrar's requestRender, which points at notifyChanged and
+			// would recurse infinitely (notifyChanged -> requestRender ->
+			// notifyChanged). Older hosts without the method degrade to a no-op.
+			const tuiLike = tui as { requestRender?: () => void } | undefined;
+			editor.setRequestRender(() => {
+				if (typeof tuiLike?.requestRender === "function") tuiLike.requestRender();
+			});
 			requestRender = () => editor.notifyChanged();
 			return editor;
 		}) as FrameEditorFactory;

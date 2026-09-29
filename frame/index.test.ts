@@ -91,6 +91,42 @@ test("registerFrameEditor wraps the existing editor and answers the probe", asyn
 	assert.match(lines.at(-1)!, /^╰/);
 });
 
+test("lifecycle repaints reach the TUI without recursion", async () => {
+	// Regression: notifyChanged() -> registrar requestRender -> notifyChanged()
+	// blew the stack (RangeError: Maximum call stack size exceeded) the first
+	// time an agent run repainted. The editor's repaint must terminate at the
+	// TUI's requestRender.
+	const baseFactory = () => ({
+		render: () => ["base-input", "base-row"],
+		getText: () => "",
+		setText() {},
+		handleInput() {},
+	});
+	const harness = makeHarness({ editorFactory: baseFactory });
+	registerFrameEditor(harness.pi, {
+		readGit: async () => ({ branch: undefined, dirty: false, ahead: 0, behind: 0 }),
+	});
+	await harness.fire("session_start");
+
+	const factory = harness.installed() as (
+		tui: unknown,
+		theme: unknown,
+		keybindings: unknown,
+	) => unknown;
+	let repaints = 0;
+	const tui = {
+		requestRender() {
+			repaints++;
+		},
+	};
+	const editor = factory(tui, harness.ctx.ui.theme, {}) as { notifyChanged(): void };
+
+	// The exact call path that crashed: every lifecycle event funnels through
+	// the registrar's requestRender into editor.notifyChanged().
+	for (let i = 0; i < 100; i++) editor.notifyChanged();
+	assert.equal(repaints, 100, "each notifyChanged repaints exactly once via the TUI");
+});
+
 test("registerFrameEditor skips a standalone Zentui editor", async () => {
 	const foreign = () => undefined;
 	Object.defineProperty(foreign, Symbol.for("pi-zentui.editor-factory"), { value: true });
