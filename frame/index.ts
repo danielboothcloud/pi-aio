@@ -30,6 +30,8 @@ import {
 	FRAME_CAPABILITY_VERSION,
 	getQueuePanelLines,
 	isFrameEditorFactory,
+	contributedFrameMetadata,
+	setFrameRepaintHook,
 } from "./protocol.js";
 
 const FRAME_EDITOR_FACTORY_SYMBOL = Symbol.for("aio.frame-editor-factory");
@@ -52,14 +54,16 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 		return result.kind === "ok" ? result.status : emptyStatus();
 	});
 
-	// Synchronous capability probe answered on the shared event bus — only
-	// once a TUI session actually installed the frame, so non-TUI and
-	// not-yet-started sessions report unsupported.
+	// Synchronous capability probe answered on the shared event bus.
+	// `supported` is true from REGISTRATION — earlier registrars (status-line)
+	// run their session_start before ours and must already know the frame
+	// exists, or they install duplicate footers (the registration-order race).
+	// `active` flips only once a TUI session actually installed the editor.
 	pi.events.on(FRAME_CAPABILITY_EVENT, (value: unknown) => {
-		if (!probeActive || value === null || typeof value !== "object") return;
+		if (value === null || typeof value !== "object") return;
 		const capability = value as { supported?: boolean; active?: boolean; version?: number };
 		capability.supported = true;
-		capability.active = true;
+		capability.active = probeActive;
 		capability.version = FRAME_CAPABILITY_VERSION;
 	});
 
@@ -94,6 +98,9 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 			sessionName: ctx.sessionManager.getSessionName() ?? "",
 			agentDurationMs: agentStartEpoch !== undefined ? Date.now() - agentStartEpoch : undefined,
 			agentActive,
+			// Feature contributions (mode, quota, …) merge last so embedded
+			// state stays live even between frame repaints.
+			...contributedFrameMetadata(),
 		};
 	}
 
@@ -168,6 +175,8 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 				if (typeof tuiLike?.requestRender === "function") tuiLike.requestRender();
 			});
 			requestRender = () => editor.notifyChanged();
+			// Out-of-band refreshes (quota fetch, mode change) repaint the frame.
+			setFrameRepaintHook(requestRender);
 			return editor;
 		}) as FrameEditorFactory;
 		factory[FRAME_EDITOR_FACTORY_SYMBOL] = true;
@@ -184,6 +193,7 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 		currentCtx = null;
 		probeActive = false;
 		requestRender = undefined;
+		setFrameRepaintHook(undefined);
 		agentStartEpoch = undefined;
 		agentActive = false;
 	});

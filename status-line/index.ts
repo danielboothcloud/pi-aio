@@ -3,7 +3,11 @@ import type {
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
-import { probeFrameEditor } from "../frame/protocol.js";
+import {
+	probeFrameEditor,
+	requestFrameRepaint,
+	setFrameMetadataContributor,
+} from "../frame/protocol.js";
 import {
 	DEFAULT_STATUS_LINE_CONFIG,
 	loadStatusLineConfig,
@@ -46,17 +50,23 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 		if (!line) {
 			ctx.ui.setStatus(PROVIDER_USAGE_STATUS_KEY, undefined);
 			ctx.ui.setWidget(PROVIDER_USAGE_WIDGET_KEY, undefined);
+			setFrameMetadataContributor("quota", undefined);
 			return;
 		}
-		const styled = ctx.ui.theme.fg(line.role, `◴ ${line.text}`);
 		if (frameCapability().supported) {
-			// AIO frame owns the visuals: render above the editor frame instead of
-			// the below-editor extension-status row, so quota reads as part of
-			// the minimalist widget like model/effort/context metadata.
-			ctx.ui.setWidget(PROVIDER_USAGE_WIDGET_KEY, [styled]);
+			// The frame embeds quota in its top border, next to the context
+			// percent — no widget, no footer status, no duplication.
+			setFrameMetadataContributor("quota", () => ({
+				quota: { text: line.text, role: line.role },
+			}));
 			ctx.ui.setStatus(PROVIDER_USAGE_STATUS_KEY, undefined);
+			ctx.ui.setWidget(PROVIDER_USAGE_WIDGET_KEY, undefined);
+			requestFrameRepaint();
 		} else {
-			ctx.ui.setStatus(PROVIDER_USAGE_STATUS_KEY, styled);
+			ctx.ui.setStatus(
+				PROVIDER_USAGE_STATUS_KEY,
+				ctx.ui.theme.fg(line.role, `◴ ${line.text}`),
+			);
 		}
 	}
 

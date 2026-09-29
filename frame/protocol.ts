@@ -1,4 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { FrameMetadata } from "./render.js";
 
 /**
  * AIO frame capability protocol — mirrors the synchronous event-bus probe
@@ -72,5 +73,58 @@ export function getQueuePanelLines(): string[] {
 		return queuePanelProvider?.() ?? [];
 	} catch {
 		return [];
+	}
+}
+
+// --- Frame metadata contributions -------------------------------------------
+
+/**
+ * Features embed their state directly into the frame's borders instead of
+ * publishing duplicate footer statuses. Each feature registers under its own
+ * key (e.g. "mode", "quota") and supplies a partial FrameMetadata; the frame
+ * merges all contributions over its own computed metadata.
+ */
+const metadataContributors = new Map<
+	string,
+	() => Partial<FrameMetadata>
+>();
+
+export function setFrameMetadataContributor(
+	key: string,
+	contributor: (() => Partial<FrameMetadata>) | undefined,
+): void {
+	if (contributor) metadataContributors.set(key, contributor);
+	else metadataContributors.delete(key);
+}
+
+export function contributedFrameMetadata(): Partial<FrameMetadata> {
+	const merged: Partial<FrameMetadata> = {};
+	for (const contributor of metadataContributors.values()) {
+		try {
+			Object.assign(merged, contributor());
+		} catch {
+			// A broken contributor must never break the frame render.
+		}
+	}
+	return merged;
+}
+
+// --- Frame repaint hook -------------------------------------------------------
+
+/**
+ * Set by the registrar while a frame editor is installed; lets features that
+ * refresh out-of-band (quota fetch, mode change) trigger a repaint.
+ */
+let repaintHook: (() => void) | undefined;
+
+export function setFrameRepaintHook(hook: (() => void) | undefined): void {
+	repaintHook = hook;
+}
+
+export function requestFrameRepaint(): void {
+	try {
+		repaintHook?.();
+	} catch {
+		// Repaints are best-effort.
 	}
 }

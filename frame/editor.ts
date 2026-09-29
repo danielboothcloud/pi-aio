@@ -11,6 +11,7 @@ import type { EditorComponent } from "@earendil-works/pi-tui";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import type { FrameMetadata, FrameStyle } from "./render.js";
 import { renderMinimalistFrame } from "./render.js";
+import { contributedFrameMetadata } from "./protocol.js";
 import type { ThemeLike } from "./style.js";
 
 type AutocompleteListInternals = { render(width: number): AutocompleteRenderResult };
@@ -322,7 +323,12 @@ export class MinimalistFrameEditor implements EditorComponent {
 				: undefined;
 
 		const panelLines = [...autocompleteLines, ...(this.options.getPanelLines?.() ?? [])];
-		const metadata = this.options.getMetadata();
+		// Feature contributions (mode, quota, …) merge over the frame's own
+		// computed metadata, so embedded state stays live between repaints.
+		const metadata: FrameMetadata = {
+			...this.options.getMetadata(),
+			...contributedFrameMetadata(),
+		};
 		return renderMinimalistFrame({
 			width,
 			editorLines,
@@ -332,7 +338,6 @@ export class MinimalistFrameEditor implements EditorComponent {
 			metadata,
 			uiTheme,
 			style,
-			borderColor: this.base.borderColor,
 		});
 	}
 }

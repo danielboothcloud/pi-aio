@@ -141,8 +141,10 @@ test("registerFrameEditor does nothing outside TUI mode", async () => {
 	registerFrameEditor(harness.pi);
 	await harness.fire("session_start");
 	assert.equal(harness.installed(), undefined);
+	// Supported means registered; active means a TUI session installed it.
 	const capability = probeFrameEditor(harness.pi);
-	assert.equal(capability.supported, false);
+	assert.equal(capability.supported, true);
+	assert.equal(capability.active, false);
 });
 
 test("session_shutdown stops refreshing without throwing", async () => {

@@ -21,6 +21,8 @@ import { Type } from "typebox";
 import {
 	emitAioUiState,
 	probeFrameEditor,
+	requestFrameRepaint,
+	setFrameMetadataContributor,
 } from "../frame/protocol.js";
 import { setPermissionModeAccess } from "./mode-access.js";
 import { showMutationApproval } from "./approval-dialog.js";
@@ -512,13 +514,18 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 	function updateStatus(ctx: ExtensionContext): void {
 		if (!ctx.hasUI) return;
 		const meta = modeMetadata(currentMode);
-		// Zentui owns the visual surfaces; the mode lives in its Working-line
-		// bridge (via emitAioUiState) instead of a duplicate footer status.
+		// The frame embeds the mode in its top border; the footer status is
+		// only a fallback for sessions without the frame.
 		if (!probeFrameEditor(pi).supported) {
 			ctx.ui.setStatus(
 				"modes",
 				ctx.ui.theme.fg(meta.role, `${meta.icon} ${meta.label}`),
 			);
+		} else {
+			setFrameMetadataContributor("mode", () => ({
+				mode: { icon: meta.icon, label: meta.label, role: meta.role },
+			}));
+			requestFrameRepaint();
 		}
 		if (!probeFrameEditor(pi).active) {
 			const indicator: WorkingIndicatorOptions = {

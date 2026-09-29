@@ -56,6 +56,10 @@ export interface FrameMetadata {
 	sessionName?: string;
 	agentDurationMs?: number;
 	agentActive?: boolean;
+	/** Permission mode, contributed by permission-modes (icon + label + theme role). */
+	mode?: { icon: string; label: string; role: string };
+	/** Provider quota line, contributed by status-line (pre-joined text + theme role). */
+	quota?: { text: string; role: string };
 }
 
 // Upstream default palette (theme source): shared colors + minimalist fallbacks.
@@ -123,6 +127,12 @@ function renderTopLeft(
 		parts.push(
 			bashMode === "no-context" ? muted("$") : safeThemeFg(uiTheme, "bashMode", "$"),
 		);
+	}
+	// Permission mode leads the metadata: it is the most operationally
+	// relevant state (gates what the agent may do).
+	const mode = metadata.mode;
+	if (mode) {
+		parts.push(safeThemeFg(uiTheme, mode.role, `${mode.icon} ${mode.label}`));
 	}
 	if (style.showTimer && metadata.agentDurationMs !== undefined) {
 		const duration = formatElapsedDuration(metadata.agentDurationMs);
@@ -198,6 +208,13 @@ function renderTopRight(
 			return joinParts([...(prefix ? [prefix] : []), context]);
 		}
 		parts.push(context);
+	}
+	// Provider quota trails the context: it is the other live-consumption
+	// metric, and reading them together (39% ctx · synthetic 100% →5h) is
+	// the whole point of embedding it.
+	const quota = metadata.quota;
+	if (quota) {
+		parts.push(safeThemeFg(uiTheme, quota.role, quota.text));
 	}
 	const joined = joinParts(parts);
 	return fit ? truncateToWidth(joined, availableWidth, "…") : joined;
@@ -313,7 +330,6 @@ export function renderMinimalistFrame({
 	metadata,
 	uiTheme,
 	style,
-	borderColor,
 }: {
 	width: number;
 	editorLines: string[];
@@ -324,7 +340,6 @@ export function renderMinimalistFrame({
 	metadata: FrameMetadata;
 	uiTheme: ThemeLike;
 	style: FrameStyle;
-	borderColor?: (text: string) => string;
 }): string[] {
 	if (width <= 4) return clampLines(editorLines, width);
 	const contentWidth = Math.max(0, width - 4);
