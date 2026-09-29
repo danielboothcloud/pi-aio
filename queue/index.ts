@@ -7,8 +7,18 @@ import { isZentuiEditorFactory } from "../zentui/protocol.js";
 import { QueueController } from "./controller.js";
 import { buildQueueLines } from "./lines.js";
 import { QueueEditor } from "./queue-editor.js";
+import { buildZentuiQueueLines } from "./zentui-lines.js";
 
 const WIDGET_KEY = "aio-queue";
+
+/** True when Zentui owns the editor (standalone, or wrapped around ours). */
+function isZentuiOwned(ctx: ExtensionContext): boolean {
+	try {
+		return isZentuiEditorFactory(ctx.ui.getEditorComponent?.());
+	} catch {
+		return false;
+	}
+}
 
 /** Matches AgentSession's _getUserMessageText (text blocks joined without separator). */
 function extractUserText(message: AgentMessage): string {
@@ -19,6 +29,25 @@ function extractUserText(message: AgentMessage): string {
 		.filter((block) => block.type === "text")
 		.map((block) => block.text)
 		.join("");
+}
+
+/**
+ * Put texts back into the editor without ever duplicating: texts the editor
+ * already holds (e.g. re-dumped by pi's abort paths) are skipped so a later
+ * Enter sends each exactly once.
+ */
+export function restoreTextsToEditor(
+	ctx: ExtensionContext,
+	texts: string[],
+	activeEditor?: { getText(): string } | null,
+): void {
+	if (!ctx.hasUI || texts.length === 0) return;
+	const current = ctx.ui.getEditorText?.() ?? activeEditor?.getText() ?? "";
+	const merged = texts.filter((text) => !current.includes(text));
+	const combined = [merged.join("\n\n"), current]
+		.filter((text) => text.trim())
+		.join("\n\n");
+	ctx.ui.setEditorText(combined);
 }
 
 export function registerQueue(pi: ExtensionAPI): void {
@@ -38,20 +67,16 @@ export function registerQueue(pi: ExtensionAPI): void {
 			(_tui, theme) => ({
 				invalidate() {},
 				render(width: number): string[] {
-					return buildQueueLines({ entries, width, theme });
+					// Render-time probe: the bundled Zentui installs its editor
+					// factory at its own session_start, after ours, so the queue
+					// panel must follow whatever owns the editor right now.
+					return isZentuiOwned(ctx)
+						? buildZentuiQueueLines({ entries, width, theme })
+						: buildQueueLines({ entries, width, theme });
 				},
 			}),
 			{ placement: "belowEditor" },
 		);
-	}
-
-	function restoreTextsToEditor(ctx: ExtensionContext, texts: string[]): void {
-		if (!ctx.hasUI || texts.length === 0) return;
-		const current = activeEditor?.getText() ?? "";
-		const combined = [texts.join("\n\n"), current]
-			.filter((text) => text.trim())
-			.join("\n\n");
-		ctx.ui.setEditorText(combined);
 	}
 
 	pi.on("session_start", (_event, ctx) => {
@@ -64,7 +89,8 @@ export function registerQueue(pi: ExtensionAPI): void {
 			hasPendingMessages: () => ctx.hasPendingMessages(),
 			abort: () => ctx.abort(),
 			clearEditor: () => ctx.ui.setEditorText(""),
-			restoreTextsToEditor: (texts) => restoreTextsToEditor(ctx, texts),
+			restoreTextsToEditor: (texts) =>
+				restoreTextsToEditor(ctx, texts, activeEditor),
 			sendUserMessage: (text, mode) =>
 				pi.sendUserMessage(text, { deliverAs: mode }),
 			notify: (message, type) => ctx.ui.notify(message, type),

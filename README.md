@@ -552,9 +552,19 @@ busy. Messages you type during a run are queued by pi as steering
 renders it as a numbered list below the input box:
 
 ```text
- queue (2) · ⏎ send next
- 1. [steer]  fix the parser off-by-one
- 2. [follow] then run the full test suite
+ QUEUE · 2 pending messages · Enter sends next
+  1 · fix the parser off-by-one · steer
+  2 · then run the full test suite · follow
+```
+
+With Zentui active, the queue renders as a frame panel attached to the
+editor in Zentui's minimalist style instead:
+
+```text
+├─ queue · 2 pending messages · Enter sends next ─────┤
+│ 1 fix the parser off-by-one                steer │
+│ 2 then run the full test suite             follow │
+╰──────────────────────────────────────────────────╯
 ```
 
 Steering entries are delivered after the current turn; follow-ups after the
@@ -562,10 +572,13 @@ run finishes. Long messages show a first-line preview; more than five pending
 messages collapse into a `+N more` row.
 
 Pressing `enter` while the input box is **empty** interrupts the current run
-and immediately pushes the next pending message at the agent (the rest stay
-queued with their original steer/follow-up semantics). Pi's default behavior
-— `esc` to interrupt and dump the queue back into the editor, `alt+↑` to edit
-the queue — still works untouched.
+and, once the aborted run settles, sends the next pending message as a fresh
+prompt — deterministically, never racing the abort unwind (the rest stay
+queued with their original steer/follow-up semantics and are re-queued once
+the new run starts). If the send fails to start a run, the pending messages
+are restored to the editor exactly once, so nothing double-sends. Pi's
+default behavior — `esc` to interrupt and dump the queue back into the
+editor, `alt+↑` to edit the queue — still works untouched.
 
 Commands:
 
