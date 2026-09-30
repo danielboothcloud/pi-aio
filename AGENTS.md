@@ -166,6 +166,18 @@ generated `dist/` tree without changing the package contract.
   append-only contracts. Detectors stay ACTIVE in
   `AIO_SUBAGENT_CHILD=1` processes; blocked calls never enter executed
   histories. Emits `loop-police:detection` on the shared event bus.
+- `subagents/` owns the `subagent` tool: configured child Pi agents run as
+  spawned `pi --mode json -p` processes (fresh or forked context, bounded
+  parallel group, background follow-up via `aio-subagent-complete`). A child
+  that dies from a provider stall, hard timeout, or crash is retried
+  automatically (`RunnerDeps.maxAttempts`, default 2) by resuming the child's
+  own session file with a continuation prompt — completed turns and usage
+  survive the failed attempt; fork retries resume the forked session with
+  `--session` (dropping `--fork`, which cannot combine with it). Final
+  failures report the preserved session file so the parent can inspect or
+  resume manually. Tool description and promptGuidelines steer the parent
+  toward generous `timeoutMs` budgets (pi's own HTTP idle timeout is 300s by
+  default, so budgets below that kill children mid-recovery).
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

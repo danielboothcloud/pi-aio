@@ -90,7 +90,7 @@ const SubagentSchema = Type.Object({
 			minimum: 1000,
 			maximum: 21_600_000,
 			description:
-				"Hard budget per child in milliseconds (1s to 6h). Defaults to the agent's declared timeoutMs, or 15 minutes when unset.",
+				"Hard budget per child in milliseconds (1s to 6h). Defaults to the agent's declared timeoutMs, or 15 minutes when unset. A timed-out child is retried once with its session resumed.",
 		}),
 	),
 });
@@ -140,6 +140,7 @@ function publicRun(run: SubagentRun): Record<string, unknown> {
 			output: child.output,
 			error: child.error,
 			sessionFile: child.sessionFile,
+			attempts: child.attempts ?? 1,
 		})),
 	};
 }
@@ -221,12 +222,14 @@ export function registerSubagents(
 	pi.registerTool({
 		name: "subagent",
 		label: "Subagent",
-		description: `Delegate a focused task to a configured child Pi agent. Supports one child or a bounded parallel group, fresh or forked context, foreground or background execution, and basic list/status/stop control. Omit model and thinking to inherit the active parent session values at launch. Use fresh context for independent review. Keep parallel tasks read-only unless their filesystems are deliberately isolated; this reduced runtime does not provide worktrees or nested delegation.`,
+		description: `Delegate a focused task to a configured child Pi agent. Supports one child or a bounded parallel group, fresh or forked context, foreground or background execution, and basic list/status/stop control. Omit model and thinking to inherit the active parent session values at launch. Use fresh context for independent review. Keep parallel tasks read-only unless their filesystems are deliberately isolated; this reduced runtime does not provide worktrees or nested delegation. A child killed by a stall, timeout, or crash is retried automatically and resumes its own session, so completed work is preserved; a final failure reports the preserved session file.`,
 		promptSnippet: "Delegate focused work to one or more isolated child agents",
 		promptGuidelines: [
 			"Use subagent for focused, self-contained delegation and independent parallel review.",
 			"Keep one writer in the shared checkout; parallel subagent tasks should normally be read-only.",
 			"Use subagent action=list before choosing an unfamiliar configured agent.",
+			"Budget timeoutMs generously for research-heavy tasks: the default is 15 minutes, and tight budgets kill healthy children mid-request and waste the tokens they already spent.",
+			"If a child fails after its automatic retry, narrow or split the task instead of re-sending it unchanged.",
 		],
 		parameters: SubagentSchema,
 		async execute(_toolCallId, params: SubagentParams, signal, onUpdate, ctx) {

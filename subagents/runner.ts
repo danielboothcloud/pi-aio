@@ -1,6 +1,12 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createInterface } from "node:readline";
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	readdirSync,
+	writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
 import { findAgent } from "./agents.js";
@@ -25,6 +31,14 @@ import type {
 const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
 const DEFAULT_TERMINATION_GRACE_MS = 3_000;
 const DEFAULT_CONCURRENCY = 4;
+const DEFAULT_MAX_ATTEMPTS = 2;
+const MAX_ATTEMPTS_CAP = 5;
+const DEFAULT_RETRY_BACKOFF_MS = 1_000;
+// Prompt sent to the CHILD agent (not the orchestrator) on a retry attempt:
+// it replaces the original task argument, which already lives in the resumed
+// child session history.
+const CONTINUATION_PROMPT =
+	"Your previous run was interrupted before you could finish (provider request stall or hard timeout). Continue the original task from this session's history without redoing work already completed, then return the final result.";
 const MAX_TASKS = 12;
 const TASK_ARG_LIMIT = 8_000;
 const MAX_OUTPUT_CHARS = 50_000;
@@ -38,6 +52,10 @@ export interface RunnerDeps {
 	piArgsPrefix?: string[];
 	runsBaseDir?: string;
 	terminationGraceMs?: number;
+	/** Total attempts per child (default 2: one automatic retry). */
+	maxAttempts?: number;
+	/** Delay before a retry attempt (default 1s). */
+	retryBackoffMs?: number;
 }
 
 interface RunInput {
@@ -171,6 +189,10 @@ export function buildSpawnSpec(input: {
 	agent: AgentConfig;
 	parent: ParentLaunchContext;
 	deps?: RunnerDeps;
+	/** Resume an existing child session instead of forking or starting fresh. */
+	resumeSessionFile?: string;
+	/** Replacement prompt for retries (the task already lives in the resumed session). */
+	promptOverride?: string;
 }): SpawnSpec {
 	const childDir = join(
 		resolveRunsBaseDir(input.deps),
@@ -196,7 +218,11 @@ export function buildSpawnSpec(input: {
 	}
 	const context = input.request.context ?? "fresh";
 	let requestedSessionFile: string | undefined;
-	if (context === "fork") {
+	if (input.resumeSessionFile) {
+		// --fork cannot be combined with --session; resuming the forked child's
+		// own session preserves its progress without re-forking from the parent.
+		args.push("--session", input.resumeSessionFile);
+	} else if (context === "fork") {
 		if (!input.parent.parentSessionFile) {
 			throw new Error(
 				"Forked subagents require a persisted parent session file.",
@@ -239,7 +265,11 @@ export function buildSpawnSpec(input: {
 	const tools = input.agent.tools?.filter((tool) => tool !== "subagent");
 	if (tools?.length) args.push("--tools", tools.join(","));
 	args.push("--exclude-tools", "subagent");
-	if (input.task.task.length > TASK_ARG_LIMIT) {
+	if (input.promptOverride !== undefined) {
+		// Retry prompt for the child process (positional argument); the parent
+		// never sees this text.
+		args.push(input.promptOverride);
+	} else if (input.task.task.length > TASK_ARG_LIMIT) {
 		const taskPath = join(childDir, "task.md");
 		writeFileSync(taskPath, `Task: ${input.task.task}`, {
 			encoding: "utf8",
@@ -295,71 +325,130 @@ function normalizeTasks(request: SubagentRunRequest): SubagentTask[] {
 	return request.tasks;
 }
 
-async function runChild(input: {
+interface AttemptOutcome {
+	code: number;
+	signal: NodeJS.Signals | null;
+	timedOut: boolean;
+	stderr: string;
+	parsed: ParsedChildOutput;
+	sessionFile?: string;
+}
+
+function attemptFailed(outcome: AttemptOutcome): boolean {
+	return (
+		outcome.timedOut ||
+		outcome.parsed.assistantError !== undefined ||
+		outcome.code !== 0
+	);
+}
+
+function sessionHasUserTurn(sessionFile: string): boolean {
+	try {
+		return readFileSync(sessionFile, "utf8").includes('"role":"user"');
+	} catch {
+		return false;
+	}
+}
+
+function preservedSessionNote(outcome: AttemptOutcome): string {
+	return outcome.sessionFile
+		? ` Child session preserved at ${outcome.sessionFile}.`
+		: "";
+}
+
+function describedFailure(input: {
+	outcome: AttemptOutcome;
+	timeoutMs: number;
+	attempts: number;
+	maxAttempts: number;
+}): string {
+	const { outcome } = input;
+	if (outcome.timedOut) {
+		return `Subagent timed out after ${input.timeoutMs}ms on attempt ${input.attempts} of ${input.maxAttempts}.${preservedSessionNote(outcome)}`;
+	}
+	const suffix = ` (attempt ${input.attempts} of ${input.maxAttempts})`;
+	const preserved = preservedSessionNote(outcome);
+	if (outcome.parsed.assistantError)
+		return `${outcome.parsed.assistantError}${suffix}.${preserved}`;
+	const base =
+		outcome.stderr.trim() ||
+		`Subagent exited with code ${outcome.code}${outcome.signal ? ` (${outcome.signal})` : ""}`;
+	return `${base}${suffix}.${preserved}`;
+}
+
+function composedChildState(input: {
+	specError?: string;
+	outcome?: AttemptOutcome;
+	wasStopped: boolean;
+	timeoutMs: number;
+	attempts: number;
+	maxAttempts: number;
+}): { state: ChildRunResult["state"]; error?: string } {
+	if (input.specError !== undefined)
+		return { state: "failed", error: input.specError };
+	if (!input.outcome)
+		return { state: "failed", error: "Subagent child did not run." };
+	if (input.wasStopped) return { state: "stopped" };
+	if (attemptFailed(input.outcome)) {
+		return {
+			state: "failed",
+			error: describedFailure({
+				outcome: input.outcome,
+				timeoutMs: input.timeoutMs,
+				attempts: input.attempts,
+				maxAttempts: input.maxAttempts,
+			}),
+		};
+	}
+	return { state: "completed" };
+}
+
+function nextRetryInputs(outcome: AttemptOutcome): {
+	resumeSessionFile?: string;
+	promptOverride?: string;
+} {
+	if (!outcome.sessionFile) return {};
+	const resumeSessionFile = outcome.sessionFile;
+	return {
+		resumeSessionFile,
+		promptOverride: sessionHasUserTurn(resumeSessionFile)
+			? CONTINUATION_PROMPT
+			: undefined,
+	};
+}
+
+function accumulateUsage(total: ChildUsage, delta: ChildUsage): void {
+	total.input += delta.input;
+	total.output += delta.output;
+	total.cacheRead += delta.cacheRead;
+	total.cacheWrite += delta.cacheWrite;
+	total.cost += delta.cost;
+}
+
+async function runChildAttempt(input: {
 	run: SubagentRun;
 	status: ChildRunStatus;
-	task: SubagentTask;
-	request: SubagentRunRequest;
-	agent: AgentConfig;
-	parent: ParentLaunchContext;
+	spec: SpawnSpec;
+	timeoutMs: number;
+	terminationGraceMs: number;
 	signal?: AbortSignal;
 	onUpdate?: (run: SubagentRun) => void;
 	deps?: RunnerDeps;
-}): Promise<ChildRunResult> {
-	const startedAt = Date.now();
-	input.status.state = "running";
-	input.status.startedAt = startedAt;
-	input.status.model = resolvedModel(
-		input.task,
-		input.request,
-		input.agent,
-		input.parent,
-	);
-	input.onUpdate?.(input.run);
-
-	let spec: SpawnSpec;
-	try {
-		spec = buildSpawnSpec({
-			runId: input.run.id,
-			index: input.status.index,
-			task: input.task,
-			request: input.request,
-			agent: input.agent,
-			parent: input.parent,
-			deps: input.deps,
-		});
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		input.status.state = "failed";
-		input.status.error = message;
-		input.status.endedAt = Date.now();
-		return {
-			index: input.status.index,
-			agent: input.agent.name,
-			task: input.task.task,
-			state: "failed",
-			output: "",
-			error: message,
-			exitCode: 1,
-			model: input.status.model,
-			startedAt,
-			endedAt: input.status.endedAt,
-			usage: emptyUsage(),
-		};
-	}
-
+}): Promise<AttemptOutcome> {
 	const parsed: ParsedChildOutput = { finalOutput: "", usage: emptyUsage() };
 	let stderr = "";
 	let timedOut = false;
 	let abortListener: (() => void) | undefined;
 	let abortKillTimer: NodeJS.Timeout | undefined;
 	const spawnProcess = input.deps?.spawnProcess ?? spawn;
-	const process = spawnProcess(spec.command, spec.args, {
-		cwd: spec.cwd,
-		env: spec.env,
+	// SAFETY: stdio tuple [null, Readable, Readable] guarantees stdout/stderr are
+	// non-null Readables; only stdin differs from ChildProcessWithoutNullStreams.
+	const process = spawnProcess(input.spec.command, input.spec.args, {
+		cwd: input.spec.cwd,
+		env: input.spec.env,
 		stdio: ["ignore", "pipe", "pipe"],
 		windowsHide: true,
-	}) as ChildProcessWithoutNullStreams;
+	}) as unknown as ChildProcessWithoutNullStreams;
 	input.status.process = process;
 
 	const stdoutLines = createInterface({ input: process.stdout });
@@ -372,19 +461,15 @@ async function runChild(input: {
 		stderr = `${stderr}${chunk.toString()}`.slice(-MAX_STDERR_CHARS);
 	});
 
-	const timeoutMs =
-		input.request.timeoutMs ?? input.agent.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-	const terminationGraceMs =
-		input.deps?.terminationGraceMs ?? DEFAULT_TERMINATION_GRACE_MS;
 	const timeout = setTimeout(() => {
 		timedOut = true;
 		process.kill("SIGTERM");
 		const killTimer = setTimeout(() => {
 			if (process.exitCode === null && process.signalCode === null)
 				process.kill("SIGKILL");
-		}, terminationGraceMs);
+		}, input.terminationGraceMs);
 		killTimer.unref?.();
-	}, timeoutMs);
+	}, input.timeoutMs);
 	timeout.unref?.();
 
 	if (input.signal) {
@@ -393,7 +478,7 @@ async function runChild(input: {
 			abortKillTimer = setTimeout(() => {
 				if (process.exitCode === null && process.signalCode === null)
 					process.kill("SIGKILL");
-			}, terminationGraceMs);
+			}, input.terminationGraceMs);
 			abortKillTimer.unref?.();
 		};
 		if (input.signal.aborted) abortListener();
@@ -419,24 +504,129 @@ async function runChild(input: {
 	stdoutLines.close();
 	input.status.process = undefined;
 
+	const sessionFile = findSessionFile(
+		input.spec.sessionDir,
+		input.spec.requestedSessionFile,
+	);
+	return {
+		code,
+		signal,
+		timedOut,
+		stderr,
+		parsed,
+		sessionFile,
+	};
+}
+
+async function runChild(input: {
+	run: SubagentRun;
+	status: ChildRunStatus;
+	task: SubagentTask;
+	request: SubagentRunRequest;
+	agent: AgentConfig;
+	parent: ParentLaunchContext;
+	signal?: AbortSignal;
+	onUpdate?: (run: SubagentRun) => void;
+	deps?: RunnerDeps;
+}): Promise<ChildRunResult> {
+	const startedAt = Date.now();
+	input.status.state = "running";
+	input.status.startedAt = startedAt;
+	input.status.model = resolvedModel(
+		input.task,
+		input.request,
+		input.agent,
+		input.parent,
+	);
+	input.status.attempts = 0;
+	input.onUpdate?.(input.run);
+
+	const maxAttempts = Math.max(
+		1,
+		Math.min(
+			input.deps?.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+			MAX_ATTEMPTS_CAP,
+		),
+	);
+	const retryBackoffMs =
+		input.deps?.retryBackoffMs ?? DEFAULT_RETRY_BACKOFF_MS;
+	const timeoutMs =
+		input.request.timeoutMs ?? input.agent.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+	const terminationGraceMs =
+		input.deps?.terminationGraceMs ?? DEFAULT_TERMINATION_GRACE_MS;
+
+	let resumeSessionFile: string | undefined;
+	let promptOverride: string | undefined;
+	let outcome: AttemptOutcome | undefined;
+	let specError: string | undefined;
+	let attempts = 0;
+	const totalUsage = emptyUsage();
+	let lastOutput = "";
+	let lastModel: string | undefined;
+
+	while (attempts < maxAttempts) {
+		attempts++;
+		input.status.attempts = attempts;
+		input.onUpdate?.(input.run);
+
+		let spec: SpawnSpec;
+		try {
+			spec = buildSpawnSpec({
+				runId: input.run.id,
+				index: input.status.index,
+				task: input.task,
+				request: input.request,
+				agent: input.agent,
+				parent: input.parent,
+				deps: input.deps,
+				resumeSessionFile,
+				promptOverride,
+			});
+		} catch (error) {
+			specError = error instanceof Error ? error.message : String(error);
+			break;
+		}
+
+		outcome = await runChildAttempt({
+			run: input.run,
+			status: input.status,
+			spec,
+			timeoutMs,
+			terminationGraceMs,
+			signal: input.signal,
+			onUpdate: input.onUpdate,
+			deps: input.deps,
+		});
+		accumulateUsage(totalUsage, outcome.parsed.usage);
+		if (outcome.parsed.finalOutput) lastOutput = outcome.parsed.finalOutput;
+		if (outcome.parsed.model) lastModel = outcome.parsed.model;
+
+		const wasStopped =
+			input.run.stopRequested || input.signal?.aborted === true;
+		if (wasStopped || !attemptFailed(outcome) || attempts >= maxAttempts)
+			break;
+
+		// Resume the child's preserved session so completed turns survive the
+		// failed attempt instead of being discarded.
+		({ resumeSessionFile, promptOverride } = nextRetryInputs(outcome));
+		if (retryBackoffMs > 0)
+			await new Promise((resolve) => setTimeout(resolve, retryBackoffMs));
+		if (input.run.stopRequested || input.signal?.aborted) break;
+	}
+
 	const endedAt = Date.now();
 	const wasStopped = input.run.stopRequested || input.signal?.aborted === true;
-	let error: string | undefined;
-	if (timedOut) error = `Subagent timed out after ${timeoutMs}ms.`;
-	else if (parsed.assistantError) error = parsed.assistantError;
-	else if (code !== 0 && !wasStopped)
-		error =
-			stderr.trim() ||
-			`Subagent exited with code ${code}${signal ? ` (${signal})` : ""}.`;
+	const { state, error } = composedChildState({
+		specError,
+		outcome,
+		wasStopped,
+		timeoutMs,
+		attempts,
+		maxAttempts,
+	});
 
-	let state: ChildRunResult["state"] = "completed";
-	if (wasStopped) state = "stopped";
-	else if (error) state = "failed";
-	const sessionFile = findSessionFile(
-		spec.sessionDir,
-		spec.requestedSessionFile,
-	);
-	let output = parsed.finalOutput;
+	const sessionFile = outcome?.sessionFile;
+	let output = lastOutput;
 	if (!output && !error)
 		output = "(Subagent completed without a textual result.)";
 	Object.assign(input.status, {
@@ -445,7 +635,8 @@ async function runChild(input: {
 		error,
 		endedAt,
 		sessionFile,
-		model: parsed.model ?? input.status.model,
+		attempts,
+		model: lastModel ?? input.status.model,
 	});
 	input.onUpdate?.(input.run);
 	return {
@@ -455,12 +646,13 @@ async function runChild(input: {
 		state,
 		output,
 		error,
-		exitCode: state === "completed" ? 0 : code || 1,
-		model: parsed.model ?? input.status.model,
+		exitCode: state === "completed" ? 0 : outcome?.code || 1,
+		model: lastModel ?? input.status.model,
 		sessionFile,
 		startedAt,
 		endedAt,
-		usage: parsed.usage,
+		usage: totalUsage,
+		attempts,
 	};
 }
 
@@ -526,7 +718,8 @@ export async function executeSubagentRun(
 export function formatRunResult(run: SubagentRun): string {
 	const header = `Subagent run ${run.id} ${run.state} (${run.mode}, ${run.context} context).`;
 	const results = run.results.map((result) => {
-		const title = `=== ${result.agent} [${result.state}] ===`;
+		const attemptsNote = result.attempts > 1 ? ` (${result.attempts} attempts)` : "";
+		const title = `=== ${result.agent} [${result.state}]${attemptsNote} ===`;
 		let body = result.output;
 		if (result.error)
 			body = result.output

@@ -72,6 +72,7 @@ export interface ChildRunResult {
 	startedAt: number;
 	endedAt: number;
 	usage: ChildUsage;
+	attempts: number;
 }
 
 export interface ChildRunStatus {
@@ -85,6 +86,7 @@ export interface ChildRunStatus {
 	output?: string;
 	error?: string;
 	sessionFile?: string;
+	attempts?: number;
 	process?: ChildProcessWithoutNullStreams;
 }
 
