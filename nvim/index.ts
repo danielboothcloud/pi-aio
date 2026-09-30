@@ -15,7 +15,7 @@
 // @-file completion inserts `@path`, which the handler strips — without
 // that, nvim would open a nonexistent "@path" buffer.
 //
-// The launcher chain mirrors hunk/launcher.ts: otty pane split anchored to
+// The launcher chain: otty pane split anchored to
 // $OTTY_PANE_ID → tmux → otty tab → macOS Terminal.app → print. nvim owns
 // the pane afterward (exec keeps the pane alive in the editor until :q).
 // ---------------------------------------------------------------------------

@@ -855,108 +855,52 @@ Important limitations (matching upstream):
   then read and block typed commands, so enable it only when you trust every
   loaded hook. The startup warning lists which projects will have access.
 
-## Hunk diff review
+## tuicr review loop
 
-`aio` integrates [hunk](https://hunk.dev), the review-first terminal diff
-viewer, so changesets get reviewed in Hunk's multi-file review stream with
-inline AI annotations beside the code. The integration wraps Hunk's public
-agent surfaces (no source vendored — see
-[`hunk/UPSTREAM.md`](hunk/UPSTREAM.md)); hunk is optional and everything
-degrades silently when the binary is missing.
+`aio` ports [@joelazar/pi-tuicr](https://github.com/joelazar/pi-tuicr) v1.1.0
+(MIT — see [`tuicr/UPSTREAM.md`](tuicr/UPSTREAM.md)): review the diff in the
+external `tuicr` terminal TUI, then hand the review comments straight back to
+pi — no retyping objections into the chat.
 
-Run `/hunk` (or `/hunk diff --staged`, `/hunk show HEAD~1`,
-`/hunk diff --watch`) to open an interactive review beside this session.
-Launch attempts run in order and the first success wins:
+Run `/tuicr` (or press **ctrl+shift+r**) and pick what to review:
 
-1. **Otty pane split** — when Pi runs inside Otty ($OTTY_PANE_ID), the
-   review opens anchored to the agent's pane (`--pane`), split right 50/50,
-   so the review stream lives beside the transcript with no focus jump
-2. **tmux window** — when Pi runs inside tmux
-3. **Otty tab** — Otty installed with the app running (fails fast to the
-   next attempt when the app is not running or the binary is absent)
-4. **macOS Terminal.app** — AppleScript (darwin)
-5. **Print** — always succeeds: hand the exact command to the user
+| Choice | tuicr invocation |
+| --- | --- |
+| Uncommitted changes | `tuicr -w` |
+| Branch vs base (+ uncommitted) | `tuicr -r base..HEAD -w` |
+| Branch vs base | `tuicr -r base..HEAD` |
+| Last commit | `tuicr -r HEAD~1..HEAD` |
+| Pick commits | `tuicr` (commit selector) |
+| Every tracked file | `tuicr -A` |
+| Custom revset... | `tuicr -r <your revset>` |
+| Pull request... | `tuicr pr <target>` |
 
-Every otty/tmux launcher runs the review with an `sh -c` script that drops
-into an interactive shell only when the hunk command fails, so launch errors
-stay visible instead of the pane silently disappearing. The TUI belongs to
-you; Pi's transcript cannot host a fullscreen review UI, which is why the
-review stream lives outside the agent.
+The base branch is detected from `origin/HEAD`, falling back to
+`origin/main`, `origin/master`, `main`, `master`; when none verifies, the
+branch entries are hidden.
 
-The **`hunk` tool** is the model's side of the workflow — it talks to your
-live review through Hunk's session daemon:
+Pi's TUI suspends, tuicr takes the terminal for the review session, and when
+it exits every comment created during that session is collected, numbered,
+and prefilled into the editor:
 
-- **`review`** — inspect the loaded file/hunk structure
-  (`includePatch` opts into raw unified diff text only when needed)
-- **`navigate`** — move your viewport to a file/hunk/line, the next or
-  previous annotated hunk, or an exact comment id
-- **`comment_add` / `comment_apply`** — leave inline AI annotations beside
-  the rows they explain (one-off note or one stdin batch for several;
-  anchored by old/new line or hunk, with optional `rationale` and replies
-  to your notes)
-- **`highlight_add` / `highlight_clear`** — paint attention marks on exact
-  character ranges (`[start, end)` UTF-16 offsets; tones include `current`
-  for the range under discussion)
-- **`reload`** — swap the live window's contents (diff/show, refs, pathspec)
-- **`comment_list` / `comment_rm` / `comment_clear`** — find note ids and
-  clean up
+```text
+I reviewed your changes. Please address these comments:
 
-If no review is running, the tool result tells the model to ask you to open
-one. The bundled `hunk-review` skill is surfaced natively through
-`resources_discover`, so the model loads Hunk's authoritative agent
-workflows without you pasting anything.
+1. `src/auth.ts:42` [BUG] - this throws when the token is missing
+2. `src/auth.ts:88` - rename this to something less generic
+```
 
-### `/hunk enforce` — automatic inline annotations
-
-By default annotations appear only when the model decides to call the
-`hunk` tool. **`/hunk enforce`** turns ON automatic inline AI annotations:
-after each meaningful mutation batch (`write`, `edit`, `apply_patch`, or
-mutation-shaped `bash`), aio maps the change onto the live review and
-leaves bounded, file-anchored comments automatically — `author: aio`,
-change-map summaries (`modify ×2, create`), highlights riding along for
-anchored create/modify changes, and a quiet `hunk: N note(s)` status chip
-when notes land. **`/hunk enforce off`** returns to inert. State persists
-in `~/.pi/agent/aio-hunk-enforce.json`.
-
-Enforcement design:
-
-- **Debounced** — a multi-file `apply_patch` lands as several
-  `tool_result`s in quick succession; annotations aggregate over a 400 ms
-  window and land as one comment batch per file set, never per call.
-- **Mechanical by design** — the enforced path annotates what changed
-  (paths, operations, anchors from `EditToolDetails.firstChangedLine` and
-  write top-of-file); the model's own narrative (intent, risks,
-  follow-ups) stays in the tool-call path, where rationale is real. The
-  enforced path never invents rationale it did not derive from the tool
-  result.
-- **Bounded** — max 6 comments per batch and a 12-annotation bash budget
-  (configurable in the state file), so a sweeping refactor cannot flood
-  the review.
-- **Invisible without a review** — before queueing, the driver probes the
-  live review; with none open, enforcement stays silent (annotations never
-  open windows on their own).
-- **VCS-gated** — hunk reviews git/jujutsu/sapling changesets, so enforce
-  is always OFF in a plain directory: `/hunk enforce` refuses to enable
-  there, and the runtime re-checks the cwd (git via
-  `git rev-parse --is-inside-work-tree`, jj/sapling via `.jj`/`.sl`
-  markers, cached per cwd). A persisted ON state from another repo never
-  annotates in a non-checkout.
-- **Best effort** — a closed review or rejected batch degrades to a
-  descriptive outcome; enforcement never breaks or blocks the mutation
-  flow.
-
-Anchors: `edit` uses the result's `firstChangedLine`, `write` anchors at
-line 1, `apply_patch` stays file-anchored (aio's tool reports counts, not
-lines), and bash-derived mutations are file-level only (parsed shell line
-numbers would be guesses). aio's structured `apply_patch` `changes` array
-is parsed directly by the annotator (yaml-hooks' extractor deliberately
-reads only the unified-diff string for `file.changed` semantics).
+Read it over and press enter when you're happy. Comments that already
+existed in tuicr before the run are ignored, so an old review never comes
+back a second time. If tuicr is missing or exits non-zero, aio says so and
+stops rather than prefilling a half-built prompt. TUI mode only; tuicr has
+to be on your PATH (everything else degrades gracefully — the integration
+is optional).
 
 Note the division of labor: aio's syntax-highlighted transcript diffs (above)
 render individual `write`/`edit`/`apply_patch` calls inline as they happen;
-Hunk is the interactive changeset review with navigation and annotations.
-Hunk's own renderer is an OpenTUI component and cannot be embedded in Pi's
-transcript, so the two surfaces complement rather than replace each other.
+tuicr is the interactive changeset review where you leave the comments that
+go back to the agent.
 
 ## Open in Neovim
 
@@ -970,7 +914,7 @@ when you want an agent-touched file in your editor immediately.
 /nvim -r src/index.ts:42    read-only view (nvim -R)
 ```
 
-The launcher chain matches the hunk launcher: an Otty pane split anchored
+The launcher chain opens an Otty pane split anchored
 to this session's pane (`$OTTY_PANE_ID`) → tmux window → Otty tab →
 macOS Terminal.app → the printed command. Neovim owns the pane afterward
 (the pane runs `exec nvim`, so it stays in the editor until `:q`), and the
@@ -1051,7 +995,7 @@ blocklist still wins over a loop block.
 ├── copy-widget/             # /pick parser + TUI overlay
 ├── diff-tools/              # write/edit/apply_patch diff rendering
 ├── effort/                  # /effort command + status
-├── hunk/                    # live hunk diff-review control + AI annotations
+├── tuicr/                   # /tuicr review loop (ported from pi-tuicr)
 ├── init/                    # /init AGENTS.md bootstrap
 ├── nvim/                    # open files in Neovim in a new otty pane
 ├── loop-police/             # reasoning/tool loop detection + recovery (ported)
@@ -1076,7 +1020,7 @@ blocklist still wins over a loop block.
   packages from settings when installing this combined package, to avoid
   duplicate tools, commands, and shortcuts.
 - Effort and permission mode are embedded in the frame's border metadata;
-  extension statuses (`!bash`, goals, hooks, Hunk) render in the muted status
+  extension statuses (`!bash`, goals, hooks) render in the muted status
   row when active.
 - The vendored questionnaire source remains covered by its original MIT license
   in [`ask-user-question/LICENSE`](ask-user-question/LICENSE).

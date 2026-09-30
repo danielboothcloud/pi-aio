@@ -3,11 +3,11 @@
 //
 // When the agent edits or reads a file, you often want it in an editor
 // immediately — /nvim <path> opens it in a Neovim buffer in a new otty
-// pane beside this session (anchored to the agent's pane, like the hunk
-// launcher). The open_nvim tool gives the agent the same power: after a
-// write/edit it can hand you the file at the changed line.
+// pane beside this session (anchored to the agent's pane). The
+// open_nvim tool gives the agent the same power: after a write/edit it
+// can hand you the file at the changed line.
 //
-// Launcher chain mirrors hunk/launcher.ts: otty pane split (when
+// Launcher chain: otty pane split (when
 // $OTTY_PANE_ID is set) → tmux window → otty tab → macOS Terminal.app →
 // print. Neovim itself owns the pane afterward (no shell takeover — nvim
 // stays open until :q).
@@ -48,8 +48,8 @@ export interface NvimOpenRequest {
 export const NVIM_BINARY = "nvim";
 
 /**
- * The ordered launch plan. Same chain as the hunk launcher; otty split is
- * first because the session usually runs inside otty ($OTTY_PANE_ID).
+ * The ordered launch plan. Otty split is first because the session usually
+ * runs inside otty ($OTTY_PANE_ID).
  */
 export function planNvimLaunchAttempts(
 	env: NodeJS.ProcessEnv = process.env,

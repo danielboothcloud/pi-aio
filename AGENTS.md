@@ -46,7 +46,7 @@ generated `dist/` tree without changing the package contract.
   which own the final bash behavior. `registerLoopPolice` sits between
   blocklist and permission-modes (loop blocks preempt mode checks; the hard
   blocklist wins over loop blocks). `registerAioZentui` runs after queue,
-  pretty-tools, status-line, and Hunk so it can wrap the final editor and own
+  pretty-tools, and status-line so it can wrap the final editor and own
   the visual surfaces. Preloaded standalone Zentui editors are preserved by the
   user-bash and queue registrars rather than overwritten. `registerYamlHooks`
   runs LAST so its opt-in `user_bash`
@@ -95,43 +95,23 @@ generated `dist/` tree without changing the package contract.
   fail-open, user-bash interception fails closed, cleanup hooks are
   best-effort. All `PI_YAML_HOOKS_*` env names and YAML validation error
   codes are append-only contracts.
-- `hunk/` integrates the hunk terminal diff viewer (MIT, modem-dev — see
-  `hunk/UPSTREAM.md`; no source vendored). It registers the `hunk` tool
-  (TypeBox-validated wrapper over the non-interactive `hunk session *` CLI:
-  inspect/navigate/reload, inline AI annotations via `comment_add`/`apply`,
-  attention marks via `highlight_add`/`clear`) plus the `/hunk` command that
-  opens the interactive review beside the session through an ordered
-  launcher chain (Otty pane split anchored to `$OTTY_PANE_ID` → tmux
-  window → Otty tab → macOS Terminal.app → print the command; first
-  success wins, failures fall through). Otty launchers pass `--pane` so
-  the review anchors to the agent's pane even when focus moved, and wrap
-  the hunk command in an `sh -c` script that drops into a shell only on
-  failure so launch errors stay visible. The bundled
-  `hunk-review` skill is surfaced through `resources_discover`. Hunk is
-  OPTIONAL: a missing binary must not prevent loading — skill discovery
-  returns nothing, the tool classifies spawn failures, `/hunk` prints the
-  command. `comment apply --stdin` batches are written to a mode-0600 temp
-  file and redirected through `sh -c` (the shared exec surface has no
-  stdin). Tests must use injected fake exec seams, never a live hunk
-  daemon.
-- `hunk enforce` (in `hunk/`) auto-annotates the live review after mutation
-  batches. `/hunk enforce` persists the toggle in
-  `getAgentDir()/aio-hunk-enforce.json`; the `tool_result` watcher maps
-  write/edit/apply_patch/bash mutations onto `MutationRecord`s (reusing
-  yaml-hooks' extractor — but parsing aio's structured `apply_patch`
-  `changes` array directly, which yaml-hooks deliberately ignores) and a
-  400 ms-debounced `EnforceRuntime` leaves ONE comment batch per file set
-  (bounded: 6 comments/batch, 12-annotation bash budget). Anchors:
-  `edit` → `firstChangedLine`, `write` → line 1, `apply_patch` and bash →
-  file-anchored only. The enforced path is mechanical (change maps, never
-  invented rationale — the model's narrative stays in the tool-call path);
-  it probes the live review before queueing (silent without one), degrades
-  best-effort (never blocks or delays mutations), and clears state on
-  `session_shutdown`. Enforce is VCS-GATED: hunk reviews git/jj/sapling
-  changesets, so `/hunk enforce` refuses to enable outside a checkout and
-  the runtime re-checks the cwd (`git rev-parse --is-inside-work-tree`,
-  then `.jj`/`.sl` markers; cached per cwd, reset on clear) — a persisted
-  ON state from another repo never annotates in a plain directory.
+- `tuicr/` is ported from @joelazar/pi-tuicr v1.1.0 (MIT, joelazar — see
+  `tuicr/UPSTREAM.md` and `tuicr/LICENSE`). It owns the `/tuicr` command and
+  the `ctrl+shift+r` shortcut: pick a diff (working tree, branch-vs-base with
+  base detection via origin/HEAD → origin/main → origin/master → main →
+  master, last commit, commit selector, all tracked files, custom revset, PR),
+  pi's TUI suspends, tuicr runs in the foreground with inherited stdio, and
+  when it exits comments created during that session (ids snapshotted before,
+  diffed after) are numbered and prefilled into the editor via
+  `ctx.ui.setEditorText`. It registers no tools and owns no editor surface,
+  so registration order is not load-bearing; it sits after status-line and
+  before the frame. TUI-only (`ctx.mode !== "tui"` refuses). Exec goes
+  through injected `Capture`/`ForegroundSpawn` seams (core/picker/runner/
+  review split) — tests never shell out to live tuicr or git. Failure
+  semantics: missing binary → "Could not start tuicr" notify, non-zero exit
+  → status notify, both stop without prefilling a half-built prompt. tuicr
+  is OPTIONAL: a missing binary must not prevent loading (registration is
+  unconditional and probe-free).
 - `frame/` is AIO's proprietary minimalist editor frame, vendored from
   pi-zentui (MIT — see `frame/LICENSE` and `frame/UPSTREAM.md`). It replaces
   the former bundled pi-zentui integration entirely: AIO wraps whatever
@@ -139,8 +119,8 @@ generated `dist/` tree without changing the package contract.
   in `MinimalistFrameEditor`, which renders the base editor inside a labeled
   minimalist border with live metadata (model, thinking level, context
   percent, cost, git branch/dirty/ahead/behind, session name, timer).
-  Registration order is load-bearing: it registers after queue, pretty-tools,
-  status-line, and Hunk so it wraps the final editor chain. Standalone Zentui
+  Registration order is load-bearing: it registers after queue,
+  pretty-tools, and status-line so it wraps the final editor chain. Standalone Zentui
   factories (symbol `pi-zentui.editor-factory`) are never displaced; with no
   factory at all the frame stays out (Pi's built-in editor is unwrappable).
   Configuration is code-owned (`DEFAULT_FRAME_STYLE`) — there is no
@@ -157,9 +137,9 @@ generated `dist/` tree without changing the package contract.
   below-editor widget in any framed environment (AIO frame or standalone
   Zentui). Status-line's provider-quota surface renders as an above-editor
   widget when the probe reports support, and as a footer status otherwise.
-- `nvim/` opens files in Neovim in a new Otty pane beside the session (same
-  launcher chain as hunk: otty split anchored to `$OTTY_PANE_ID` → tmux →
-  otty tab → Terminal.app → print). `/nvim <path>[:line[:col]]` (`-r` for
+- `nvim/` opens files in Neovim in a new Otty pane beside the session
+  (otty split anchored to `$OTTY_PANE_ID` → tmux → otty tab →
+  Terminal.app → print). `/nvim <path>[:line[:col]]` (`-r` for
   read-only) parses the `path:line:col` shorthand; the pane runs `exec
   nvim` so it stays in the editor until `:q`, titled `nvim
   <basename>[:line]`. The `open_nvim` tool lets the agent hand the user a
@@ -225,9 +205,10 @@ generated `dist/` tree without changing the package contract.
   directory must be wired into `index.ts`, included in `files`, and covered by
   a test command.
 - Optional integrations must remain optional: missing
-  `@juicesharp/rpiv-i18n`, `rtk`, CloakBrowser, or the `hypa` binary must not
-  prevent the extension from loading (hypa resolves its bundled
-  `@hypabolic/hypa` dependency and fails open on rewrite errors).
+  `@juicesharp/rpiv-i18n`, `rtk`, CloakBrowser, the `hypa` binary, or the
+  `tuicr` binary must not prevent the extension from loading (hypa resolves
+  its bundled `@hypabolic/hypa` dependency and fails open on rewrite errors;
+  tuicr only fails the run with a notify).
 - Pi keeps the first tool registration by name. Loading pi-web-access before AIO
   prevents AIO's `web_search` and `fetch_content` from becoming active.
 - Do not smoke-test with standalone packages that register the same tools,
