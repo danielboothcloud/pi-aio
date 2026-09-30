@@ -36,10 +36,10 @@ function frame(lines: string[], overrides: Partial<FrameMetadata> = {}, width = 
 test("the frame wraps editor content with labeled borders", () => {
 	const lines = frame(["hello", "world"]);
 	assert.equal(lines.length, 4);
-	// Top-left: mode · effort. Top-right: cost · model · context.
+	// Top-left: effort · context. Top-right: cost · model.
 	// Bottom-left: branch · session name; bottom-right: cwd.
-	assert.match(lines[0]!, /^╭.*high ─/);
-	assert.match(lines[0]!, /\$0\.100.*test-model.*42%.*╮$/);
+	assert.match(lines[0]!, /^╭─ high · 42% ─/);
+	assert.match(lines[0]!, /\$0\.100 – test-model ─╮$/);
 	assert.doesNotMatch(lines[0]!, /session/);
 	assert.match(lines[1]!, /^│ hello\s+│$/);
 	assert.match(lines[2]!, /^│ world\s+│$/);
@@ -60,9 +60,10 @@ test("effort renders directly to the right of the mode, left of the fill", () =>
 		uiTheme: theme,
 		style: DEFAULT_FRAME_STYLE,
 	});
-	assert.match(lines[0]!, /^╭─ ▶ Auto · max ─/, "mode then effort, both top-left");
-	// The right side must no longer carry the effort level.
+	assert.match(lines[0]!, /^╭─ ▶ Auto · max · 42% ─/, "mode · effort · context, top-left");
+	// The right side must no longer carry the effort level or context.
 	assert.doesNotMatch(lines[0]!, /test-model – max/);
+	assert.doesNotMatch(lines[0]!, /– 42% – /);
 });
 
 test("panel rows render between content and the bottom border", () => {

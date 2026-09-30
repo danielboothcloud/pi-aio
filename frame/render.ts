@@ -162,6 +162,27 @@ function renderTopLeft(
 			),
 		);
 	}
+	// Context percent follows the effort level: mode · effort · context ·
+	// time — the session's state, then its burn clock.
+	if (metadata.contextPercent !== undefined && Number.isFinite(metadata.contextPercent)) {
+		const percent = Math.round(Math.max(0, Math.min(999, metadata.contextPercent)));
+		const tier = contextColorTier(percent, style.contextThresholds);
+		const color =
+			tier === "error"
+				? COLORS.contextError
+				: tier === "warning"
+					? COLORS.contextWarning
+					: COLORS.contextNormal;
+		parts.push(
+			renderThemeStyle(
+				uiTheme,
+				color,
+				style.contextGauge
+					? `[${buildContextGauge(percent, 5, style.ascii)}] ${percent}%`
+					: `${percent}%`,
+			),
+		);
+	}
 	if (style.showTimer && metadata.agentDurationMs !== undefined) {
 		const duration = formatElapsedDuration(metadata.agentDurationMs);
 		parts.push(
@@ -197,43 +218,10 @@ function renderTopRight(
 	if (model) {
 		parts.push(renderThemeStyle(uiTheme, COLORS.model, model));
 	}
-	// The effort (thinking) level renders top-left beside the mode.
-	if (metadata.contextPercent !== undefined && Number.isFinite(metadata.contextPercent)) {
-		const percent = Math.round(Math.max(0, Math.min(999, metadata.contextPercent)));
-		const tier = contextColorTier(percent, style.contextThresholds);
-		const color =
-			tier === "error"
-				? COLORS.contextError
-				: tier === "warning"
-					? COLORS.contextWarning
-					: COLORS.contextNormal;
-		const text = `${percent}%`;
-		let context = renderThemeStyle(uiTheme, color, text);
-		if (style.contextGauge) {
-			for (const gaugeWidth of [5, 3]) {
-				const gauge = `[${buildContextGauge(percent, gaugeWidth, style.ascii)}] ${text}`;
-				const styledGauge = renderThemeStyle(uiTheme, color, gauge);
-				if (visibleWidth(joinParts([...parts, styledGauge])) <= availableWidth) {
-					context = styledGauge;
-					break;
-				}
-			}
-		}
-		if (fit && visibleWidth(joinParts([...parts, context])) > availableWidth) {
-			// Descriptive adornments yield before the context percentage.
-			context = renderThemeStyle(uiTheme, color, text);
-			const contextWidth = visibleWidth(context);
-			if (contextWidth > availableWidth) return "";
-			const prefixBudget = Math.max(0, availableWidth - contextWidth - 3);
-			const prefix = prefixBudget > 0 ? truncateToWidth(joinParts(parts), prefixBudget, "…") : "";
-			return joinParts([...(prefix ? [prefix] : []), context]);
-		}
-		parts.push(context);
-	}
-	// Provider quota trails the context: it is the other live-consumption
-	// metric, and reading them together (39% ctx · synthetic 100% →5h) is
-	// the whole point of embedding it. The Codex 5h/week windows use the same
-	// slot — only one provider is ever active, so they never both appear.
+	// The effort (thinking) level and context percent render top-left.
+	// Provider quota trails: it is the other live-consumption metric. The
+	// Codex 5h/week windows use the same slot — only one provider is ever
+	// active, so they never both appear.
 	const codex = metadata.codexQuota;
 	if (codex) {
 		parts.push(safeThemeFg(uiTheme, codex.role, codex.text));
