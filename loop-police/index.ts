@@ -10,7 +10,10 @@
 // blocking tool_call handler, so blocklist wins over loop blocks (a blocked
 // command stays blocked), while a loop block preempts mode checks. The
 // context scrub composes with blocklist/permission-modes context handlers:
-// only assistant thinking blocks in the stagnant window are replaced.
+// it removes stagnant assistant messages whole — reasoning, tool calls and
+// all — together with their paired tool results, so the rewritten request
+// never carries an orphaned function_call_output (Responses-API providers
+// such as OpenAI Codex reject the whole request when that happens).
 //
 // Detectors stay ACTIVE in aio subagent child processes
 // (AIO_SUBAGENT_CHILD=1) — children loop too and burn the same tokens.
@@ -19,11 +22,13 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { LoopPoliceRuntime, SANITIZED_THINKING_MARKER } from "./runtime.js";
+import { scrubStagnantContext } from "./scrub.js";
 import { textSimilarity } from "./detect.js";
 import { NUMERIC_DEFAULTS, NUMERIC_RANGES, defaultConfig, loopPoliceFilePath, type NumericKey } from "./config.js";
 
 export type { LoopPoliceRuntime } from "./runtime.js";
 export { SANITIZED_THINKING_MARKER };
+export { scrubStagnantContext } from "./scrub.js";
 export { DETECTION_EVENT } from "./messages.js";
 export { NUMERIC_DEFAULTS, NUMERIC_RANGES, defaultConfig, loopPoliceFilePath };
 
@@ -129,11 +134,9 @@ export default function registerLoopPolice(pi: ExtensionAPI): void {
 				break;
 			}
 		}
-		if (stagnant.size === 0) return undefined;
-
-		const filtered = messages.filter((_, i) => !stagnant.has(i) || !thinkingIndexes.includes(i));
-		if (filtered.length === messages.length) return undefined;
-		return { messages: filtered };
+		const scrubbed = scrubStagnantContext(messages, stagnant, thinkingIndexes);
+		if (scrubbed === undefined) return undefined;
+		return { messages: scrubbed };
 	});
 
 	// ---- /loop-police command ----
