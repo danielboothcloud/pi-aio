@@ -136,9 +136,13 @@ export function registerQueue(pi: ExtensionAPI): void {
 		// editor factory with a well-known symbol; never displace it. Otherwise
 		// install our QueueEditor (extends the user-bash BashHintEditor).
 		const existingEditor = ctx.ui.getEditorComponent?.();
+		// SAFETY: editor factories are branded with symbol properties by
+		// standalone Zentui; the type system cannot see symbol keys on a
+		// function, so an unknown-bridged Record view is required.
+		const branded = existingEditor as unknown as Record<symbol, unknown> | undefined;
 		const standaloneZentui =
 			typeof existingEditor === "function" &&
-			(existingEditor as Record<symbol, unknown>)[Symbol.for("pi-zentui.editor-factory")] === true;
+			branded?.[Symbol.for("pi-zentui.editor-factory")] === true;
 		if (!standaloneZentui) {
 			ctx.ui.setEditorComponent((tui, theme, keybindings) => {
 				const editor = new QueueEditor(tui, theme, keybindings, ctx, {

@@ -65,6 +65,19 @@ export interface FrameMetadata {
 }
 
 // Upstream default palette (theme source): shared colors + minimalist fallbacks.
+/**
+ * Pi's native thinking-level theme roles — the same palette the thinking
+ * text block renders with, so the effort level reads consistently.
+ */
+const THINKING_ROLES: Record<string, string> = {
+	minimal: "thinkingMinimal",
+	low: "thinkingLow",
+	medium: "thinkingMedium",
+	high: "thinkingHigh",
+	xhigh: "thinkingXhigh",
+	max: "thinkingMax",
+};
+
 const COLORS = {
 	border: "borderMuted",
 	model: "syntaxKeyword",
@@ -130,11 +143,24 @@ function renderTopLeft(
 			bashMode === "no-context" ? muted("$") : safeThemeFg(uiTheme, "bashMode", "$"),
 		);
 	}
-	// Permission mode leads the metadata: it is the most operationally
-	// relevant state (gates what the agent may do).
+	// Permission mode leads the metadata (it gates what the agent may do),
+	// then the effort level, then the run timer — mode-effort-time.
 	const mode = metadata.mode;
 	if (mode) {
 		parts.push(safeThemeFg(uiTheme, mode.role, `${mode.icon} ${mode.label}`));
+	}
+	const effort = (metadata.thinkingLevel ?? "").trim();
+	const effortKey = effort.toLowerCase();
+	if (effort && effortKey !== "off") {
+		// Level-tinted via Pi's native thinking roles; unknown levels fall back
+		// to the generic thinking color.
+		parts.push(
+			safeThemeFg(
+				uiTheme,
+				THINKING_ROLES[effortKey] ?? COLORS.thinking,
+				effort,
+			),
+		);
 	}
 	if (style.showTimer && metadata.agentDurationMs !== undefined) {
 		const duration = formatElapsedDuration(metadata.agentDurationMs);
@@ -148,10 +174,7 @@ function renderTopLeft(
 				: muted(duration),
 		);
 	}
-	const sessionName = (metadata.sessionName ?? "").trim();
-	if (style.showSessionName && sessionName) {
-		parts.push(renderThemeStyle(uiTheme, COLORS.sessionName, sessionName));
-	}
+	// The session name renders bottom-left after the branch (branch · name).
 	return joinStyled(parts, muted(" · "));
 }
 
@@ -161,7 +184,6 @@ function renderTopRight(
 	style: FrameStyle,
 	availableWidth: number,
 	renderBorder: (text: string) => string,
-	renderThinking: (text: string) => string,
 	fit = false,
 ): string {
 	const parts: string[] = [];
@@ -175,10 +197,7 @@ function renderTopRight(
 	if (model) {
 		parts.push(renderThemeStyle(uiTheme, COLORS.model, model));
 	}
-	const thinking = (metadata.thinkingLevel ?? "").trim();
-	if (thinking && thinking.toLowerCase() !== "off") {
-		parts.push(renderThinking(thinking));
-	}
+	// The effort (thinking) level renders top-left beside the mode.
 	if (metadata.contextPercent !== undefined && Number.isFinite(metadata.contextPercent)) {
 		const percent = Math.round(Math.max(0, Math.min(999, metadata.contextPercent)));
 		const tier = contextColorTier(percent, style.contextThresholds);
@@ -355,8 +374,6 @@ export function renderMinimalistFrame({
 	// Adaptive border coloring by thinking level was an upstream style option;
 	// AIO keeps the static muted border.
 	const renderBorder = renderStaticBorder;
-	const renderThinking = (text: string) =>
-		renderThemeStyle(uiTheme, COLORS.thinking, text);
 	const separator = safeThemeFg(uiTheme, "muted", " · ");
 	const viewportLabel = (direction: "above" | "below", count: string | undefined) => {
 		if (!count || !/^[1-9]\d*$/.test(count)) return "";
@@ -369,19 +386,27 @@ export function renderMinimalistFrame({
 	const top = renderLabeledBorder({
 		width,
 		left: topLeft,
-		right: renderTopRight(metadata, uiTheme, style, topRightBudget, renderBorder, renderThinking),
+		right: renderTopRight(metadata, uiTheme, style, topRightBudget, renderBorder),
 		fitRight: (budget) =>
-			renderTopRight(metadata, uiTheme, style, budget, renderBorder, renderThinking, true),
+			renderTopRight(metadata, uiTheme, style, budget, renderBorder, true),
 		leftCorner: "╭",
 		rightCorner: "╮",
 		renderBorder,
 	});
 	const bottomMetadata = renderBottomLeft(metadata, uiTheme, style);
 	const bottomViewport = viewportLabel("below", viewport?.below);
+	// Bottom-left reads branch · session name — git state first, the working
+	// context second. With no git repo the name stands alone.
+	const sessionLabel =
+		style.showSessionName ? (metadata.sessionName ?? "").trim() : "";
+	const bottomLeft = joinStyled(
+		[bottomViewport, bottomMetadata, sessionLabel].filter(Boolean),
+		separator,
+	);
 	const bottom = renderLabeledBorder({
 		width,
-		left: joinStyled([bottomViewport, bottomMetadata], separator),
-		leftFallbacks: bottomViewport ? [bottomMetadata] : undefined,
+		left: bottomLeft,
+		leftFallbacks: bottomViewport ? [bottomMetadata, sessionLabel].filter(Boolean) : undefined,
 		right: renderBottomRight(metadata, uiTheme, style),
 		leftCorner: "╰",
 		rightCorner: "╯",

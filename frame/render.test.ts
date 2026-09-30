@@ -36,10 +36,33 @@ function frame(lines: string[], overrides: Partial<FrameMetadata> = {}, width = 
 test("the frame wraps editor content with labeled borders", () => {
 	const lines = frame(["hello", "world"]);
 	assert.equal(lines.length, 4);
-	assert.match(lines[0]!, /^╭.*session.*\$0\.100.*test-model.*high.*42%.*╮$/);
+	// Top-left: mode · effort. Top-right: cost · model · context.
+	// Bottom-left: branch · session name; bottom-right: cwd.
+	assert.match(lines[0]!, /^╭.*high ─/);
+	assert.match(lines[0]!, /\$0\.100.*test-model.*42%.*╮$/);
+	assert.doesNotMatch(lines[0]!, /session/);
 	assert.match(lines[1]!, /^│ hello\s+│$/);
 	assert.match(lines[2]!, /^│ world\s+│$/);
-	assert.match(lines[3]!, /^╰.*main.*repo.*╯$/);
+	assert.match(lines[3]!, /^╰─ main · session ─/);
+	assert.match(lines[3]!, /repo ─╯$/);
+});
+
+test("effort renders directly to the right of the mode, left of the fill", () => {
+	const lines = renderMinimalistFrame({
+		width: 90,
+		editorLines: ["x"],
+		inputText: "",
+		metadata: {
+			...metadata,
+			mode: { icon: "▶", label: "Auto", role: "accent" },
+			thinkingLevel: "max",
+		},
+		uiTheme: theme,
+		style: DEFAULT_FRAME_STYLE,
+	});
+	assert.match(lines[0]!, /^╭─ ▶ Auto · max ─/, "mode then effort, both top-left");
+	// The right side must no longer carry the effort level.
+	assert.doesNotMatch(lines[0]!, /test-model – max/);
 });
 
 test("panel rows render between content and the bottom border", () => {
@@ -120,4 +143,37 @@ test("context percent is tier-colored: green < 50, yellow 50-74, red >= 75", () 
 	seen.length = 0;
 	assert.match(render(80), /80%/);
 	assert.ok(seen.includes("error"), `red at >= 75, saw: ${seen.join(",")}`);
+});
+
+test("effort level is tinted with its native thinking role", () => {
+	const seen: string[] = [];
+	const capturingTheme = {
+		fg: (name: string, text: string) => {
+			seen.push(name);
+			return text;
+		},
+		bold: (text: string) => text,
+	};
+	const render = (thinkingLevel: string) =>
+		renderMinimalistFrame({
+			width: 60,
+			editorLines: ["x"],
+			inputText: "",
+			metadata: { ...metadata, thinkingLevel },
+			uiTheme: capturingTheme,
+			style: DEFAULT_FRAME_STYLE,
+		})[0] ?? "";
+
+	seen.length = 0;
+	assert.match(render("max"), /max/);
+	assert.ok(seen.includes("thinkingMax"), `max → thinkingMax, saw: ${seen.join(",")}`);
+
+	seen.length = 0;
+	assert.match(render("low"), /low/);
+	assert.ok(seen.includes("thinkingLow"), `low → thinkingLow, saw: ${seen.join(",")}`);
+
+	// Unknown levels fall back to the generic thinking color.
+	seen.length = 0;
+	assert.match(render("turbo"), /turbo/);
+	assert.ok(seen.includes("warning"), `unknown → warning, saw: ${seen.join(",")}`);
 });
