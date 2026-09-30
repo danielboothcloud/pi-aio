@@ -30,12 +30,15 @@ export default function registerTuicr(pi: ExtensionAPI): void {
 		await review(ctx, deps);
 	};
 
-	pi.registerCommand("tuicr", {
+	const command = {
 		description: "Review a diff in tuicr, then load comments",
-		handler: async (_args, ctx) => {
+		handler: async (_args: string, ctx: ExtensionContext) => {
 			await start(ctx);
 		},
-	});
+	};
+
+	pi.registerCommand("tuicr", command);
+	pi.registerCommand("review", command);
 
 	pi.registerShortcut("ctrl+shift+r", {
 		description: "Review a diff in tuicr",
