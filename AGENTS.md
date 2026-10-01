@@ -167,9 +167,14 @@ generated `dist/` tree without changing the package contract.
   repository's ESM convention.
 - Match the existing formatting: tabs, double quotes, semicolons, and trailing
   commas in multiline structures.
-- Runtime imports belong in `dependencies`. Pi SDK packages stay in
-  `peerDependencies` and are pinned in `devDependencies` for tests; Pi
-  production installs omit dev dependencies.
+- Runtime imports belong in `dependencies`, except packages the Pi host
+  provides at load time. Host-provided packages — the `@earendil-works/pi-*`
+  SDK, `@mariozechner/pi-*`, and `typebox`/`@sinclair/typebox` (aliased by the
+  extension loader) — must be declared in `peerDependencies` with a `"*"` range
+  and pinned in `devDependencies` for tests; Pi production installs omit dev
+  dependencies. Declaring them in `dependencies` makes the host warn that
+  installed copies "can bypass the extension loader and create duplicate
+  runtime modules."
 - Use `StringEnum` from `@earendil-works/pi-ai` for tool string enums. Throw from
   tool `execute` to produce an error result rather than returning an
   error-shaped success.
