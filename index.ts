@@ -59,7 +59,7 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// block (blocked commands stay blocked). Its context scrub composes with
 	// blocklist's context dedupe — it only touches assistant thinking blocks.
 	registerLoopPolice(pi);
-	// Nvim owns the open_nvim tool and /nvim command; registers after the
+	// Nvim owns the /nvim command (no agent tool); registers after the
 	// gates (it opens editor panes, it never gates anything).
 	registerNvim(pi);
 	registerPermissionModes(pi);

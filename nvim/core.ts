@@ -3,9 +3,7 @@
 //
 // When the agent edits or reads a file, you often want it in an editor
 // immediately — /nvim <path> opens it in a Neovim buffer in a new otty
-// pane beside this session (anchored to the agent's pane). The
-// open_nvim tool gives the agent the same power: after a write/edit it
-// can hand you the file at the changed line.
+// pane beside this session (anchored to the agent's pane).
 //
 // Launcher chain: otty pane split (when
 // $OTTY_PANE_ID is set) → tmux window → otty tab → macOS Terminal.app →

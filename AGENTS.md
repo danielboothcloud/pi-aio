@@ -142,12 +142,10 @@ generated `dist/` tree without changing the package contract.
   Terminal.app → print). `/nvim <path>[:line[:col]]` (`-r` for
   read-only) parses the `path:line:col` shorthand; the pane runs `exec
   nvim` so it stays in the editor until `:q`, titled `nvim
-  <basename>[:line]`. The `open_nvim` tool lets the agent hand the user a
-  file at a line (typically after a write/edit, using the edit result's
-  `firstChangedLine`); its guidance says to OFFER an open rather than
-  opening files unprompted on every edit. No gating, no tool-name overlap;
-  degrades silently when nvim or every launcher is missing (the tool
-  returns the exact command to run).
+  <basename>[:line]`. It is a user-initiated surface with NO agent tool:
+  the agent cannot open panes on its own. No gating, no tool-name overlap;
+  degrades silently when nvim or every launcher is missing (the command
+  reports the exact command to run).
 - `loop-police/` is ported from pi-loop-police (MIT, sebaxzero — see
   `loop-police/LICENSE` and `loop-police/UPSTREAM.md`). It detects and
   breaks infinite reasoning/tool loops in real time: streaming tail +

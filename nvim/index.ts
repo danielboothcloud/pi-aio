@@ -6,9 +6,8 @@
 //   /nvim -r <path>[:line]      read-only view
 //   /nvim @a.ts:3 @b.ts         @-references (pi's @-file completion shape);
 //                               several tokens open several panes
-//   open_nvim (tool)            the agent opens a file for you — typically
-//                               right after a write/edit, handing you the
-//                               changed file at the changed line
+//
+// This is a USER-initiated surface only: nvim owns no agent tool.
 //
 // Typing /nvim suggests files this session read or edited first (tracked
 // from tool_result events), then git-tracked project files. Pi's built-in
@@ -20,18 +19,10 @@
 // the pane afterward (exec keeps the pane alive in the editor until :q).
 // ---------------------------------------------------------------------------
 
-import { Type, type Static } from "typebox";
-import type {
-	AgentToolResult,
-	AgentToolUpdateCallback,
-	ExtensionAPI,
-	ExtensionContext,
-	ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { resolve as resolvePath } from "node:path";
 import {
 	buildNvimCompletions,
-	formatNvimCommand,
 	filePathsFromToolResult,
 	openInNvim,
 	parseFileTarget,
@@ -42,88 +33,6 @@ import {
 	type NvimOpenRequest,
 	type SessionFileEntry,
 } from "./core.js";
-import { throwIfAborted } from "./abort.js";
-
-const NvimToolParameters = Type.Object({
-	path: Type.String({
-		description: "File to open (relative to cwd or absolute). Shorthand path:line or path:line:col anchors the cursor.",
-	}),
-	line: Type.Optional(
-		Type.Integer({ minimum: 1, description: "1-based line to place the cursor on (overrides path:line)." }),
-	),
-	column: Type.Optional(
-		Type.Integer({ minimum: 1, description: "1-based column (requires line)." }),
-	),
-	readOnly: Type.Optional(
-		Type.Boolean({ description: "Open read-only (nvim -R). Default false." }),
-	),
-});
-
-export type NvimToolParams = Static<typeof NvimToolParameters>;
-
-export type NvimToolDetails = {
-	readonly command: string;
-	readonly launched: boolean;
-};
-
-function toolResult(text: string, details: NvimToolDetails): AgentToolResult<NvimToolDetails> {
-	return {
-		content: [{ type: "text", text }],
-		details,
-	};
-}
-
-const TOOL_DESCRIPTION = `Open a file in Neovim in a new terminal pane beside the user's session (otty split when available, else tmux/otty tab/Terminal.app).
-
-Use this when the user asks to "open" a file you were reading or editing, and right after a write/edit when they will want to see it in their editor: pass the changed file and the line you changed (firstChangedLine for edits). The editor pane opens beside the conversation; the user stays in control of their keyboard — do not open more than a handful of files per task.`;
-
-export function createNvimTool(pi: ExtensionAPI): ToolDefinition<typeof NvimToolParameters> {
-	return {
-		name: "open_nvim",
-		label: "Open in Neovim",
-		description: TOOL_DESCRIPTION,
-		promptSnippet:
-			"Open a file (optionally at a line) in Neovim in a new terminal pane beside the user's session — use after write/edit to hand the user the changed file.",
-		promptGuidelines: [
-			"After editing a file, offer to open it at the changed line rather than opening it unprompted every time.",
-			"path:line shorthand works; line/column parameters override the shorthand.",
-		],
-		parameters: NvimToolParameters,
-
-		async execute(
-			_callId: string,
-			params: NvimToolParams,
-			signal: AbortSignal | undefined,
-			_onUpdate: AgentToolUpdateCallback<NvimToolDetails> | undefined,
-			ctx: ExtensionContext,
-		): Promise<AgentToolResult<NvimToolDetails>> {
-			throwIfAborted(signal);
-			const shorthand = parseFileTarget(params.path);
-			const request: NvimOpenRequest = {
-				path: resolveNvimPath(shorthand.path, ctx.cwd),
-			};
-			// Explicit line/column parameters override the path:line shorthand.
-			if (params.line !== undefined) {
-				request.line = params.line;
-			} else if (shorthand.line !== undefined) {
-				request.line = shorthand.line;
-			}
-			if (params.column !== undefined) {
-				request.column = params.column;
-			} else if (params.line === undefined && shorthand.column !== undefined) {
-				request.column = shorthand.column;
-			}
-			if (params.readOnly) {
-				request.readOnly = true;
-			}
-			const output = await openInNvim(pi, ctx, request);
-			return toolResult(output, {
-				command: formatNvimCommand(request),
-				launched: !output.startsWith("no terminal launcher"),
-			});
-		},
-	};
-}
 
 const NVIM_HELP =
 	"/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n" +
@@ -134,7 +43,7 @@ const NVIM_HELP =
 	"  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n" +
 	"  /nvim @a.ts:3 @b.ts         several files — one pane each\n" +
 	"Typing /nvim suggests files this session read or edited first, then project files.\n" +
-	"The agent can open files for you too (open_nvim tool). Launcher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command.";
+	"Launcher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command.";
 
 // ---- session file tracking (the /nvim suggestion source) ----
 //
@@ -143,8 +52,6 @@ const NVIM_HELP =
 // without the SDK value-import chain; this module only wires them up.
 
 export default function registerNvim(pi: ExtensionAPI): void {
-	pi.registerTool(createNvimTool(pi));
-
 	// ---- session file MRU (feeds /nvim argument suggestions) ----
 
 	let sessionFiles: SessionFileEntry[] = [];

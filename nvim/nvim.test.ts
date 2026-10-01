@@ -286,3 +286,26 @@ test("NvimOpenRequest round-trips through format/build", () => {
 	const formatted = formatNvimCommand(request);
 	assert.equal(formatted, "nvim -R +3,9 -- '/repo/src/deep file.ts'");
 });
+
+// ---- registration surface ----
+
+test("registerNvim: /nvim commands only, no agent tool", async () => {
+	const { default: registerNvim } = await import("./index.js");
+	const tools: string[] = [];
+	const commands: string[] = [];
+	const pi = {
+		registerTool(tool: { name: string }) {
+			tools.push(tool.name);
+		},
+		registerCommand(name: string) {
+			commands.push(name);
+		},
+		on() {},
+		exec: async () => ({ code: 0, stdout: "", stderr: "" }),
+	} as unknown as Parameters<typeof registerNvim>[0];
+
+	registerNvim(pi);
+
+	assert.deepEqual(tools, []);
+	assert.deepEqual(commands.sort(), ["nvim", "nvim-open-help"]);
+});

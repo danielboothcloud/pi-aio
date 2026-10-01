@@ -921,12 +921,10 @@ macOS Terminal.app → the printed command. Neovim owns the pane afterward
 pane title is `nvim <basename>[:line]` so several open files are tellable
 apart in the tab bar.
 
-The agent can open files for you too, through the **`open_nvim` tool**:
-after a `write`/`edit` it can hand you the changed file at the changed
-line (`firstChangedLine` for edits), and it can open anything you ask to
-"see in the editor". `path:line` and `path:line:col` shorthand work; the
-guidance asks the agent to offer an open rather than opening files
-unprompted on every edit.
+`/nvim` opens the file. The integration is a user-driven surface only:
+the agent has no tool to open editor panes, so files are opened when
+you ask for them (`/nvim src/index.ts:42`, or `-r` for a read-only
+view). `path:line` and `path:line:col` shorthand work.
 
 ## Loop police
 
