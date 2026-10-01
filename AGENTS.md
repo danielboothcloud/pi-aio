@@ -146,24 +146,6 @@ generated `dist/` tree without changing the package contract.
   the agent cannot open panes on its own. No gating, no tool-name overlap;
   degrades silently when nvim or every launcher is missing (the command
   reports the exact command to run).
-- `loop-police/` is ported from pi-loop-police (MIT, sebaxzero — see
-  `loop-police/LICENSE` and `loop-police/UPSTREAM.md`). It detects and
-  breaks infinite reasoning/tool loops in real time: streaming tail +
-  semantic detectors (abort via `ctx.abort()` from `message_update` —
-  notify-only in the Pi SDK — sanitize via `message_end` same-role
-  replacement, recovery via `before_agent_start` message injection),
-  cross-turn stagnation + re-derived-reasoning scrubs (via the `context`
-  event), and blocked-in-place tool gates (file ceiling, re-read window,
-  search spiral — the recovery message is the block
-  reason). REGISTRATION ORDER IS LOAD-BEARING: it sits between blocklist
-  and permission-modes (loop block preempts mode checks; the hard
-  blocklist wins over a loop block). Its context scrub composes with
-  blocklist's context dedupe — it only touches assistant thinking blocks.
-  Config lives at `getAgentDir()/aio-loop-police.json` (aio pattern),
-  loads tolerant-and-fail-open, all `PI_*`-style config keys are
-  append-only contracts. Detectors stay ACTIVE in
-  `AIO_SUBAGENT_CHILD=1` processes; blocked calls never enter executed
-  histories. Emits `loop-police:detection` on the shared event bus.
 - `subagents/` owns the `subagent` tool: configured child Pi agents run as
   spawned `pi --mode json -p` processes (fresh or forked context, bounded
   parallel group, background follow-up via `aio-subagent-complete`). A child

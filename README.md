@@ -926,64 +926,6 @@ the agent has no tool to open editor panes, so files are opened when
 you ask for them (`/nvim src/index.ts:42`, or `-r` for a read-only
 view). `path:line` and `path:line:col` shorthand work.
 
-## Loop police
-
-`aio` detects and breaks infinite reasoning/tool loops in real time, ported
-from [pi-loop-police](https://github.com/sebaxzero/pi-loop-police) (MIT —
-see [`loop-police/UPSTREAM.md`](loop-police/UPSTREAM.md)). Reasoning models
-get stuck in characteristic ways: repeating the same phrases inside the
-thinking block, re-emitting the same paragraph in the answer, or re-reading
-the same file over and over. Loop police watches for these patterns as they
-happen: it aborts looping output mid-stream, trims the repetition out
-of your context, and injects a recovery message so the model continues with
-a fresh perspective — you keep the tokens the loop would have burned.
-
-Nine detectors, all enabled out of the box:
-
-- **Streaming loops** (thinking + output, re-checked every 50 chars): a
-  character-level tail detector (the text ends in two adjacent verbatim
-  copies of a block between 80/100 and 4000 chars) and a semantic layer
-  (the same paragraph fingerprint 3 times — ordered-list counters
-  normalized, code fences skipped). The semantic layer catches loops early:
-  repeats rarely stay perfectly verbatim. On detection the stream is
-  aborted immediately, the contaminated reasoning is replaced by an
-  ordinary marker (no provider signature, so nothing opaque is replayed),
-  and a recovery message starts the model past the loop.
-- **Cross-turn stagnation**: 4 turns of ≥ 85% word-similar thinking refresh
-  the reasoning and scrub the stagnant window from future model requests
-  (the stored transcript stays available for postmortems).
-- **Re-derived reasoning**: after any detection, thinking ≥ 85% similar to
-  the blocked plan is trimmed — interrupting the action is not enough for
-  small models; the reasoning itself has to go. Escalates to ⚠️ STUCK when
-  the same blocked plan re-derives in a row.
-- **File read ceiling** (20 real reads of one path), **redundant re-read
-  window** (≥ 40% of the last 10 reads are re-reads of unchanged files;
-  read → edit → re-read counts as fresh), and **search expansion spiral**
-  (the same pattern across 3+ locations). Blocked calls never reached the
-  tool, so they never spend a budget or inflate reported counts.
-
-```text
-/loop-police                # detection state + all config values
-/loop-police reset          # clear state (false positive recovery)
-/loop-police set KEY=VAL …  # tune live (range-checked)
-/loop-police save           # persist to ~/.pi/agent/aio-loop-police.json
-```
-
-Set a detector's key to 0 to disable it (`SEMANTIC_THRESHOLD=0`,
-`REREAD_WINDOW=0`, …). The legacy `TOOL_LOOP_BAN`, `TOOL_LOOP_EXEMPT`, and
-`MSG_TOOL_LOOP` config keys are accepted for compatibility but ignored —
-the identical tool-call sequence detector was removed because legitimate
-repeated actions tripped it too often. Custom `MSG_*` templates and the
-`MSG_SUFFIX` rider are edited in the JSON
-file. Every detection also emits a metadata-only payload to
-`loop-police:detection` on the extension event bus, `HOOK_LOG` JSONL
-statistics, and `HOOK_CMD` — all observational, never blocking.
-
-Detection stays active in aio subagent child processes (children loop too
-and burn the same tokens). Registration sits between blocklist and
-permission-modes: a loop block preempts mode checks, while the hard
-blocklist still wins over a loop block.
-
 ## Layout
 
 ```text
@@ -996,7 +938,6 @@ blocklist still wins over a loop block.
 ├── tuicr/                   # /tuicr review loop (ported from pi-tuicr)
 ├── init/                    # /init AGENTS.md bootstrap
 ├── nvim/                    # open files in Neovim in a new otty pane
-├── loop-police/             # reasoning/tool loop detection + recovery (ported)
 ├── permission-modes/        # Shift+Tab modes + plan flow
 ├── queue/                   # message-queue widget + Enter-to-interrupt
 ├── status-line/             # provider quota + legacy footer fallback
