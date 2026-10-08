@@ -35,7 +35,8 @@ export interface StatusLineRenderInput {
 }
 
 const STATUS_KEY_ORDER = ["rtk", "user-bash", "fff", "codex-quota"] as const;
-const DEDICATED_STATUS_KEYS = new Set(["effort", "cursor"]);
+// "style" is the opt-in interaction style; it renders inside the mode segment.
+const DEDICATED_STATUS_KEYS = new Set(["effort", "cursor", "style"]);
 const HIDDEN_STATUS_KEYS = new Set(["modes"]);
 
 /** Compact Unicode icons (no Nerd Font dependency). */
@@ -136,7 +137,10 @@ function renderSegment(
 	switch (segment) {
 		case "mode": {
 			const meta = modeMetadata(mode);
-			return theme.fg(meta.role, withIcon(meta.icon, meta.label));
+			const modeText = theme.fg(meta.role, withIcon(meta.icon, meta.label));
+			// The style is pre-themed by its owner and only present once set.
+			const style = input.extensionStatuses.get("style");
+			return style ? `${modeText}${theme.fg("muted", " · ")}${style}` : modeText;
 		}
 		case "path": {
 			const path = formatPath(input.cwd, config.path);

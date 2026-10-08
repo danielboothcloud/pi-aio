@@ -69,6 +69,22 @@ test("renderStatusLine separates codex quota from effort", () => {
 	assert.doesNotMatch(line, /effort:max weekly/);
 });
 
+test("renderStatusLine shows an active style beside the mode, once", () => {
+	const [line] = renderStatusLine(
+		baseInput({
+			extensionStatuses: new Map([
+				["rtk", "rtk✓"],
+				["style", "✎ Mentor"],
+			]),
+		}),
+	);
+	assert.match(line, /^⏸ Plan · ✎ Mentor · /);
+	assert.equal(line.split("Mentor").length - 1, 1, "style must not repeat in statuses");
+
+	const [unstyled] = renderStatusLine(baseInput());
+	assert.match(unstyled, /^⏸ Plan · ⌂/);
+});
+
 test("renderStatusLine omits empty git segment", () => {
 	const [line] = renderStatusLine(baseInput({ gitBranch: null }));
 	assert.doesNotMatch(line, /\bmain\b/);

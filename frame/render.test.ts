@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { visibleWidth } from "@earendil-works/pi-tui";
 import {
 	DEFAULT_FRAME_STYLE,
 	renderMinimalistFrame,
@@ -64,6 +65,27 @@ test("effort renders directly to the right of the mode, left of the fill", () =>
 	// The right side must no longer carry the effort level or context.
 	assert.doesNotMatch(lines[0]!, /test-model – max/);
 	assert.doesNotMatch(lines[0]!, /– 42% – /);
+});
+
+test("an interaction style renders between the mode and the effort level", () => {
+	const styled = frame(["x"], {
+		mode: { icon: "▶", label: "Auto", role: "accent" },
+		style: { icon: "✎", label: "Mentor", role: "accent" },
+	}, 90);
+	assert.match(styled[0]!, /^╭─ ▶ Auto · ✎ Mentor · high · 42% ─/);
+
+	const unstyled = frame(["x"], { mode: { icon: "▶", label: "Auto", role: "accent" } }, 90);
+	assert.doesNotMatch(unstyled[0]!, /Mentor|Collaborate/);
+
+	for (const width of [24, 40]) {
+		const narrow = frame(["x"], {
+			mode: { icon: "⏸", label: "Plan", role: "warning" },
+			style: { icon: "⇄", label: "Collaborate", role: "success" },
+		}, width);
+		for (const line of narrow) {
+			assert.ok(visibleWidth(line) <= width, `line too wide at ${width}: ${line}`);
+		}
+	}
 });
 
 test("panel rows render between content and the bottom border", () => {

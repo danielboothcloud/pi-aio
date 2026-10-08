@@ -146,6 +146,18 @@ generated `dist/` tree without changing the package contract.
   the agent cannot open panes on its own. No gating, no tool-name overlap;
   degrades silently when nvim or every launcher is missing (the command
   reports the exact command to run).
+- `styles/` owns `/style` (`none | collaborate | mentor`): opt-in interaction
+  styles layered on top of permission modes. A style only injects a hidden
+  per-turn `styles-context` instruction (mode-aware, e.g. no `TODO(human)`
+  markers in ask/plan); it never gates tools, and it is NOT a permission mode
+  (keep it out of `mode-access.ts`, Shift+Tab, and `--permission-mode`).
+  Off by default: no flag or setting enables it; only `/style` does, and the
+  choice persists as a `styles` session entry restored from the current
+  branch. Its `context` handler keeps only the latest instruction and strips
+  all of them once the style is `none`. In subagent children
+  (`AIO_SUBAGENT_CHILD=1`) it registers only that stripping filter. Display:
+  a `style` frame metadata contributor beside the mode, or a `style` footer
+  status that status-line renders inside its mode segment.
 - `subagents/` owns the `subagent` tool: configured child Pi agents run as
   spawned `pi --mode json -p` processes (fresh or forked context, bounded
   parallel group, background follow-up via `aio-subagent-complete`). A child

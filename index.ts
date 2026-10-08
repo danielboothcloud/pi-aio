@@ -28,6 +28,7 @@ import { registerQueue } from "./queue/index.js";
 import registerPrettyTools from "./pretty-tools/index.js";
 import { registerSubagents } from "./subagents/index.js";
 import { registerStatusLine } from "./status-line/index.js";
+import { registerStyles } from "./styles/index.js";
 import registerTuicr from "./tuicr/index.js";
 import { registerUserBash } from "./user-bash/index.js";
 import { registerFrameEditor } from "./frame/index.js";
@@ -57,6 +58,9 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// gates (it opens editor panes, it never gates anything).
 	registerNvim(pi);
 	registerPermissionModes(pi);
+	// Styles layer opt-in interaction guidance on top of the permission mode;
+	// they register after it so their per-turn instruction follows the mode's.
+	registerStyles(pi);
 	registerSubagents(pi);
 	registerUserBash(pi);
 	registerRtk(pi);

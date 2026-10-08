@@ -58,6 +58,8 @@ export interface FrameMetadata {
 	agentActive?: boolean;
 	/** Permission mode, contributed by permission-modes (icon + label + theme role). */
 	mode?: { icon: string; label: string; role: string };
+	/** Opt-in interaction style, contributed by styles; absent when no style is set. */
+	style?: { icon: string; label: string; role: string };
 	/** Provider quota line, contributed by status-line (pre-joined text + theme role). */
 	quota?: { text: string; role: string };
 	/** Codex 5h/week remaining windows, from the frame's own poller. */
@@ -144,10 +146,21 @@ function renderTopLeft(
 		);
 	}
 	// Permission mode leads the metadata (it gates what the agent may do),
-	// then the effort level, then the run timer — mode-effort-time.
+	// then the opt-in interaction style that rides on top of it, then the
+	// effort level, then the run timer — mode-style-effort-time.
 	const mode = metadata.mode;
 	if (mode) {
 		parts.push(safeThemeFg(uiTheme, mode.role, `${mode.icon} ${mode.label}`));
+	}
+	const interactionStyle = metadata.style;
+	if (interactionStyle) {
+		parts.push(
+			safeThemeFg(
+				uiTheme,
+				interactionStyle.role,
+				`${interactionStyle.icon} ${interactionStyle.label}`,
+			),
+		);
 	}
 	const effort = (metadata.thinkingLevel ?? "").trim();
 	const effortKey = effort.toLowerCase();

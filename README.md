@@ -4,7 +4,8 @@ Combined Pi extension with a **minimalist editor frame**, structured
 **`ask_user_question`** dialogs, a **`/pick`** code picker, **`/init`** AGENTS.md
 bootstrap, **`/effort`** thinking control, generic **subagent delegation**,
 configurable **`web_search`** and **`fetch_content`**, **`!` bash shortcuts**,
-**Shift+Tab** permission modes, enhanced built-in output with FFF-backed search,
+**Shift+Tab** permission modes, opt-in **`/style`** interaction styles, enhanced
+built-in output with FFF-backed search,
 **rtk** shell-command rewriting, and syntax-highlighted write/edit/patch diffs.
 
 The questionnaire implementation is based on
@@ -380,6 +381,35 @@ During plan execution, the `todo` tool can manage the active plan steps:
 pi --permission-mode ask
 pi --permission-mode plan
 ```
+
+## Interaction styles (`/style`)
+
+A style changes how the agent works with you; it never changes what tools may
+do. Permission modes still own that, and any mode can be combined with any
+style (for example plan + collaborate, or ask + mentor).
+
+Styles are **off by default**. Every new session starts with `none`; there is no
+flag, setting, or shortcut that enables one. Run `/style <name>` to turn a style
+on for the current session. Resuming that session or moving around its tree
+restores the style chosen on that branch. Subagents never inherit a style.
+
+| Style       | What the agent does                                                                                       |
+| ----------- | --------------------------------------------------------------------------------------------------------- |
+| none        | Default behavior: no extra interaction guidance                                                           |
+| collaborate | Surfaces decisions with 2-3 options and a recommendation, asks via `ask_user_question`, uses your domain knowledge, and confirms direction between small increments |
+| mentor      | Adds short "Insight" notes on the why, leaves occasional `TODO(human)` handoffs and reviews your attempt, asks guiding questions first, and ends with a "What you learned" recap |
+
+In ask and plan mode, mentor names the piece you could write instead of planting
+`TODO(human)` markers, because file edits are disabled there. Collaborate in plan
+mode co-designs the plan with you before emitting it.
+
+The active style appears beside the mode: in the frame's top border
+(`▶ Auto · ✎ Mentor`), in the legacy status line, or as a `style` footer status
+when the status line is disabled.
+
+- `/style` — selector
+- `/style collaborate`, `/style mentor` — switch directly
+- `/style none` (or `/style off`) — turn the style off
 
 ## Minimalist frame interface
 
@@ -941,6 +971,7 @@ view). `path:line` and `path:line:col` shorthand work.
 ├── permission-modes/        # Shift+Tab modes + plan flow
 ├── queue/                   # message-queue widget + Enter-to-interrupt
 ├── status-line/             # provider quota + legacy footer fallback
+├── styles/                  # opt-in /style interaction styles
 ├── ui/                      # shared responsive accent-rail chrome
 ├── frame/                   # proprietary minimalist editor frame (vendored)
 ├── pretty-tools/            # pretty built-ins + FFF search
