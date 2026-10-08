@@ -492,7 +492,7 @@ Configure it in Pi settings (`~/.pi/agent/settings.json` or project
 | `path` | `basename`, `abbreviated`, or `full` |
 | `workingMessage` | `minimal` (default), `verbose` (streaming stats), or `off` |
 | `statusKeys` | Optional allowlist for extension status keys |
-| `providerUsage` | Optional per-provider quota endpoint, headers, and response mappings |
+| `providerUsage` | Optional per-provider quota endpoint, auth, headers, refresh interval, and response mappings |
 
 Quick toggles for the fallback/data layer:
 
@@ -513,7 +513,17 @@ model provider. Provider keys must match the provider id shown in the model
 segment. Response mappings are dot-separated JSON paths. Requests are cached,
 have a bounded timeout, fail silently, and keep the last successful value on a
 transient error. Header values support `$VAR` and `${VAR}` environment
-references (but never shell commands).
+references (but never shell commands). Set `auth: "pi-oauth"` to read the
+bearer token from the OAuth credentials Pi stored during `/login`
+(`<agentDir>/auth.json`, sent with the `anthropic-beta: oauth-2025-04-20`
+header) instead of templating it from the environment — the token rotates, so
+it is re-read per request. `authAccount` overrides the auth.json provider key,
+which defaults to the provider key itself (so `anthropic-2` from pi-multi-pass
+reads its own entry). Each provider may also set `refreshIntervalMs` to
+override the global interval; subscription usage endpoints rate-limit
+aggressively (Anthropic's 429s after a handful of requests), so give them a
+slower cadence than the 60s default. Failed attempts back off for the same
+interval instead of refetching on every lifecycle event.
 
 For example, a custom provider named `synthetic` can use Synthetic's quota API,
 showing both the request quota and the weekly credit window from one response:
@@ -556,9 +566,50 @@ showing both the request quota and the weekly credit window from one response:
 }
 ```
 
-Each mapping may provide `used`, `limit`, `remaining`, `renewsAt`, and/or
-`text`. When `used` and `limit` are available, aio computes the remaining
-percentage. `text` can map a provider-formatted quota string (for example
+A Claude Pro/Max subscription authenticated through `/login anthropic` (and
+`pi-anthropic-auth`) needs no environment variable at all — `auth: "pi-oauth"`
+reads the stored OAuth token, and `usedPercent` maps the endpoint's
+percent-used windows:
+
+```json
+{
+  "aio": {
+    "statusLine": {
+      "providerUsage": {
+        "providers": {
+          "anthropic": {
+            "endpoint": "https://api.anthropic.com/api/oauth/usage",
+            "auth": "pi-oauth",
+            "refreshIntervalMs": 300000,
+            "windows": {
+              "fiveHour": {
+                "label": "5h",
+                "mapping": {
+                  "usedPercent": "five_hour.utilization",
+                  "renewsAt": "five_hour.resets_at"
+                }
+              },
+              "sevenDay": {
+                "label": "7d",
+                "mapping": {
+                  "usedPercent": "seven_day.utilization",
+                  "renewsAt": "seven_day.resets_at"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Each mapping may provide `used`, `limit`, `remaining`, `usedPercent`,
+`renewsAt`, and/or `text`. When `used` and `limit` are available, aio computes
+the remaining percentage; `usedPercent` inverts a percent-used value
+(`remaining = 100 - usedPercent`, clamped to 0–100) for endpoints like
+Anthropic's that only expose utilization. `text` can map a provider-formatted quota string (for example
 `"$23.21"`) verbatim. With the frame active, quota embeds in the pill's top
 border right after the context percent. In fallback mode it renders inside
 one `quota` segment. Values are joined by `·` and color by the

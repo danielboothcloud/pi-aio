@@ -136,6 +136,53 @@ test("loadStatusLineConfig parses provider usage endpoints and mappings", () => 
 	}
 });
 
+test("loadStatusLineConfig parses pi-oauth auth and per-provider refresh", () => {
+	const tmpDir = mkdtempSync(join(tmpdir(), "aio-status-line-oauth-config-"));
+	try {
+		mkdirSync(join(tmpDir, ".pi"), { recursive: true });
+		writeFileSync(
+			join(tmpDir, ".pi", "settings.json"),
+			JSON.stringify({
+				aio: {
+					statusLine: {
+						providerUsage: {
+							providers: {
+								anthropic: {
+									endpoint: "https://api.anthropic.com/api/oauth/usage",
+									auth: "pi-oauth",
+									refreshIntervalMs: 300_000,
+									windows: {
+										fiveHour: {
+											label: "5h",
+											mapping: {
+												usedPercent: "five_hour.utilization",
+												renewsAt: "five_hour.resets_at",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}),
+			"utf-8",
+		);
+
+		const config = loadStatusLineConfig(tmpDir, { includeGlobal: false });
+		const provider = config.providerUsage?.providers.anthropic;
+		assert.equal(provider?.auth, "pi-oauth");
+		assert.equal(provider?.authAccount, undefined);
+		assert.equal(provider?.refreshIntervalMs, 300_000);
+		assert.deepEqual(provider?.windows?.fiveHour?.mapping, {
+			usedPercent: "five_hour.utilization",
+			renewsAt: "five_hour.resets_at",
+		});
+	} finally {
+		rmSync(tmpDir, { recursive: true, force: true });
+	}
+});
+
 test("loadStatusLineConfig parses named provider usage windows", () => {
 	const tmpDir = mkdtempSync(join(tmpdir(), "aio-status-line-usage-windows-"));
 	try {

@@ -32,7 +32,8 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	let outputAtTurnStart = 0;
 	let currentCtx: ExtensionContext | null = null;
 	let providerUsage: ProviderUsage[] = [];
-	let providerUsageFetchedAt = 0;
+	let providerUsageAttemptedAt = 0;
+	let providerUsageAttemptProvider: string | undefined;
 	let providerUsageRequest: Promise<void> | undefined;
 	let providerUsageAbort: AbortController | undefined;
 	let requestFooterRender: (() => void) | undefined;
@@ -76,7 +77,8 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 		providerUsageRequest = undefined;
 		if (clearValue) {
 			providerUsage = [];
-			providerUsageFetchedAt = 0;
+			providerUsageAttemptedAt = 0;
+			providerUsageAttemptProvider = undefined;
 			requestFooterRender?.();
 			syncProviderUsageStatus();
 		}
@@ -99,21 +101,24 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 			: undefined;
 		if (!provider || !usageConfig || !endpointConfig) {
 			providerUsage = [];
-			providerUsageFetchedAt = 0;
+			providerUsageAttemptedAt = 0;
+			providerUsageAttemptProvider = undefined;
 			requestFooterRender?.();
 			syncProviderUsageStatus(ctx);
 			return Promise.resolve();
 		}
 		if (providerUsageRequest) return providerUsageRequest;
+		const interval =
+			endpointConfig.refreshIntervalMs ?? usageConfig.refreshIntervalMs;
 		if (
 			!force &&
-			providerUsage.length > 0 &&
-			providerUsage[0]?.provider === provider &&
-			Date.now() - providerUsageFetchedAt < usageConfig.refreshIntervalMs
+			providerUsageAttemptProvider === provider &&
+			Date.now() - providerUsageAttemptedAt < interval
 		) {
 			return Promise.resolve();
 		}
 
+		providerUsageAttemptProvider = provider;
 		providerUsageAbort?.abort();
 		const controller = new AbortController();
 		providerUsageAbort = controller;
@@ -128,12 +133,16 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 				if (controller.signal.aborted || currentCtx?.model?.provider !== provider)
 					return;
 				providerUsage = usage;
-				providerUsageFetchedAt = Date.now();
+				providerUsageAttemptedAt = Date.now();
 				requestFooterRender?.();
 				syncProviderUsageStatus(ctx);
 			})
 			.catch(() => {
-				// Quota display is best-effort. Keep stale data on transient failures.
+				// Quota display is best-effort. Keep stale data on transient
+				// failures and stamp the attempt so rate-limited endpoints
+				// (Anthropic's usage API 429s quickly) are not hammered on
+				// every lifecycle event before the refresh window elapses.
+				providerUsageAttemptedAt = Date.now();
 			})
 			.finally(() => {
 				if (providerUsageAbort === controller) {

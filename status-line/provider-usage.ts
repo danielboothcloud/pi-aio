@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { getAgentDir } from "@earendil-works/pi-coding-agent";
 import type {
 	ProviderUsageEndpointConfig,
 	ProviderUsageMapping,
@@ -109,6 +112,9 @@ export function mapProviderUsage(
 	if (remaining === undefined && limit !== undefined && used !== undefined) {
 		remaining = limit - used;
 	}
+	const usedPercent = mapping.usedPercent
+		? finiteNumber(readScalarPath(payload, mapping.usedPercent))
+		: undefined;
 	const text = mapping.text
 		? stringValue(readScalarPath(payload, mapping.text))
 		: undefined;
@@ -119,15 +125,20 @@ export function mapProviderUsage(
 		used === undefined &&
 		limit === undefined &&
 		remaining === undefined &&
+		usedPercent === undefined &&
 		text === undefined
 	) {
 		return undefined;
 	}
 
+	// Endpoints that only expose percent-used (Anthropic's usage API) invert
+	// into the remaining percentage the status line colors by.
 	const remainingPercent =
 		remaining !== undefined && limit !== undefined && limit > 0
 			? Math.max(0, Math.min(100, Math.round((remaining / limit) * 100)))
-			: undefined;
+			: usedPercent !== undefined
+				? Math.max(0, Math.min(100, Math.round(100 - usedPercent)))
+				: undefined;
 	return {
 		provider,
 		label: label ?? provider,
@@ -140,12 +151,38 @@ export function mapProviderUsage(
 	};
 }
 
+/**
+ * Read an OAuth access token from Pi's agent-dir auth.json (what `/login`
+ * writes). Returns undefined for API-key entries and missing files so callers
+ * can fail closed without touching the network.
+ */
+export function readPiOAuthToken(
+	account: string,
+	agentDir: string = getAgentDir(),
+): string | undefined {
+	try {
+		const raw: unknown = JSON.parse(
+			readFileSync(join(agentDir, "auth.json"), "utf-8"),
+		);
+		if (typeof raw !== "object" || raw === null) return undefined;
+		const entry = (raw as Record<string, unknown>)[account];
+		if (typeof entry !== "object" || entry === null) return undefined;
+		const record = entry as Record<string, unknown>;
+		if (record.type !== "oauth") return undefined;
+		const token = record.access;
+		return typeof token === "string" && token.trim() ? token : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
 export async function fetchProviderUsage(
 	provider: string,
 	config: ProviderUsageEndpointConfig,
 	timeoutMs: number,
 	request: typeof fetch = fetch,
 	signal?: AbortSignal,
+	resolveAuthToken: (account: string) => string | undefined = readPiOAuthToken,
 ): Promise<ProviderUsage[]> {
 	const headers: Record<string, string> = {};
 	for (const [name, template] of Object.entries(config.headers)) {
@@ -156,6 +193,18 @@ export async function fetchProviderUsage(
 			);
 		}
 		headers[name] = value;
+	}
+	if (config.auth === "pi-oauth") {
+		// Subscription usage endpoints key off the OAuth token Pi stored during
+		// /login; it rotates, so it is read from auth.json rather than templated
+		// from the environment. Config headers still win when set explicitly.
+		const account = config.authAccount ?? provider;
+		const token = resolveAuthToken(account);
+		if (!token) {
+			throw new Error(`No pi OAuth token for provider ${account}`);
+		}
+		headers.Authorization ??= `Bearer ${token}`;
+		headers["anthropic-beta"] ??= "oauth-2025-04-20";
 	}
 
 	const controller = new AbortController();

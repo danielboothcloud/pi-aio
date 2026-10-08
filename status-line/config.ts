@@ -24,6 +24,8 @@ export interface ProviderUsageMapping {
 	used?: string;
 	limit?: string;
 	remaining?: string;
+	/** Percent-used scalar; inverted into the remaining percentage. */
+	usedPercent?: string;
 	renewsAt?: string;
 	text?: string;
 }
@@ -37,6 +39,12 @@ export interface ProviderUsageEndpointConfig {
 	endpoint: string;
 	label?: string;
 	headers: Record<string, string>;
+	/** Read the bearer token from Pi's agent-dir auth.json instead of headers. */
+	auth?: "pi-oauth";
+	/** auth.json provider key for `auth`; defaults to the providers map key. */
+	authAccount?: string;
+	/** Per-provider refresh override; subscription usage endpoints rate-limit hard. */
+	refreshIntervalMs?: number;
 	/** Single-window shorthand; ignored when `windows` is set. */
 	mapping?: ProviderUsageMapping;
 	/** Multiple named displays mapped from one endpoint response. */
@@ -136,6 +144,7 @@ const USAGE_MAPPING_KEYS = [
 	"used",
 	"limit",
 	"remaining",
+	"usedPercent",
 	"renewsAt",
 	"text",
 ] as const;
@@ -212,6 +221,13 @@ function parseProviderUsage(
 			endpoint,
 			label: nonEmptyString(entry.label),
 			headers,
+			auth: entry.auth === "pi-oauth" ? "pi-oauth" : undefined,
+			authAccount: nonEmptyString(entry.authAccount),
+			refreshIntervalMs: boundedNumber(
+				entry.refreshIntervalMs,
+				5_000,
+				86_400_000,
+			),
 			mapping,
 			windows: Object.keys(windows).length > 0 ? windows : undefined,
 		};
