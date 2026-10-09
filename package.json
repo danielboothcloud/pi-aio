@@ -113,6 +113,9 @@
 		"tuicr/LICENSE",
 		"browser-search/**/*.ts",
 		"!browser-search/**/*.test.ts",
+		"browser-search/cloak-worker.mjs",
+		"browser-search/cloak-latest.mjs",
+		"browser-search/cloak-ownership.mjs",
 		"browser-search/README.md",
 		"browser-search/LICENSE",
 		"blocklist/**/*.ts",
@@ -151,6 +154,7 @@
 		"@mozilla/readability": "^0.6.0",
 		"@shikijs/cli": "4.0.2",
 		"diff": "^7.0.0",
+		"jiti": "2.7.0",
 		"linkedom": "^0.18.0",
 		"marked": "18.0.5",
 		"shiki": "4.0.2",
@@ -180,9 +184,5 @@
 		"@juicesharp/rpiv-i18n": {
 			"optional": true
 		}
-	},
-	"optionalDependencies": {
-		"cloakbrowser": "0.5.1",
-		"playwright-core": "1.60.0"
 	}
 }

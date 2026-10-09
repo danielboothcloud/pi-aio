@@ -79,9 +79,21 @@ curl 'http://localhost:9377/health'
 Stop them with `docker compose down`; add `-v` to also delete browser profiles
 and the SearXNG cache.
 
-`cloakbrowser` and `playwright-core` are optional npm dependencies. AIO imports
-them only when Camofox cannot extract a page. CloakBrowser downloads its
-Chromium binary on first use.
+When Camofox cannot extract a page, AIO starts an isolated **Node.js** worker.
+Playwright/Chromium never launch inside Pi (including Bun-hosted Pi), so a
+browser crash becomes a per-URL error rather than terminating the session.
+Node.js and npm must be on PATH; missing executables do not prevent AIO loading.
+
+Every worker checks the public npm registry's `latest` tags for `cloakbrowser`
+and `playwright-core` using a fresh, disposable metadata cache (npm cannot
+silently fall back to stale metadata). The same explicit public registry is
+used for installation, regardless of project `.npmrc` settings. It installs that
+exact version pair into `~/.cache/aio/cloakbrowser/<registry-hash>-<versions>/` on first use,
+then reuses it only while it remains latest. Installs are staged atomically,
+with npm lifecycle scripts disabled. AIO's lockfile does not pin these browser
+packages. Registry/installation failures report an error: there is **no stale
+or offline fallback**. CloakBrowser downloads its Chromium binary on first use.
+The worker has a four-minute deadline; cancellation terminates it.
 
 ## Environment configuration
 
@@ -105,8 +117,12 @@ Chromium binary on first use.
 - `BROWSER_SEARCH_CAMOFOX_TIMEOUT_MS` (`30000`) — Camofox request timeout.
 - `BROWSER_SEARCH_MAX_INLINE_CONTENT` (`40000`) — model-facing result cap.
 - `BROWSER_SEARCH_CLOAK_MAX_CHARS` (`100000`) — CloakBrowser extraction cap.
+- `BROWSER_SEARCH_NODE_BINARY` — optional genuine Node executable path for the
+  browser worker. Defaults to the current executable under Node, or `node` on
+  PATH under Bun. A Bun executable is refused; there is no in-process fallback.
 - `CLOAKBROWSER_AUTO_UPDATE` — cloakbrowser's own opt-in npm-update notice;
-  AIO defaults it to `false` unless you set it explicitly.
+  AIO defaults it to `false` unless you set it explicitly. This does not disable
+  the worker's mandatory latest-version check.
 
 The SSRF guard rejects unsafe initial URLs and private DNS results before either
 browser tier starts navigation. As with any remote browser service, deploy

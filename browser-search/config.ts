@@ -185,9 +185,7 @@ export const CAMOFOX_RESTART_CMD =
  * challenge polling, per-hit fetch progress). Off by default so the TUI
  * spinner stays quiet; failures still surface via tool output.
  */
-export const BROWSER_SEARCH_DEBUG = /^(1|true|yes)$/i.test(
-	process.env.BROWSER_SEARCH_DEBUG ?? "",
-);
+export { BROWSER_SEARCH_DEBUG, CLOAK_MAX_CHARS } from "./cloak-settings.js";
 
 /** Network timeout for SearXNG HTTP calls. */
 export const SEARXNG_REQUEST_TIMEOUT_MS = positiveInteger(
@@ -211,10 +209,4 @@ export const CAMOFOX_REQUEST_TIMEOUT_MS = positiveInteger(
 export const MAX_INLINE_CONTENT = positiveInteger(
 	process.env.BROWSER_SEARCH_MAX_INLINE_CONTENT,
 	40_000,
-);
-
-/** Default CloakBrowser extraction cap before model-facing truncation. */
-export const CLOAK_MAX_CHARS = positiveInteger(
-	process.env.BROWSER_SEARCH_CLOAK_MAX_CHARS,
-	100_000,
 );
