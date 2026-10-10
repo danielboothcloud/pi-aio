@@ -8,3 +8,10 @@ export const CLOAK_MAX_CHARS =
 	Number.isSafeInteger(configuredMaxChars) && configuredMaxChars > 0
 		? configuredMaxChars
 		: 100_000;
+
+/** Per-navigation deadline before CloakBrowser commit/poll fallbacks engage. */
+const configuredTimeoutMs = Number(process.env.BROWSER_SEARCH_CLOAK_TIMEOUT_MS);
+export const CLOAK_GOTO_TIMEOUT_MS =
+	Number.isSafeInteger(configuredTimeoutMs) && configuredTimeoutMs > 0
+		? configuredTimeoutMs
+		: 30_000;

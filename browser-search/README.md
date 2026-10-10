@@ -94,6 +94,12 @@ with npm lifecycle scripts disabled. AIO's lockfile does not pin these browser
 packages. Registry/installation failures report an error: there is **no stale
 or offline fallback**. CloakBrowser downloads its Chromium binary on first use.
 The worker has a four-minute deadline; cancellation terminates it.
+Navigation stops waiting at DOMContentLoaded and falls back to a commit +
+DOM-readiness poll, so slow pages return content instead of stalling; pages
+that never produce anything fail explicitly. Human-form input simulation
+(`humanize`) is opt-in — cloakbrowser 0.6 nondeterministically hung `page.goto`
+while it was enabled by default. Ordinary Cloudflare pages (a bare `__cf_bm`
+cookie) no longer trigger the 20-second challenge poll.
 
 ## Environment configuration
 
@@ -117,6 +123,8 @@ The worker has a four-minute deadline; cancellation terminates it.
 - `BROWSER_SEARCH_CAMOFOX_TIMEOUT_MS` (`30000`) — Camofox request timeout.
 - `BROWSER_SEARCH_MAX_INLINE_CONTENT` (`40000`) — model-facing result cap.
 - `BROWSER_SEARCH_CLOAK_MAX_CHARS` (`100000`) — CloakBrowser extraction cap.
+- `BROWSER_SEARCH_CLOAK_TIMEOUT_MS` (`30000`) — per-navigation deadline before
+  CloakBrowser's commit + readiness-poll fallbacks engage.
 - `BROWSER_SEARCH_NODE_BINARY` — optional genuine Node executable path for the
   browser worker. Defaults to the current executable under Node, or `node` on
   PATH under Bun. A Bun executable is refused; there is no in-process fallback.

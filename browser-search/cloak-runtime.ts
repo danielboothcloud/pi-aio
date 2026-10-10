@@ -32,7 +32,11 @@ import { homedir } from "node:os";
 
 import { abortable, abortError, sleep, throwIfAborted } from "./abort.js";
 import { waitForChallenge, type ChallengePage } from "./challenges.js";
-import { BROWSER_SEARCH_DEBUG, CLOAK_MAX_CHARS } from "./cloak-settings.js";
+import {
+	BROWSER_SEARCH_DEBUG,
+	CLOAK_GOTO_TIMEOUT_MS,
+	CLOAK_MAX_CHARS,
+} from "./cloak-settings.js";
 import { extractMarkdownFromHtml, textFromHtml } from "./readability.js";
 import type { FetchResult } from "./types.js";
 import { validateUrlWithDns } from "./url-validation.js";
@@ -52,6 +56,7 @@ export interface CloakFetchOptions {
 	wait?: number; // ms after load
 	timeout?: number; // ms navigation
 	retry?: number;
+	/** Opt-in humanized input simulation; destabilizes navigation on cloakbrowser ≥0.6. */
 	humanize?: boolean;
 	proxy?: string;
 	geoip?: boolean;
@@ -221,7 +226,9 @@ function pageToChallengePage(page: CloakPage): ChallengePage {
 
 function buildLaunchOpts(opts: CloakFetchOptions): Record<string, unknown> {
 	const launchOpts: Record<string, unknown> = { headless: true };
-	if (opts.humanize !== false) {
+	// Humanize nondeterministically stalled page.goto against plain doc sites
+	// under cloakbrowser 0.6, so it is opt-in rather than a default.
+	if (opts.humanize === true) {
 		launchOpts.humanize = true;
 	}
 	if (opts.proxy) launchOpts.proxy = opts.proxy;
@@ -252,6 +259,81 @@ async function openPersistentPage(
 		(context.pages()[0] as CloakPage) ||
 		(await abortable(context.newPage(), signal));
 	return { context, page };
+}
+
+/**
+ * Navigate without trusting a single Playwright wait condition:
+ *  1. `domcontentloaded` — the common fast path.
+ *  2. `commit` — restarts navigation and returns at the earliest possible
+ *     point, for pages whose event timing stalls under stealth patches.
+ *  3. Poll the live DOM — when `readyState` passes `loading`, or body text
+ *     appears and stays stable, the document is usable regardless of events.
+ * Stalling through every stage surfaces as an explicit unreadable-page error
+ * during extraction instead of a silent goto timeout.
+ */
+async function gotoWithFallbacks(
+	page: CloakPage,
+	url: string,
+	timeout: number,
+	signal?: AbortSignal,
+): Promise<void> {
+	try {
+		await abortable(
+			page.goto(url, { waitUntil: "domcontentloaded", timeout }),
+			signal,
+		);
+		return;
+	} catch {
+		if (signal?.aborted) throw abortError(signal);
+	}
+	try {
+		await abortable(
+			page.goto(url, { waitUntil: "commit", timeout: Math.min(timeout, 15_000) }),
+			signal,
+		);
+	} catch {
+		if (signal?.aborted) throw abortError(signal);
+		// The first, stalled navigation may still deliver a usable document.
+	}
+	const deadline = Date.now() + Math.min(timeout, 15_000);
+	let chars = 0;
+	let stablePolls = 0;
+	while (Date.now() < deadline && stablePolls < 2) {
+		throwIfAborted(signal);
+		const state = (await page
+			.evaluate<{ readyState: string; chars: number }>(() => ({
+				readyState: document.readyState,
+				chars: document.body?.innerText?.trim().length ?? 0,
+			}))
+			.catch(() => {
+				if (signal?.aborted) throw abortError(signal);
+				return { readyState: "loading", chars: 0 };
+			})) as { readyState: string; chars: number };
+		if (state.readyState === "interactive" || state.readyState === "complete") {
+			return;
+		}
+		// Body text without advancing readyState: stable across two polls means
+		// the fallback navigation delivered real content.
+		if (state.chars > 0) {
+			stablePolls = state.chars === chars ? stablePolls + 1 : 0;
+			chars = state.chars;
+		}
+		await sleep(500, signal);
+	}
+}
+
+/** Reads page HTML, treating an empty document as a hard failure. */
+async function extractPageHtml(
+	page: CloakPage,
+	signal?: AbortSignal,
+): Promise<string> {
+	try {
+		const html = await abortable(page.content(), signal);
+		if (html.trim()) return html;
+	} catch {
+		if (signal?.aborted) throw abortError(signal);
+	}
+	throw new CloakError("Page never became readable (navigation stalled)");
 }
 
 async function fetchPageOnce(
@@ -296,19 +378,12 @@ async function fetchPageOnce(
 			page = await abortable(context.newPage(), opts.signal);
 		}
 
-		const timeout = opts.timeout ?? 30_000;
-		try {
-			await abortable(
-				page.goto(opts.url, { waitUntil: "networkidle", timeout }),
-				opts.signal,
-			);
-		} catch (err) {
-			if (opts.signal?.aborted) throw abortError(opts.signal);
-			await abortable(
-				page.goto(opts.url, { waitUntil: "domcontentloaded", timeout }),
-				opts.signal,
-			);
-		}
+		await gotoWithFallbacks(
+			page,
+			opts.url,
+			opts.timeout ?? CLOAK_GOTO_TIMEOUT_MS,
+			opts.signal,
+		);
 
 		const challenge = await waitForChallenge(
 			pageToChallengePage(page),
@@ -342,17 +417,26 @@ async function fetchPageOnce(
 
 		let raw: string;
 		if (format === "html") {
-			raw = await page.content();
+			raw = await extractPageHtml(page, opts.signal);
 		} else if (format === "markdown") {
-			const html = await abortable(page.content(), opts.signal);
-			raw = extractMarkdownFromHtml(html).content;
+			raw = extractMarkdownFromHtml(
+				await extractPageHtml(page, opts.signal),
+			).content;
 		} else {
-			// Narrow `page` into a const so the catch callback below keeps the
+			// Narrow `page` into a const so the callbacks below keep the
 			// null-check guarantee (narrowing is lost inside closures).
 			const activePage: CloakPage = page;
-			raw = await activePage
-				.evaluate<string>(() => document.body?.innerText || "")
-				.catch(async () => textFromHtml(await activePage.content()));
+			let text = "";
+			try {
+				text = await activePage.evaluate<string>(() => document.body?.innerText || "");
+			} catch {
+				if (opts.signal?.aborted) throw abortError(opts.signal);
+			}
+			if (text.trim()) {
+				raw = text;
+			} else {
+				raw = textFromHtml(await extractPageHtml(activePage, opts.signal));
+			}
 		}
 
 		const truncated = raw.length > maxChars;

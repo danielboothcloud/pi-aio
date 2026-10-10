@@ -143,6 +143,15 @@ export interface ChallengeWaitOutcome {
 	strategy: string | null;
 }
 
+/** Interstitial copy that proves a challenge is actually on the page. */
+const ACTIVE_CHALLENGE_HINTS = [
+	"Checking your browser",
+	"Just a moment",
+	"Attention Required",
+	"Verifying you are human",
+	"Enable JavaScript and cookies to continue",
+] as const;
+
 /** Poll the page until any detected challenge resolves or timeout. */
 export async function waitForChallenge(
 	page: ChallengePage,
@@ -180,16 +189,13 @@ export async function waitForChallenge(
 		if (challenge) {
 			detected = true;
 			strategy = challenge.name;
-			const stillChallenging =
-				Boolean(html) &&
-				(html.includes("Checking your browser") ||
-					html.includes("Just a moment") ||
-					html.includes("Attention Required") ||
-					url.includes("/cdn-cgi/") ||
-					cookies.some(
-						(c) => c.name.startsWith("__cf") && c.name.includes("bm"),
-					));
-			if (!stillChallenging) {
+			// Bot-management cookies such as __cf_bm are set on ordinary
+			// Cloudflare-served pages; only a visible interstitial keeps polling.
+			const visible =
+				ACTIVE_CHALLENGE_HINTS.some((hint) => (html ?? "").includes(hint)) ||
+				url.includes("/cdn-cgi/") ||
+				cookies.some((c) => c.name.startsWith("cf_chl"));
+			if (!visible) {
 				return { detected: true, resolved: true, strategy };
 			}
 		} else {

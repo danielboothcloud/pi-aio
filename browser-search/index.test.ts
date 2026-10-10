@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { detectChallenge } from "./challenges.ts";
+import { detectChallenge, waitForChallenge } from "./challenges.ts";
 import {
 	fetchSingleUrl,
 	isLikelyChallengeContent,
@@ -376,4 +376,33 @@ test("challenge detection recognizes anti-bot pages and ignores articles", () =>
 		}),
 		null,
 	);
+});
+
+test("challenge wait stops immediately on ordinary Cloudflare-backed pages", async () => {
+	const started = Date.now();
+	const outcome = await waitForChallenge(
+		{
+			url: () => "https://canonical.com/lxd/docs",
+			evaluate: async () => "<article><h1>Docs</h1><p>Readable text</p></article>",
+			context: () => ({ cookies: async () => [{ name: "__cf_bm" }] }),
+		},
+		20_000,
+	);
+	assert.equal(outcome.detected, true);
+	assert.equal(outcome.resolved, true);
+	assert.ok(Date.now() - started < 2_500);
+});
+
+test("challenge wait keeps polling while an interstitial is visible", async () => {
+	const outcome = await waitForChallenge(
+		{
+			url: () => "https://example.com/",
+			evaluate: async () =>
+				"<title>Just a moment</title>Checking your browser … Cloudflare",
+			context: () => ({ cookies: async () => [{ name: "__cf_bm" }] }),
+		},
+		50,
+	);
+	assert.equal(outcome.detected, true);
+	assert.equal(outcome.resolved, false);
 });
