@@ -5,6 +5,7 @@
  */
 
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { chromeFrameRow, chromeFrameRule } from "../ui/chrome.js";
 import {
 	bashModeLabel,
 	buildContextGauge,
@@ -95,11 +96,6 @@ const COLORS = {
 	cwd: "bold cyan",
 } as const;
 
-function fillLine(content: string, width: number): string {
-	const truncated = truncateToWidth(content, Math.max(0, width), "");
-	return `${truncated}${" ".repeat(Math.max(0, width - visibleWidth(truncated)))}`;
-}
-
 function clampLines(lines: string[], width: number): string[] {
 	return lines.map((line) => truncateToWidth(line, Math.max(0, width), ""));
 }
@@ -119,16 +115,11 @@ export function renderFramedPanelRows({
 	renderBorder: (text: string) => string;
 }): string[] {
 	if (width <= 4 || lines.length === 0) return clampLines(lines, width);
-	const contentWidth = width - 4;
-	return clampLines(
-		[
-			`${renderBorder("├")}${renderBorder("─".repeat(width - 2))}${renderBorder("┤")}`,
-			...lines.map(
-				(line) => `${renderBorder("│")} ${fillLine(line, contentWidth)} ${renderBorder("│")}`,
-			),
-		],
-		width,
-	);
+	const theme = { fg: (_role: string, text: string) => renderBorder(text) };
+	return [
+		chromeFrameRule(theme, width, "divider"),
+		...lines.map((line) => chromeFrameRow(theme, line, width)),
+	];
 }
 
 function renderTopLeft(
@@ -369,7 +360,6 @@ export function renderMinimalistFrame({
 	style: FrameStyle;
 }): string[] {
 	if (width <= 4) return clampLines(editorLines, width);
-	const contentWidth = Math.max(0, width - 4);
 	const renderStaticBorder = (text: string) =>
 		renderThemeStyle(uiTheme, COLORS.border, text);
 	// Adaptive border coloring by thinking level was an upstream style option;
@@ -413,9 +403,8 @@ export function renderMinimalistFrame({
 		rightCorner: "╯",
 		renderBorder,
 	});
-	const content = editorLines.map(
-		(line) => `${renderBorder("│")} ${fillLine(line, contentWidth)} ${renderBorder("│")}`,
-	);
+	const rowTheme = { fg: (_role: string, text: string) => renderBorder(text) };
+	const content = editorLines.map((line) => chromeFrameRow(rowTheme, line, width));
 	const panels = renderFramedPanelRows({ width, lines: panelLines, renderBorder });
 	return clampLines([top, ...content, ...panels, bottom], width);
 }

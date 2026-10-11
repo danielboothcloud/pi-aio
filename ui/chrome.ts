@@ -97,6 +97,28 @@ export function chromeDivider(
 	return fitLine(theme.fg("borderMuted", decorated + suffix), width, "");
 }
 
+/** Shared with the editor: muted, rounded edges and one cell of inner padding. */
+export function chromeFrameRule(
+	theme: ChromeTheme,
+	width: number,
+	edge: "top" | "divider" | "bottom",
+	label?: string,
+): string {
+	if (width <= 0) return "";
+	if (width <= 4) return chromeDivider(theme, width, label);
+	const corners = edge === "top" ? ["╭", "╮"] : edge === "bottom" ? ["╰", "╯"] : ["├", "┤"];
+	const innerWidth = width - 2;
+	const title = label ? fitLine(`─ ${label} `, innerWidth, "") : "";
+	const fill = "─".repeat(Math.max(0, innerWidth - visibleWidth(title)));
+	return theme.fg("borderMuted", `${corners[0]}${title}${fill}${corners[1]}`);
+}
+
+export function chromeFrameRow(theme: ChromeTheme, text: string, width: number): string {
+	if (width <= 4) return fitLine(text, width, "");
+	const border = theme.fg("borderMuted", "│");
+	return `${border} ${padToWidth(text, width - 4)} ${border}`;
+}
+
 export function plural(count: number, singular: string, pluralForm = `${singular}s`): string {
 	return `${count} ${count === 1 ? singular : pluralForm}`;
 }

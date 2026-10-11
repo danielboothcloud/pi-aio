@@ -4,11 +4,12 @@ import {
 	Markdown,
 	matchesKey,
 	truncateToWidth,
-	visibleWidth,
 	type Component,
 } from "@earendil-works/pi-tui";
 import type { CopyableCodeBlock } from "./parse.js";
 import {
+	chromeFrameRow,
+	chromeFrameRule,
 	chromeHeader,
 	chromeHint,
 	chromeItem,
@@ -119,22 +120,16 @@ export class CodeBlockPicker implements Component {
 	}
 
 	render(width: number): string[] {
-		if (width < 4) return [truncateToWidth("Copy code block", width, "")];
+		if (width <= 4) return [truncateToWidth("Copy code block", Math.max(0, width), "")];
 
-		const innerWidth = width - 2;
-		const border = (text: string) => this.theme.fg("border", text);
-		const row = (content = "", selected = false): string => {
-			const truncated = truncateToWidth(content, innerWidth, "");
-			const padded = truncated + " ".repeat(Math.max(0, innerWidth - visibleWidth(truncated)));
-			const body = selected ? this.theme.bg("selectedBg", padded) : padded;
-			return `${border("│")}${body}${border("│")}`;
-		};
+		const innerWidth = width - 4;
+		const row = (content = ""): string => chromeFrameRow(this.theme, content, width);
 
 		const maxRows = Math.max(1, this.getMaxRows());
 		const selectedBlock = this.blocks[this.selectedIndex];
 		if (maxRows < 9) {
-			const top = border(`╭${"─".repeat(innerWidth)}╮`);
-			const bottom = border(`╰${"─".repeat(innerWidth)}╯`);
+			const top = chromeFrameRule(this.theme, width, "top");
+			const bottom = chromeFrameRule(this.theme, width, "bottom");
 			const header = row(
 				chromeHeader(
 					this.theme,
@@ -150,14 +145,14 @@ export class CodeBlockPicker implements Component {
 								label: blockLabel(selectedBlock),
 								active: true,
 								marker: "›",
-								indent: 1,
+								indent: 0,
 							},
 							innerWidth,
 						),
 					)
 				: row(` ${this.theme.fg("warning", "No code block selected")}`);
 			const help = row(
-				chromeHint(this.theme, "j/k move · Enter copy · q cancel", innerWidth, 1),
+				chromeHint(this.theme, "j/k move · Enter copy · q cancel", innerWidth, 0),
 			);
 			if (maxRows === 1) return [item];
 			if (maxRows === 2) return [item, help];
@@ -167,7 +162,7 @@ export class CodeBlockPicker implements Component {
 		}
 
 		const lines: string[] = [];
-		lines.push(border(`╭${"─".repeat(innerWidth)}╮`));
+		lines.push(chromeFrameRule(this.theme, width, "top"));
 		lines.push(
 			row(
 				chromeHeader(
@@ -196,7 +191,7 @@ export class CodeBlockPicker implements Component {
 							label: blockLabel(block),
 							active: selected,
 							marker: selected ? "›" : "·",
-							indent: 1,
+							indent: 0,
 						},
 						innerWidth,
 					),
@@ -208,10 +203,10 @@ export class CodeBlockPicker implements Component {
 			lines.push(row(` ${this.theme.fg("dim", `Showing ${offset + 1}-${offset + visibleItems} of ${this.blocks.length}`)}`));
 		}
 
-		lines.push(border(`├${"─".repeat(innerWidth)}┤`));
+		lines.push(chromeFrameRule(this.theme, width, "divider"));
 		if (!selectedBlock) {
 			lines.push(row(` ${this.theme.fg("warning", "No code block selected")}`));
-			lines.push(border(`╰${"─".repeat(innerWidth)}╯`));
+			lines.push(chromeFrameRule(this.theme, width, "bottom"));
 			return lines;
 		}
 		lines.push(
@@ -241,11 +236,11 @@ export class CodeBlockPicker implements Component {
 					this.theme,
 					"j/k move · Ctrl+u/d jump · g/G ends · Enter copy · q cancel",
 					innerWidth,
-					1,
+					0,
 				),
 			),
 		);
-		lines.push(border(`╰${"─".repeat(innerWidth)}╯`));
+		lines.push(chromeFrameRule(this.theme, width, "bottom"));
 		return lines;
 	}
 

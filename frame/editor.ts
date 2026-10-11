@@ -128,10 +128,12 @@ function autocompleteCount(
 		const suffix = baseRendered.slice(-capture.rows.length);
 		const matches = suffix.every((line, index) => {
 			const captured = capture.rows[index];
-			return (
-				captured !== undefined &&
-				(line === captured || stripNativeRightPadding(line) === stripNativeRightPadding(captured))
-			);
+			if (captured === undefined) return false;
+			// Pi surrounds list rows with editor padding on BOTH sides. Only
+			// accept added spaces, never a changed completion or ANSI style.
+			const actual = stripNativeRightPadding(line);
+			const expected = stripNativeRightPadding(captured);
+			return actual.endsWith(expected) && /^ *$/.test(actual.slice(0, actual.length - expected.length));
 		});
 		return matches ? { known: true, count: capture.rows.length } : { known: false, count: 0 };
 	} catch {
@@ -302,8 +304,8 @@ export class MinimalistFrameEditor implements EditorComponent {
 		const autocomplete = autocompleteCount(this.base, captured.capture, baseRendered);
 		if (!autocomplete.known) return baseRendered.map((line) => truncateToWidth(line, width, ""));
 
-		const autocompleteLines =
-			autocomplete.count > 0 ? baseRendered.slice(-autocomplete.count) : [];
+		// Use the list's rows, without the native editor's extra padding.
+		const autocompleteLines = autocomplete.count > 0 ? (captured.capture?.rows ?? []) : [];
 		const editorFrame = baseRendered.slice(0, baseRendered.length - autocomplete.count);
 		if (editorFrame.length < 1) {
 			return baseRendered.map((line) => truncateToWidth(line, width, ""));

@@ -104,6 +104,22 @@ test("compact rendering preserves controls within tiny row budgets", () => {
 	}
 });
 
+test("copy picker uses the editor's muted frame and fits ANSI/wide content", () => {
+	const roles: string[] = [];
+	const themed = {
+		...theme,
+		fg: (role: string, text: string) => { roles.push(role); return `\x1b[32m${text}\x1b[0m`; },
+	} as unknown as Theme;
+	const items = blocks(2);
+	items[0]!.code = "界".repeat(80);
+	const picker = new CodeBlockPicker({ blocks: items, theme: themed, requestRender() {}, getMaxRows: () => 18, done() {} });
+	for (const width of [0, 1, 4, 5, 12, 64]) {
+		for (const line of picker.render(width)) assert.ok(visibleWidth(line) <= width);
+	}
+	assert.ok(roles.includes("borderMuted"));
+	assert.ok(!roles.includes("border"));
+});
+
 test("render stays within the overlay row and column budgets", () => {
 	const maxRows = 18;
 	const width = 64;

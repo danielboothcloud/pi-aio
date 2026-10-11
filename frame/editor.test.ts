@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { CURSOR_MARKER, getKeybindings, visibleWidth, type EditorTheme, type TUI } from "@earendil-works/pi-tui";
+import { BashHintEditor } from "../user-bash/bash-hint-editor.ts";
 import { MinimalistFrameEditor, renderWithAutocompleteCapture } from "./editor.ts";
 import { DEFAULT_FRAME_STYLE } from "./render.ts";
 
@@ -151,6 +154,60 @@ test("renderWithAutocompleteCapture restores the predecessor render", () => {
 	assert.deepEqual(list.render(5), ["5"]);
 	// Predecessor restored: calling render directly hits the original.
 	assert.deepEqual(list.render(5), ["5"]);
+});
+
+test("real padded editor keeps slash, argument, and file completions inside the frame", async () => {
+	const plain = (text: string) => text;
+	const editorTheme: EditorTheme = {
+		borderColor: plain,
+		selectList: { selectedPrefix: plain, selectedText: plain, description: plain, scrollInfo: plain, noMatch: plain },
+	};
+	const ctx = { mode: "tui", hasUI: true, ui: { theme, setWidget() {}, setStatus() {} } } as unknown as ExtensionContext;
+	for (const prefix of ["/", "/effort ", "@src/"]) {
+		const base = new BashHintEditor(
+			{ terminal: { rows: 24 }, requestRender() {} } as unknown as TUI,
+			editorTheme, getKeybindings() as never, ctx,
+		);
+		base.setPaddingX(0); // BashHintEditor enforces Pi's real minimum padding of 1.
+		base.focused = true;
+		base.setAutocompleteProvider({
+			getSuggestions: () => ({ prefix, items: [
+				{ value: "one", label: "one", description: "first completion" },
+				{ value: "two", label: "two", description: "second completion" },
+			] }),
+			applyCompletion: (lines, cursorLine, cursorCol) => ({ lines, cursorLine, cursorCol }),
+		});
+		base.setText(prefix);
+		base.handleInput("\t");
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		assert.equal(base.isShowingAutocomplete(), true, prefix);
+		const editor = new MinimalistFrameEditor(base as never, editorOptions);
+		for (const width of [12, 40, 80]) {
+			const lines = editor.render(width);
+			assert.match(lines[0]!, /^╭/);
+			assert.match(lines.at(-1)!, /^╰/);
+			assert.equal(lines.filter((line) => /^├─+┤$/.test(line)).length, 1);
+			assert.ok(lines.some((line) => line.includes(CURSOR_MARKER)), "IME cursor preserved");
+			assert.ok(lines.some((line) => line.startsWith("│ → ")), "no extra native left padding");
+			if (width >= 40) assert.ok(lines.some((line) => line.startsWith("│ → one")));
+			for (const line of lines) assert.ok(visibleWidth(line) <= width, line);
+		}
+		base.handleInput("\x1b[B");
+		assert.ok(editor.render(80).some((line) => line.startsWith("│ → two")));
+		base.handleInput("\x1b");
+		assert.equal(base.isShowingAutocomplete(), false);
+		assert.equal(editor.render(80).filter((line) => /^├─+┤$/.test(line)).length, 0);
+	}
+});
+
+test("changed autocomplete content remains a native fallback", () => {
+	const list = { render: () => ["one"] };
+	const base = makeBase({ isShowingAutocomplete: () => true, autocompleteList: list });
+	base.render = function () {
+		list.render();
+		return ["body", "prefix one"];
+	};
+	assert.deepEqual(new MinimalistFrameEditor(base as never, editorOptions).render(60), ["body", "prefix one"]);
 });
 
 test("renderWithAutocompleteCapture is a no-op without an autocomplete list", () => {

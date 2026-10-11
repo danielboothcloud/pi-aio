@@ -30,6 +30,7 @@ import {
 	type FrameMetadata,
 	type FrameStyle,
 } from "./render.js";
+import { hostMenuComponents, installMenuFrames } from "./menus.js";
 import {
 	FRAME_CAPABILITY_EVENT,
 	FRAME_CAPABILITY_VERSION,
@@ -46,6 +47,8 @@ export interface FrameIntegrationDependencies {
 	style?: Partial<FrameStyle>;
 	/** Test seam: initial git status instead of spawning git. */
 	readGit?: (cwd: string) => Promise<GitFrameStatus>;
+	/** Test seam: public host selector constructors. */
+	menuComponents?: readonly unknown[];
 }
 
 type FrameEditorFactory = ((tui: unknown, theme: unknown, keybindings: unknown) => unknown) & {
@@ -79,6 +82,7 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 	let agentStartEpoch: number | undefined;
 	let agentActive = false;
 	let gitTimer: ReturnType<typeof setInterval> | undefined;
+	let restoreMenus: (() => void) | undefined;
 
 	// Codex (openai-codex) 5h/week windows, polled in-process. Inert unless the
 	// routed model is the native Codex route — no config required.
@@ -206,6 +210,11 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 		factory[FRAME_EDITOR_FACTORY_SYMBOL] = true;
 
 		ctx.ui.setEditorComponent(factory as never);
+		restoreMenus?.();
+		restoreMenus = installMenuFrames(
+			dependencies.menuComponents ?? hostMenuComponents(),
+			() => ctx.ui.theme as never,
+		);
 		if (previousText.trim().length > 0) ctx.ui.setEditorText(previousText);
 		void refreshGit();
 		startGitTimer();
@@ -214,6 +223,8 @@ export function registerFrameEditor(pi: ExtensionAPI, dependencies: FrameIntegra
 	});
 
 	pi.on("session_shutdown", async () => {
+		restoreMenus?.();
+		restoreMenus = undefined;
 		stopGitTimer();
 		codexQuota.stop();
 		currentCtx = null;

@@ -60,7 +60,7 @@ function makeHarness(options: { editorFactory?: unknown; tui?: boolean } = {}) {
 	return { ctx, pi, fire, installed: () => installedFactory, editorState };
 }
 
-test("registerFrameEditor wraps the existing editor and answers the probe", async () => {
+test("registerFrameEditor wraps the existing editor and answers the probe", async (t) => {
 	// The queue (registered earlier in production) installs a base factory.
 	// The queue's base editor renders multi-line output (input + rows); the
 	// frame needs at least a two-line base to decorate.
@@ -71,7 +71,8 @@ test("registerFrameEditor wraps the existing editor and answers the probe", asyn
 		handleInput() {},
 	});
 	const harness = makeHarness({ editorFactory: baseFactory });
-	registerFrameEditor(harness.pi, { readGit: async () => ({ branch: "main", dirty: false, ahead: 0, behind: 0 }) });
+	registerFrameEditor(harness.pi, { menuComponents: [], readGit: async () => ({ branch: "main", dirty: false, ahead: 0, behind: 0 }) });
+	t.after(() => harness.fire("session_shutdown"));
 	await harness.fire("session_start");
 
 	const factory = harness.installed() as ((...args: unknown[]) => unknown) | undefined;
@@ -91,7 +92,7 @@ test("registerFrameEditor wraps the existing editor and answers the probe", asyn
 	assert.match(lines.at(-1)!, /^╰/);
 });
 
-test("lifecycle repaints reach the TUI without recursion", async () => {
+test("lifecycle repaints reach the TUI without recursion", async (t) => {
 	// Regression: notifyChanged() -> registrar requestRender -> notifyChanged()
 	// blew the stack (RangeError: Maximum call stack size exceeded) the first
 	// time an agent run repainted. The editor's repaint must terminate at the
@@ -104,8 +105,10 @@ test("lifecycle repaints reach the TUI without recursion", async () => {
 	});
 	const harness = makeHarness({ editorFactory: baseFactory });
 	registerFrameEditor(harness.pi, {
+		menuComponents: [],
 		readGit: async () => ({ branch: undefined, dirty: false, ahead: 0, behind: 0 }),
 	});
+	t.after(() => harness.fire("session_shutdown"));
 	await harness.fire("session_start");
 
 	const factory = harness.installed() as (
@@ -145,6 +148,34 @@ test("registerFrameEditor does nothing outside TUI mode", async () => {
 	const capability = probeFrameEditor(harness.pi);
 	assert.equal(capability.supported, true);
 	assert.equal(capability.active, false);
+});
+
+test("menu framing follows TUI frame ownership and tears down on shutdown", async () => {
+	const baseFactory = () => ({ render: () => ["input", "row"], getText: () => "", setText() {}, handleInput() {} });
+	const foreign = () => undefined;
+	Object.defineProperty(foreign, Symbol.for("pi-zentui.editor-factory"), { value: true });
+	for (const options of [
+		{ editorFactory: baseFactory }, { editorFactory: foreign }, { editorFactory: baseFactory, tui: false }, {},
+	]) {
+		class Menu { render(width: number) { return ["─".repeat(width), "item", "─".repeat(width)]; } }
+		const original = Menu.prototype.render;
+		const harness = makeHarness(options);
+		registerFrameEditor(harness.pi, {
+			menuComponents: [Menu],
+			readGit: async () => ({ branch: undefined, dirty: false, ahead: 0, behind: 0 }),
+		});
+		try {
+			await harness.fire("session_start");
+			if (options.editorFactory === baseFactory && options.tui !== false) {
+				assert.match(new Menu().render(40)[0]!, /^╭/);
+				await harness.fire("session_start");
+				assert.equal(new Menu().render(40).length, 3, "reinstall is not double-framed");
+			} else assert.equal(Menu.prototype.render, original);
+		} finally {
+			await harness.fire("session_shutdown");
+		}
+		assert.equal(Menu.prototype.render, original);
+	}
 });
 
 test("session_shutdown stops refreshing without throwing", async () => {

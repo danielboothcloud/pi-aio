@@ -21,12 +21,11 @@ import {
 	wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
 import {
-	chromeDivider,
+	chromeFrameRow,
+	chromeFrameRule,
 	chromeHeader,
 	chromeHint,
 	chromeItem,
-	fitLine,
-	padToWidth,
 } from "../ui/chrome.js";
 import {
 	buildMutationApprovalPrompt,
@@ -38,9 +37,6 @@ export type ApprovalDecision = "allow" | "allowAll" | "block";
 
 /** Options shown in the sticky footer, in order. */
 const OPTIONS = ["Allow", "Allow all (enable auto)", "Block"] as const;
-
-/** Left/right content margin inside the overlay, mirroring Text paddingX. */
-const PAD_X = 1;
 
 /** Caps for the overlay preview — effectively uncapped for realistic diffs. */
 const OVERLAY_MAX_LINES = 10_000;
@@ -143,8 +139,8 @@ interface ApprovalDialogOptions {
  * TUI component rendered inside the `ctx.ui.custom` overlay.
  *
  * Layout (top → bottom):
- *   border · spacer · header · spacer · [scrollable diff body] · spacer ·
- *   option · option · option · spacer · hint · spacer · border
+ *   rounded top · header · changes divider · [scrollable diff body] ·
+ *   decision divider · option · option · option · hint · rounded bottom
  *
  * The diff body is a scrollable window over the wrapped diff rows. When the body
  * overflows, the first/last visible row is replaced with an "↑ N above" / "↓ N
@@ -249,9 +245,9 @@ export class ApprovalDialog implements Component {
 		const start = this.scrollOffset;
 
 		const top = [
-			this.borderLine(width),
+			chromeFrameRule(this.theme, width, "top"),
 			this.headerLine(width),
-			chromeDivider(this.theme, width, "changes"),
+			chromeFrameRule(this.theme, width, "divider", "changes"),
 		];
 
 		const body: string[] = [];
@@ -293,12 +289,12 @@ export class ApprovalDialog implements Component {
 		}
 
 		const bottom = [
-			chromeDivider(this.theme, width, "decision"),
+			chromeFrameRule(this.theme, width, "divider", "decision"),
 			this.optionLine(0, width),
 			this.optionLine(1, width),
 			this.optionLine(2, width),
 			this.hintLine(width),
-			this.borderLine(width),
+			chromeFrameRule(this.theme, width, "bottom"),
 		];
 
 		const result = [...top, ...body, ...bottom];
@@ -320,7 +316,7 @@ export class ApprovalDialog implements Component {
 	private ensureWrapped(width: number): { text: string; role: DiffRole }[] {
 		if (this.cacheWidth === width) return this.wrappedRows;
 		this.cacheWidth = width;
-		const contentWidth = Math.max(1, width - PAD_X * 2);
+		const contentWidth = Math.max(1, width > 4 ? width - 4 : width);
 		const rows: { text: string; role: DiffRole }[] = [];
 		for (const line of this.diffLines) {
 			const role = classifyLine(line);
@@ -363,17 +359,16 @@ export class ApprovalDialog implements Component {
 	}
 
 	private padLine(colored: string, width: number): string {
-		return padToWidth(fitLine(`${" ".repeat(PAD_X)}${colored}`, width), width);
-	}
-
-	private borderLine(width: number): string {
-		return chromeDivider(this.theme, width);
+		return chromeFrameRow(this.theme, colored, width);
 	}
 
 	private headerLine(width: number): string {
-		return chromeHeader(
-			this.theme,
-			{ title: "Review mutation", meta: this.header },
+		return this.padLine(
+			chromeHeader(
+				this.theme,
+				{ title: "Review mutation", meta: this.header },
+				width > 4 ? width - 4 : width,
+			),
 			width,
 		);
 	}
@@ -381,25 +376,31 @@ export class ApprovalDialog implements Component {
 	private optionLine(index: number, width: number): string {
 		const labels = ["Allow once", "Enable auto", "Block"] as const;
 		const tones = ["success", "warning", "error"] as const;
-		return chromeItem(
-			this.theme,
-			{
-				label: `${index + 1} ${labels[index] ?? OPTIONS[index] ?? ""}`,
-				marker: index === this.selected ? "›" : "·",
-				tone: tones[index],
-				active: index === this.selected,
-				indent: 1,
-			},
+		return this.padLine(
+			chromeItem(
+				this.theme,
+				{
+					label: `${index + 1} ${labels[index] ?? OPTIONS[index] ?? ""}`,
+					marker: index === this.selected ? "›" : "·",
+					tone: tones[index],
+					active: index === this.selected,
+					indent: 0,
+				},
+				width > 4 ? width - 4 : width,
+			),
 			width,
 		);
 	}
 
 	private hintLine(width: number): string {
-		return chromeHint(
-			this.theme,
-			"↑/↓ scroll · j/k decision · 1–3 pick · Enter confirm · Esc block",
+		return this.padLine(
+			chromeHint(
+				this.theme,
+				"↑/↓ scroll · j/k decision · 1–3 pick · Enter confirm · Esc block",
+				width > 4 ? width - 4 : width,
+				0,
+			),
 			width,
-			1,
 		);
 	}
 }

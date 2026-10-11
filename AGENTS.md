@@ -137,6 +137,12 @@ generated `dist/` tree without changing the package contract.
   below-editor widget in any framed environment (AIO frame or standalone
   Zentui). Status-line's provider-quota surface renders as an above-editor
   widget when the probe reports support, and as a footer status otherwise.
+  `frame/menus.ts` is the narrow TUI-only host-selector adapter: public
+  selector render/mouse prototypes only, never Container/SelectList. It
+  replaces native rule/spacer rows using `ui/chrome.ts` frame primitives, preserves
+  row indices, translates mouse x/width, and tears down on shutdown. Unknown
+  and already-rounded layouts stay native; RPC and standalone Zentui are
+  untouched.
 - `nvim/` opens files in Neovim in a new Otty pane beside the session
   (otty split anchored to `$OTTY_PANE_ID` → tmux → otty tab →
   Terminal.app → print). `/nvim <path>[:line[:col]]` (`-r` for

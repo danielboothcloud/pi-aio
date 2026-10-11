@@ -31,9 +31,9 @@ function makeDialog(
 	return { dialog, doneCalls };
 }
 
-/** Strip trailing whitespace from each rendered line for stable assertions. */
+/** Strip frame edges and trailing whitespace to assert on dialog content. */
 function trim(lines: string[]): string[] {
-	return lines.map((line) => line.replace(/\s+$/, ""));
+	return lines.map((line) => line.replace(/^│ | │$/g, "").replace(/\s+$/, ""));
 }
 
 test("render pins the file-path header, options, and hint within terminal rows", () => {
@@ -77,6 +77,17 @@ test("render pins the file-path header, options, and hint within terminal rows",
 		lines.some((l) => l.includes("- const b = 2;")),
 		"del line visible",
 	);
+});
+
+test("approval shell matches the editor frame with the same row budget", () => {
+	const { dialog } = makeDialog("+ one\n- two", { rows: 24 });
+	const lines = dialog.render(80);
+	assert.equal(lines.length, 11); // 3 header + 2 diff + 6 decision rows, unchanged.
+	assert.match(lines[0]!, /^╭─+╮$/);
+	assert.match(lines.at(-1)!, /^╰─+╯$/);
+	assert.match(lines[2]!, /^├─ changes /);
+	assert.ok(lines.some((line) => /^│ › 1 Allow once\s+│$/.test(line)));
+	for (const line of lines) assert.equal(visibleWidth(line), 80);
 });
 
 test("empty diff shows a muted note instead of an empty body", () => {
@@ -215,7 +226,7 @@ test("j/k cycle options while arrow keys scroll the diff", () => {
 		"arrow down scrolled the diff",
 	);
 	assert.equal(
-		lines.map((l) => l.trim()).find((l) => l.startsWith("› ")),
+		selectedLabel(lines),
 		"› 3 Block",
 		"arrow down did not move the selection",
 	);
