@@ -1,13 +1,15 @@
 {
 	"name": "aio",
-	"version": "0.6.0",
-	"description": "Combined Pi extension for structured questions, permission modes, subagents, enhanced tools and diffs, shell rewriting, structural search, and self-hosted web browsing.",
+	"version": "0.7.0",
+	"description": "Combined Pi extension with a Zentui-powered interface, structured questions, permission modes, subagents, enhanced tools and diffs, shell rewriting, structural search, web browsing, and context compression.",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
 		"pi-package",
 		"pi",
 		"pi-extension",
+		"terminal-ui",
+		"statusline",
 		"questionnaire",
 		"clarifying-questions",
 		"clipboard",
@@ -28,6 +30,10 @@
 		"word-diff",
 		"rtk",
 		"token-optimization",
+		"hypa",
+		"token-compression",
+		"context-compression",
+		"mcp-proxy",
 		"message-queue",
 		"queue",
 		"shell-rewrite",
@@ -35,8 +41,22 @@
 		"structural-search",
 		"syntax-aware-search",
 		"codemod",
+		"yaml-hooks",
+		"hook-automation",
+		"hooks-yaml",
+		"tool-guards",
+		"session-hooks",
+		"tuicr",
+		"diff-review",
+		"code-review",
+		"review-comments",
+		"neovim",
+		"nvim",
+		"editor-integration",
+		"open-in-editor",
 		"web-search",
 		"searxng",
+		"exa",
 		"camofox",
 		"cloakbrowser"
 	],
@@ -53,8 +73,11 @@
 		"diff-tools/CONFIG.md",
 		"diff-tools/LICENSE",
 		"effort/**/*.ts",
+		"!effort/**/*.test.ts",
 		"init/**/*.ts",
 		"!init/**/*.test.ts",
+		"nvim/**/*.ts",
+		"!nvim/**/*.test.ts",
 		"goal-loop/**/*.ts",
 		"!goal-loop/**/*.test.ts",
 		"goal-loop/prompts/*.md",
@@ -62,7 +85,13 @@
 		"permission-modes/**/*.ts",
 		"!permission-modes/**/*.test.ts",
 		"status-line/**/*.ts",
+		"styles/**/*.ts",
+		"!styles/**/*.test.ts",
+		"frame/**/*.ts",
+		"!frame/**/*.test.ts",
 		"!status-line/**/*.test.ts",
+		"ui/**/*.ts",
+		"!ui/**/*.test.ts",
 		"queue/**/*.ts",
 		"!queue/**/*.test.ts",
 		"pretty-tools/**/*.ts",
@@ -70,13 +99,27 @@
 		"pretty-tools/LICENSE",
 		"rtk/**/*.ts",
 		"!rtk/**/*.test.ts",
+		"hypa/**/*.ts",
+		"!hypa/**/*.test.ts",
+		"hypa/scripts/postinstall.js",
+		"hypa/LICENSE-FSL",
+		"hypa/UPSTREAM.md",
 		"subagents/**/*.ts",
 		"subagents/agents/**/*.md",
 		"!subagents/**/*.test.ts",
+		"tuicr/**/*.ts",
+		"!tuicr/**/*.test.ts",
+		"tuicr/UPSTREAM.md",
+		"tuicr/LICENSE",
 		"browser-search/**/*.ts",
 		"!browser-search/**/*.test.ts",
+		"browser-search/cloak-worker.mjs",
+		"browser-search/cloak-latest.mjs",
+		"browser-search/cloak-ownership.mjs",
 		"browser-search/README.md",
 		"browser-search/LICENSE",
+		"blocklist/**/*.ts",
+		"!blocklist/**/*.test.ts",
 		"compose.yaml",
 		".env.example",
 		"docker/searxng/settings.yml",
@@ -85,13 +128,18 @@
 		"!user-bash/**/*.test.ts",
 		"ast-grep/**/*.ts",
 		"!ast-grep/**/*.test.ts",
+		"yaml-hooks/**/*.ts",
+		"!yaml-hooks/**/*.test.ts",
+		"yaml-hooks/UPSTREAM.md",
+		"yaml-hooks/LICENSE",
 		"README.md"
 	],
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
-		"test:node": "tsx --test ast-grep/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts goal-loop/*.test.ts init/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts rtk/*.test.ts status-line/*.test.ts subagents/*.test.ts user-bash/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
-		"test:upstream": "vitest run --config vitest.config.ts"
+		"test:node": "tsx --test ast-grep/*.test.ts blocklist/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts effort/*.test.ts goal-loop/*.test.ts tuicr/*.test.ts hypa/*.test.ts init/*.test.ts nvim/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts rtk/*.test.ts status-line/*.test.ts styles/*.test.ts subagents/*.test.ts ui/*.test.ts user-bash/*.test.ts yaml-hooks/*.test.ts frame/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:upstream": "vitest run --config vitest.config.ts",
+		"postinstall": "node hypa/scripts/postinstall.js"
 	},
 	"pi": {
 		"extensions": [
@@ -101,16 +149,17 @@
 	"dependencies": {
 		"@ast-grep/cli": "0.43.0",
 		"@ff-labs/fff-node": "^0.10.0",
+		"@hypabolic/hypa": "0.1.15",
 		"@juicesharp/rpiv-config": "2.0.0",
 		"@mozilla/readability": "^0.6.0",
 		"@shikijs/cli": "4.0.2",
 		"diff": "^7.0.0",
+		"jiti": "2.7.0",
 		"linkedom": "^0.18.0",
 		"marked": "18.0.5",
 		"shiki": "4.0.2",
 		"turndown": "^7.2.0",
 		"xxhash-wasm": "^1.1.0",
-		"typebox": "^1.1.24",
 		"yaml": "^2.8.3"
 	},
 	"devDependencies": {
@@ -120,6 +169,7 @@
 		"@earendil-works/pi-tui": "0.80.10",
 		"@types/diff": "^7.0.2",
 		"tsx": "4.20.6",
+		"typebox": "1.1.38",
 		"vitest": "4.1.10"
 	},
 	"peerDependencies": {
@@ -127,15 +177,12 @@
 		"@earendil-works/pi-ai": "*",
 		"@earendil-works/pi-coding-agent": "*",
 		"@earendil-works/pi-tui": "*",
-		"@juicesharp/rpiv-i18n": "*"
+		"@juicesharp/rpiv-i18n": "*",
+		"typebox": "*"
 	},
 	"peerDependenciesMeta": {
 		"@juicesharp/rpiv-i18n": {
 			"optional": true
 		}
-	},
-	"optionalDependencies": {
-		"cloakbrowser": "0.5.1",
-		"playwright-core": "1.60.0"
 	}
 }

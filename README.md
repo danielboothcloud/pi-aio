@@ -1,11 +1,12 @@
 # aio
 
-Combined Pi extension: structured **`ask_user_question`** dialogs, a **`/pick`**
-code picker, **`/init`** AGENTS.md bootstrap, **`/effort`** thinking control,
-generic **subagent delegation**, self-hosted **`web_search`** and
-**`fetch_content`**, **`!` bash shortcuts**, **Shift+Tab** permission modes,
-enhanced built-in output with FFF-backed search, **rtk** shell-command rewriting,
-and syntax-highlighted write/edit/patch diffs.
+Combined Pi extension with a **minimalist editor frame**, structured
+**`ask_user_question`** dialogs, a **`/pick`** code picker, **`/init`** AGENTS.md
+bootstrap, **`/effort`** thinking control, generic **subagent delegation**,
+configurable **`web_search`** and **`fetch_content`**, **`!` bash shortcuts**,
+**Shift+Tab** permission modes, opt-in **`/style`** interaction styles, enhanced
+built-in output with FFF-backed search,
+**rtk** shell-command rewriting, and syntax-highlighted write/edit/patch diffs.
 
 The questionnaire implementation is based on
 [@juicesharp/rpiv-ask-user-question](https://www.npmjs.com/package/@juicesharp/rpiv-ask-user-question),
@@ -148,20 +149,21 @@ Analyze the codebase and create or update `AGENTS.md` for Pi and other coding ag
 - `force` regenerates even when `AGENTS.md` already exists; `dry-run` shows the proposed content without writing files.
 - Run `/reload` after writing so Pi loads the new context.
 
-## Self-hosted web search
+## Web search
 
-AIO provides `web_search` and `fetch_content` using the native TypeScript port
-in [`browser-search/`](browser-search/README.md):
+AIO provides `web_search` and `fetch_content` through
+[`browser-search/`](browser-search/README.md):
 
-- SearXNG supplies raw multi-engine search hits.
-- Camofox extracts readable page content through headless Firefox.
-- CloakBrowser is an optional stealth fallback for blocked or empty pages.
+- `web_search` is opt-in and uses the Exa or SearXNG provider selected under
+  `aio.browserSearch` in Pi settings.
+- `fetch_content` uses Camofox with an optional CloakBrowser fallback and stays
+  available even when search is disabled.
 - Results are returned inline; there is no curator, response-id store, or
   `get_search_content` tool.
 
-SearXNG and Camofox must be running separately. See the
-[browser-search setup and configuration](browser-search/README.md), including
-how to disable pi-web-access's overlapping extension while retaining its skills.
+No search provider is selected by default. See the
+[browser-search setup and configuration](browser-search/README.md) for Exa API
+keys, the optional self-hosted stack, and pi-web-access coexistence.
 
 ## Subagent delegation
 
@@ -231,7 +233,14 @@ file and line references. Do not modify files.
 ```
 
 Supported frontmatter fields are `name`, `description`, `tools`, `model`,
-`thinking`, `systemPromptMode`, `inheritProjectContext`, and `inheritSkills`.
+`thinking`, `timeoutMs`, `systemPromptMode`, `inheritProjectContext`, and
+`inheritSkills`.
+
+Child runs have a hard time budget: the per-run `timeoutMs` parameter wins,
+then the agent's frontmatter `timeoutMs`, then a 15-minute default. The
+`researcher`, `reviewer`, and `validator` agents declare 30 minutes for
+evidence-gathering work that queries live sources; pass `timeoutMs` (up to 6
+hours) to extend an individual run beyond its agent default.
 Trusted project definitions override user definitions, which override bundled
 agents. Project agent files are ignored until Pi trusts the checkout.
 
@@ -285,6 +294,43 @@ While typing a `!` command, aio shows live feedback:
 - Hint line below the editor with the parsed command preview
 - Footer status: `!bash`
 
+## Command blocklist
+
+`aio` ships a hard blocklist: shell commands you list in it NEVER run, no
+matter the permission mode (even `auto`), and for both agent `bash` tool calls
+and your `!`/`!!` commands. A blocked command fails with an error explaining
+which rule matched — it cannot be approved, and the model is told about the
+blocklist at the start of every turn so it does not waste attempts on it.
+
+Config is two-tier JSON with union semantics (both files apply):
+
+- Global: `~/.pi/agent/aio-blocklist.json`
+- Project: `<project>/.pi/aio-blocklist.json`
+
+```json
+{
+  "enabled": true,
+  "entries": [
+    "rm -rf /",
+    { "pattern": "kubectl delete", "reason": "no cluster deletions" },
+    { "pattern": "\\bgit push --force\\b", "regex": true, "reason": "no force push" }
+  ]
+}
+```
+
+- Plain string entries match as case-insensitive substrings of the command.
+- Object entries take a `pattern`, an optional `regex: true` flag (the pattern
+  is then compiled as a case-insensitive regular expression), and an optional
+  `reason` shown in the block error.
+- Each file's `enabled` flag (default `true`) gates only that file's entries;
+  set it to `false` to disable a tier without deleting it.
+- Matching is case-insensitive: `RM -RF /` hits a `rm -rf /` rule.
+- Malformed JSON, entries, or regexes are skipped rather than fatal.
+
+The config is re-read on every check, so edits apply immediately — no reload
+needed. Cursor host replay calls (`cursor-replay-*`) are exempt because they
+only display work that already ran outside Pi's gate.
+
 ## Permission modes (Shift+Tab)
 
 Cycle with **Shift+Tab**: default → ask → plan → auto → default
@@ -336,13 +382,91 @@ pi --permission-mode ask
 pi --permission-mode plan
 ```
 
-## Status line
+## Interaction styles (`/style`)
 
-`aio` installs a quiet single-row footer that replaces noisy packages like
-`pi-powerline-footer`. The default layout is:
+A style changes how the agent works with you; it never changes what tools may
+do. Permission modes still own that, and any mode can be combined with any
+style (for example plan + collaborate, or ask + mentor).
+
+Styles are **off by default**. Every new session starts with `none`; there is no
+flag, setting, or shortcut that enables one. Run `/style <name>` to turn a style
+on for the current session. Resuming that session or moving around its tree
+restores the style chosen on that branch. Subagents never inherit a style.
+
+| Style       | What the agent does                                                                                       |
+| ----------- | --------------------------------------------------------------------------------------------------------- |
+| none        | Default behavior: no extra interaction guidance                                                           |
+| collaborate | Surfaces decisions with 2-3 options and a recommendation, asks via `ask_user_question`, uses your domain knowledge, and confirms direction between small increments |
+| mentor      | Adds short "Insight" notes on the why, leaves occasional `TODO(human)` handoffs and reviews your attempt, asks guiding questions first, and ends with a "What you learned" recap |
+
+In ask and plan mode, mentor names the piece you could write instead of planting
+`TODO(human)` markers, because file edits are disabled there. Collaborate in plan
+mode co-designs the plan with you before emitting it.
+
+The active style appears beside the mode: in the frame's top border
+(`▶ Auto · ✎ Mentor`), in the legacy status line, or as a `style` footer status
+when the status line is disabled.
+
+- `/style` — selector
+- `/style collaborate`, `/style mentor` — switch directly
+- `/style none` (or `/style off`) — turn the style off
+
+## Minimalist frame interface
+
+`aio` ships its own proprietary minimalist editor frame (vendored from
+[pi-zentui](https://github.com/lmilojevicc/pi-zentui), MIT — see
+`frame/UPSTREAM.md`). It replaces Pi's editor with a labeled rounded frame
+embedding live metadata — permission mode, session name, turn timer, cost,
+model, thinking level, context percent, provider quota, git
+branch/dirty/ahead/behind, and path — directly in the border, in Pi's own
+theme colors. The frame wraps aio's queue/`!bash`
+editor rather than replacing its behavior, so autocomplete, queue
+interruption, and bash hints keep working, and pending queue rows render
+inside the frame above its bottom border.
+
+Quota appears automatically: the Codex 5-hour/weekly windows (`5h 88% | week
+97%`) poll the native `openai-codex` usage endpoint whenever that route is
+active — no configuration — and the generic `aio.statusLine.providerUsage`
+providers supply other providers. Both occupy the same slot after the context
+percent, and both disappear when their provider is not active.
+
+There is no configuration surface: the frame's style is code-owned
+(`frame/render.ts`). When a separately installed standalone Zentui already
+owns the editor, aio detects it and stays out to avoid duplicate UI owners;
+remove the standalone package from Pi settings when possible.
+
+Aio's mode, effort, and provider-quota state render as extension statuses (or,
+for quota, an above-editor widget) rather than duplicating what the frame
+already embeds. The former bundled Zentui integration, its `/zentui`
+command, and the zentui.json seeding contract are gone.
+
+### Unified AIO visual system
+
+AIO's own custom surfaces use the same theme-aware visual language instead of
+looking like separate plugins:
+
+- Mutation reviews use pinned accent-rail headers, colored diff rows, explicit
+  allow-once/enable-auto/block tiers, sticky controls, and narrow-width fitting.
+- Write/edit/patch cards and Bash/read/ls/find/grep output share branded headers,
+  state glyphs, consistent metadata separators, and responsive summaries.
+- Queue, goal, and subagent widgets render compact live dashboards with bounded
+  rows and ANSI-aware width guarantees.
+- `/pick` uses framed preview sections and selected-row treatment matching the
+  editor; questionnaire tabs carry the same accent rail.
+- `!bash` keeps command text in the editor only and publishes one compact status,
+  eliminating the old repeated command echo below the editor.
+
+The shared primitives live in `ui/chrome.ts` and use Pi semantic theme roles, so
+custom themes remain authoritative.
+
+## Legacy status line and provider quotas
+
+The frame is the primary visual owner. Aio retains its former quiet single-row
+footer as a compatibility fallback only when the frame is absent. Its layout
+is:
 
 ```text
-Plan · ⌂ pi-aio · ⎇ main · ◫ 42% · ⚡ effort:max · rtk✓ · ◈ cursor:local · fast:on · ◇ cursor/composer-2.5
+Plan · ⌂ pi-aio · ⎇ main · ◫ 42% · ⚡ effort:max · ◈ cursor:local · fast:on · ◇ cursor/composer-2.5
 ```
 
 Configure it in Pi settings (`~/.pi/agent/settings.json` or project
@@ -353,7 +477,7 @@ Configure it in Pi settings (`~/.pi/agent/settings.json` or project
   "aio": {
     "statusLine": {
       "enabled": true,
-      "segments": ["mode", "path", "git", "context", "effort", "statuses", "cursor", "model"],
+      "segments": ["mode", "path", "git", "context", "effort", "statuses", "cursor", "quota", "model"],
       "path": "basename",
       "workingMessage": "minimal"
     }
@@ -363,21 +487,136 @@ Configure it in Pi settings (`~/.pi/agent/settings.json` or project
 
 | Field | Purpose |
 | ----- | ------- |
-| `enabled` | Master toggle; `false` restores Pi's default footer |
-| `segments` | Ordered list: `mode`, `path`, `git`, `context`, `effort`, `statuses`, `cursor`, `model`, `tokens`, `cost` |
+| `enabled` | Enables aio fallback/status data; the frame still owns visuals when present |
+| `segments` | Ordered list: `mode`, `path`, `git`, `context`, `effort`, `statuses`, `cursor`, `quota`, `model`, `tokens`, `cost` |
 | `path` | `basename`, `abbreviated`, or `full` |
 | `workingMessage` | `minimal` (default), `verbose` (streaming stats), or `off` |
 | `statusKeys` | Optional allowlist for extension status keys |
+| `providerUsage` | Optional per-provider quota endpoint, auth, headers, refresh interval, and response mappings |
 
-Quick toggles:
+Quick toggles for the fallback/data layer:
 
-- `/status-line` — enable/disable
-- `/status-line minimal` or `/status-line verbose` — working message style
+- `/status-line` — enable/disable aio's legacy status data
+- `/status-line minimal` or `/status-line verbose` — fallback working-message style
 
-Extension statuses (`rtk`, `!bash`, `fff`, `codex-quota`, etc.) appear in the
-`statuses` segment when active. Thinking effort (`effort`) and Cursor runtime
-(`cursor:local · fast:on`) get their own segments so they do not blend with the
-model name. Context percentage turns warning/error at 70%/90%.
+With the frame active, extension statuses (`!bash`, goals, hooks, etc.) render
+in Zentui's statuses-only row below the editor when a standalone Zentui is
+installed, or via the muted status row otherwise. Thinking effort and
+permission mode are embedded in the frame's border metadata and are not
+duplicated as footer statuses. Without the frame, the legacy footer keeps its
+dedicated effort/Cursor segments and 70%/90% context coloring.
+
+### Custom provider quota usage
+
+The optional `providerUsage` block fetches a quota endpoint for the active
+model provider. Provider keys must match the provider id shown in the model
+segment. Response mappings are dot-separated JSON paths. Requests are cached,
+have a bounded timeout, fail silently, and keep the last successful value on a
+transient error. Header values support `$VAR` and `${VAR}` environment
+references (but never shell commands). Set `auth: "pi-oauth"` to read the
+bearer token from the OAuth credentials Pi stored during `/login`
+(`<agentDir>/auth.json`, sent with the `anthropic-beta: oauth-2025-04-20`
+header) instead of templating it from the environment — the token rotates, so
+it is re-read per request. `authAccount` overrides the auth.json provider key,
+which defaults to the provider key itself (so `anthropic-2` from pi-multi-pass
+reads its own entry). Each provider may also set `refreshIntervalMs` to
+override the global interval; subscription usage endpoints rate-limit
+aggressively (Anthropic's 429s after a handful of requests), so give them a
+slower cadence than the 60s default. Failed attempts back off for the same
+interval instead of refetching on every lifecycle event.
+
+For example, a custom provider named `synthetic` can use Synthetic's quota API,
+showing both the request quota and the weekly credit window from one response:
+
+```json
+{
+  "aio": {
+    "statusLine": {
+      "providerUsage": {
+        "refreshIntervalMs": 60000,
+        "timeoutMs": 5000,
+        "providers": {
+          "synthetic": {
+            "endpoint": "https://api.synthetic.new/v2/quotas",
+            "headers": {
+              "Authorization": "Bearer ${SYNTHETIC_API_KEY}"
+            },
+            "windows": {
+              "requests": {
+                "label": "synthetic",
+                "mapping": {
+                  "used": "subscription.requests",
+                  "limit": "subscription.limit",
+                  "renewsAt": "subscription.renewsAt"
+                }
+              },
+              "weekly": {
+                "label": "wk",
+                "mapping": {
+                  "text": "weeklyTokenLimit.remainingCredits",
+                  "renewsAt": "weeklyTokenLimit.nextRegenAt"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+A Claude Pro/Max subscription authenticated through `/login anthropic` (and
+`pi-anthropic-auth`) needs no environment variable at all — `auth: "pi-oauth"`
+reads the stored OAuth token, and `usedPercent` maps the endpoint's
+percent-used windows:
+
+```json
+{
+  "aio": {
+    "statusLine": {
+      "providerUsage": {
+        "providers": {
+          "anthropic": {
+            "endpoint": "https://api.anthropic.com/api/oauth/usage",
+            "auth": "pi-oauth",
+            "refreshIntervalMs": 300000,
+            "windows": {
+              "fiveHour": {
+                "label": "5h",
+                "mapping": {
+                  "usedPercent": "five_hour.utilization",
+                  "renewsAt": "five_hour.resets_at"
+                }
+              },
+              "sevenDay": {
+                "label": "7d",
+                "mapping": {
+                  "usedPercent": "seven_day.utilization",
+                  "renewsAt": "seven_day.resets_at"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Each mapping may provide `used`, `limit`, `remaining`, `usedPercent`,
+`renewsAt`, and/or `text`. When `used` and `limit` are available, aio computes
+the remaining percentage; `usedPercent` inverts a percent-used value
+(`remaining = 100 - usedPercent`, clamped to 0–100) for endpoints like
+Anthropic's that only expose utilization. `text` can map a provider-formatted quota string (for example
+`"$23.21"`) verbatim. With the frame active, quota embeds in the pill's top
+border right after the context percent. In fallback mode it renders inside
+one `quota` segment. Values are joined by `·` and color by the
+window closest to exhaustion. A provider entry with a single top-level `mapping`
+instead of `windows` keeps working as a one-window shorthand. Quota output is
+omitted when the active provider has no configuration or nothing has been fetched
+successfully.
 
 To migrate off `pi-powerline-footer`, remove it from `packages` in Pi settings,
 delete any `powerline` block, and reload extensions.
@@ -390,9 +629,19 @@ busy. Messages you type during a run are queued by pi as steering
 renders it as a numbered list below the input box:
 
 ```text
- queue (2) · ⏎ send next
- 1. [steer]  fix the parser off-by-one
- 2. [follow] then run the full test suite
+ QUEUE · 2 pending messages · Enter sends next
+  1 · fix the parser off-by-one · steer
+  2 · then run the full test suite · follow
+```
+
+With the frame active, the queue renders as framed rows inside the editor
+frame, above its bottom border:
+
+```text
+├─ queue · 2 pending messages · Enter sends next ─────┤
+│ 1 fix the parser off-by-one                steer │
+│ 2 then run the full test suite             follow │
+╰──────────────────────────────────────────────────╯
 ```
 
 Steering entries are delivered after the current turn; follow-ups after the
@@ -400,10 +649,13 @@ run finishes. Long messages show a first-line preview; more than five pending
 messages collapse into a `+N more` row.
 
 Pressing `enter` while the input box is **empty** interrupts the current run
-and immediately pushes the next pending message at the agent (the rest stay
-queued with their original steer/follow-up semantics). Pi's default behavior
-— `esc` to interrupt and dump the queue back into the editor, `alt+↑` to edit
-the queue — still works untouched.
+and, once the aborted run settles, sends the next pending message as a fresh
+prompt — deterministically, never racing the abort unwind (the rest stay
+queued with their original steer/follow-up semantics and are re-queued once
+the new run starts). If the send fails to start a run, the pending messages
+are restored to the editor exactly once, so nothing double-sends. Pi's
+default behavior — `esc` to interrupt and dump the queue back into the
+editor, `alt+↑` to edit the queue — still works untouched.
 
 Commands:
 
@@ -507,7 +759,7 @@ for command gating.
 
 - `/rtk status` or `/rtk` — show enforced routing state and the detected binary.
 
-The footer shows `rtk ✓` while the enforced integration is loaded.
+The footer shows no rtk status; `/rtk status` reports on demand.
 
 ### Prerequisites
 
@@ -517,6 +769,67 @@ gracefully without it.
 
 Do not load standalone `@sherif-fanous/pi-rtk` alongside `aio`; both rewrite
 shell commands and would double-rewrite the same command.
+
+## Hypa context compression
+
+`aio` also routes tool output through [Hypa](https://github.com/Hypabolic/Hypa),
+a local, deterministic context runtime. It compliments rtk rather than competing
+with it:
+
+- **rtk precedence** — hypa's bash rewrite registers after rtk's and skips
+  commands rtk already claimed (`rtk ...`). It engages only where rtk has no
+  equivalent, GenericWrapping those commands (`hypa -c "…"`) so their output is
+  compressed with deterministic reducers and recorded as recoverable evidence.
+- **`hypa_*` tools** — `hypa_shell`, `hypa_read`, `hypa_grep`, `hypa_find`, and
+  `hypa_ls` run shell/file tools directly through the Hypa CLI with compression,
+  evidence recording, and 50KB/2000-line output caps (truncated full output is
+  saved to a temp file). In the default additive mode they sit alongside aio's
+  pretty built-in tools; `HYPA_PI_MODE=replace` disables each builtin only while
+  its matching `hypa_*` replacement is active.
+- **`hypa_read` images** — png/jpeg/gif/webp files are sniffed by magic bytes and
+  attached as vision content; opaque binary gets a sized notice instead of
+  mojibake.
+- **Optional MCP proxy bridge** — with `HYPA_PI_ENABLE_MCP_PROXY=1`, one compact
+  `hypa_mcp_proxy` tool discovers (`list`/`search`), inspects (`schema`),
+  invokes, and auth-checks upstream MCP servers configured in Hypa instead of
+  dumping every upstream tool into context. Servers already configured directly
+  in Pi are deduplicated by default.
+- **Diagnostics** — `/hypa` shows extension mode, binary resolution, MCP proxy
+  settings, and the last rewrite status.
+- **Fail-open** — rewrite parse, timeout, and process errors pass the original
+  command through unchanged; `Deny` blocks the tool call; `Ask` confirms in UI
+  mode and follows `HYPA_PI_ASK_NON_INTERACTIVE` (`deny`/`allow`) otherwise.
+
+### Hypa configuration
+
+Environment variables override values in the optional JSON config file
+(`HYPA_PI_CONFIG`, default `~/.hypa-pi/config.json`; `none`/empty disables file
+loading). JSON fields are camelCase: `mode`, `binary`, `rewriteTimeoutMs`,
+`askNonInteractive`, `mcpProxyEnabled`, `mcpProxyTimeoutMs`, `piMcpConfigPath`.
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `HYPA_BIN` | bundled `@hypabolic/hypa`, then `hypa` | Hypa executable or absolute path |
+| `HYPA_PI_MODE` | `additive` | `replace` disables builtins while their `hypa_*` replacement is active |
+| `HYPA_PI_REWRITE_TIMEOUT_MS` | `5000` | `hypa rewrite` timeout |
+| `HYPA_PI_ASK_NON_INTERACTIVE` | `deny` | Ask fallback when `ctx.hasUI === false` |
+| `HYPA_PI_ENABLE_MCP_PROXY` | `0` | Enable `hypa_mcp_proxy` discovery/invocation |
+| `HYPA_PI_MCP_PROXY_TIMEOUT_MS` | `10000` | Per-call proxy timeout |
+| `HYPA_PI_MCP_CONFIG` | `~/.pi/agent/mcp.json` | Pi MCP config used for dedup |
+
+### Hypa prerequisites
+
+aio bundles [`@hypabolic/hypa`](https://www.npmjs.com/package/@hypabolic/hypa) as
+a dependency, so Node.js 18+ (or Bun) with Linux/macOS/Windows on x64/arm64 is
+enough — the platform-native binary is selected automatically, with `bin.js` via
+the host runtime as fallback. Installing aio also runs a best-effort
+`hypa/scripts/postinstall.js` that creates a user-level `hypa` shim in
+`~/.local/bin` when no `hypa` is already on `PATH` (set `HYPA_PI_SKIP_CLI_INSTALL=1`
+to skip).
+
+Do not load standalone `@hypabolic/pi-hypa` alongside `aio`; its tools, hooks,
+and `/hypa` command are absorbed here. Upstream is FSL-1.1-ALv2 licensed — see
+`hypa/LICENSE-FSL` and `hypa/UPSTREAM.md`.
 
 ## Syntax-highlighted diffs
 
@@ -544,6 +857,156 @@ See [`diff-tools/CONFIG.md`](diff-tools/CONFIG.md) for the complete reference.
 Do not load standalone `@heyhuynhgiabuu/pi-diff` alongside `aio`, because both
 packages register `write`, `edit`, and `apply_patch`.
 
+## YAML hooks
+
+`aio` ships YAML-configured hooks: run bash around tool calls, block risky
+commands, add same-turn prompt context, and post UI notifications,
+confirmations, and status entries from one `hooks.yaml` file. The
+implementation is ported from
+[pi-yaml-hooks](https://github.com/KristjanPikhof/pi-yaml-hooks) (MIT — see
+[`yaml-hooks/UPSTREAM.md`](yaml-hooks/UPSTREAM.md)); the YAML contract and all
+`PI_YAML_HOOKS_*` environment variables are unchanged.
+
+Config is two-tier with global-first merge and project overrides by hook `id`:
+
+- Global: `~/.pi/agent/hook/hooks.yaml`
+- Project: `<project>/.pi/hook/hooks.yaml` (loads only after `/hooks-trust`)
+
+```yaml
+hooks:
+  - id: idle-notify
+    event: session.idle
+    actions:
+      - notify: "Agent is idle"
+  - id: guard-bash
+    event: tool.before.bash
+    conditions:
+      - matchesAnyPath: "**/*.sh"
+    actions:
+      - bash: "./scripts/check-command.sh"   # exit 2 blocks the tool
+```
+
+- **Events** — `user.prompt.submit`, `tool.before.*`/`tool.after.*` (exact
+  names or `*` wildcard), `file.changed` (synthesized from `write`, `edit`,
+  `apply_patch`, and mutation-shaped bash commands), `session.created`,
+  `session.idle`, and `session.deleted`.
+- **Actions** — `bash` (JSON context on stdin, `PI_*` env injected, exit 2
+  blocks on `tool.before.*`), `tool` (sends a follow-up prompt into the
+  current session), `notify`, `confirm` (blocks a pre-tool hook when
+  rejected), and `setStatus`.
+- **Conditions** — `matchesCodeFiles`, `matchesAnyPath`, and `matchesAllPaths`
+  over project-relative globs; `scope: all|main|child` filters session
+  lineage; `async: true` moves bash-only hooks onto background queues.
+- **Overrides** — a project file can replace (`override: <id>`) or disable
+  (`override: <id>` + `disable: true`) a global hook by `id`.
+- **Blocking** — a `tool.before.*` bash hook that exits 2, a rejected
+  `confirm`, or `action: stop` blocks the tool call. `user.prompt.submit`
+  hooks are synchronous, bash-only, and fail-open: successful stdout becomes
+  system context for the same turn, capped at 64 KiB.
+- **Async** — `async: true` (or `{ group, concurrency }`) queues bash-only
+  hooks off the dispatch loop; not allowed on `tool.before.*`,
+  `user.prompt.submit`, or `session.idle`.
+
+Slash commands:
+
+```text
+/hooks-status      # active files, hook counts, trust state, log path
+/hooks-validate    # validation errors grouped by global/project/imported
+/hooks-trust       # add the current repo/worktree anchor to the trust store
+/hooks-reload      # reload extensions; edits also refresh lazily per event
+/hooks-tail-log    # log path plus a ready-to-run tail -F command
+```
+
+Config files are watched by stat fingerprint; a valid edit applies on the
+next matching event without a reload, and an invalid edit keeps the last
+good hook set. Startup appends a short hook-awareness note to the system
+prompt (disable with `PI_YAML_HOOKS_PROMPT_AWARENESS=0`). Structured
+logs are opt-in via `PI_YAML_HOOKS_DEBUG=1` or `PI_YAML_HOOKS_LOG_LEVEL`.
+
+Important limitations (matching upstream):
+
+- `command:` actions are unsupported and rejected at load time.
+- `tool:` sends a follow-up prompt into the current session; it does not
+  execute a tool or target another session.
+- `action: stop` only takes effect on `tool.before.*`.
+- Prompt hooks receive the expanded text prompt only; they cannot rewrite or
+  block the submitted prompt.
+- Human `!`/`!!` commands are intercepted only when
+  `PI_YAML_HOOKS_ENABLE_USER_BASH=1` is set; every trusted-project hook can
+  then read and block typed commands, so enable it only when you trust every
+  loaded hook. The startup warning lists which projects will have access.
+
+## tuicr review loop
+
+`aio` ports [@joelazar/pi-tuicr](https://github.com/joelazar/pi-tuicr) v1.1.0
+(MIT — see [`tuicr/UPSTREAM.md`](tuicr/UPSTREAM.md)): review the diff in the
+external `tuicr` terminal TUI, then hand the review comments straight back to
+pi — no retyping objections into the chat.
+
+Run `/tuicr` (or press **ctrl+shift+r**) and pick what to review:
+
+| Choice | tuicr invocation |
+| --- | --- |
+| Uncommitted changes | `tuicr -w` |
+| Branch vs base (+ uncommitted) | `tuicr -r base..HEAD -w` |
+| Branch vs base | `tuicr -r base..HEAD` |
+| Last commit | `tuicr -r HEAD~1..HEAD` |
+| Pick commits | `tuicr` (commit selector) |
+| Every tracked file | `tuicr -A` |
+| Custom revset... | `tuicr -r <your revset>` |
+| Pull request... | `tuicr pr <target>` |
+
+The base branch is detected from `origin/HEAD`, falling back to
+`origin/main`, `origin/master`, `main`, `master`; when none verifies, the
+branch entries are hidden.
+
+Pi's TUI suspends, tuicr takes the terminal for the review session, and when
+it exits every comment created during that session is collected, numbered,
+and prefilled into the editor:
+
+```text
+I reviewed your changes. Please address these comments:
+
+1. `src/auth.ts:42` [BUG] - this throws when the token is missing
+2. `src/auth.ts:88` - rename this to something less generic
+```
+
+Read it over and press enter when you're happy. Comments that already
+existed in tuicr before the run are ignored, so an old review never comes
+back a second time. If tuicr is missing or exits non-zero, aio says so and
+stops rather than prefilling a half-built prompt. TUI mode only; tuicr has
+to be on your PATH (everything else degrades gracefully — the integration
+is optional).
+
+Note the division of labor: aio's syntax-highlighted transcript diffs (above)
+render individual `write`/`edit`/`apply_patch` calls inline as they happen;
+tuicr is the interactive changeset review where you leave the comments that
+go back to the agent.
+
+## Open in Neovim
+
+`aio` opens files in Neovim in a new Otty pane beside this session — for
+when you want an agent-touched file in your editor immediately.
+
+```text
+/nvim src/index.ts          open at the top
+/nvim src/index.ts:42       open with the cursor on line 42
+/nvim src/index.ts:42:7     line 42, column 7
+/nvim -r src/index.ts:42    read-only view (nvim -R)
+```
+
+The launcher chain opens an Otty pane split anchored
+to this session's pane (`$OTTY_PANE_ID`) → tmux window → Otty tab →
+macOS Terminal.app → the printed command. Neovim owns the pane afterward
+(the pane runs `exec nvim`, so it stays in the editor until `:q`), and the
+pane title is `nvim <basename>[:line]` so several open files are tellable
+apart in the tab bar.
+
+`/nvim` opens the file. The integration is a user-driven surface only:
+the agent has no tool to open editor panes, so files are opened when
+you ask for them (`/nvim src/index.ts:42`, or `-r` for a read-only
+view). `path:line` and `path:line:col` shorthand work.
+
 ## Layout
 
 ```text
@@ -553,14 +1016,20 @@ packages register `write`, `edit`, and `apply_patch`.
 ├── copy-widget/             # /pick parser + TUI overlay
 ├── diff-tools/              # write/edit/apply_patch diff rendering
 ├── effort/                  # /effort command + status
+├── tuicr/                   # /tuicr review loop (ported from pi-tuicr)
 ├── init/                    # /init AGENTS.md bootstrap
+├── nvim/                    # open files in Neovim in a new otty pane
 ├── permission-modes/        # Shift+Tab modes + plan flow
 ├── queue/                   # message-queue widget + Enter-to-interrupt
-├── status-line/             # quiet footer + working message
+├── status-line/             # provider quota + legacy footer fallback
+├── styles/                  # opt-in /style interaction styles
+├── ui/                      # shared responsive accent-rail chrome
+├── frame/                   # proprietary minimalist editor frame (vendored)
 ├── pretty-tools/            # pretty built-ins + FFF search
 ├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)
 ├── subagents/               # child-agent discovery, execution, and lifecycle
-└── user-bash/               # !/!! command permission gating
+├── user-bash/               # !/!! command permission gating
+└── yaml-hooks/              # hooks.yaml automation (ported from pi-yaml-hooks)
 ```
 
 ## Notes
@@ -568,11 +1037,12 @@ packages register `write`, `edit`, and `apply_patch`.
 - Remove standalone `@juicesharp/rpiv-ask-user-question`,
   `@pandi-coding-agent/pandi-effort`, `@aprimediet/permission-modes`,
   `@heyhuynhgiabuu/pi-pretty`, `@heyhuynhgiabuu/pi-diff`, `pi-subagents`,
-  and `@sherif-fanous/pi-rtk`
+  `pi-zentui`, and `@sherif-fanous/pi-rtk`
   packages from settings when installing this combined package, to avoid
   duplicate tools, commands, and shortcuts.
-- Effort status (`effort:…`), rtk, and `!bash` appear in the aio status line
-  when active; the footer shows mode, path, git, context, and model.
+- Effort and permission mode are embedded in the frame's border metadata;
+  extension statuses (`!bash`, goals, hooks) render in the muted status
+  row when active.
 - The vendored questionnaire source remains covered by its original MIT license
   in [`ask-user-question/LICENSE`](ask-user-question/LICENSE).
 - The pretty-tool implementation is based on `@heyhuynhgiabuu/pi-pretty` and

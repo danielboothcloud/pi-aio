@@ -1,4 +1,9 @@
-import { truncateToWidth } from "@earendil-works/pi-tui";
+import {
+	chromeHeader,
+	chromeHint,
+	chromeItem,
+	plural,
+} from "../ui/chrome.js";
 import type { QueuedMessage } from "./mirror.js";
 
 /** Minimal theme surface, compatible with pi's Theme.fg (see status-line/render.ts). */
@@ -36,30 +41,38 @@ export function buildQueueLines(input: BuildQueueLinesInput): string[] {
 	const maxRows = Math.max(1, input.maxRows ?? MAX_QUEUE_ROWS);
 
 	const lines: string[] = [];
-	const header =
-		theme.fg("accent", " queue") +
-		theme.fg("muted", ` (${entries.length})`) +
-		theme.fg("dim", " · ⏎ send next");
-	lines.push(truncateToWidth(header, width, "…"));
+	lines.push(
+		chromeHeader(
+			theme,
+			{
+				title: "queue",
+				meta: `${plural(entries.length, "pending message")} · Enter sends next`,
+			},
+			width,
+		),
+	);
 
 	const visible = entries.slice(0, maxRows);
 	for (const [index, entry] of visible.entries()) {
-		const number = theme.fg("accent", ` ${index + 1}.`);
-		const tag =
-			entry.mode === "steer"
-				? theme.fg("accent", "[steer]")
-				: theme.fg("dim", "[follow]");
 		const preview = firstLinePreview(entry.text);
-		const text = theme.fg("muted", preview.line);
-		const more = preview.truncated ? theme.fg("dim", " …") : "";
-		lines.push(truncateToWidth(`${number} ${tag} ${text}${more}`, width, "…"));
+		lines.push(
+			chromeItem(
+				theme,
+				{
+					label: `${preview.line}${preview.truncated ? " …" : ""}`,
+					meta: entry.mode === "steer" ? "steer" : "follow",
+					marker: `${index + 1}`,
+					tone: entry.mode === "steer" ? "accent" : "muted",
+					indent: 1,
+				},
+				width,
+			),
+		);
 	}
 
 	const remaining = entries.length - visible.length;
 	if (remaining > 0) {
-		lines.push(
-			truncateToWidth(theme.fg("dim", `  … +${remaining} more`), width, "…"),
-		);
+		lines.push(chromeHint(theme, `+${remaining} more queued`, width, 2));
 	}
 
 	return lines;

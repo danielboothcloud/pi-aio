@@ -18,9 +18,15 @@ import {
 	type Component,
 	getKeybindings,
 	type TUI,
-	visibleWidth,
 	wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
+import {
+	chromeFrameRow,
+	chromeFrameRule,
+	chromeHeader,
+	chromeHint,
+	chromeItem,
+} from "../ui/chrome.js";
 import {
 	buildMutationApprovalPrompt,
 	formatMutationPreview,
@@ -32,9 +38,6 @@ export type ApprovalDecision = "allow" | "allowAll" | "block";
 /** Options shown in the sticky footer, in order. */
 const OPTIONS = ["Allow", "Allow all (enable auto)", "Block"] as const;
 
-/** Left/right content margin inside the overlay, mirroring Text paddingX. */
-const PAD_X = 1;
-
 /** Caps for the overlay preview — effectively uncapped for realistic diffs. */
 const OVERLAY_MAX_LINES = 10_000;
 const OVERLAY_MAX_CHARS = 200_000;
@@ -43,6 +46,7 @@ const OVERLAY_MAX_CHARS = 200_000;
 interface ApprovalTheme {
 	fg(color: string, text: string): string;
 	bold(text: string): string;
+	bg?(color: string, text: string): string;
 }
 
 /** Color role assigned to a wrapped diff row. */
@@ -102,6 +106,8 @@ export async function showMutationApproval(
 		(tui, theme, _kb, done) =>
 			new ApprovalDialog({
 				tui,
+				// SAFETY: ApprovalTheme is the exact fg/bold/bg subset used from Pi's
+				// Theme; narrowing keeps this component independent of the full type.
 				theme: theme as unknown as ApprovalTheme,
 				header,
 				diff: preview,
@@ -133,8 +139,8 @@ interface ApprovalDialogOptions {
  * TUI component rendered inside the `ctx.ui.custom` overlay.
  *
  * Layout (top → bottom):
- *   border · spacer · header · spacer · [scrollable diff body] · spacer ·
- *   option · option · option · spacer · hint · spacer · border
+ *   rounded top · header · changes divider · [scrollable diff body] ·
+ *   decision divider · option · option · option · hint · rounded bottom
  *
  * The diff body is a scrollable window over the wrapped diff rows. When the body
  * overflows, the first/last visible row is replaced with an "↑ N above" / "↓ N
@@ -227,8 +233,8 @@ export class ApprovalDialog implements Component {
 		const rows = this.ensureWrapped(width);
 		const termRows = this.tui.terminal.rows;
 
-		const topFixed = 4; // border + spacer + header + spacer
-		const bottomFixed = 8; // spacer + 3 options + spacer + hint + spacer + border
+		const topFixed = 3; // top rule + branded header + changes rule
+		const bottomFixed = 6; // decision rule + 3 options + hint + bottom rule
 		const available = Math.max(0, termRows - topFixed - bottomFixed);
 
 		const totalRows = rows.length;
@@ -239,10 +245,9 @@ export class ApprovalDialog implements Component {
 		const start = this.scrollOffset;
 
 		const top = [
-			this.borderLine(width),
-			this.spacerLine(width),
+			chromeFrameRule(this.theme, width, "top"),
 			this.headerLine(width),
-			this.spacerLine(width),
+			chromeFrameRule(this.theme, width, "divider", "changes"),
 		];
 
 		const body: string[] = [];
@@ -284,14 +289,12 @@ export class ApprovalDialog implements Component {
 		}
 
 		const bottom = [
-			this.spacerLine(width),
+			chromeFrameRule(this.theme, width, "divider", "decision"),
 			this.optionLine(0, width),
 			this.optionLine(1, width),
 			this.optionLine(2, width),
-			this.spacerLine(width),
 			this.hintLine(width),
-			this.spacerLine(width),
-			this.borderLine(width),
+			chromeFrameRule(this.theme, width, "bottom"),
 		];
 
 		const result = [...top, ...body, ...bottom];
@@ -313,7 +316,7 @@ export class ApprovalDialog implements Component {
 	private ensureWrapped(width: number): { text: string; role: DiffRole }[] {
 		if (this.cacheWidth === width) return this.wrappedRows;
 		this.cacheWidth = width;
-		const contentWidth = Math.max(1, width - PAD_X * 2);
+		const contentWidth = Math.max(1, width > 4 ? width - 4 : width);
 		const rows: { text: string; role: DiffRole }[] = [];
 		for (const line of this.diffLines) {
 			const role = classifyLine(line);
@@ -327,7 +330,7 @@ export class ApprovalDialog implements Component {
 
 	private windowRows(): number {
 		const termRows = this.tui.terminal.rows;
-		const available = Math.max(0, termRows - 4 - 8);
+		const available = Math.max(0, termRows - 3 - 6);
 		return Math.min(available, Math.max(this.wrappedRows.length, 1));
 	}
 
@@ -356,47 +359,46 @@ export class ApprovalDialog implements Component {
 	}
 
 	private padLine(colored: string, width: number): string {
-		const left = " ".repeat(PAD_X);
-		const line = left + colored;
-		const pad = Math.max(0, width - PAD_X - visibleWidth(colored));
-		return line + " ".repeat(pad);
-	}
-
-	private spacerLine(width: number): string {
-		return " ".repeat(width);
-	}
-
-	private borderLine(width: number): string {
-		return this.theme.fg("border", "─".repeat(Math.max(0, width)));
+		return chromeFrameRow(this.theme, colored, width);
 	}
 
 	private headerLine(width: number): string {
 		return this.padLine(
-			this.theme.fg("accent", this.theme.bold(this.header)),
+			chromeHeader(
+				this.theme,
+				{ title: "Review mutation", meta: this.header },
+				width > 4 ? width - 4 : width,
+			),
 			width,
 		);
 	}
 
 	private optionLine(index: number, width: number): string {
-		const label = OPTIONS[index] ?? "";
-		const key = `${index + 1}`;
-		if (index === this.selected) {
-			return this.padLine(
-				this.theme.fg("accent", `→ ${key} ${this.theme.bold(label)}`),
-				width,
-			);
-		}
+		const labels = ["Allow once", "Enable auto", "Block"] as const;
+		const tones = ["success", "warning", "error"] as const;
 		return this.padLine(
-			`  ${this.theme.fg("muted", key)} ${this.theme.fg("text", label)}`,
+			chromeItem(
+				this.theme,
+				{
+					label: `${index + 1} ${labels[index] ?? OPTIONS[index] ?? ""}`,
+					marker: index === this.selected ? "›" : "·",
+					tone: tones[index],
+					active: index === this.selected,
+					indent: 0,
+				},
+				width > 4 ? width - 4 : width,
+			),
 			width,
 		);
 	}
 
 	private hintLine(width: number): string {
 		return this.padLine(
-			this.theme.fg(
-				"muted",
-				"↑↓ scroll diff  j/k option  1/2/3 quick-pick  Enter confirm  Esc cancel",
+			chromeHint(
+				this.theme,
+				"↑/↓ scroll · j/k decision · 1–3 pick · Enter confirm · Esc block",
+				width > 4 ? width - 4 : width,
+				0,
 			),
 			width,
 		);

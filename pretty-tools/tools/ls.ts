@@ -21,8 +21,11 @@ import {
 import { shortPath } from "../helpers.js";
 import {
 	fillToolBackground,
+	plural,
+	renderToolCallChrome,
 	renderToolError,
 	renderToolMetrics,
+	renderToolSummary,
 	renderTree,
 } from "../render.js";
 import { resolveTextCtor } from "../tui-text.js";
@@ -51,6 +54,10 @@ export function registerLsTool(
 	const home = process.env.HOME ?? "";
 	const TC = resolveTextCtor(TextComp);
 
+	// SAFETY: the definition mirrors the SDK builtin ls's runtime shape — its own
+	// parameters schema and execute contract — plus duck-typed renderCall/renderResult
+	// extensions Pi accepts at runtime but ToolDefinition's generics cannot express,
+	// so the literal is widened once at this boundary (asserted at its end below).
 	pi.registerTool({
 		name: "ls",
 		label: "List",
@@ -118,13 +125,18 @@ export function registerLsTool(
 					? ""
 					: shortPath(cwd, home, String(rawPath));
 			const limit = args.limit;
-			let out = theme.fg("toolTitle", theme.bold("ls"));
-			if (path) out += ` ${theme.fg("accent", path)}`;
-			if (limit !== undefined && limit !== null)
-				out += theme.fg("toolOutput", ` (limit ${limit})`);
+			const meta = [
+				path || ".",
+				limit !== undefined && limit !== null ? `limit ${limit}` : undefined,
+			]
+				.filter(Boolean)
+				.join(" · ");
+			const call = renderToolCallChrome(theme, "ls", meta, {
+				tone: ctx.isError ? "error" : "accent",
+			});
 			text.setText(
 				fillToolBackground(
-					`\n${TOOL_RESULT_INDENT}${out}\n`,
+					`\n${call}\n`,
 					ctx.isError ? BG_ERROR : undefined,
 				),
 			);
@@ -149,7 +161,7 @@ export function registerLsTool(
 				if (!ctx.expanded) {
 					text.setText(
 						fillToolBackground(
-							`${TOOL_RESULT_INDENT}${FG_DIM}${d.entryCount} entries — ctrl+o to expand${RST}${renderToolMetrics(result)}\n`,
+							`${renderToolSummary(theme, plural(d.entryCount, "entry"), [], { hint: "ctrl+o expand" })}${renderToolMetrics(result)}\n`,
 						),
 					);
 					return text;

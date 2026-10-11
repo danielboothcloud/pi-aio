@@ -23,9 +23,7 @@ import {
 	rewriteAgentBashCommand,
 } from "./rewrite.js";
 import {
-	clearRtkFooter,
 	registerRtkCommand,
-	updateRtkFooter,
 } from "./command.js";
 
 export {
@@ -45,13 +43,12 @@ export function registerRtk(pi: ExtensionAPI): void {
 
 	pi.on("session_start", (_event, ctx: ExtensionContext) => {
 		cacheNotify((message, level) => ctx.ui.notify(message, level));
-		updateRtkFooter(ctx);
 		probeRtkAvailability();
 	});
 
-	pi.on("session_shutdown", (_event, ctx: ExtensionContext) => {
-		clearRtkFooter(ctx);
-	});
+	// No footer status: rtk routing is unconditional, so a permanent "rtk ✓"
+	// segment only clutters Zentui's statuses-only row. `/rtk status` reports
+	// routing and binary details on demand.
 
 	// Permission modes register their tool_call gate before RTK, so they inspect
 	// and approve the original command. RTK then rewrites only allowed commands,

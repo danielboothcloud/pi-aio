@@ -1,5 +1,12 @@
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { safeCurrentLevel, updateEffortStatus } from "./effort-status.js";
+import type {
+	ExtensionAPI,
+	ExtensionContext,
+} from "@earendil-works/pi-coding-agent";
+import {
+	getEffectiveLevel,
+	safeCurrentLevel,
+	updateEffortStatus,
+} from "./effort-status.js";
 import { setThinkingEffort } from "./effort-thinking.js";
 import { enableUltracodeEffort } from "./effort-ultracode.js";
 import { notify } from "./notify.js";
@@ -9,9 +16,16 @@ function usage(current: string): string {
 	return `Current effort: ${current}. Usage: /effort <off|minimal|low|medium|high|xhigh|max|ultracode>`;
 }
 
-export function handleEffortTarget(pi: ExtensionAPI, ctx: ExtensionContext, target: EffortTarget): void {
+export function handleEffortTarget(
+	pi: ExtensionAPI,
+	ctx: ExtensionContext,
+	target: EffortTarget,
+): void {
 	if (target.kind === "status") {
-		const current = safeCurrentLevel(pi);
+		const current =
+			getEffectiveLevel() === "unknown"
+				? safeCurrentLevel(pi)
+				: getEffectiveLevel();
 		updateEffortStatus(pi, ctx, current);
 		notify(ctx, usage(current), "info");
 		return;
@@ -19,7 +33,11 @@ export function handleEffortTarget(pi: ExtensionAPI, ctx: ExtensionContext, targ
 
 	if (target.kind === "invalid") {
 		const current = safeCurrentLevel(pi);
-		notify(ctx, `Unknown effort "${target.value}". ${usage(current)}`, "warning");
+		notify(
+			ctx,
+			`Unknown effort "${target.value}". ${usage(current)}`,
+			"warning",
+		);
 		return;
 	}
 

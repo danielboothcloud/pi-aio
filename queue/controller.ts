@@ -6,7 +6,7 @@ export interface QueueControllerDeps {
 	/** Aborts the current run. In pi's TUI this also dumps the native queue into the editor. */
 	abort(): void;
 	clearEditor(): void;
-	/** Put texts back into the editor (used when an interrupt fails mid-flight). */
+	/** Put texts back into the editor (used when a deferred send fails to start a run). */
 	restoreTextsToEditor(texts: string[]): void;
 	sendUserMessage(text: string, mode: QueueMode): void;
 	notify(message: string, type: "info" | "warning" | "error"): void;
@@ -22,17 +22,26 @@ export interface QueueControllerDeps {
  * 1. `ctx.abort()` in pi's TUI is `restoreQueuedMessagesToEditor({abort})`:
  *    it clears pi's native queues into the editor, then aborts the run. We
  *    clear that dumped text from the editor ourselves.
- * 2. The "next" message is re-sent immediately with deliverAs "steer". Two
- *    convergent outcomes: if the aborted run is still unwinding it is queued
- *    as steering and drained by the post-run continuation; if the run already
- *    settled it becomes a direct prompt. Either way it starts a fresh run.
- * 3. The remaining messages are NOT re-sent synchronously: there is a real
- *    race between the abort unwinding and `sendUserMessage`'s streaming check
- *    that can turn them into direct prompts and throw "Agent is already
+ * 2. The popped "next" message is NOT re-sent while the aborted run is still
+ *    unwinding. Racing the unwind with `sendUserMessage` is nondeterministic:
+ *    queued-as-steering only drains when the post-run continuation starts
+ *    another run, and when it does not the message silently coexists with the
+ *    editor-restored texts and double-sends on the next Enter. Instead the
+ *    send is deferred to `agent_settled`, where pi is guaranteed idle
+ *    (`agent_settled` is emitted from the prompt cycle's finally, after the
+ *    active-run flag is cleared), so the send becomes a direct prompt that
+ *    always starts a fresh run.
+ * 3. The remaining messages are NOT re-sent synchronously either: there is a
+ *    real race between the abort unwinding and `sendUserMessage`'s streaming
+ *    check that can turn them into direct prompts and throw "Agent is already
  *    processing". They stay mirrored (widget keeps showing them) and are
  *    flushed on the next `agent_start`, when pi is guaranteed to be streaming.
- * 4. If no run ever starts (e.g. auth error), `agent_settled` restores the
- *    orphaned messages to the editor instead of losing them.
+ * 4. If the deferred send fails to start a run (e.g. an auth error caught by
+ *    pi, which extensions never see as a throw), `pendingNext` stays set: a
+ *    later `agent_settled` retries the send, and Enter on the still-empty
+ *    editor restores the orphaned messages to the editor instead of losing
+ *    them — restoring exactly once, with nothing left in pi's native queue,
+ *    so nothing can double-send.
  */
 export class QueueController {
 	readonly mirror = new QueueMirror();
@@ -83,12 +92,21 @@ export class QueueController {
 	}
 
 	/**
-	 * Enter pressed with an empty editor while the agent is busy: abort the
-	 * current run and push the next pending message at it. Returns true when
-	 * the key was consumed.
+	 * Enter pressed with an empty editor: while the agent is busy, abort the
+	 * current run and queue the next pending message for the deferred send;
+	 * while idle with an orphaned flow, recover the orphans to the editor.
+	 * Returns true when the key was consumed.
 	 */
 	onEmptySubmit(): boolean {
 		if (this.deps.isIdle()) {
+			if (this.flowBusy) {
+				// A deferred send never started a run (e.g. it failed
+				// silently). Restore the orphaned messages to the editor and
+				// consume the key: the editor now holds them, so the next Enter
+				// sends exactly them — once.
+				this.restoreOrphans();
+				return true;
+			}
 			this.resync();
 			return false;
 		}
@@ -110,9 +128,8 @@ export class QueueController {
 		this.pendingNext = next;
 		this.deps.abort();
 		this.deps.clearEditor();
-		// Fires an `input` event that re-mirrors this message as steering —
-		// correct, since it is pending until delivered.
-		this.deps.sendUserMessage(next.text, "steer");
+		// No send here: see the class doc — the send is deferred to
+		// agent_settled, when pi is guaranteed idle.
 		this.deps.updateWidget();
 		return true;
 	}
@@ -131,8 +148,25 @@ export class QueueController {
 		this.deps.updateWidget();
 	}
 
-	/** If an interrupt never produced a run, restore orphans to the editor. */
+	/**
+	 * `agent_settled`: pi is idle by construction. If an interrupt flow is
+	 * waiting, deliver its popped message as a direct prompt (guaranteed to
+	 * start a run); otherwise restore any orphaned flow messages.
+	 */
 	onAgentSettled(): void {
+		if (this.pendingNext !== null && this.deps.isIdle()) {
+			// The deferred send: pi is idle, so this becomes a direct prompt
+			// that always starts a fresh run. The input event carries no
+			// streaming behavior (not re-mirrored); delivery (message_start)
+			// clears pendingNext, and the run's agent_start flushes requeue.
+			this.deps.sendUserMessage(this.pendingNext.text, "steer");
+			return;
+		}
+		this.restoreOrphans();
+	}
+
+	/** Restore orphaned flow messages to the editor and clear the flow state. */
+	private restoreOrphans(): void {
 		const orphaned = this.requeue;
 		this.requeue = [];
 		const lostNext = this.pendingNext;

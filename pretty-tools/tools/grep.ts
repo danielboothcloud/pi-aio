@@ -21,8 +21,11 @@ import {
 import { normalizeLineEndings, shortPath } from "../helpers.js";
 import {
 	fillToolBackground,
+	plural,
 	renderGrepResults,
+	renderToolCallChrome,
 	renderToolError,
+	renderToolSummary,
 } from "../render.js";
 import { resolveTextCtor } from "../tui-text.js";
 import type {
@@ -55,6 +58,10 @@ export function registerGrepTool(
 
 	const baseDescription =
 		sdkTool.description ?? "Search file contents by pattern";
+	// SAFETY: the definition mirrors the SDK builtin grep's runtime shape — its own
+	// parameters schema and execute contract — plus duck-typed renderCall/renderResult
+	// extensions Pi accepts at runtime but ToolDefinition's generics cannot express,
+	// so the literal is widened once at this boundary (asserted at its end below).
 	pi.registerTool({
 		name: "grep",
 		label: "Grep",
@@ -78,7 +85,12 @@ export function registerGrepTool(
 				const limit = typeof p.limit === "number" ? p.limit : 200;
 				const literal = p.literal === true;
 				const effectiveLimit = Math.max(1, limit);
-				const args = ["-m", String(effectiveLimit), "-l", "500", "-R"];
+				// rtk grep takes `--max` for the result cap and forwards the rest to BSD
+				// grep. Do not pass `-l` here: BSD grep's -l is a boolean
+				// files-with-matches flag, so a numeric value silently shifts into the
+				// pattern slot and every search fails. Output stays bounded via rtk's
+				// --max cap plus truncateRtkOutput below.
+				const args = ["--max", String(effectiveLimit), "-R"];
 				args.push(literal ? "-F" : "-E");
 				if (p.ignoreCase === true || p.caseInsensitive === true)
 					args.push("-i");
@@ -142,12 +154,20 @@ export function registerGrepTool(
 			const literal = args.literal === true;
 			const caseInsensitive =
 				args.caseInsensitive === true || args.ignoreCase === true;
-			let out = `${theme.fg(ctx.isError ? "error" : "toolTitle", theme.bold("✱ grep"))} ${theme.fg("toolTitle", `/${pattern || ""}/`)}${theme.fg("toolOutput", ` in ${path}`)}`;
-			if (glob) out += theme.fg("dim", ` (${String(glob)})`);
-			if (limit !== undefined && limit !== null)
-				out += theme.fg("dim", ` limit ${limit}`);
-			if (literal) out += theme.fg("dim", ` (literal)`);
-			if (caseInsensitive) out += theme.fg("dim", ` (case-insensitive)`);
+			const meta = [
+				`/${pattern || ""}/`,
+				path,
+				glob ? String(glob) : undefined,
+				limit !== undefined && limit !== null ? `limit ${limit}` : undefined,
+				literal ? "literal" : undefined,
+				caseInsensitive ? "ignore case" : undefined,
+			]
+				.filter(Boolean)
+				.join(" · ");
+			const out = renderToolCallChrome(theme, "grep", meta, {
+				icon: "✱",
+				tone: ctx.isError ? "error" : "accent",
+			});
 			text.setText(
 				fillToolBackground(
 					`\n${TOOL_RESULT_INDENT}${out}\n`,
@@ -183,7 +203,7 @@ export function registerGrepTool(
 				if (!ctx.expanded) {
 					text.setText(
 						fillToolBackground(
-							`${TOOL_RESULT_INDENT}${FG_DIM}${lines.length} lines — ctrl+o to expand${RST}\n`,
+							`${renderToolSummary(theme, plural(lines.length, "line"), [], { hint: "ctrl+o expand" })}\n`,
 							ctx.isError ? BG_ERROR : undefined,
 						),
 					);
@@ -212,5 +232,9 @@ export function registerGrepTool(
 			);
 			return text;
 		},
+		// SAFETY: pretty tools extend the SDK tool definition with renderCall/
+		// renderResult; Pi's ToolDefinition accepts these fields but the SDK
+		// generic does not express the renderer extension, so the widening is
+		// deliberate and covered by the pretty-tools integration tests.
 	} as unknown as ToolDefinition<any, any, any>);
 }

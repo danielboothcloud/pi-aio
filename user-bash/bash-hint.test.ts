@@ -38,20 +38,20 @@ test("syncBashHint clears widget and status for normal input", () => {
 	assert.equal(statuses.at(-1)?.text, undefined);
 });
 
-test("syncBashHint shows below-editor widget and footer status for ! input", () => {
+test("syncBashHint keeps editor chrome singular and publishes !bash status", () => {
 	const { ctx, widgets, statuses } = makeCtx();
 	syncBashHint(ctx, "!git status");
 	const widget = widgets.at(-1);
 	const status = statuses.at(-1);
 	assert.equal(widget?.key, "user-bash-hint");
-	assert.deepEqual(widget?.options, { placement: "belowEditor" });
-	assert.match(String(widget?.content), /bash/);
-	assert.match(String(widget?.content), /git status/);
+	assert.equal(widget?.content, undefined);
+	assert.equal(widget?.options, undefined);
 	assert.equal(status?.text, "!bash");
 });
 
 test("syncBashHint labels hidden mode for !! input", () => {
-	const { ctx, widgets } = makeCtx();
+	const { ctx, widgets, statuses } = makeCtx();
 	syncBashHint(ctx, "!!npm test");
-	assert.match(String(widgets.at(-1)?.content), /hidden from model/);
+	assert.equal(widgets.at(-1)?.content, undefined);
+	assert.equal(statuses.at(-1)?.text, "!!bash");
 });

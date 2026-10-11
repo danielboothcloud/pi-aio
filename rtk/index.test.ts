@@ -69,23 +69,19 @@ test("registerRtk registers the /rtk command and lifecycle handlers", () => {
 		h.handlers.has("session_start"),
 		"session_start handler registered",
 	);
-	assert.ok(
-		h.handlers.has("session_shutdown"),
-		"session_shutdown handler registered",
-	);
+	// No session_shutdown handler: there is no footer status to clean up.
 	assert.ok(h.handlers.has("tool_call"), "tool_call handler registered");
 	assert.ok(h.handlers.has("user_bash"), "user_bash handler registered");
 });
 
-test("session_start sets the rtk footer status", () => {
+test("session_start sets no footer status", () => {
 	const h = makeHarness();
 	registerRtk(h.pi);
 	const [handler] = h.handlers.get("session_start")!;
 	handler({ type: "session_start", reason: "startup" }, h.ctx);
 
-	const rtkStatus = h.statuses.find((s) => s.key === "rtk");
-	assert.ok(rtkStatus, "rtk footer status was set");
-	assert.match(String(rtkStatus?.text), /rtk ✓/);
+	// Routing is unconditional; a permanent footer segment is visual noise.
+	assert.equal(h.statuses.find((s) => s.key === "rtk"), undefined);
 });
 
 test("/rtk getArgumentCompletions exposes status only", () => {

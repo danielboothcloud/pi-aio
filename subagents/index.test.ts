@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { registerSubagents } from "./index.ts";
+import { visibleWidth } from "@earendil-works/pi-tui";
+import { buildSubagentWidgetLines, registerSubagents } from "./index.ts";
+import type { SubagentRun } from "./types.ts";
 
 function createHarness() {
 	const tools = new Map<string, Record<string, unknown>>();
@@ -22,6 +24,31 @@ function createHarness() {
 	} as unknown as ExtensionAPI;
 	return { handlers, pi, tools };
 }
+
+test("subagent widget is branded, bounded, and width-safe", () => {
+	const runs: SubagentRun[] = Array.from({ length: 6 }, (_, index) => ({
+		id: `run-${index}-abcdefgh`,
+		state: "running",
+		mode: "parallel",
+		context: "fresh",
+		cwd: process.cwd(),
+		startedAt: Date.now(),
+		children: [
+			{ index: 0, agent: "reviewer", task: "Review", state: "completed" },
+			{ index: 1, agent: "validator", task: "Validate", state: "running" },
+		],
+		results: [],
+		stopRequested: false,
+	}));
+	const theme = {
+		fg: (_role: string, text: string) => text,
+		bold: (text: string) => text,
+	};
+	const lines = buildSubagentWidgetLines(runs, 28, theme, 3);
+	assert.match(lines[0] ?? "", /SUBAGENTS · 6 active runs/);
+	assert.match(lines.at(-1) ?? "", /\+3 more runs/);
+	for (const line of lines) assert.ok(visibleWidth(line) <= 28);
+});
 
 test("registers the reduced subagent tool and lifecycle hooks", () => {
 	const harness = createHarness();

@@ -177,10 +177,8 @@ test("grep routes all options through rtk grep", async () => {
 		command: "rtk",
 		args: [
 			"grep",
-			"-m",
+			"--max",
 			"10",
-			"-l",
-			"500",
 			"-R",
 			"-E",
 			"-i",

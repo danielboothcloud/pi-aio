@@ -41,14 +41,35 @@ generated `dist/` tree without changing the package contract.
 
 - `index.ts` is the sole package entry point and composes feature-level
   registrars. Preserve registration order unless deliberately changing event
-  interception: `registerUserBash` must run before `registerRtk`, and pretty
-  tools are registered last to wrap the final bash behavior.
+  interception: `registerUserBash` must run before `registerRtk`, and hypa
+  must register after rtk (rtk precedence) but before queue and pretty tools,
+  which own the final bash behavior. `registerLoopPolice` sits between
+  blocklist and permission-modes (loop blocks preempt mode checks; the hard
+  blocklist wins over loop blocks). `registerAioZentui` runs after queue,
+  pretty-tools, and status-line so it can wrap the final editor and own
+  the visual surfaces. Preloaded standalone Zentui editors are preserved by the
+  user-bash and queue registrars rather than overwritten. `registerYamlHooks`
+  runs LAST so its opt-in `user_bash`
+  interception wraps the earlier gates.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
   `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/` and
   `user-bash/` gate those mutations. Changes can cross feature boundaries.
-- `browser-search/` owns the `web_search` and `fetch_content` names. It talks to
-  external SearXNG/Camofox services and lazily loads optional CloakBrowser;
-  tests must use injected/mocked backends rather than live network services.
+- `ui/chrome.ts` is the shared visual vocabulary for AIO-owned surfaces:
+  theme-aware accent rails, headers, items, hints, dividers, pluralization, and
+  ANSI-aware width fitting. Diff/approval, pretty tools, copy picker, queue,
+  goals, and subagents should compose these primitives rather than inventing
+  new chrome. Preserve each component's behavioral and row-count contracts;
+  every returned line must fit its supplied width.
+- `browser-search/` owns the `web_search` and `fetch_content` names. Search is
+  opt-in through `aio.browserSearch` in Pi settings and routes to Exa or
+  SearXNG; browsing uses Camofox and lazily loads optional CloakBrowser. Tests
+  must use injected/mocked backends rather than live network services.
+- `hypa/` is vendored from @hypabolic/pi-hypa (FSL-1.1-ALv2 — see
+  `hypa/LICENSE-FSL` and `hypa/UPSTREAM.md`). It registers the `hypa_*`
+  shell/file tools, bash rewrite interception, the optional `hypa_mcp_proxy`
+  bridge (off by default), and the `/hypa` diagnostics command. Composition
+  rule: it registers after rtk and never rewrites commands rtk already claimed
+  (`rtk ...`) — rtk precedence, see `isRtkClaimedCommand`.
 - `ask-user-question/` is vendored code. Follow
   `ask-user-question/UPSTREAM.md`: preserve its license, config/event
   namespaces, sequential execution, soft i18n peer, and
@@ -62,6 +83,99 @@ generated `dist/` tree without changing the package contract.
   loop/list state were stripped. It drives `agent_end` continuations (the
   Two-Driver Rule) and is inert in aio subagent child processes
   (`AIO_SUBAGENT_CHILD=1`) so a child never restores the parent's goal.
+- `yaml-hooks/` is ported from pi-yaml-hooks (MIT, KristjanPikhof — see
+  `yaml-hooks/LICENSE` and `yaml-hooks/UPSTREAM.md`). It owns the
+  `hooks.yaml` automation surface: discovery + trust, bash/tool/notify/
+  confirm/setStatus actions, `/hooks-*` commands, prompt context injection,
+  and the opt-in `PI_YAML_HOOKS_ENABLE_USER_BASH=1` interception. It
+  registers LAST so its `user_bash` interception wraps the blocklist,
+  permission-modes, and user-bash gates (the runner honors the first
+  non-undefined `user_bash` result; the earlier gates win). It owns no tool
+  names. Failure semantics: prompt hooks fail-open, post-tool hooks
+  fail-open, user-bash interception fails closed, cleanup hooks are
+  best-effort. All `PI_YAML_HOOKS_*` env names and YAML validation error
+  codes are append-only contracts.
+- `tuicr/` is ported from @joelazar/pi-tuicr v1.1.0 (MIT, joelazar — see
+  `tuicr/UPSTREAM.md` and `tuicr/LICENSE`). It owns the `/tuicr` command and
+  the `ctrl+shift+r` shortcut: pick a diff (working tree, branch-vs-base with
+  base detection via origin/HEAD → origin/main → origin/master → main →
+  master, last commit, commit selector, all tracked files, custom revset, PR),
+  pi's TUI suspends, tuicr runs in the foreground with inherited stdio, and
+  when it exits comments created during that session (ids snapshotted before,
+  diffed after) are numbered and prefilled into the editor via
+  `ctx.ui.setEditorText`. It registers no tools and owns no editor surface,
+  so registration order is not load-bearing; it sits after status-line and
+  before the frame. TUI-only (`ctx.mode !== "tui"` refuses). Exec goes
+  through injected `Capture`/`ForegroundSpawn` seams (core/picker/runner/
+  review split) — tests never shell out to live tuicr or git. Failure
+  semantics: missing binary → "Could not start tuicr" notify, non-zero exit
+  → status notify, both stop without prefilling a half-built prompt. tuicr
+  is OPTIONAL: a missing binary must not prevent loading (registration is
+  unconditional and probe-free).
+- `frame/` is AIO's proprietary minimalist editor frame, vendored from
+  pi-zentui (MIT — see `frame/LICENSE` and `frame/UPSTREAM.md`). It replaces
+  the former bundled pi-zentui integration entirely: AIO wraps whatever
+  editor factory exists at `session_start` (normally the QueueEditor chain)
+  in `MinimalistFrameEditor`, which renders the base editor inside a labeled
+  minimalist border with live metadata (model, thinking level, context
+  percent, cost, git branch/dirty/ahead/behind, session name, timer).
+  Registration order is load-bearing: it registers after queue,
+  pretty-tools, and status-line so it wraps the final editor chain. Standalone Zentui
+  factories (symbol `pi-zentui.editor-factory`) are never displaced; with no
+  factory at all the frame stays out (Pi's built-in editor is unwrappable).
+  Configuration is code-owned (`DEFAULT_FRAME_STYLE`) — there is no
+  zentui.json and no seeding. The frame answers a synchronous capability
+  probe (`frame/protocol.ts`, event `aio:minimal-frame-capability`) only
+  after a TUI session installed it; effort and permission-modes suppress
+  their duplicate footer statuses based on that probe. `frame/codex-quota.ts`
+  (ported from pi-zentui) polls the native `openai-codex` usage endpoint for
+  the 5h/weekly remaining windows and renders them beside the context percent
+  — inert unless the routed model is the native Codex route, and it degrades
+  to nothing rather than falling back to private credential storage. The
+  queue feeds framed
+  rows into the frame via `setQueuePanelLinesProvider` and suppresses its
+  below-editor widget in any framed environment (AIO frame or standalone
+  Zentui). Status-line's provider-quota surface renders as an above-editor
+  widget when the probe reports support, and as a footer status otherwise.
+  `frame/menus.ts` is the narrow TUI-only host-selector adapter: public
+  selector render/mouse prototypes only, never Container/SelectList. It
+  replaces native rule/spacer rows using `ui/chrome.ts` frame primitives, preserves
+  row indices, translates mouse x/width, and tears down on shutdown. Unknown
+  and already-rounded layouts stay native; RPC and standalone Zentui are
+  untouched.
+- `nvim/` opens files in Neovim in a new Otty pane beside the session
+  (otty split anchored to `$OTTY_PANE_ID` → tmux → otty tab →
+  Terminal.app → print). `/nvim <path>[:line[:col]]` (`-r` for
+  read-only) parses the `path:line:col` shorthand; the pane runs `exec
+  nvim` so it stays in the editor until `:q`, titled `nvim
+  <basename>[:line]`. It is a user-initiated surface with NO agent tool:
+  the agent cannot open panes on its own. No gating, no tool-name overlap;
+  degrades silently when nvim or every launcher is missing (the command
+  reports the exact command to run).
+- `styles/` owns `/style` (`none | collaborate | mentor`): opt-in interaction
+  styles layered on top of permission modes. A style only injects a hidden
+  per-turn `styles-context` instruction (mode-aware, e.g. no `TODO(human)`
+  markers in ask/plan); it never gates tools, and it is NOT a permission mode
+  (keep it out of `mode-access.ts`, Shift+Tab, and `--permission-mode`).
+  Off by default: no flag or setting enables it; only `/style` does, and the
+  choice persists as a `styles` session entry restored from the current
+  branch. Its `context` handler keeps only the latest instruction and strips
+  all of them once the style is `none`. In subagent children
+  (`AIO_SUBAGENT_CHILD=1`) it registers only that stripping filter. Display:
+  a `style` frame metadata contributor beside the mode, or a `style` footer
+  status that status-line renders inside its mode segment.
+- `subagents/` owns the `subagent` tool: configured child Pi agents run as
+  spawned `pi --mode json -p` processes (fresh or forked context, bounded
+  parallel group, background follow-up via `aio-subagent-complete`). A child
+  that dies from a provider stall, hard timeout, or crash is retried
+  automatically (`RunnerDeps.maxAttempts`, default 2) by resuming the child's
+  own session file with a continuation prompt — completed turns and usage
+  survive the failed attempt; fork retries resume the forked session with
+  `--session` (dropping `--fork`, which cannot combine with it). Final
+  failures report the preserved session file so the parent can inspect or
+  resume manually. Tool description and promptGuidelines steer the parent
+  toward generous `timeoutMs` budgets (pi's own HTTP idle timeout is 300s by
+  default, so budgets below that kill children mid-recovery).
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 
@@ -71,9 +185,14 @@ generated `dist/` tree without changing the package contract.
   repository's ESM convention.
 - Match the existing formatting: tabs, double quotes, semicolons, and trailing
   commas in multiline structures.
-- Runtime imports belong in `dependencies`. Pi SDK packages stay in
-  `peerDependencies` and are pinned in `devDependencies` for tests; Pi
-  production installs omit dev dependencies.
+- Runtime imports belong in `dependencies`, except packages the Pi host
+  provides at load time. Host-provided packages — the `@earendil-works/pi-*`
+  SDK, `@mariozechner/pi-*`, and `typebox`/`@sinclair/typebox` (aliased by the
+  extension loader) — must be declared in `peerDependencies` with a `"*"` range
+  and pinned in `devDependencies` for tests; Pi production installs omit dev
+  dependencies. Declaring them in `dependencies` makes the host warn that
+  installed copies "can bypass the extension loader and create duplicate
+  runtime modules."
 - Use `StringEnum` from `@earendil-works/pi-ai` for tool string enums. Throw from
   tool `execute` to produce an error result rather than returning an
   error-shaped success.
@@ -101,10 +220,14 @@ generated `dist/` tree without changing the package contract.
   directory must be wired into `index.ts`, included in `files`, and covered by
   a test command.
 - Optional integrations must remain optional: missing
-  `@juicesharp/rpiv-i18n`, `rtk`, or CloakBrowser must not prevent the extension
-  from loading.
+  `@juicesharp/rpiv-i18n`, `rtk`, CloakBrowser, the `hypa` binary, or the
+  `tuicr` binary must not prevent the extension from loading (hypa resolves
+  its bundled `@hypabolic/hypa` dependency and fails open on rewrite errors;
+  tuicr only fails the run with a notify).
 - Pi keeps the first tool registration by name. Loading pi-web-access before AIO
   prevents AIO's `web_search` and `fetch_content` from becoming active.
-- Do not smoke-test with standalone packages that register the same tools or
-  hooks (`rpiv-ask-user-question`, `pi-pretty`, `pi-diff`, `pi-subagents`, or
-  `pi-rtk`); duplicate registrations change behavior.
+- Do not smoke-test with standalone packages that register the same tools,
+  hooks, or UI owners (`rpiv-ask-user-question`, `pi-pretty`, `pi-diff`,
+  `pi-subagents`, `pi-rtk`, `pi-zentui`, or `@hypabolic/pi-hypa`); duplicate
+  registrations change behavior. AIO can skip a Zentui predecessor but cannot
+  prevent a separately configured Zentui package from loading afterward.

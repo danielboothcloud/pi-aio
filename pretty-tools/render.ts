@@ -41,6 +41,12 @@ import {
 	normalizeLineEndings,
 } from "./helpers.js";
 import type { RenderCtxLike as RenderContext, ThemeLike } from "./types.js";
+import {
+	chromeHeader,
+	chromeItem,
+	plural,
+	type ChromeTone,
+} from "../ui/chrome.js";
 
 /** Thin wrapper over pi-tui's truncateToWidth (imported at top level above). */
 function _truncateToWidth(text: string, maxWidth: number, ellipsis?: string, pad?: boolean): string {
@@ -180,6 +186,58 @@ function lnum(n: number, w: number): string {
 	const v = String(n);
 	return `${FG_LNUM}${" ".repeat(Math.max(0, w - v.length))}${v}${RST}`;
 }
+
+// ---------------------------------------------------------------------------
+// Shared tool chrome
+// ---------------------------------------------------------------------------
+
+export function renderToolCallChrome(
+	theme: ThemeLike,
+	title: string,
+	meta?: string,
+	options: { tone?: ChromeTone; icon?: string; width?: number } = {},
+): string {
+	return chromeHeader(
+		theme,
+		{
+			title,
+			meta,
+			tone: options.tone,
+			icon: options.icon,
+			indent: 1,
+		},
+		options.width ?? termWidth(),
+	);
+}
+
+export function renderToolSummary(
+	theme: ThemeLike,
+	label: string,
+	facts: Array<string | undefined> = [],
+	options: {
+		tone?: ChromeTone;
+		marker?: string;
+		width?: number;
+		hint?: string;
+	} = {},
+): string {
+	const values = [...facts, options.hint].filter(
+		(value): value is string => Boolean(value),
+	);
+	return chromeItem(
+		theme,
+		{
+			label,
+			meta: values.join(" · "),
+			marker: options.marker ?? "◇",
+			tone: options.tone ?? "muted",
+			indent: 1,
+		},
+		options.width ?? termWidth(),
+	);
+}
+
+export { plural };
 
 // ---------------------------------------------------------------------------
 // Tool metrics line

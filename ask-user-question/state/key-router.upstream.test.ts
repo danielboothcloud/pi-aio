@@ -11,7 +11,9 @@ const KEY = {
 	CANCEL: "tui.select.cancel",
 };
 const sentinel = (name: string) => `<KEY:${name}>`;
-const keybindings = { matches: (data: string, name: string) => data === sentinel(name) };
+const keybindings = {
+	matches: (data: string, name: string) => data === sentinel(name),
+};
 
 const BYTE_TAB = "\t";
 const BYTE_SHIFT_TAB = "\x1b[Z";
@@ -58,11 +60,16 @@ function makeState(over: Partial<QuestionnaireState> = {}): QuestionnaireState {
 	};
 }
 
-function makeRuntime(over: Partial<QuestionnaireRuntime> = {}): QuestionnaireRuntime {
+function makeRuntime(
+	over: Partial<QuestionnaireRuntime> = {},
+): QuestionnaireRuntime {
 	const questions = over.questions ?? [makeQuestion(), makeQuestion()];
 	const items: WrappingSelectItem[] = over.items
 		? [...over.items]
-		: questions[0]!.options.map((o) => ({ kind: "option" as const, label: o.label }));
+		: questions[0]!.options.map((o) => ({
+				kind: "option" as const,
+				label: o.label,
+			}));
 	return {
 		keybindings,
 		inputBuffer: "",
@@ -83,9 +90,14 @@ describe("wrapTab + allAnswered", () => {
 	});
 
 	it("allAnswered is false when any question lacks an answer", () => {
-		expect(allAnswered(makeState({ answers: new Map([[0, makeAnswer({ questionIndex: 0 })]]) }), makeRuntime())).toBe(
-			false,
-		);
+		expect(
+			allAnswered(
+				makeState({
+					answers: new Map([[0, makeAnswer({ questionIndex: 0 })]]),
+				}),
+				makeRuntime(),
+			),
+		).toBe(false);
 	});
 
 	it("allAnswered is true when every question has an answer", () => {
@@ -105,7 +117,9 @@ describe("wrapTab + allAnswered", () => {
 
 describe("routeKey — nav", () => {
 	it("UP from a non-zero index decrements by 1", () => {
-		expect(routeKey(sentinel(KEY.UP), makeState({ optionIndex: 2 }), makeRuntime())).toEqual({
+		expect(
+			routeKey(sentinel(KEY.UP), makeState({ optionIndex: 2 }), makeRuntime()),
+		).toEqual({
 			kind: "nav",
 			nextIndex: 1,
 		});
@@ -117,10 +131,12 @@ describe("routeKey — nav", () => {
 		});
 	});
 	it("vim k/j mirror UP/DOWN navigation", () => {
-		expect(routeKey("k", makeState({ optionIndex: 2 }), makeRuntime())).toEqual({
-			kind: "nav",
-			nextIndex: 1,
-		});
+		expect(routeKey("k", makeState({ optionIndex: 2 }), makeRuntime())).toEqual(
+			{
+				kind: "nav",
+				nextIndex: 1,
+			},
+		);
 		expect(routeKey("j", makeState(), makeRuntime())).toEqual({
 			kind: "nav",
 			nextIndex: 1,
@@ -130,7 +146,13 @@ describe("routeKey — nav", () => {
 	// DOWN at the last item wraps to 0; UP at the first item wraps to the last.
 	it("DOWN at the last item wraps to 0 (no chat row, wrapTab clamp)", () => {
 		// makeRuntime default items length === 3 (questions[0].options)
-		expect(routeKey(sentinel(KEY.DOWN), makeState({ optionIndex: 2 }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				sentinel(KEY.DOWN),
+				makeState({ optionIndex: 2 }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "nav",
 			nextIndex: 0,
 		});
@@ -138,7 +160,9 @@ describe("routeKey — nav", () => {
 	it("UP at the first item wraps to the last (no chat row, wrapTab clamp)", () => {
 		const runtime = makeRuntime();
 		const last = runtime.items.length - 1;
-		expect(routeKey(sentinel(KEY.UP), makeState({ optionIndex: 0 }), runtime)).toEqual({
+		expect(
+			routeKey(sentinel(KEY.UP), makeState({ optionIndex: 0 }), runtime),
+		).toEqual({
 			kind: "nav",
 			nextIndex: last,
 		});
@@ -161,14 +185,18 @@ describe("routeKey — tab_switch", () => {
 	});
 
 	it("Shift+Tab wraps backward from tab 0 to the Submit tab", () => {
-		expect(routeKey(BYTE_SHIFT_TAB, makeState({ currentTab: 0 }), makeRuntime())).toEqual({
+		expect(
+			routeKey(BYTE_SHIFT_TAB, makeState({ currentTab: 0 }), makeRuntime()),
+		).toEqual({
 			kind: "tab_switch",
 			nextTab: 2,
 		});
 	});
 
 	it("Left is an alias for Shift+Tab", () => {
-		expect(routeKey(BYTE_LEFT, makeState({ currentTab: 1 }), makeRuntime())).toEqual({
+		expect(
+			routeKey(BYTE_LEFT, makeState({ currentTab: 1 }), makeRuntime()),
+		).toEqual({
 			kind: "tab_switch",
 			nextTab: 0,
 		});
@@ -186,16 +214,34 @@ describe("routeKey — tab_switch", () => {
 	});
 
 	it("vim h/l are ignored in single-question mode", () => {
-		expect(routeKey("l", makeState(), makeRuntime({ isMulti: false, questions: [makeQuestion()] }))).toEqual({
+		expect(
+			routeKey(
+				"l",
+				makeState(),
+				makeRuntime({ isMulti: false, questions: [makeQuestion()] }),
+			),
+		).toEqual({
 			kind: "ignore",
 		});
-		expect(routeKey("h", makeState(), makeRuntime({ isMulti: false, questions: [makeQuestion()] }))).toEqual({
+		expect(
+			routeKey(
+				"h",
+				makeState(),
+				makeRuntime({ isMulti: false, questions: [makeQuestion()] }),
+			),
+		).toEqual({
 			kind: "ignore",
 		});
 	});
 
 	it("Tab is a no-op (returns ignore) in single-question mode", () => {
-		expect(routeKey(BYTE_TAB, makeState(), makeRuntime({ isMulti: false, questions: [makeQuestion()] }))).toEqual({
+		expect(
+			routeKey(
+				BYTE_TAB,
+				makeState(),
+				makeRuntime({ isMulti: false, questions: [makeQuestion()] }),
+			),
+		).toEqual({
 			kind: "ignore",
 		});
 	});
@@ -203,7 +249,11 @@ describe("routeKey — tab_switch", () => {
 
 describe("routeKey — confirm (single-select)", () => {
 	it("emits confirm with autoAdvanceTab pointing to the next tab", () => {
-		const action = routeKey(sentinel(KEY.CONFIRM), makeState({ currentTab: 0 }), makeRuntime());
+		const action = routeKey(
+			sentinel(KEY.CONFIRM),
+			makeState({ currentTab: 0 }),
+			makeRuntime(),
+		);
 		expect(action).toMatchObject({
 			kind: "confirm",
 			answer: { questionIndex: 0, answer: "A", kind: "option" },
@@ -212,7 +262,11 @@ describe("routeKey — confirm (single-select)", () => {
 	});
 
 	it("last question -> autoAdvanceTab points at the Submit tab (questions.length)", () => {
-		const action = routeKey(sentinel(KEY.CONFIRM), makeState({ currentTab: 1 }), makeRuntime());
+		const action = routeKey(
+			sentinel(KEY.CONFIRM),
+			makeState({ currentTab: 1 }),
+			makeRuntime(),
+		);
 		expect(action).toMatchObject({ kind: "confirm", autoAdvanceTab: 2 });
 	});
 
@@ -238,7 +292,10 @@ describe("routeKey — confirm (single-select)", () => {
 	});
 
 	it("inline-input mode: Enter confirms with the buffered text + kind:'custom'", () => {
-		const other: WrappingSelectItem = { kind: "other", label: "Type something." };
+		const other: WrappingSelectItem = {
+			kind: "other",
+			label: "Type something.",
+		};
 		const action = routeKey(
 			sentinel(KEY.CONFIRM),
 			makeState({ inputMode: true }),
@@ -366,14 +423,19 @@ describe("routeKey — multiSelect", () => {
 			}),
 		);
 		expect(action.kind).toBe("multi_confirm");
-		if (action.kind === "multi_confirm") expect(action.autoAdvanceTab).toBeUndefined();
+		if (action.kind === "multi_confirm")
+			expect(action.autoAdvanceTab).toBeUndefined();
 	});
 
 	// Spec: Enter on Next for a multi-question dialog advances to the next tab.
 	it("multi-question multi-select on tab 0: Enter on Next carries autoAdvanceTab=1", () => {
 		const action = routeKey(
 			sentinel(KEY.CONFIRM),
-			makeState({ currentTab: 0, optionIndex: 3, multiSelectChecked: new Set([0]) }),
+			makeState({
+				currentTab: 0,
+				optionIndex: 3,
+				multiSelectChecked: new Set([0]),
+			}),
 			makeRuntime({
 				questions: [multiQ, makeQuestion()],
 				isMulti: true,
@@ -394,7 +456,11 @@ describe("routeKey — multiSelect", () => {
 	it("multi-question multi-select on last tab: Enter on Next carries autoAdvanceTab=questions.length (Submit)", () => {
 		const action = routeKey(
 			sentinel(KEY.CONFIRM),
-			makeState({ currentTab: 1, optionIndex: 3, multiSelectChecked: new Set([0]) }),
+			makeState({
+				currentTab: 1,
+				optionIndex: 3,
+				multiSelectChecked: new Set([0]),
+			}),
 			makeRuntime({
 				questions: [makeQuestion(), multiQ],
 				isMulti: true,
@@ -412,7 +478,9 @@ describe("routeKey — multiSelect", () => {
 	});
 
 	it("Space does NOT emit toggle on a single-select question", () => {
-		expect(routeKey(BYTE_SPACE, makeState(), makeRuntime())).toEqual({ kind: "ignore" });
+		expect(routeKey(BYTE_SPACE, makeState(), makeRuntime())).toEqual({
+			kind: "ignore",
+		});
 	});
 });
 
@@ -458,7 +526,12 @@ describe("routeKey — multiSelect free-text ('Type something.')", () => {
 			routeKey(
 				BYTE_SPACE,
 				makeState({ optionIndex: 3 }),
-				makeRuntime({ questions: [multiQ], isMulti: false, items, currentItem: items[3] }),
+				makeRuntime({
+					questions: [multiQ],
+					isMulti: false,
+					items,
+					currentItem: items[3],
+				}),
 			),
 		).toEqual({ kind: "ignore" });
 	});
@@ -468,7 +541,12 @@ describe("routeKey — multiSelect free-text ('Type something.')", () => {
 			routeKey(
 				sentinel(KEY.CONFIRM),
 				makeState({ optionIndex: 3 }),
-				makeRuntime({ questions: [multiQ], isMulti: false, items, currentItem: items[3] }),
+				makeRuntime({
+					questions: [multiQ],
+					isMulti: false,
+					items,
+					currentItem: items[3],
+				}),
 			),
 		).toEqual({ kind: "ignore" });
 	});
@@ -478,7 +556,12 @@ describe("routeKey — multiSelect free-text ('Type something.')", () => {
 			routeKey(
 				sentinel(KEY.DOWN),
 				makeState({ optionIndex: 2 }),
-				makeRuntime({ questions: [multiQ], isMulti: false, items, currentItem: items[2] }),
+				makeRuntime({
+					questions: [multiQ],
+					isMulti: false,
+					items,
+					currentItem: items[2],
+				}),
 			),
 		).toEqual({ kind: "nav", nextIndex: 3 });
 	});
@@ -488,7 +571,12 @@ describe("routeKey — multiSelect free-text ('Type something.')", () => {
 			routeKey(
 				sentinel(KEY.DOWN),
 				makeState({ optionIndex: 3 }),
-				makeRuntime({ questions: [multiQ], isMulti: false, items, currentItem: items[3] }),
+				makeRuntime({
+					questions: [multiQ],
+					isMulti: false,
+					items,
+					currentItem: items[3],
+				}),
 			),
 		).toEqual({ kind: "nav", nextIndex: 4 });
 	});
@@ -498,7 +586,12 @@ describe("routeKey — multiSelect free-text ('Type something.')", () => {
 			routeKey(
 				sentinel(KEY.UP),
 				makeState({ optionIndex: 4 }),
-				makeRuntime({ questions: [multiQ], isMulti: false, items, currentItem: items[4] }),
+				makeRuntime({
+					questions: [multiQ],
+					isMulti: false,
+					items,
+					currentItem: items[4],
+				}),
 			),
 		).toEqual({ kind: "nav", nextIndex: 3 });
 	});
@@ -506,8 +599,16 @@ describe("routeKey — multiSelect free-text ('Type something.')", () => {
 
 describe("routeKey — cancel + submit", () => {
 	it("Esc cancels the entire questionnaire from any tab", () => {
-		expect(routeKey(sentinel(KEY.CANCEL), makeState(), makeRuntime())).toEqual({ kind: "cancel" });
-		expect(routeKey(sentinel(KEY.CANCEL), makeState({ currentTab: 2 }), makeRuntime())).toEqual({
+		expect(routeKey(sentinel(KEY.CANCEL), makeState(), makeRuntime())).toEqual({
+			kind: "cancel",
+		});
+		expect(
+			routeKey(
+				sentinel(KEY.CANCEL),
+				makeState({ currentTab: 2 }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "cancel",
 		});
 	});
@@ -545,21 +646,39 @@ describe("routeKey — cancel + submit", () => {
 	});
 
 	it("Submit tab + DOWN -> submit_nav nextIndex=1", () => {
-		expect(routeKey(sentinel(KEY.DOWN), makeState({ currentTab: 2, submitChoiceIndex: 0 }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				sentinel(KEY.DOWN),
+				makeState({ currentTab: 2, submitChoiceIndex: 0 }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "submit_nav",
 			nextIndex: 1,
 		});
 	});
 
 	it("Submit tab + UP wraps from 0 to 1", () => {
-		expect(routeKey(sentinel(KEY.UP), makeState({ currentTab: 2, submitChoiceIndex: 0 }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				sentinel(KEY.UP),
+				makeState({ currentTab: 2, submitChoiceIndex: 0 }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "submit_nav",
 			nextIndex: 1,
 		});
 	});
 
 	it("Submit tab + DOWN from index 1 wraps to 0", () => {
-		expect(routeKey(sentinel(KEY.DOWN), makeState({ currentTab: 2, submitChoiceIndex: 1 }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				sentinel(KEY.DOWN),
+				makeState({ currentTab: 2, submitChoiceIndex: 1 }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "submit_nav",
 			nextIndex: 0,
 		});
@@ -584,20 +703,36 @@ describe("routeKey — cancel + submit", () => {
 
 	it("Submit tab + Enter on Cancel row (index 1) when incomplete -> cancel", () => {
 		expect(
-			routeKey(sentinel(KEY.CONFIRM), makeState({ currentTab: 2, submitChoiceIndex: 1 }), makeRuntime()),
+			routeKey(
+				sentinel(KEY.CONFIRM),
+				makeState({ currentTab: 2, submitChoiceIndex: 1 }),
+				makeRuntime(),
+			),
 		).toEqual({ kind: "cancel" });
 	});
 });
 
 describe("routeKey — notes", () => {
 	it("'n' when focused option has preview emits notes_enter", () => {
-		expect(routeKey("n", makeState({ focusedOptionHasPreview: true }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				"n",
+				makeState({ focusedOptionHasPreview: true }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "notes_enter",
 		});
 	});
 
 	it("'n' when focused option has no preview is ignored", () => {
-		expect(routeKey("n", makeState({ focusedOptionHasPreview: false }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				"n",
+				makeState({ focusedOptionHasPreview: false }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "ignore",
 		});
 	});
@@ -614,26 +749,42 @@ describe("routeKey — notes", () => {
 	});
 
 	it("notesMode: Esc -> notes_exit", () => {
-		expect(routeKey(sentinel(KEY.CANCEL), makeState({ notesVisible: true }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				sentinel(KEY.CANCEL),
+				makeState({ notesVisible: true }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "notes_exit",
 		});
 	});
 
 	it("notesMode: Enter -> notes_exit (save + return to options)", () => {
-		expect(routeKey(sentinel(KEY.CONFIRM), makeState({ notesVisible: true }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				sentinel(KEY.CONFIRM),
+				makeState({ notesVisible: true }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "notes_exit",
 		});
 	});
 
 	it("notesMode: Tab byte emits notes_forward (any non-Esc/Enter key forwards to the Input)", () => {
-		expect(routeKey(BYTE_TAB, makeState({ notesVisible: true }), makeRuntime())).toEqual({
+		expect(
+			routeKey(BYTE_TAB, makeState({ notesVisible: true }), makeRuntime()),
+		).toEqual({
 			kind: "notes_forward",
 			data: BYTE_TAB,
 		});
 	});
 
 	it("notesMode: arbitrary printable byte emits notes_forward (single dispatch path)", () => {
-		expect(routeKey("a", makeState({ notesVisible: true }), makeRuntime())).toEqual({
+		expect(
+			routeKey("a", makeState({ notesVisible: true }), makeRuntime()),
+		).toEqual({
 			kind: "notes_forward",
 			data: "a",
 		});
@@ -644,21 +795,121 @@ describe("routeKey — inputMode (Type something)", () => {
 	const other: WrappingSelectItem = { kind: "other", label: "Type something." };
 
 	it("Tab byte is ignored under inputMode", () => {
-		expect(routeKey(BYTE_TAB, makeState({ inputMode: true }), makeRuntime({ currentItem: other }))).toEqual({
+		expect(
+			routeKey(
+				BYTE_TAB,
+				makeState({ inputMode: true }),
+				makeRuntime({ currentItem: other }),
+			),
+		).toEqual({
 			kind: "ignore",
 		});
 	});
 
 	it("printable bytes return ignore (dialog forwards to inlineInput.handleInput)", () => {
-		expect(routeKey("x", makeState({ inputMode: true }), makeRuntime({ currentItem: other }))).toEqual({
+		expect(
+			routeKey(
+				"x",
+				makeState({ inputMode: true }),
+				makeRuntime({ currentItem: other }),
+			),
+		).toEqual({
 			kind: "ignore",
 		});
 	});
 
-	it("Esc cancels the questionnaire even in inputMode", () => {
+	// Regression: vim nav keys (j/k) must be TYPED into the buffer while inputMode is
+	// active, not intercepted as option-list navigation. Previously the inputMode block
+	// ran matchesSelectUp/Down and stole j/k, so the user could not type those letters.
+	it("vim j/k are typed (ignore) under inputMode — not stolen for navigation", () => {
 		expect(
-			routeKey(sentinel(KEY.CANCEL), makeState({ inputMode: true }), makeRuntime({ currentItem: other })),
-		).toEqual({ kind: "cancel" });
+			routeKey(
+				"j",
+				makeState({ inputMode: true }),
+				makeRuntime({ currentItem: other }),
+			),
+		).toEqual({
+			kind: "ignore",
+		});
+		expect(
+			routeKey(
+				"k",
+				makeState({ inputMode: true }),
+				makeRuntime({ currentItem: other }),
+			),
+		).toEqual({
+			kind: "ignore",
+		});
+	});
+
+	it("vim h/l are typed (ignore) under inputMode (tab_switch does not fire while typing)", () => {
+		expect(
+			routeKey(
+				"l",
+				makeState({ inputMode: true }),
+				makeRuntime({ currentItem: other }),
+			),
+		).toEqual({
+			kind: "ignore",
+		});
+		expect(
+			routeKey(
+				"h",
+				makeState({ inputMode: true }),
+				makeRuntime({ currentItem: other }),
+			),
+		).toEqual({
+			kind: "ignore",
+		});
+	});
+
+	it("Arrow Up/Down still navigate off the typing row under inputMode (preserves list traversal)", () => {
+		// Arrows are the configured `tui.select.up/down` keybindings; they keep working so
+		// the multi-select flow (Down through options → Next) is not trapped by the typing
+		// box. Only the vim LETTERS j/k are disabled (typed) — see the test above.
+		expect(
+			routeKey(
+				sentinel(KEY.UP),
+				makeState({ inputMode: true, optionIndex: 2 }),
+				makeRuntime({ currentItem: other }),
+			),
+		).toEqual({ kind: "nav", nextIndex: 1 });
+		expect(
+			routeKey(
+				sentinel(KEY.DOWN),
+				makeState({ inputMode: true }),
+				makeRuntime({ currentItem: other }),
+			),
+		).toEqual({
+			kind: "nav",
+			nextIndex: 1,
+		});
+	});
+
+	// Behavior change: Escape now exits the typing box back to the option list (re-enabling
+	// j/k nav) instead of cancelling the whole questionnaire. Press Escape again from the
+	// option list to cancel. Cancelling mid-typing was destructive and trapped the user.
+	it("Esc exits inputMode back to the option list (does NOT cancel the questionnaire)", () => {
+		expect(
+			routeKey(
+				sentinel(KEY.CANCEL),
+				makeState({ inputMode: true }),
+				makeRuntime({ currentItem: other }),
+			),
+		).toEqual({ kind: "exit_input_mode" });
+	});
+
+	it("Enter still confirms the buffered text as kind:'custom' under inputMode", () => {
+		const action = routeKey(
+			sentinel(KEY.CONFIRM),
+			makeState({ inputMode: true }),
+			makeRuntime({ currentItem: other, inputBuffer: "my custom answer" }),
+		);
+		expect(action.kind).toBe("confirm");
+		if (action.kind === "confirm") {
+			expect(action.answer.answer).toBe("my custom answer");
+			expect(action.answer.kind).toBe("custom");
+		}
 	});
 });
 
@@ -670,14 +921,22 @@ describe("routeKey — collapse/expand (Ctrl+] toggle + collapsed-mode lockout)"
 	const BYTE_CTRL_RBRACKET = "\x1d";
 
 	it("Ctrl+] emits toggle_collapsed from the default question state", () => {
-		expect(routeKey(BYTE_CTRL_RBRACKET, makeState(), makeRuntime())).toEqual({ kind: "toggle_collapsed" });
+		expect(routeKey(BYTE_CTRL_RBRACKET, makeState(), makeRuntime())).toEqual({
+			kind: "toggle_collapsed",
+		});
 	});
 
 	it("Ctrl+] emits toggle_collapsed even while notesVisible (the notes branch never sees the key)", () => {
 		// Notes mode normally forwards every keystroke to the notes input via `notes_forward`.
 		// The collapse intercept sits ABOVE all state branches so the user can shrink the
 		// dialog to read the transcript mid-notes-edit without dirtying the draft.
-		expect(routeKey(BYTE_CTRL_RBRACKET, makeState({ notesVisible: true }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				BYTE_CTRL_RBRACKET,
+				makeState({ notesVisible: true }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "toggle_collapsed",
 		});
 	});
@@ -685,33 +944,71 @@ describe("routeKey — collapse/expand (Ctrl+] toggle + collapsed-mode lockout)"
 	it("Ctrl+] emits toggle_collapsed even when already collapsed (expand round-trip)", () => {
 		// Symmetric: pressing Ctrl+] a second time returns to the full questionnaire.
 		// The reducer flips the boolean; the router stays oblivious to which way we're going.
-		expect(routeKey(BYTE_CTRL_RBRACKET, makeState({ collapsed: true }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				BYTE_CTRL_RBRACKET,
+				makeState({ collapsed: true }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "toggle_collapsed",
 		});
 	});
 
 	it("while collapsed, Esc maps to cancel (the documented escape hatch in the one-line footer)", () => {
-		expect(routeKey(sentinel(KEY.CANCEL), makeState({ collapsed: true }), makeRuntime())).toEqual({ kind: "cancel" });
+		expect(
+			routeKey(
+				sentinel(KEY.CANCEL),
+				makeState({ collapsed: true }),
+				makeRuntime(),
+			),
+		).toEqual({ kind: "cancel" });
 	});
 
 	it("while collapsed, navigation keys are swallowed as ignore (no state mutation behind the one-line footer)", () => {
 		// Arrow keys would otherwise navigate options; collapsed mode is a read-the-
 		// transcript pause, so non-cancel keys must not advance any focus.
-		expect(routeKey(sentinel(KEY.UP), makeState({ collapsed: true, optionIndex: 2 }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				sentinel(KEY.UP),
+				makeState({ collapsed: true, optionIndex: 2 }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "ignore",
 		});
-		expect(routeKey(sentinel(KEY.DOWN), makeState({ collapsed: true }), makeRuntime())).toEqual({ kind: "ignore" });
-		expect(routeKey(sentinel(KEY.CONFIRM), makeState({ collapsed: true }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				sentinel(KEY.DOWN),
+				makeState({ collapsed: true }),
+				makeRuntime(),
+			),
+		).toEqual({ kind: "ignore" });
+		expect(
+			routeKey(
+				sentinel(KEY.CONFIRM),
+				makeState({ collapsed: true }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "ignore",
 		});
-		expect(routeKey(BYTE_TAB, makeState({ collapsed: true }), makeRuntime())).toEqual({ kind: "ignore" });
+		expect(
+			routeKey(BYTE_TAB, makeState({ collapsed: true }), makeRuntime()),
+		).toEqual({ kind: "ignore" });
 	});
 
 	it("while collapsed, the notes-forward and toggle branches are unreachable (lockout precedes them)", () => {
 		// Regression guard: without the lockout, a collapsed + notesVisible state would forward
 		// keystrokes into the notes input, and a collapsed + multiSelect state would let Space
 		// flip checkboxes. Both paths must be dead-ended at the collapsed branch.
-		expect(routeKey("x", makeState({ collapsed: true, notesVisible: true }), makeRuntime())).toEqual({
+		expect(
+			routeKey(
+				"x",
+				makeState({ collapsed: true, notesVisible: true }),
+				makeRuntime(),
+			),
+		).toEqual({
 			kind: "ignore",
 		});
 		expect(
@@ -732,11 +1029,15 @@ describe("routeKey — collapse/expand (Ctrl+] toggle + collapsed-mode lockout)"
 		// alone — users on such terminals should pick a key whose spec resolves
 		// unambiguously (e.g. `alt+o`, `ctrl+shift+h`).
 		const BYTE_ALT_O = "\x1bo"; // ESC + 'o' — legacy encoding for Alt+O
-		expect(routeKey(BYTE_ALT_O, makeState(), makeRuntime({ collapseKey: "alt+o" }))).toEqual({
+		expect(
+			routeKey(BYTE_ALT_O, makeState(), makeRuntime({ collapseKey: "alt+o" })),
+		).toEqual({
 			kind: "toggle_collapsed",
 		});
 		// When the override is `alt+o`, sending the Ctrl+] byte should NOT match
-		expect(routeKey("\x1d", makeState(), makeRuntime({ collapseKey: "alt+o" }))).toEqual({ kind: "ignore" });
+		expect(
+			routeKey("\x1d", makeState(), makeRuntime({ collapseKey: "alt+o" })),
+		).toEqual({ kind: "ignore" });
 	});
 	it("`collapseKey: 'off'` disables the toggle entirely (the key is never matched)", () => {
 		// Disable the collapse shortcut via config: the key router must not emit
@@ -744,6 +1045,8 @@ describe("routeKey — collapse/expand (Ctrl+] toggle + collapsed-mode lockout)"
 		// to the normal state branches (no-op here, but the same flow as any other
 		// non-handled key).
 		const runtime = makeRuntime({ collapseKey: "off" });
-		expect(routeKey(BYTE_CTRL_RBRACKET, makeState(), runtime)).not.toEqual({ kind: "toggle_collapsed" });
+		expect(routeKey(BYTE_CTRL_RBRACKET, makeState(), runtime)).not.toEqual({
+			kind: "toggle_collapsed",
+		});
 	});
 });

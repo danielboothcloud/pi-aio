@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import {
 	mkdirSync,
 	mkdtempSync,
@@ -308,6 +309,44 @@ test("stop terminates an active background-style run", async () => {
 	assert.equal(run.results[0].state, "stopped");
 });
 
+test("agent timeoutMs applies when the request does not set one", async () => {
+	const run = await executeSubagentRun({
+		request: { agent: "reviewer", task: "ignore-term review" },
+		agents: [agent({ timeoutMs: 200 })],
+		parent: parent(),
+		deps: {
+			piBinary: process.execPath,
+			piArgsPrefix: [fixture],
+			runsBaseDir: temporaryDirectory(),
+			terminationGraceMs: 20,
+		},
+	});
+	assert.equal(run.state, "failed");
+	assert.equal(run.results[0].state, "failed");
+	assert.match(run.results[0].error ?? "", /timed out after 200ms/);
+});
+
+test("request timeoutMs overrides the agent's declared timeout", async () => {
+	const run = await executeSubagentRun({
+		request: {
+			agent: "reviewer",
+			task: "ignore-term review",
+			timeoutMs: 150,
+		},
+		agents: [agent({ timeoutMs: 5_000 })],
+		parent: parent(),
+		deps: {
+			piBinary: process.execPath,
+			piArgsPrefix: [fixture],
+			runsBaseDir: temporaryDirectory(),
+			terminationGraceMs: 20,
+		},
+	});
+	assert.equal(run.state, "failed");
+	assert.equal(run.results[0].state, "failed");
+	assert.match(run.results[0].error ?? "", /timed out after 150ms/);
+});
+
 test("cursor parent models include pi-cursor-sdk when it is installed", () => {
 	const cursorExtension = resolveCursorExtensionPath();
 	if (!cursorExtension) return;
@@ -346,4 +385,119 @@ test("cursor parent models omit --model when pi-cursor-sdk is unavailable", () =
 		deps: { runsBaseDir: temporaryDirectory() },
 	});
 	assert.equal(spec.args.includes("--model"), false);
+});
+
+function recordingSpawn(spawnedArgs: string[][]): typeof spawn {
+	return ((command: string, args: string[], options: never) => {
+		spawnedArgs.push([...args]);
+		return spawn(command, args, options);
+	}) as unknown as typeof spawn;
+}
+
+test("a timed-out child is retried once and resumes its session", async () => {
+	const run = await executeSubagentRun({
+		request: {
+			agent: "reviewer",
+			task: "resume-hang review",
+			timeoutMs: 250,
+		},
+		agents: [agent()],
+		parent: parent(),
+		deps: {
+			piBinary: process.execPath,
+			piArgsPrefix: [fixture],
+			runsBaseDir: temporaryDirectory(),
+			terminationGraceMs: 20,
+			retryBackoffMs: 10,
+		},
+	});
+
+	assert.equal(run.state, "completed");
+	assert.equal(run.results[0].attempts, 2);
+	// The retry continues with a continuation prompt, not the original task.
+	assert.match(run.results[0].output ?? "", /previous run was interrupted/);
+	assert.doesNotMatch(run.results[0].output ?? "", /Task: resume-hang/);
+	// Usage aggregates across both attempts.
+	assert.equal(run.results[0].usage.cost, 0.02);
+});
+
+test("retry gives up after maxAttempts and preserves the child session", async () => {
+	const run = await executeSubagentRun({
+		request: {
+			agent: "reviewer",
+			task: "always-hang review",
+			timeoutMs: 200,
+		},
+		agents: [agent()],
+		parent: parent(),
+		deps: {
+			piBinary: process.execPath,
+			piArgsPrefix: [fixture],
+			runsBaseDir: temporaryDirectory(),
+			terminationGraceMs: 20,
+			retryBackoffMs: 10,
+		},
+	});
+
+	assert.equal(run.state, "failed");
+	assert.equal(run.results[0].attempts, 2);
+	assert.match(
+		run.results[0].error ?? "",
+		/timed out after 200ms on attempt 2 of 2/,
+	);
+	assert.match(run.results[0].error ?? "", /preserved at/);
+	assert.ok(run.results[0].sessionFile);
+});
+
+test("stopped runs are not retried", async () => {
+	const promise = executeSubagentRun({
+		request: { agent: "reviewer", task: "resume-hang review" },
+		agents: [agent()],
+		parent: parent(),
+		deps: {
+			piBinary: process.execPath,
+			piArgsPrefix: [fixture],
+			runsBaseDir: temporaryDirectory(),
+		},
+	});
+	await new Promise((resolve) => setTimeout(resolve, 50));
+	const active = listRuns().find((run) => run.state === "running");
+	assert.ok(active);
+	stopRun(active.id);
+	const run = await promise;
+	assert.equal(run.state, "stopped");
+	assert.equal(run.results[0].state, "stopped");
+	assert.equal(run.results[0].attempts, 1);
+});
+
+test("fork retries resume the forked child session without --fork", async () => {
+	const root = temporaryDirectory();
+	const parentSessionFile = join(root, "parent.jsonl");
+	writeFileSync(parentSessionFile, "");
+	const spawnedArgs: string[][] = [];
+	const run = await executeSubagentRun({
+		request: {
+			agent: "reviewer",
+			task: "fork-hang review",
+			context: "fork",
+			timeoutMs: 250,
+		},
+		agents: [agent()],
+		parent: parent({ parentSessionFile }),
+		deps: {
+			piBinary: process.execPath,
+			piArgsPrefix: [fixture],
+			runsBaseDir: root,
+			terminationGraceMs: 20,
+			retryBackoffMs: 10,
+			spawnProcess: recordingSpawn(spawnedArgs),
+		},
+	});
+
+	assert.equal(run.state, "completed");
+	assert.equal(run.results[0].attempts, 2);
+	assert.match(run.results[0].output ?? "", /previous run was interrupted/);
+	const retryArgs = spawnedArgs.at(-1) ?? [];
+	assert.equal(retryArgs.includes("--session"), true);
+	assert.equal(retryArgs.includes("--fork"), false);
 });

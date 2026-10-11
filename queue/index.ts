@@ -1,13 +1,41 @@
+import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type {
-	AgentMessage,
 	ExtensionAPI,
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
+import {
+	isFrameEditorFactory,
+	setQueuePanelLinesProvider,
+} from "../frame/protocol.js";
 import { QueueController } from "./controller.js";
-import { buildQueueLines } from "./lines.js";
+import { buildQueueLines, firstLinePreview, MAX_QUEUE_ROWS } from "./lines.js";
+import type { QueuedMessage } from "./mirror.js";
 import { QueueEditor } from "./queue-editor.js";
+import { plural } from "../ui/chrome.js";
 
 const WIDGET_KEY = "aio-queue";
+
+/**
+ * True when a framed editor environment owns the editor (AIO's frame, or a
+ * standalone Zentui install): the below-editor widget would clash with the
+ * frame, so the queue renders inside the frame (AIO) or yields (Zentui).
+ */
+function isFramedEditor(ctx: ExtensionContext): boolean {
+	try {
+		const factory = ctx.ui.getEditorComponent?.();
+		if (!factory || typeof factory !== "function") return false;
+		// SAFETY: editor factories are branded with symbol properties by both
+		// AIO's frame and standalone Zentui; the type system cannot see symbol
+		// keys on a function, so a Record<symbol, unknown> view is required.
+		const branded = factory as unknown as Record<symbol, unknown>;
+		return (
+			isFrameEditorFactory(factory) ||
+			branded[Symbol.for("pi-zentui.editor-factory")] === true
+		);
+	} catch {
+		return false;
+	}
+}
 
 /** Matches AgentSession's _getUserMessageText (text blocks joined without separator). */
 function extractUserText(message: AgentMessage): string {
@@ -20,6 +48,25 @@ function extractUserText(message: AgentMessage): string {
 		.join("");
 }
 
+/**
+ * Put texts back into the editor without ever duplicating: texts the editor
+ * already holds (e.g. re-dumped by pi's abort paths) are skipped so a later
+ * Enter sends each exactly once.
+ */
+export function restoreTextsToEditor(
+	ctx: ExtensionContext,
+	texts: string[],
+	activeEditor?: { getText(): string } | null,
+): void {
+	if (!ctx.hasUI || texts.length === 0) return;
+	const current = ctx.ui.getEditorText?.() ?? activeEditor?.getText() ?? "";
+	const merged = texts.filter((text) => !current.includes(text));
+	const combined = [merged.join("\n\n"), current]
+		.filter((text) => text.trim())
+		.join("\n\n");
+	ctx.ui.setEditorText(combined);
+}
+
 export function registerQueue(pi: ExtensionAPI): void {
 	let enabled = true;
 	let controller: QueueController | null = null;
@@ -28,7 +75,15 @@ export function registerQueue(pi: ExtensionAPI): void {
 	function updateWidget(ctx: ExtensionContext): void {
 		if (!ctx.hasUI) return;
 		const entries = enabled ? (controller?.mirror.entries() ?? []) : [];
+		latestEntries = entries;
 		if (entries.length === 0) {
+			ctx.ui.setWidget(WIDGET_KEY, undefined);
+			return;
+		}
+		if (isFramedEditor(ctx)) {
+			// The frame renders the queue as rows inside the editor; a widget
+			// would duplicate it. Touch the (empty) widget anyway so the TUI
+			// repaints with the new frame rows.
 			ctx.ui.setWidget(WIDGET_KEY, undefined);
 			return;
 		}
@@ -44,14 +99,21 @@ export function registerQueue(pi: ExtensionAPI): void {
 		);
 	}
 
-	function restoreTextsToEditor(ctx: ExtensionContext, texts: string[]): void {
-		if (!ctx.hasUI || texts.length === 0) return;
-		const current = activeEditor?.getText() ?? "";
-		const combined = [texts.join("\n\n"), current]
-			.filter((text) => text.trim())
-			.join("\n\n");
-		ctx.ui.setEditorText(combined);
-	}
+	// Feed the frame's in-editor queue panel: compact preview rows the frame
+	// renders above its bottom border when it owns the editor.
+	let latestEntries: QueuedMessage[] = [];
+	setQueuePanelLinesProvider(() => {
+		if (!enabled || latestEntries.length === 0) return [];
+		const lines: string[] = [
+			`queue · ${plural(latestEntries.length, "pending message")} · Enter sends next`,
+		];
+		for (const [index, entry] of latestEntries.slice(0, MAX_QUEUE_ROWS).entries()) {
+			const preview = firstLinePreview(entry.text);
+			const meta = entry.mode === "steer" ? " · steer" : "";
+			lines.push(`${index + 1} ${preview.line}${preview.truncated ? " …" : ""}${meta}`);
+		}
+		return lines;
+	});
 
 	pi.on("session_start", (_event, ctx) => {
 		if (ctx.mode !== "tui") {
@@ -63,20 +125,34 @@ export function registerQueue(pi: ExtensionAPI): void {
 			hasPendingMessages: () => ctx.hasPendingMessages(),
 			abort: () => ctx.abort(),
 			clearEditor: () => ctx.ui.setEditorText(""),
-			restoreTextsToEditor: (texts) => restoreTextsToEditor(ctx, texts),
+			restoreTextsToEditor: (texts) =>
+				restoreTextsToEditor(ctx, texts, activeEditor),
 			sendUserMessage: (text, mode) =>
 				pi.sendUserMessage(text, { deliverAs: mode }),
 			notify: (message, type) => ctx.ui.notify(message, type),
 			updateWidget: () => updateWidget(ctx),
 		});
-		ctx.ui.setEditorComponent((tui, theme, keybindings) => {
-			const editor = new QueueEditor(tui, theme, keybindings, ctx, {
-				onEmptySubmit: () =>
-					enabled ? (controller?.onEmptySubmit() ?? false) : false,
+		// Standalone Zentui (globally installed, separate from AIO) marks its
+		// editor factory with a well-known symbol; never displace it. Otherwise
+		// install our QueueEditor (extends the user-bash BashHintEditor).
+		const existingEditor = ctx.ui.getEditorComponent?.();
+		// SAFETY: editor factories are branded with symbol properties by
+		// standalone Zentui; the type system cannot see symbol keys on a
+		// function, so an unknown-bridged Record view is required.
+		const branded = existingEditor as unknown as Record<symbol, unknown> | undefined;
+		const standaloneZentui =
+			typeof existingEditor === "function" &&
+			branded?.[Symbol.for("pi-zentui.editor-factory")] === true;
+		if (!standaloneZentui) {
+			ctx.ui.setEditorComponent((tui, theme, keybindings) => {
+				const editor = new QueueEditor(tui, theme, keybindings, ctx, {
+					onEmptySubmit: () =>
+						enabled ? (controller?.onEmptySubmit() ?? false) : false,
+				});
+				activeEditor = editor;
+				return editor;
 			});
-			activeEditor = editor;
-			return editor;
-		});
+		}
 		updateWidget(ctx);
 	});
 

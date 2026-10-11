@@ -48,7 +48,7 @@ function buildUrl(query: string, opts: SearxngOptions): string {
 	if (opts.timeRange) params.set("time_range", opts.timeRange);
 	if (opts.engines) params.set("engines", opts.engines);
 	if (opts.page) params.set("pageno", String(opts.page));
-	return `${SEARXNG_BASE}/search?${params.toString()}`;
+	return `${opts.baseUrl ?? SEARXNG_BASE}/search?${params.toString()}`;
 }
 
 /** Search SearXNG and normalize the JSON response. */
@@ -58,7 +58,8 @@ export async function searxngSearch(
 	signal?: AbortSignal,
 ): Promise<SearxngSearchOutcome> {
 	throwIfAborted(signal);
-	const url = buildUrl(query, opts);
+	const baseUrl = opts.baseUrl ?? SEARXNG_BASE;
+	const url = buildUrl(query, { ...opts, baseUrl });
 	const requestSignal = withTimeoutSignal(signal, SEARXNG_REQUEST_TIMEOUT_MS);
 	let res: Response;
 	try {
@@ -71,7 +72,7 @@ export async function searxngSearch(
 			);
 		}
 		throw new SearxngError(
-			`Connection to SearXNG failed at ${SEARXNG_BASE}: ${err instanceof Error ? err.message : String(err)}`,
+			`Connection to SearXNG failed at ${baseUrl}: ${err instanceof Error ? err.message : String(err)}`,
 		);
 	}
 	if (!res.ok) {
@@ -88,9 +89,7 @@ export async function searxngSearch(
 				`SearXNG response timed out after ${SEARXNG_REQUEST_TIMEOUT_MS}ms`,
 			);
 		}
-		throw new SearxngError(
-			"SearXNG returned non-JSON — is format=json enabled?",
-		);
+		throw new SearxngError("SearXNG returned non-JSON — is format=json enabled?");
 	}
 
 	const raw = data.results ?? [];

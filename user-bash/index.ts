@@ -65,6 +65,7 @@ export function registerUserBash(pi: ExtensionAPI): void {
 
 	pi.on("session_start", (_event, ctx) => {
 		if (!ctx.hasUI || ctx.mode !== "tui") return;
+		if (ctx.ui.getEditorComponent?.()) return;
 		ctx.ui.setEditorComponent(
 			(tui, theme, keybindings) =>
 				new BashHintEditor(tui, theme, keybindings, ctx),

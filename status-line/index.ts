@@ -4,11 +4,21 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
 import {
+	probeFrameEditor,
+	requestFrameRepaint,
+	setFrameMetadataContributor,
+} from "../frame/protocol.js";
+import {
 	DEFAULT_STATUS_LINE_CONFIG,
 	loadStatusLineConfig,
 	type StatusLineConfig,
 	type WorkingMessageMode,
 } from "./config.js";
+import {
+	fetchProviderUsage,
+	providerUsageLine,
+	type ProviderUsage,
+} from "./provider-usage.js";
 import {
 	computeContextPercent,
 	computeUsageStats,
@@ -21,8 +31,130 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	let streamStart = 0;
 	let outputAtTurnStart = 0;
 	let currentCtx: ExtensionContext | null = null;
+	let providerUsage: ProviderUsage[] = [];
+	let providerUsageAttemptedAt = 0;
+	let providerUsageAttemptProvider: string | undefined;
+	let providerUsageRequest: Promise<void> | undefined;
+	let providerUsageAbort: AbortController | undefined;
+	let requestFooterRender: (() => void) | undefined;
+
+	const frameCapability = () => probeFrameEditor(pi);
+
+	const PROVIDER_USAGE_STATUS_KEY = "aio-provider-usage";
+	const PROVIDER_USAGE_WIDGET_KEY = "aio-provider-usage";
+
+	function syncProviderUsageStatus(
+		ctx: ExtensionContext | null = currentCtx,
+	): void {
+		if (!ctx?.hasUI) return;
+		const line = providerUsageLine(providerUsage);
+		if (!line) {
+			ctx.ui.setStatus(PROVIDER_USAGE_STATUS_KEY, undefined);
+			ctx.ui.setWidget(PROVIDER_USAGE_WIDGET_KEY, undefined);
+			setFrameMetadataContributor("quota", undefined);
+			return;
+		}
+		if (frameCapability().supported) {
+			// The frame embeds quota in its top border, next to the context
+			// percent — no widget, no footer status, no duplication.
+			setFrameMetadataContributor("quota", () => ({
+				quota: { text: line.text, role: line.role },
+			}));
+			ctx.ui.setStatus(PROVIDER_USAGE_STATUS_KEY, undefined);
+			ctx.ui.setWidget(PROVIDER_USAGE_WIDGET_KEY, undefined);
+			requestFrameRepaint();
+		} else {
+			ctx.ui.setStatus(
+				PROVIDER_USAGE_STATUS_KEY,
+				ctx.ui.theme.fg(line.role, `◴ ${line.text}`),
+			);
+		}
+	}
+
+	function resetProviderUsage(clearValue = false): void {
+		providerUsageAbort?.abort();
+		providerUsageAbort = undefined;
+		providerUsageRequest = undefined;
+		if (clearValue) {
+			providerUsage = [];
+			providerUsageAttemptedAt = 0;
+			providerUsageAttemptProvider = undefined;
+			requestFooterRender?.();
+			syncProviderUsageStatus();
+		}
+	}
+
+	function shouldFetchProviderUsage(ctx: ExtensionContext): boolean {
+		return (
+			ctx.mode === "tui" && config.enabled && config.segments.includes("quota")
+		);
+	}
+
+	function refreshProviderUsage(
+		ctx: ExtensionContext,
+		force = false,
+	): Promise<void> {
+		const provider = ctx.model?.provider;
+		const usageConfig = config.providerUsage;
+		const endpointConfig = provider
+			? usageConfig?.providers[provider]
+			: undefined;
+		if (!provider || !usageConfig || !endpointConfig) {
+			providerUsage = [];
+			providerUsageAttemptedAt = 0;
+			providerUsageAttemptProvider = undefined;
+			requestFooterRender?.();
+			syncProviderUsageStatus(ctx);
+			return Promise.resolve();
+		}
+		if (providerUsageRequest) return providerUsageRequest;
+		const interval =
+			endpointConfig.refreshIntervalMs ?? usageConfig.refreshIntervalMs;
+		if (
+			!force &&
+			providerUsageAttemptProvider === provider &&
+			Date.now() - providerUsageAttemptedAt < interval
+		) {
+			return Promise.resolve();
+		}
+
+		providerUsageAttemptProvider = provider;
+		providerUsageAbort?.abort();
+		const controller = new AbortController();
+		providerUsageAbort = controller;
+		providerUsageRequest = fetchProviderUsage(
+			provider,
+			endpointConfig,
+			usageConfig.timeoutMs,
+			fetch,
+			controller.signal,
+		)
+			.then((usage) => {
+				if (controller.signal.aborted || currentCtx?.model?.provider !== provider)
+					return;
+				providerUsage = usage;
+				providerUsageAttemptedAt = Date.now();
+				requestFooterRender?.();
+				syncProviderUsageStatus(ctx);
+			})
+			.catch(() => {
+				// Quota display is best-effort. Keep stale data on transient
+				// failures and stamp the attempt so rate-limited endpoints
+				// (Anthropic's usage API 429s quickly) are not hammered on
+				// every lifecycle event before the refresh window elapses.
+				providerUsageAttemptedAt = Date.now();
+			})
+			.finally(() => {
+				if (providerUsageAbort === controller) {
+					providerUsageAbort = undefined;
+					providerUsageRequest = undefined;
+				}
+			});
+		return providerUsageRequest;
+	}
 
 	function applyWorkingMessage(ctx: ExtensionContext): void {
+		if (frameCapability().active) return;
 		if (!ctx.hasUI || config.workingMessage === "off") {
 			ctx.ui.setWorkingMessage();
 			return;
@@ -47,6 +179,21 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 		if (!ctx.hasUI) return;
 		currentCtx = ctx;
 
+		// The frame embeds every session stat in its border. Claim the footer
+		// with an intentionally quiet component anyway: skipping entirely lets
+		// Pi's native footer (path/branch, token/cache/cost rows, model line,
+		// extension statuses) show through and duplicate the pill.
+		if (frameCapability().supported) {
+			ctx.ui.setFooter(() => ({
+				dispose() {},
+				invalidate() {},
+				render() {
+					return [];
+				},
+			}));
+			return;
+		}
+
 		if (!config.enabled) {
 			ctx.ui.setFooter(undefined);
 			return;
@@ -54,9 +201,12 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 
 		ctx.ui.setFooter((_tui, theme, footerData) => {
 			const unsub = footerData.onBranchChange(() => _tui.requestRender());
+			const renderRequest = () => _tui.requestRender();
+			requestFooterRender = renderRequest;
 			return {
 				dispose() {
 					if (typeof unsub === "function") unsub();
+					if (requestFooterRender === renderRequest) requestFooterRender = undefined;
 				},
 				invalidate() {},
 				render(width: number): string[] {
@@ -73,13 +223,17 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 						contextPercent: computeContextPercent(liveCtx),
 						extensionStatuses: footerData.getExtensionStatuses(),
 						usageStats: computeUsageStats(liveCtx.sessionManager.getBranch()),
+						providerUsage,
 					});
 				},
 			};
 		});
 	}
 
-	function setWorkingMessageMode(mode: WorkingMessageMode, ctx: ExtensionContext): void {
+	function setWorkingMessageMode(
+		mode: WorkingMessageMode,
+		ctx: ExtensionContext,
+	): void {
 		config = { ...config, workingMessage: mode };
 		applyWorkingMessage(ctx);
 		ctx.ui.notify(`Status line working message: ${mode}`, "info");
@@ -88,7 +242,13 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 	function setEnabled(enabled: boolean, ctx: ExtensionContext): void {
 		config = { ...config, enabled };
 		installFooter(ctx);
-		ctx.ui.notify(`Status line ${enabled ? "enabled" : "disabled"}`, "info");
+		if (enabled && shouldFetchProviderUsage(ctx)) {
+			void refreshProviderUsage(ctx, true);
+		} else if (!enabled) {
+			resetProviderUsage(true);
+		}
+		const owner = frameCapability().supported ? " data (frame owns the visuals)" : "";
+		ctx.ui.notify(`Status line${owner} ${enabled ? "enabled" : "disabled"}`, "info");
 	}
 
 	pi.registerCommand("status-line", {
@@ -119,34 +279,51 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 					setWorkingMessageMode("verbose", ctx);
 					return;
 				default:
-					ctx.ui.notify(
-						"Usage: /status-line [on|off|minimal|verbose]",
-						"warning",
-					);
+					ctx.ui.notify("Usage: /status-line [on|off|minimal|verbose]", "warning");
 			}
 		},
 	});
 
 	pi.on("session_start", async (_event, ctx) => {
-		config = loadStatusLineConfig(ctx.cwd);
+		config = loadStatusLineConfig(ctx.cwd, {
+			includeProject: ctx.isProjectTrusted(),
+		});
 		currentCtx = ctx;
 		installFooter(ctx);
+		if (shouldFetchProviderUsage(ctx)) void refreshProviderUsage(ctx, true);
 	});
 
 	pi.on("session_tree", async (_event, ctx) => {
-		config = loadStatusLineConfig(ctx.cwd);
+		config = loadStatusLineConfig(ctx.cwd, {
+			includeProject: ctx.isProjectTrusted(),
+		});
 		currentCtx = ctx;
+		resetProviderUsage(true);
 		installFooter(ctx);
+		if (shouldFetchProviderUsage(ctx)) void refreshProviderUsage(ctx, true);
 	});
 
 	pi.on("session_shutdown", async () => {
+		if (currentCtx?.hasUI) {
+			currentCtx.ui.setStatus("aio-provider-usage", undefined);
+			currentCtx.ui.setWidget("aio-provider-usage", undefined);
+		}
+		resetProviderUsage();
+		requestFooterRender = undefined;
 		currentCtx = null;
+	});
+
+	pi.on("model_select", async (_event, ctx) => {
+		currentCtx = ctx;
+		resetProviderUsage(true);
+		if (shouldFetchProviderUsage(ctx)) void refreshProviderUsage(ctx, true);
 	});
 
 	pi.on("turn_start", async (_event, ctx) => {
 		streamStart = Date.now();
 		outputAtTurnStart = computeUsageStats(ctx.sessionManager.getBranch()).output;
 		applyWorkingMessage(ctx);
+		if (shouldFetchProviderUsage(ctx)) void refreshProviderUsage(ctx);
 	});
 
 	pi.on("before_provider_request", async (_event, ctx) => {
@@ -160,7 +337,8 @@ export function registerStatusLine(pi: ExtensionAPI): void {
 
 	pi.on("agent_end", async (_event, ctx) => {
 		streamStart = 0;
-		if (ctx.hasUI) ctx.ui.setWorkingMessage();
+		if (ctx.hasUI && !frameCapability().active) ctx.ui.setWorkingMessage();
+		if (shouldFetchProviderUsage(ctx)) void refreshProviderUsage(ctx);
 	});
 }
 

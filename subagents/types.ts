@@ -20,6 +20,7 @@ export interface AgentConfig {
 	tools?: string[];
 	model?: string;
 	thinking?: SubagentThinking;
+	timeoutMs?: number;
 	source: "builtin" | "user" | "project";
 	filePath: string;
 }
@@ -71,6 +72,7 @@ export interface ChildRunResult {
 	startedAt: number;
 	endedAt: number;
 	usage: ChildUsage;
+	attempts: number;
 }
 
 export interface ChildRunStatus {
@@ -84,6 +86,7 @@ export interface ChildRunStatus {
 	output?: string;
 	error?: string;
 	sessionFile?: string;
+	attempts?: number;
 	process?: ChildProcessWithoutNullStreams;
 }
 

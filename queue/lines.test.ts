@@ -47,9 +47,9 @@ test("header shows the pending count and the send-next hint", () => {
 		width: 80,
 		theme: plainTheme,
 	});
-	assert.match(lines[0] ?? "", /queue/);
-	assert.match(lines[0] ?? "", /\(2\)/);
-	assert.match(lines[0] ?? "", /send next/);
+	assert.match(lines[0] ?? "", /QUEUE/);
+	assert.match(lines[0] ?? "", /2 pending messages/);
+	assert.match(lines[0] ?? "", /sends next/);
 });
 
 test("entries are numbered and tagged by mode", () => {
@@ -58,8 +58,8 @@ test("entries are numbered and tagged by mode", () => {
 		width: 80,
 		theme: plainTheme,
 	});
-	assert.match(lines[1] ?? "", /^ 1\. \[steer\] fix the bug$/);
-	assert.match(lines[2] ?? "", /^ 2\. \[follow\] run tests$/);
+	assert.match(lines[1] ?? "", /^ 1 fix the bug · steer$/);
+	assert.match(lines[2] ?? "", /^ 2 run tests · follow$/);
 });
 
 test("multi-line messages render as a first-line preview with an ellipsis", () => {
@@ -68,7 +68,7 @@ test("multi-line messages render as a first-line preview with an ellipsis", () =
 		width: 80,
 		theme: plainTheme,
 	});
-	assert.match(lines[1] ?? "", /first line …$/);
+	assert.match(lines[1] ?? "", /first line … · steer$/);
 	assert.ok(!lines.some((line) => line.includes("second line")));
 });
 

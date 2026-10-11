@@ -2,9 +2,18 @@ import { StringEnum } from "@earendil-works/pi-ai";
 import type {
 	ExtensionAPI,
 	ExtensionContext,
+	Theme,
 } from "@earendil-works/pi-coding-agent";
+import type { TUI } from "@earendil-works/pi-tui";
 import { Type, type Static } from "typebox";
 import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
+import {
+	chromeHeader,
+	chromeHint,
+	chromeItem,
+	plural,
+	type ChromeTheme,
+} from "../ui/chrome.js";
 import { discoverAgents } from "./agents.js";
 import { resolveChildExtensionPaths } from "./extensions.js";
 import { clearRuns, getRun, listRuns, stopRun } from "./registry.js";
@@ -76,7 +85,14 @@ const SubagentSchema = Type.Object({
 		}),
 	),
 	thinking: Type.Optional(StringEnum(THINKING_VALUES)),
-	timeoutMs: Type.Optional(Type.Integer({ minimum: 1000, maximum: 3_600_000 })),
+	timeoutMs: Type.Optional(
+		Type.Integer({
+			minimum: 1000,
+			maximum: 21_600_000,
+			description:
+				"Hard budget per child in milliseconds (1s to 6h). Defaults to the agent's declared timeoutMs, or 15 minutes when unset. A timed-out child is retried once with its session resumed.",
+		}),
+	),
 });
 
 type SubagentParams = Static<typeof SubagentSchema>;
@@ -124,27 +140,63 @@ function publicRun(run: SubagentRun): Record<string, unknown> {
 			output: child.output,
 			error: child.error,
 			sessionFile: child.sessionFile,
+			attempts: child.attempts ?? 1,
 		})),
 	};
 }
 
-function activeWidgetLines(): string[] | undefined {
+export function buildSubagentWidgetLines(
+	active: readonly SubagentRun[],
+	width: number,
+	theme: ChromeTheme,
+	maxRows = 4,
+): string[] {
+	if (active.length === 0 || width <= 0) return [];
+	const lines = [
+		chromeHeader(
+			theme,
+			{ title: "subagents", meta: plural(active.length, "active run") },
+			width,
+		),
+	];
+	const visible = active.slice(0, Math.max(1, maxRows));
+	for (const run of visible) {
+		const done = run.children.filter(
+			(child) => child.state === "completed",
+		).length;
+		const failed = run.children.filter(
+			(child) => child.state === "failed",
+		).length;
+		lines.push(
+			chromeItem(
+				theme,
+				{
+					label: run.id.slice(0, 8),
+					meta: `${done}/${run.children.length} done${failed ? ` · ${failed} failed` : ""}`,
+					marker: run.state === "running" ? "◐" : "◌",
+					tone: failed ? "warning" : "accent",
+					indent: 1,
+				},
+				width,
+			),
+		);
+	}
+	const remaining = active.length - visible.length;
+	if (remaining > 0) lines.push(chromeHint(theme, `+${remaining} more runs`, width));
+	return lines;
+}
+
+function activeWidgetContent() {
 	const active = listRuns().filter(
 		(run) => run.state === "queued" || run.state === "running",
 	);
 	if (!active.length) return undefined;
-	return [
-		"Subagents",
-		...active.map((run) => {
-			const done = run.children.filter(
-				(child) => child.state === "completed",
-			).length;
-			const failed = run.children.filter(
-				(child) => child.state === "failed",
-			).length;
-			return `  ${run.id.slice(0, 8)}  ${done}/${run.children.length} done${failed ? `, ${failed} failed` : ""}`;
-		}),
-	];
+	return (_tui: TUI, theme: Theme) => ({
+		invalidate() {},
+		render(width: number): string[] {
+			return buildSubagentWidgetLines(active, width, theme);
+		},
+	});
 }
 
 function toolResult(text: string, details: Record<string, unknown> = {}) {
@@ -170,12 +222,14 @@ export function registerSubagents(
 	pi.registerTool({
 		name: "subagent",
 		label: "Subagent",
-		description: `Delegate a focused task to a configured child Pi agent. Supports one child or a bounded parallel group, fresh or forked context, foreground or background execution, and basic list/status/stop control. Omit model and thinking to inherit the active parent session values at launch. Use fresh context for independent review. Keep parallel tasks read-only unless their filesystems are deliberately isolated; this reduced runtime does not provide worktrees or nested delegation.`,
+		description: `Delegate a focused task to a configured child Pi agent. Supports one child or a bounded parallel group, fresh or forked context, foreground or background execution, and basic list/status/stop control. Omit model and thinking to inherit the active parent session values at launch. Use fresh context for independent review. Keep parallel tasks read-only unless their filesystems are deliberately isolated; this reduced runtime does not provide worktrees or nested delegation. A child killed by a stall, timeout, or crash is retried automatically and resumes its own session, so completed work is preserved; a final failure reports the preserved session file.`,
 		promptSnippet: "Delegate focused work to one or more isolated child agents",
 		promptGuidelines: [
 			"Use subagent for focused, self-contained delegation and independent parallel review.",
 			"Keep one writer in the shared checkout; parallel subagent tasks should normally be read-only.",
 			"Use subagent action=list before choosing an unfamiliar configured agent.",
+			"Budget timeoutMs generously for research-heavy tasks: the default is 15 minutes, and tight budgets kill healthy children mid-request and waste the tokens they already spent.",
+			"If a child fails after its automatic retry, narrow or split the task instead of re-sending it unchanged.",
 		],
 		parameters: SubagentSchema,
 		async execute(_toolCallId, params: SubagentParams, signal, onUpdate, ctx) {
@@ -213,7 +267,7 @@ export function registerSubagents(
 			if (params.action === "stop") {
 				if (!params.id) throw new Error("Subagent stop requires an id.");
 				const run = stopRun(params.id);
-				ctx.ui.setWidget("aio-subagents", activeWidgetLines());
+				ctx.ui.setWidget("aio-subagents", activeWidgetContent());
 				return toolResult(`Subagent run ${run.id} is ${run.state}.`, {
 					run: publicRun(run),
 				});
@@ -236,7 +290,7 @@ export function registerSubagents(
 			const parent = parentContext(ctx, pi);
 			const updateWidget = () => {
 				if (!shuttingDown)
-					ctx.ui.setWidget("aio-subagents", activeWidgetLines());
+					ctx.ui.setWidget("aio-subagents", activeWidgetContent());
 			};
 			const updateForeground = (run: SubagentRun) => {
 				updateWidget();
@@ -316,10 +370,11 @@ export function registerSubagents(
 		clearRuns();
 	});
 
-	pi.on("session_shutdown", () => {
+	pi.on("session_shutdown", (_event, ctx) => {
 		shuttingDown = true;
 		for (const run of listRuns()) {
 			if (run.state === "queued" || run.state === "running") stopRun(run.id);
 		}
+		if (ctx.hasUI) ctx.ui.setWidget("aio-subagents", undefined);
 	});
 }

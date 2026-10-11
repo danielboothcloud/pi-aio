@@ -57,22 +57,14 @@ describe("resolveCollapseKey", () => {
 		// `ctr+]` is the dangerous one: pi-tui's parseKeyId takes the LAST `+`-part as
 		// the key and ignores unknown parts, so an unvalidated `ctr+]` would match every
 		// bare `]` keypress and the raw terminal listener would consume them globally.
-		expect(resolveCollapseKey({ collapseKey: "ctr+]" })).toBe(
-			DEFAULT_COLLAPSE_KEY,
-		); // gitleaks:allow
-		expect(resolveCollapseKey({ collapseKey: "control+]" })).toBe(
-			DEFAULT_COLLAPSE_KEY,
-		);
-		expect(resolveCollapseKey({ collapseKey: "ctrl+nosuchkey" })).toBe(
-			DEFAULT_COLLAPSE_KEY,
-		); // gitleaks:allow
-		expect(resolveCollapseKey({ collapseKey: "hello" })).toBe(
-			DEFAULT_COLLAPSE_KEY,
-		);
+		// These are keyboard key IDs, not credentials; gitleaks:allow suppresses its
+		// generic-api-key false positive on the identifier+colon+string construct.
+		expect(resolveCollapseKey({ collapseKey: "ctr+]" })).toBe(DEFAULT_COLLAPSE_KEY); // gitleaks:allow
+		expect(resolveCollapseKey({ collapseKey: "control+]" })).toBe(DEFAULT_COLLAPSE_KEY);
+		expect(resolveCollapseKey({ collapseKey: "ctrl+nosuchkey" })).toBe(DEFAULT_COLLAPSE_KEY); // gitleaks:allow
+		expect(resolveCollapseKey({ collapseKey: "hello" })).toBe(DEFAULT_COLLAPSE_KEY);
 		// Duplicate modifiers are not part of the KeyId grammar
-		expect(resolveCollapseKey({ collapseKey: "ctrl+ctrl+]" })).toBe(
-			DEFAULT_COLLAPSE_KEY,
-		);
+		expect(resolveCollapseKey({ collapseKey: "ctrl+ctrl+]" })).toBe(DEFAULT_COLLAPSE_KEY);
 	});
 
 	it("accepts named special keys and bare base keys", () => {

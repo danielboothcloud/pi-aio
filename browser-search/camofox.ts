@@ -14,9 +14,13 @@
  *    produce `{ title, text, excerpt, length }`. We do this by shipping the
  *    vendored Readability source from `@mozilla/readability` instead of the
  *    repo's hand-checked-in `Readability.js`, so we don't need a sibling file.
- *  - `ensureBrowser()` mirrors the upstream recovery dance: probe `/health`,
- *    and on 503 "recovering" optionally `docker restart camofox-browser`
- *    (gated behind CAMOFOX_AUTO_RESTART), then poll up to 30s.
+ *  - `ensureBrowser()` performs only best-effort engine recovery, never a
+ *    hard gate: probe `/health`, and on 503 "recovering" optionally restart
+ *    the container (gated behind CAMOFOX_AUTO_RESTART, command via
+ *    BROWSER_SEARCH_CAMOFOX_RESTART_CMD) plus a single idempotent `POST
+ *    /start`. Upstream boots the engine lazily on first tab creation and
+ *    documents `browserRunning:false` as normal, so `createTab` is the real
+ *    liveness probe and failure surface.
  */
 
 import {
@@ -28,9 +32,11 @@ import {
 import type { ReadabilityArticle } from "./types.js";
 
 import {
+	BROWSER_SEARCH_DEBUG,
 	CAMOFOX_API_KEY,
 	CAMOFOX_AUTO_RESTART,
 	CAMOFOX_BASE,
+	CAMOFOX_RESTART_CMD,
 	CAMOFOX_REQUEST_TIMEOUT_MS,
 	CAMOFOX_SESSION_KEY,
 	CAMOFOX_USER_ID,
@@ -46,9 +52,14 @@ export class CamofoxError extends Error {
 	}
 }
 
-const logStep = (msg: string): void => {
-	process.stderr.write(`[camofox] ${msg}\n`);
+/** Routine per-call Camofox progress lines. Debug-gated to keep the TUI quiet;
+ *  failures still surface via tool output and the [browser-search] error line. */
+const debugStep = (msg: string): void => {
+	if (BROWSER_SEARCH_DEBUG) process.stderr.write(`[camofox] ${msg}\n`);
 };
+
+const CONTAINER_RESTART_CMD =
+	CAMOFOX_RESTART_CMD || "docker restart camofox-browser";
 
 async function request<T = unknown>(
 	method: string,
@@ -125,7 +136,7 @@ async function request<T = unknown>(
 	const opts: RequestInit = { method, headers, signal: requestSignal };
 	if (body && method !== "GET") opts.body = JSON.stringify(body);
 
-	logStep(`${method} ${path}`);
+	debugStep(`${method} ${path}`);
 	let res: Response;
 	try {
 		res = await fetch(fetchUrl, opts);
@@ -141,7 +152,11 @@ async function request<T = unknown>(
 		);
 	}
 
-	if (rawOutput) return res as unknown as T;
+	if (rawOutput) {
+		// SAFETY: rawOutput callers only inspect res.status/headers; the body is
+		// read separately, so handing back the Response is the intended contract.
+		return res as unknown as T;
+	}
 
 	let text: string;
 	try {
@@ -165,6 +180,8 @@ async function request<T = unknown>(
 	try {
 		return JSON.parse(text) as T;
 	} catch {
+		// SAFETY: non-JSON bodies (e.g. plain-text endpoints) are surfaced as
+		// strings to callers, which only read known fields off well-typed JSON.
 		return text as unknown as T;
 	}
 }
@@ -301,55 +318,58 @@ async function loadReadabilitySource(): Promise<string> {
 
 // ---------- High-level orchestration ----------
 
+/**
+ * Best-effort engine recovery before tab creation. This must never be a hard
+ * gate: upstream camofox-browser boots its engine lazily on first tab
+ * creation, and `/health` may honestly report `browserRunning:false` (or 503
+ * `"recovering":true` — a flag that can wedge for days while tab creation
+ * still succeeds) either way. `createTab` is the real liveness probe and the
+ * thing that actually boots the engine; any failure there surfaces per URL.
+ */
 async function ensureBrowser(signal?: AbortSignal): Promise<void> {
 	throwIfAborted(signal);
 	try {
 		const h = await health(signal);
-		if (h.browserRunning) return;
+		// Health OK. Whether the engine is marked running is irrelevant — lazy
+		// launch means tab creation boots it on demand (upstream documents
+		// `browserRunning:false` as normal).
+		if (!h.browserRunning) debugStep("Engine not marked running; relying on lazy launch");
+		return;
 	} catch (err) {
 		if (signal?.aborted) throw abortError(signal);
-		if (err instanceof CamofoxError && err.status === 503) {
-			if (CAMOFOX_AUTO_RESTART) {
-				logStep("Browser recovering; restarting container…");
-				const { exec } = await import("node:child_process");
-				await new Promise<void>((resolve, reject) => {
-					exec("docker restart camofox-browser", { signal }, (error) => {
-						if (signal?.aborted) {
-							reject(abortError(signal));
-							return;
-						}
-						if (error) logStep(`docker restart failed: ${error.message}`);
-						resolve();
-					});
-				});
-				const deadline = Date.now() + 30_000;
-				while (Date.now() < deadline) {
-					throwIfAborted(signal);
-					try {
-						const h2 = await health(signal);
-						if (h2.browserRunning) return;
-					} catch (pollError) {
-						if (signal?.aborted) throw abortError(signal);
-						void pollError;
+		if (!(err instanceof CamofoxError)) {
+			// Unreachable or non-HTTP failure: skip recovery, let createTab
+			// surface the real error.
+			return;
+		}
+		if (err.status !== 503) return; // Other HTTP failures: createTab decides.
+		// 503 "recovering": optionally restart the container, else fire the
+		// idempotent /start once — never re-verify, createTab will decide.
+		if (CAMOFOX_AUTO_RESTART) {
+			debugStep("Engine recovering; restarting container…");
+			const { exec } = await import("node:child_process");
+			await new Promise<void>((resolve, reject) => {
+				exec(CONTAINER_RESTART_CMD, { signal }, (error) => {
+					if (signal?.aborted) {
+						reject(abortError(signal));
+						return;
 					}
-					await sleep(1000, signal);
-				}
-				throw new CamofoxError(
-					"Browser unavailable after container restart (30s timeout)",
-				);
-			}
-			// No auto-restart configured: fall through to start() attempt.
-		} else if (!(err instanceof CamofoxError)) {
-			throw err;
+					if (error) debugStep(`container restart failed: ${error.message}`);
+					resolve();
+				});
+			});
 		}
 	}
 	throwIfAborted(signal);
-	logStep("Browser not running, starting…");
-	await start(signal);
-	await sleep(2000, signal);
-	const h2 = await health(signal);
-	if (!h2.browserRunning) {
-		throw new CamofoxError("Unable to start the Camofox browser");
+	debugStep("Firing idempotent /start…");
+	try {
+		await start(signal);
+	} catch (startError) {
+		if (signal?.aborted) throw abortError(signal);
+		// /start failing is not fatal: createTab below surfaces the real state.
+		debugStep(
+			`/start failed (${startError instanceof Error ? startError.message : String(startError)}); proceeding to tab creation`,
+		);
 	}
 }
 
@@ -403,7 +423,7 @@ export async function readability(
 					const maxAttempts = 2;
 					for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 						throwIfAborted(signal);
-						logStep(`Readability attempt ${attempt}/${maxAttempts}…`);
+						debugStep(`Readability attempt ${attempt}/${maxAttempts}…`);
 						const res = await readabilityRun(tabId, signal);
 						if (res?.text) {
 							readabilityResult = {
@@ -416,12 +436,12 @@ export async function readability(
 							break;
 						}
 						if (attempt < maxAttempts) {
-							logStep("Readability → null, retrying in 1500ms…");
+							debugStep("Readability → null, retrying in 1500ms…");
 							await sleep(1500, signal);
 						}
 					}
 					if (!readabilityResult) {
-						logStep(
+						debugStep(
 							"Readability → null after 2 attempts, falling back to snapshot…",
 						);
 						snapshotResult = await snapshot(tabId, undefined, signal);

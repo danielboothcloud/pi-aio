@@ -18,6 +18,12 @@ import type {
 	WorkingIndicatorOptions,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import {
+	emitAioUiState,
+	probeFrameEditor,
+	requestFrameRepaint,
+	setFrameMetadataContributor,
+} from "../frame/protocol.js";
 import { setPermissionModeAccess } from "./mode-access.js";
 import { showMutationApproval } from "./approval-dialog.js";
 import {
@@ -492,8 +498,10 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 
 		syncCursorPermissionBridge(ctx);
 
-		// Update status pill + working indicator
+		// Update status pill + working indicator, then let Zentui's keyed
+		// Working-line bridge mirror the new mode without touching global slots.
 		updateStatus(ctx);
+		emitAioUiState(pi, { mode: currentMode });
 
 		persistState();
 	}
@@ -506,17 +514,28 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 	function updateStatus(ctx: ExtensionContext): void {
 		if (!ctx.hasUI) return;
 		const meta = modeMetadata(currentMode);
-		ctx.ui.setStatus(
-			"modes",
-			ctx.ui.theme.fg(meta.role, `${meta.icon} ${meta.label}`),
-		);
-		const indicator: WorkingIndicatorOptions = {
-			frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"].map((f) =>
-				ctx.ui.theme.fg(meta.role, f),
-			),
-			intervalMs: 80,
-		};
-		ctx.ui.setWorkingIndicator(indicator);
+		// The frame embeds the mode in its top border; the footer status is
+		// only a fallback for sessions without the frame.
+		if (!probeFrameEditor(pi).supported) {
+			ctx.ui.setStatus(
+				"modes",
+				ctx.ui.theme.fg(meta.role, `${meta.icon} ${meta.label}`),
+			);
+		} else {
+			setFrameMetadataContributor("mode", () => ({
+				mode: { icon: meta.icon, label: meta.label, role: meta.role },
+			}));
+			requestFrameRepaint();
+		}
+		if (!probeFrameEditor(pi).active) {
+			const indicator: WorkingIndicatorOptions = {
+				frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"].map((f) =>
+					ctx.ui.theme.fg(meta.role, f),
+				),
+				intervalMs: 80,
+			};
+			ctx.ui.setWorkingIndicator(indicator);
+		}
 	}
 
 	function persistState(): void {
@@ -648,7 +667,8 @@ Remaining steps:
 ${todoList}
 ${todoHint}
 
-Execute each step in order. Mark progress in the todo tool as you go; do not batch toggles at the end.`,
+Execute each step in order. Mark progress in the todo tool as you go; do not batch toggles at the end.
+Observe, don't narrate: run the check (test, command, log) instead of reasoning about what it would show. If you catch yourself deriving the same conclusion twice, stop — produce an artifact (test, table, log line) or change the hypothesis.`,
 					display: false,
 				},
 			};
@@ -664,8 +684,10 @@ Restrictions:
 - bash is restricted to an allowlist of read-only commands
 - reads (read/grep/find/ls) pass through
 
-Answer the user's request directly. Inspect the codebase when useful, but do not modify files or system state.
-Do not create an implementation plan unless the user explicitly asks for one.`;
+Answer the user's request directly. Ground answers in what you can read — files, logs, git history — and prefer evidence over prediction. Where the answer cannot be determined without running something, say "unknown — would need to run it" instead of reasoning past the evidence.
+Inspect the codebase when useful, but do not modify files or system state.
+Do not create an implementation plan unless the user explicitly asks for one.
+Do not re-derive a conclusion you have already stated; a repeat adds nothing — offer new evidence or drop the thread.`;
 		} else if (currentMode === "plan") {
 			body = `[PLAN MODE ACTIVE]
 You are in plan mode — a read-only exploration mode for safe code analysis.
@@ -675,24 +697,38 @@ Restrictions:
 - bash is restricted to an allowlist of read-only commands
 - reads (read/grep/find/ls) pass through
 
-Create a detailed numbered plan under a "Plan:" header:
+The plan decides what to do and what to measure; it does not solve the problem. Emitting it is the stopping point — do not resolve unknowns in order to finish.
 
 Plan:
 1. First step description
 2. Second step description
 ...
 
-Do NOT attempt to make changes — just describe what you would do.`;
+For diagnostic tasks, put these sections BEFORE the "Plan:" header:
+- "Hypotheses:" — one line per hypothesis, each with the single observation that would confirm or kill it (a test to run, a log line to read, a command to execute once tools are unlocked).
+- "Open questions:" — anything unresolvable read-only, marked "unknown — determine at runtime". These are valid plan output; do NOT paper over them by reasoning.
+
+Do NOT attempt to make changes — just plan. Observe, don't deduce: prefer a read-only look (file, log, git history) over predicting behavior in prose. Split multi-symptom bugs: plan one symptom at a time. More than ~4 interacting state variables: use a state or hypothesis table, not prose. Never state the same conclusion a third time — repetition is not evidence; add an observation or change the hypothesis.`;
 		} else if (currentMode === "auto") {
 			body = `[AUTO MODE ACTIVE]
 All tool calls (edit, write, bash) are auto-approved — no permission prompts.
-Proceed without asking for confirmation. After completing each meaningful chunk, briefly summarize progress.
+Proceed without asking for confirmation.
+
+Work rules:
+- Observe behavior, don't reason about it: when a test, command, or log check is cheap, run it. One observation beats three paragraphs of deliberation.
+- Verify by running: after a change, verify with the cheapest available check (test, build, command) instead of narrating why it should work.
+- Multi-symptom bugs: split and fix one symptom at a time; verify each before the next.
+- Juggling more than ~4 interacting state variables: switch to a state or hypothesis table instead of prose.
+- Hard rule: if you have stated the same conclusion twice, stop — produce an artifact (test, table, log line, code change) or change the hypothesis. Never state it a third time.
+
+After completing each meaningful chunk, briefly summarize progress.
 If a todo list is active, toggle each finished step with the todo tool before continuing.`;
 		} else {
 			body = `[DEFAULT MODE ACTIVE]
 - edit, write, and apply_patch tools require per-call user approval
 - mutating bash commands require per-call user approval
-- read-only bash and reads (read/grep/find/ls) pass through without prompting`;
+- read-only bash and reads (read/grep/find/ls) pass through without prompting
+Prefer running a cheap check (test, command, log line) over reasoning about behavior you could observe.`;
 		}
 
 		if (ctx.model?.provider === "cursor") {
@@ -790,6 +826,7 @@ If a todo list is active, toggle each finished step with the todo tool before co
 			toolsBeforePassiveMode = undefined;
 			currentMode = "auto";
 			updateStatus(ctx);
+			emitAioUiState(pi, { mode: currentMode });
 			persistState();
 
 			// Initial widget
@@ -928,8 +965,9 @@ If a todo list is active, toggle each finished step with the todo tool before co
 
 		syncCursorPermissionBridge(ctx);
 
-		// 6) Restore status pill
+		// 6) Restore status pill and any keyed Working-line integration.
 		updateStatus(ctx);
+		emitAioUiState(pi, { mode: currentMode });
 	}
 
 	pi.on("session_start", async (_event, ctx) => {

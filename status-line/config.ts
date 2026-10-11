@@ -10,6 +10,7 @@ export const STATUS_LINE_SEGMENTS = [
 	"effort",
 	"statuses",
 	"cursor",
+	"quota",
 	"model",
 	"tokens",
 	"cost",
@@ -19,20 +20,84 @@ export type StatusLineSegment = (typeof STATUS_LINE_SEGMENTS)[number];
 export type PathDisplay = "basename" | "abbreviated" | "full";
 export type WorkingMessageMode = "minimal" | "verbose" | "off";
 
+export interface ProviderUsageMapping {
+	used?: string;
+	limit?: string;
+	remaining?: string;
+	/** Percent-used scalar; inverted into the remaining percentage. */
+	usedPercent?: string;
+	renewsAt?: string;
+	text?: string;
+}
+
+export interface ProviderUsageWindowConfig {
+	label?: string;
+	mapping: ProviderUsageMapping;
+}
+
+export interface ProviderUsageEndpointConfig {
+	endpoint: string;
+	label?: string;
+	headers: Record<string, string>;
+	/** Read the bearer token from Pi's agent-dir auth.json instead of headers. */
+	auth?: "pi-oauth";
+	/** auth.json provider key for `auth`; defaults to the providers map key. */
+	authAccount?: string;
+	/** Per-provider refresh override; subscription usage endpoints rate-limit hard. */
+	refreshIntervalMs?: number;
+	/** Single-window shorthand; ignored when `windows` is set. */
+	mapping?: ProviderUsageMapping;
+	/** Multiple named displays mapped from one endpoint response. */
+	windows?: Record<string, ProviderUsageWindowConfig>;
+}
+
+export interface ProviderUsageConfig {
+	refreshIntervalMs: number;
+	timeoutMs: number;
+	providers: Record<string, ProviderUsageEndpointConfig>;
+}
+
+interface ParsedProviderUsageConfig {
+	refreshIntervalMs?: number;
+	timeoutMs?: number;
+	providers: Record<string, ProviderUsageEndpointConfig>;
+}
+
+type ParsedStatusLineConfig = Omit<
+	Partial<StatusLineConfig>,
+	"providerUsage"
+> & {
+	providerUsage?: ParsedProviderUsageConfig;
+};
+
 export interface StatusLineConfig {
 	enabled: boolean;
 	segments: StatusLineSegment[];
 	path: PathDisplay;
 	workingMessage: WorkingMessageMode;
 	statusKeys?: string[];
+	providerUsage?: ProviderUsageConfig;
 }
 
 export const DEFAULT_STATUS_LINE_CONFIG: StatusLineConfig = {
 	enabled: true,
-	segments: ["mode", "path", "git", "context", "effort", "statuses", "cursor", "model"],
+	segments: [
+		"mode",
+		"path",
+		"git",
+		"context",
+		"effort",
+		"statuses",
+		"cursor",
+		"quota",
+		"model",
+	],
 	path: "basename",
 	workingMessage: "minimal",
 };
+
+const DEFAULT_USAGE_REFRESH_INTERVAL_MS = 60_000;
+const DEFAULT_USAGE_TIMEOUT_MS = 5_000;
 
 const VALID_SEGMENTS = new Set<string>(STATUS_LINE_SEGMENTS);
 const VALID_PATH = new Set<string>(["basename", "abbreviated", "full"]);
@@ -59,13 +124,136 @@ function readSettingsFile(path: string): Record<string, unknown> | undefined {
 	}
 }
 
-function parseStatusLineBlock(raw: unknown): Partial<StatusLineConfig> {
+function nonEmptyString(value: unknown): string | undefined {
+	if (typeof value !== "string") return undefined;
+	const normalized = value.trim();
+	return normalized.length > 0 ? normalized : undefined;
+}
+
+function boundedNumber(
+	value: unknown,
+	minimum: number,
+	maximum: number,
+): number | undefined {
+	return typeof value === "number" && Number.isFinite(value)
+		? Math.min(maximum, Math.max(minimum, Math.round(value)))
+		: undefined;
+}
+
+const USAGE_MAPPING_KEYS = [
+	"used",
+	"limit",
+	"remaining",
+	"usedPercent",
+	"renewsAt",
+	"text",
+] as const;
+
+function parseUsageMapping(raw: unknown): ProviderUsageMapping | undefined {
+	if (typeof raw !== "object" || raw === null) return undefined;
+	const rawMapping = raw as Record<string, unknown>;
+	const mapping: ProviderUsageMapping = {};
+	for (const key of USAGE_MAPPING_KEYS) {
+		const path = nonEmptyString(rawMapping[key]);
+		if (path) mapping[key] = path;
+	}
+	return Object.keys(mapping).length > 0 ? mapping : undefined;
+}
+
+function parseProviderUsage(
+	raw: unknown,
+): ParsedProviderUsageConfig | undefined {
+	if (typeof raw !== "object" || raw === null) return undefined;
+	const block = raw as Record<string, unknown>;
+	if (typeof block.providers !== "object" || block.providers === null) {
+		return undefined;
+	}
+
+	const providers = Object.create(null) as Record<
+		string,
+		ProviderUsageEndpointConfig
+	>;
+	for (const [provider, rawProvider] of Object.entries(block.providers)) {
+		const providerId = provider.trim();
+		if (!providerId || typeof rawProvider !== "object" || rawProvider === null)
+			continue;
+		const entry = rawProvider as Record<string, unknown>;
+		const endpoint = nonEmptyString(entry.endpoint);
+		if (!endpoint) continue;
+		try {
+			const parsed = new URL(endpoint);
+			if (parsed.protocol !== "http:" && parsed.protocol !== "https:") continue;
+		} catch {
+			continue;
+		}
+
+		const windows = Object.create(
+			null,
+		) as Record<string, ProviderUsageWindowConfig>;
+		if (typeof entry.windows === "object" && entry.windows !== null) {
+			for (const [name, rawWindow] of Object.entries(entry.windows)) {
+				if (!nonEmptyString(name)) continue;
+				if (typeof rawWindow !== "object" || rawWindow === null) continue;
+				const window = rawWindow as Record<string, unknown>;
+				const windowMapping = parseUsageMapping(window.mapping);
+				if (!windowMapping) continue;
+				windows[name] = {
+					label: nonEmptyString(window.label),
+					mapping: windowMapping,
+				};
+			}
+		}
+		const mapping = Object.keys(windows).length > 0
+			? undefined
+			: parseUsageMapping(entry.mapping);
+		if (!mapping && Object.keys(windows).length === 0) continue;
+
+		const headers = Object.create(null) as Record<string, string>;
+		if (typeof entry.headers === "object" && entry.headers !== null) {
+			for (const [name, value] of Object.entries(entry.headers)) {
+				const headerName = name.trim();
+				const header = nonEmptyString(value);
+				if (headerName && header) headers[headerName] = header;
+			}
+		}
+
+		providers[providerId] = {
+			endpoint,
+			label: nonEmptyString(entry.label),
+			headers,
+			auth: entry.auth === "pi-oauth" ? "pi-oauth" : undefined,
+			authAccount: nonEmptyString(entry.authAccount),
+			refreshIntervalMs: boundedNumber(
+				entry.refreshIntervalMs,
+				5_000,
+				86_400_000,
+			),
+			mapping,
+			windows: Object.keys(windows).length > 0 ? windows : undefined,
+		};
+	}
+
+	const parsed: ParsedProviderUsageConfig = { providers };
+	const refreshIntervalMs = boundedNumber(
+		block.refreshIntervalMs,
+		5_000,
+		86_400_000,
+	);
+	if (refreshIntervalMs !== undefined)
+		parsed.refreshIntervalMs = refreshIntervalMs;
+	const timeoutMs = boundedNumber(block.timeoutMs, 500, 30_000);
+	if (timeoutMs !== undefined) parsed.timeoutMs = timeoutMs;
+	return parsed;
+}
+
+function parseStatusLineBlock(raw: unknown): ParsedStatusLineConfig {
 	if (typeof raw !== "object" || raw === null) return {};
 	const block = raw as Record<string, unknown>;
-	const next: Partial<StatusLineConfig> = {};
+	const next: ParsedStatusLineConfig = {};
 
 	if (typeof block.enabled === "boolean") next.enabled = block.enabled;
-	if (Array.isArray(block.segments)) next.segments = normalizeSegments(block.segments);
+	if (Array.isArray(block.segments))
+		next.segments = normalizeSegments(block.segments);
 	if (typeof block.path === "string" && VALID_PATH.has(block.path)) {
 		next.path = block.path as PathDisplay;
 	}
@@ -80,26 +268,61 @@ function parseStatusLineBlock(raw: unknown): Partial<StatusLineConfig> {
 			(key): key is string => typeof key === "string" && key.length > 0,
 		);
 	}
+	const providerUsage = parseProviderUsage(block.providerUsage);
+	if (providerUsage) next.providerUsage = providerUsage;
 	return next;
 }
 
-/** Load aio.statusLine from project then global Pi settings. */
-export function loadStatusLineConfig(cwd?: string): StatusLineConfig {
-	const paths = cwd
-		? [join(cwd, CONFIG_DIR_NAME, "settings.json")]
-		: [
-				join(process.cwd(), CONFIG_DIR_NAME, "settings.json"),
-				join(getAgentDir(), "settings.json"),
-			];
+/** Load aio.statusLine from global settings, then trusted project settings. */
+export function loadStatusLineConfig(
+	cwd?: string,
+	options: {
+		includeGlobal?: boolean;
+		includeProject?: boolean;
+		globalDir?: string;
+	} = {},
+): StatusLineConfig {
+	const paths: string[] = [];
+	if (options.includeGlobal !== false) {
+		paths.push(join(options.globalDir ?? getAgentDir(), "settings.json"));
+	}
+	if (cwd && options.includeProject !== false) {
+		paths.push(join(cwd, CONFIG_DIR_NAME, "settings.json"));
+	}
 
-	let merged: Partial<StatusLineConfig> = {};
+	let merged: ParsedStatusLineConfig = {};
 	for (const path of paths) {
 		const settings = readSettingsFile(path);
 		const aio = settings?.aio;
 		if (typeof aio !== "object" || aio === null) continue;
 		const statusLine = (aio as Record<string, unknown>).statusLine;
-		merged = { ...merged, ...parseStatusLineBlock(statusLine) };
+		const next = parseStatusLineBlock(statusLine);
+		const providerUsage = next.providerUsage
+			? {
+					...merged.providerUsage,
+					...next.providerUsage,
+					providers: {
+						...(merged.providerUsage?.providers ?? {}),
+						...next.providerUsage.providers,
+					},
+				}
+			: merged.providerUsage;
+		merged = { ...merged, ...next, providerUsage };
 	}
 
-	return { ...DEFAULT_STATUS_LINE_CONFIG, ...merged };
+	const { providerUsage, ...statusLine } = merged;
+	return {
+		...DEFAULT_STATUS_LINE_CONFIG,
+		...statusLine,
+		...(providerUsage
+			? {
+					providerUsage: {
+						refreshIntervalMs:
+							providerUsage.refreshIntervalMs ?? DEFAULT_USAGE_REFRESH_INTERVAL_MS,
+						timeoutMs: providerUsage.timeoutMs ?? DEFAULT_USAGE_TIMEOUT_MS,
+						providers: providerUsage.providers,
+					},
+				}
+			: {}),
+	};
 }

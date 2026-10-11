@@ -1,0 +1,310 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { getAgentDir } from "@earendil-works/pi-coding-agent";
+import type {
+	ProviderUsageEndpointConfig,
+	ProviderUsageMapping,
+	ProviderUsageWindowConfig,
+} from "./config.js";
+
+export interface ProviderUsage {
+	provider: string;
+	label: string;
+	used?: number;
+	limit?: number;
+	remaining?: number;
+	remainingPercent?: number;
+	renewsAt?: string;
+	text?: string;
+}
+
+export interface ProviderUsageWindow extends ProviderUsageWindowConfig {
+	name: string;
+}
+
+/** Expand legacy single `mapping` and named `windows` into a uniform list. */
+export function providerUsageWindows(
+	config: ProviderUsageEndpointConfig,
+): ProviderUsageWindow[] {
+	if (config.windows && Object.keys(config.windows).length > 0) {
+		return Object.entries(config.windows).map(([name, window]) => ({
+			name,
+			label: window.label ?? config.label,
+			mapping: window.mapping,
+		}));
+	}
+	return config.mapping
+		? [{ name: "default", label: config.label, mapping: config.mapping }]
+		: [];
+}
+
+function readScalarPath(
+	value: unknown,
+	path: string,
+): string | number | undefined {
+	let current = value;
+	for (const part of path.split(".")) {
+		if (
+			!part ||
+			part === "__proto__" ||
+			part === "prototype" ||
+			part === "constructor" ||
+			typeof current !== "object" ||
+			current === null
+		) {
+			return undefined;
+		}
+		const descriptor = Object.getOwnPropertyDescriptor(current, part);
+		if (!descriptor) return undefined;
+		current = descriptor.value;
+	}
+	return typeof current === "string" || typeof current === "number"
+		? current
+		: undefined;
+}
+
+function finiteNumber(value: string | number | undefined): number | undefined {
+	if (typeof value === "number" && Number.isFinite(value)) return value;
+	if (typeof value === "string" && value.trim()) {
+		const parsed = Number(value);
+		if (Number.isFinite(parsed)) return parsed;
+	}
+	return undefined;
+}
+
+function stringValue(value: string | number | undefined): string | undefined {
+	return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+/** Resolve $VAR and ${VAR} references without supporting command execution. */
+export function resolveEnvironmentTemplate(value: string): string | undefined {
+	let missing = false;
+	const resolved = value.replace(
+		/\$\$|\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)/g,
+		(match, braced: string | undefined, bare: string | undefined) => {
+			if (match === "$$") return "$";
+			const envValue = process.env[braced ?? bare ?? ""];
+			if (envValue === undefined) {
+				missing = true;
+				return "";
+			}
+			return envValue;
+		},
+	);
+	return missing ? undefined : resolved;
+}
+
+export function mapProviderUsage(
+	provider: string,
+	label: string | undefined,
+	mapping: ProviderUsageMapping,
+	payload: unknown,
+): ProviderUsage | undefined {
+	const used = mapping.used
+		? finiteNumber(readScalarPath(payload, mapping.used))
+		: undefined;
+	const limit = mapping.limit
+		? finiteNumber(readScalarPath(payload, mapping.limit))
+		: undefined;
+	let remaining = mapping.remaining
+		? finiteNumber(readScalarPath(payload, mapping.remaining))
+		: undefined;
+	if (remaining === undefined && limit !== undefined && used !== undefined) {
+		remaining = limit - used;
+	}
+	const usedPercent = mapping.usedPercent
+		? finiteNumber(readScalarPath(payload, mapping.usedPercent))
+		: undefined;
+	const text = mapping.text
+		? stringValue(readScalarPath(payload, mapping.text))
+		: undefined;
+	const renewsAt = mapping.renewsAt
+		? stringValue(readScalarPath(payload, mapping.renewsAt))
+		: undefined;
+	if (
+		used === undefined &&
+		limit === undefined &&
+		remaining === undefined &&
+		usedPercent === undefined &&
+		text === undefined
+	) {
+		return undefined;
+	}
+
+	// Endpoints that only expose percent-used (Anthropic's usage API) invert
+	// into the remaining percentage the status line colors by.
+	const remainingPercent =
+		remaining !== undefined && limit !== undefined && limit > 0
+			? Math.max(0, Math.min(100, Math.round((remaining / limit) * 100)))
+			: usedPercent !== undefined
+				? Math.max(0, Math.min(100, Math.round(100 - usedPercent)))
+				: undefined;
+	return {
+		provider,
+		label: label ?? provider,
+		used,
+		limit,
+		remaining,
+		remainingPercent,
+		renewsAt,
+		text,
+	};
+}
+
+/**
+ * Read an OAuth access token from Pi's agent-dir auth.json (what `/login`
+ * writes). Returns undefined for API-key entries and missing files so callers
+ * can fail closed without touching the network.
+ */
+export function readPiOAuthToken(
+	account: string,
+	agentDir: string = getAgentDir(),
+): string | undefined {
+	try {
+		const raw: unknown = JSON.parse(
+			readFileSync(join(agentDir, "auth.json"), "utf-8"),
+		);
+		if (typeof raw !== "object" || raw === null) return undefined;
+		const entry = (raw as Record<string, unknown>)[account];
+		if (typeof entry !== "object" || entry === null) return undefined;
+		const record = entry as Record<string, unknown>;
+		if (record.type !== "oauth") return undefined;
+		const token = record.access;
+		return typeof token === "string" && token.trim() ? token : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+export async function fetchProviderUsage(
+	provider: string,
+	config: ProviderUsageEndpointConfig,
+	timeoutMs: number,
+	request: typeof fetch = fetch,
+	signal?: AbortSignal,
+	resolveAuthToken: (account: string) => string | undefined = readPiOAuthToken,
+): Promise<ProviderUsage[]> {
+	const headers: Record<string, string> = {};
+	for (const [name, template] of Object.entries(config.headers)) {
+		const value = resolveEnvironmentTemplate(template);
+		if (value === undefined) {
+			throw new Error(
+				`Missing environment variable for provider usage header ${name}`,
+			);
+		}
+		headers[name] = value;
+	}
+	if (config.auth === "pi-oauth") {
+		// Subscription usage endpoints key off the OAuth token Pi stored during
+		// /login; it rotates, so it is read from auth.json rather than templated
+		// from the environment. Config headers still win when set explicitly.
+		const account = config.authAccount ?? provider;
+		const token = resolveAuthToken(account);
+		if (!token) {
+			throw new Error(`No pi OAuth token for provider ${account}`);
+		}
+		headers.Authorization ??= `Bearer ${token}`;
+		headers["anthropic-beta"] ??= "oauth-2025-04-20";
+	}
+
+	const controller = new AbortController();
+	const abort = () => controller.abort();
+	if (signal?.aborted) controller.abort();
+	else signal?.addEventListener("abort", abort, { once: true });
+	const timeout = setTimeout(abort, timeoutMs);
+	try {
+		const response = await request(config.endpoint, {
+			method: "GET",
+			headers,
+			signal: controller.signal,
+		});
+		if (!response.ok) {
+			throw new Error(
+				`Provider usage request failed with HTTP ${response.status}`,
+			);
+		}
+		const payload: unknown = await response.json();
+		return providerUsageWindows(config).flatMap((window) => {
+			const usage = mapProviderUsage(
+				provider,
+				window.label,
+				window.mapping,
+				payload,
+			);
+			return usage ? [usage] : [];
+		});
+	} finally {
+		clearTimeout(timeout);
+		signal?.removeEventListener("abort", abort);
+	}
+}
+
+function sanitizeDisplayText(value: string): string {
+	let sanitized = "";
+	for (const character of value) {
+		const code = character.codePointAt(0) ?? 0;
+		sanitized += code < 32 || (code >= 127 && code <= 159) ? " " : character;
+	}
+	return sanitized.replace(/\s+/g, " ").trim();
+}
+
+function formatReset(
+	renewsAt: string | undefined,
+	now: number,
+): string | undefined {
+	if (!renewsAt) return undefined;
+	const timestamp = Date.parse(renewsAt);
+	if (!Number.isFinite(timestamp)) return undefined;
+	const remainingMs = timestamp - now;
+	if (remainingMs <= 0) return "→now";
+	const minutes = Math.ceil(remainingMs / 60_000);
+	if (minutes < 60) return `→${minutes}m`;
+	const hours = Math.ceil(minutes / 60);
+	if (hours < 48) return `→${hours}h`;
+	return `→${Math.ceil(hours / 24)}d`;
+}
+
+/**
+ * Compact, minimalist-style tokens: the Zentui status row sits beside terse
+ * editor metadata, so avoid prose like "left"/"resets". Renewal timing uses a
+ * bare arrow unit (e.g. "→5h") matching the "· "-separated visual language.
+ */
+export function formatProviderUsage(
+	usage: ProviderUsage,
+	now = Date.now(),
+): string {
+	let value: string;
+	if (usage.text) value = sanitizeDisplayText(usage.text);
+	else if (usage.remainingPercent !== undefined)
+		value = `${usage.remainingPercent}%`;
+	else if (usage.remaining !== undefined) value = `${usage.remaining}`;
+	else if (usage.used !== undefined && usage.limit !== undefined) {
+		value = `${usage.used}/${usage.limit}`;
+	} else if (usage.used === undefined) value = `limit ${usage.limit}`;
+	else value = `${usage.used} used`;
+
+	const reset = formatReset(usage.renewsAt, now);
+	return `${sanitizeDisplayText(usage.label)} ${value}${reset ? ` ${reset}` : ""}`;
+}
+
+/**
+ * Compose every window into one compact status line. The role drives theming;
+ * thresholds mirror the previous inline logic (≤20% error, ≤50% warning).
+ */
+export function providerUsageLine(
+	usages: ProviderUsage[],
+	now = Date.now(),
+): { text: string; role: "error" | "warning" | "muted" } | undefined {
+	if (usages.length === 0) return undefined;
+	const remaining = usages
+		.map((usage) => usage.remainingPercent)
+		.filter((value): value is number => value !== undefined);
+	const lowest = remaining.length > 0 ? Math.min(...remaining) : undefined;
+	let role: "error" | "warning" | "muted" = "muted";
+	if (lowest !== undefined && lowest <= 20) role = "error";
+	else if (lowest !== undefined && lowest <= 50) role = "warning";
+	return {
+		text: usages.map((usage) => formatProviderUsage(usage, now)).join(" · "),
+		role,
+	};
+}

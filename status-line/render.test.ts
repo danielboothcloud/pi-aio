@@ -4,10 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { visibleWidth } from "@earendil-works/pi-tui";
-import {
-	DEFAULT_STATUS_LINE_CONFIG,
-	loadStatusLineConfig,
-} from "./config.ts";
+import { DEFAULT_STATUS_LINE_CONFIG, loadStatusLineConfig } from "./config.ts";
 import {
 	formatWorkingMessage,
 	renderStatusLine,
@@ -72,6 +69,22 @@ test("renderStatusLine separates codex quota from effort", () => {
 	assert.doesNotMatch(line, /effort:max weekly/);
 });
 
+test("renderStatusLine shows an active style beside the mode, once", () => {
+	const [line] = renderStatusLine(
+		baseInput({
+			extensionStatuses: new Map([
+				["rtk", "rtk✓"],
+				["style", "✎ Mentor"],
+			]),
+		}),
+	);
+	assert.match(line, /^⏸ Plan · ✎ Mentor · /);
+	assert.equal(line.split("Mentor").length - 1, 1, "style must not repeat in statuses");
+
+	const [unstyled] = renderStatusLine(baseInput());
+	assert.match(unstyled, /^⏸ Plan · ⌂/);
+});
+
 test("renderStatusLine omits empty git segment", () => {
 	const [line] = renderStatusLine(baseInput({ gitBranch: null }));
 	assert.doesNotMatch(line, /\bmain\b/);
@@ -134,11 +147,41 @@ test("loadStatusLineConfig merges project and global aio.statusLine settings", (
 			"utf-8",
 		);
 
-		const config = loadStatusLineConfig(tmpDir);
+		const config = loadStatusLineConfig(tmpDir, { includeGlobal: false });
 		assert.equal(config.enabled, false);
 		assert.equal(config.workingMessage, "verbose");
 		assert.deepEqual(config.segments, DEFAULT_STATUS_LINE_CONFIG.segments);
 	} finally {
 		rmSync(tmpDir, { recursive: true, force: true });
 	}
+});
+
+test("renderStatusLine shows mapped provider quota", () => {
+	const [line] = renderStatusLine(
+		baseInput({
+			providerUsage: [
+				{
+					provider: "synthetic",
+					label: "synthetic",
+					used: 0,
+					limit: 135,
+					remaining: 135,
+					remainingPercent: 100,
+				},
+			],
+		}),
+	);
+	assert.match(line, /◴ synthetic 100%/);
+});
+
+test("renderStatusLine joins provider quota windows", () => {
+	const [line] = renderStatusLine(
+		baseInput({
+			providerUsage: [
+				{ provider: "synthetic", label: "synthetic", remainingPercent: 100 },
+				{ provider: "synthetic", label: "wk", text: "$23.21" },
+			],
+		}),
+	);
+	assert.match(line, /◴ synthetic 100% · wk \$23\.21/);
 });
