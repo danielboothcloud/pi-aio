@@ -187,8 +187,17 @@ generated `dist/` tree without changing the package contract.
 - `you-should-know/` owns the YSK shadow auditor: successful
   `write`/`edit`/`apply_patch` tool results are debounced into one bounded,
   isolated `ctx.modelRegistry.complete()` audit (the sub-agent) whose findings
-  render as a chrome-composed custom entry; custom entries never enter LLM
-  context, and a clean audit renders nothing. Off by default — `/ysk
+  surface through one shared path: a chrome-composed custom entry in the btw
+  box idiom (`YOU SHOULD KNOW` label, severity-glyph head rows, wrapped
+  details, one dim provenance line) — custom entries never enter LLM context
+  — plus an above-editor findings card in the btw answer-card idiom (max 9
+  rows, auto-hides after 30s, TUI-only, replaced by newer findings,
+  test-overridable via `registerYouShouldKnow`'s `cardMs`); the critical-only
+  toast contract is unchanged, and a clean audit renders nothing. Infra
+  failures toast once then latch silent (reset by enable/model changes), but
+  the latest failure is always recorded and reported by `/ysk status` (age
+  + message); otherwise silence means clean audits, below-threshold
+  findings, or deduped repeats. Off by default — `/ysk
   enable|disable|model|severity|tools|audit` persists to
   `~/.pi/agent/aio-you-should-know.settings.json` (goal-settings contract;
   `AIO_YSK_SETTINGS_FILE` overrides for tests). Subagent children resolve the

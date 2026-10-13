@@ -32,7 +32,7 @@ export const YSK_ENTRY_TYPE = "you-should-know";
 /** Status-bar key; only ever set while YSK is enabled. */
 export const YSK_STATUS_KEY = "ysk";
 
-const BOX_LABEL = "YOU SHOULD KNOW (PI EDITION)";
+const BOX_LABEL = "YOU SHOULD KNOW";
 
 const SEVERITY_GLYPH: Record<Severity, string> = { critical: "✖", warning: "▲", info: "ℹ" };
 const SEVERITY_TONE: Record<Severity, "error" | "warning" | "accent"> = { critical: "error", warning: "warning", info: "accent" };
@@ -100,18 +100,19 @@ export function buildYskMetaRows(
 	expanded: boolean,
 	width: number,
 ): string[] {
-	const who = [`sub-agent: ${data.model}`, data.origin ? `via ${data.origin}` : ""]
-		.filter(Boolean)
-		.join(" · ");
-	const stats = [
+	const parts = [
 		`${data.shown} shown / ${data.raised} raised`,
 		`min ${data.minSeverity}`,
+		`sub-agent ${data.model}`,
+		data.origin
+			? `via ${data.origin}`
+			: undefined, // filtered out by the join below
 		formatAuditTokens(data.usage),
 		`${(data.latencyMs / 1000).toFixed(1)}s`,
 	]
 		.filter(Boolean)
 		.join(" · ");
-	const rows = [`· ${who}`, `· ${stats}`];
+	const rows = [`· ${parts}`];
 	if (expanded && data.files.length > 1) {
 		rows.push(...data.files.map((f) => `· ${f}`));
 	}
@@ -119,17 +120,21 @@ export function buildYskMetaRows(
 }
 
 /**
- * Builds the framed box rows for one audit, per the agreed preview:
+ * Builds the framed box rows for one audit, in the btw box idiom:
  *
- *   ╭─ YOU SHOULD KNOW (PI EDITION) ────────╮
- *   │ ✖ [critical] Unawaited promise        │
- *   │   detail …                            │
- *   │ ▲ [warning] Router bound twice        │
- *   ╰───────────────────────────────────────╯
- *     · sub-agent: … · 2 shown / 3 raised …
+ *   ╭─ YOU SHOULD KNOW ─────────────────────╮
+ *   │ ✖ Unawaited promise discarded          │
+ *   │ Errors pass silently. — src/app.ts     │
+ *   │                                        │
+ *   │ ▲ Router bound twice                   │
+ *   │ Double binding can duplicate handlers. │
+ *   ╰────────────────────────────────────────╯
+ *     · 2 shown / 3 raised · min warning · sub-agent … · 4.5k tok · 1.2s
  *
- * Every row is fitted to `width` by the chrome primitives (the AGENTS.md
- * renderer contract).
+ * Severity lives in the glyph and its tone (✖ error, ▲ warning, ℹ accent) —
+ * the same marker-row construction as the btw question row. Every row is
+ * fitted to `width` by the chrome primitives (the AGENTS.md renderer
+ * contract).
  */
 export function buildYskBoxRows(
 	theme: ChromeTheme,
@@ -145,7 +150,7 @@ export function buildYskBoxRows(
 
 	for (const [index, finding] of data.findings.entries()) {
 		const tone = severityTone(finding.severity);
-		const head = `${severityGlyph(finding.severity)} [${finding.severity}] ${finding.title}`;
+		const head = `${severityGlyph(finding.severity)} ${finding.title}`;
 		rows.push(framing(theme.fg(tone, head)));
 
 		const detailWithFile = finding.file
@@ -191,6 +196,72 @@ export function registerShouldKnowRenderer(pi: ExtensionAPI): void {
 		if (!data || data.findings.length === 0) return undefined;
 		return new YskBoxComponent(data, options?.expanded ?? false, toChromeTheme(theme));
 	});
+}
+
+// ============================================================
+// Above-editor findings card (btw answer-card idiom)
+// ============================================================
+
+/** Above-editor widget key (ctx.ui.setWidget) — findings cards. */
+export const YSK_CARD_KEY = "aio-ysk-card";
+
+/** Head rows shown inside the card (incl. the "+N more" row, if any). */
+export const MAX_CARD_FINDING_ROWS = 4;
+/** Ceiling for every card render (rules and hint row included). */
+export const MAX_CARD_ROWS = 9;
+
+/**
+ * The transient findings card, in the btw answer-card idiom:
+ *
+ *   ╭─ YOU SHOULD KNOW ───────────────╮
+ *   │ ✖ Unawaited promise discarded     │
+ *   │ ▲ Router bound twice              │
+ *   ╰───────────────────────────────────╯
+ *     · auto-hides in 24s · full findings in the transcript
+ *
+ * One severity-toned head row per finding (the transcript box carries the
+ * detail); surplus findings collapse into a "+N more" row. The hint counts
+ * down from `dismissAt`; index.ts owns the clearing timer.
+ */
+export function buildYskCardRows(
+	theme: ChromeTheme,
+	data: YskEntryData,
+	width: number,
+	dismissAt: number,
+	now = Date.now(),
+): string[] {
+	if (width <= 4 || data.findings.length === 0) return [];
+	const framing = (body: string) => chromeFrameRow(theme, body, width);
+
+	const rows: string[] = [chromeFrameRule(theme, width, "top", BOX_LABEL)];
+	const findings = data.findings.slice(0, MAX_CARD_FINDING_ROWS);
+	for (const finding of findings) {
+		rows.push(
+			framing(
+				theme.fg(
+					severityTone(finding.severity),
+					`${severityGlyph(finding.severity)} ${finding.title}`,
+				),
+			),
+		);
+	}
+	if (data.findings.length > findings.length) {
+		rows.push(
+			framing(
+				theme.fg(
+					"dim",
+					`…+${data.findings.length - findings.length} more (full findings in the transcript)`,
+				),
+			),
+		);
+	}
+	rows.push(chromeFrameRule(theme, width, "bottom"));
+
+	const hideIn = Math.max(0, Math.ceil((dismissAt - now) / 1000));
+	rows.push(
+		fitLine(theme.fg("dim", `· auto-hides in ${hideIn}s · full findings in the transcript`), width),
+	);
+	return rows;
 }
 
 // ============================================================

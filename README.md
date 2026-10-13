@@ -1080,14 +1080,19 @@ operational footguns the implementing agent would not surface.
   through `modelRegistry.complete()`, and findings are custom session entries,
   which never enter LLM context. A clean audit renders nothing at all — no
   entry, no toast, no noise.
-- **One cohesive surface**: findings render as a chrome-composed transcript
-  box labeled `YOU SHOULD KNOW (PI EDITION)` with severity-coded findings, the
-  sub-agent model, per-audit token spend, and an attribution line. Critical
-  findings also toast. While enabled, YSK shows its state the way the rest of
-  AIO does: embedded in the minimalist frame's border (`mode · style ·
-  effort · context · time · ysk` — muted while armed, accent while auditing)
-  through the frame metadata protocol, and as a `◉ YSK` pill in the status
-  row's `statuses` segment in unframed sessions.
+- **One cohesive surface**, in the same visual idiom as `/btw`: findings render
+  as a chrome-composed transcript box labeled `YOU SHOULD KNOW` (severity-glyph
+  head rows like the `✦` question row, wrapped details, one dim provenance
+  line: counts · threshold · sub-agent · tokens · latency), plus a transient
+  **above-editor card** that auto-hides after 30 seconds and points at the full
+  findings in the transcript — so a mid-flow surfacing is actually seen. The
+  box lands in the transcript right after the edits that raised it; context
+  stays attached to context. Critical findings also toast (critical-only,
+  unchanged). While enabled, YSK shows its state the way the rest of AIO does:
+  embedded in the minimalist frame's border (`mode · style · effort · context ·
+  time · ysk · btw` — muted while armed, accent while auditing) through the
+  frame metadata protocol, and as a `◉ YSK` pill in the status row's
+  `statuses` segment in unframed sessions.
 - **Subagents included**: children spawned by the `subagent` tool audit their
   own writes, mirror findings into a sidecar beside their runner-managed
   session file, and the parent surfaces (and consumes) them through the same
@@ -1098,7 +1103,13 @@ operational footguns the implementing agent would not surface.
   once keeps it on across sessions *and* in subagent children, and disabling
   it stops both immediately.
 
-Commands: `/ysk` shows status; `/ysk enable`, `/ysk disable`,
+Commands: `/ysk` shows status — including the **last audit failure** (age and
+message), so "why is it surfacing nothing" is answerable: once an
+infrastructure failure toasts (once), later failures stay silent until
+settings change, and `/ysk status` is the way to see them. Silence can also
+mean genuinely-clean audits (nothing found), findings below the `severity`
+threshold, or recent duplicates (a dedupe window suppresses repeats).
+`/ysk enable`, `/ysk disable`,
 `/ysk model <provider/id> | off` (default: the session model),
 `/ysk severity info|warning|critical`, `/ysk tools <list>`, and
 `/ysk audit <path>` for a manual one-shot audit.

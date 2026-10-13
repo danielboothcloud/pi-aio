@@ -35,6 +35,8 @@ interface HarnessOptions {
 		errorMessage?: string;
 		usage?: { input?: number; output?: number; cost?: { total?: number } };
 	};
+	/** Answer-card lifetime injected into registerYouShouldKnow (default 8ms). */
+	cardMs?: number;
 	failComplete?: Error;
 	/** Held unresolved while auditing; release it to finish the batch. */
 	completeGate?: Promise<void>;
@@ -50,6 +52,22 @@ interface HarnessOptions {
 
 interface CompleteCall {
 	context: { systemPrompt: string; messages: Array<{ content: string }> };
+}
+
+/** Passthrough theme for captured widget factories. */
+const widgetTheme = {
+	fg: (_role: string, text: string) => text,
+	bold: (text: string) => text,
+};
+
+/** Renders a captured widget factory at a width (the btw-index harness twin). */
+function renderWidget(call: { content: unknown } | undefined, width = 80): string[] {
+	if (!call || typeof call.content !== "function") return [];
+	const component = (call.content as (tui: unknown, theme: unknown) => { render(w: number): string[] })(
+		{},
+		widgetTheme,
+	);
+	return component.render(width);
 }
 
 const CRITICAL_REPLY = JSON.stringify({
@@ -97,6 +115,7 @@ function makeHarness(options: HarnessOptions = {}) {
 	const sessionModel = options.model ?? { provider: "openai", id: "gpt-test" };
 	const alternateModel = { provider: "anthropic", id: "claude-test" };
 	const replyText = options.reply?.text ?? JSON.stringify({ findings: [] });
+	const cardMs = Math.max(0, options.cardMs ?? 8);
 	const registryList = () => [sessionModel, alternateModel].filter(Boolean);
 
 	const handlers = new Map<string, Array<(event: ExtensionEvent, ctx: unknown) => unknown>>();
@@ -108,6 +127,7 @@ function makeHarness(options: HarnessOptions = {}) {
 	const entries: Array<{ customType: string; data: YskEntryData }> = [];
 	const notifications: Array<{ message: string; type?: string }> = [];
 	const statusHistory: Array<{ key: string; text: string | undefined }> = [];
+	const widgets: Array<{ key: string; content: unknown; options?: { placement?: string } }> = [];
 	const completeCalls: CompleteCall[] = [];
 
 	const ctx = {
@@ -117,6 +137,9 @@ function makeHarness(options: HarnessOptions = {}) {
 		scopedModels: (options.scopedModels ?? []).map((m) => ({ model: m })),
 		ui: {
 			notify: (message: string, type?: string) => notifications.push({ message, type }),
+			setWidget: (key: string, content: unknown, widgetOptions?: { placement?: string }) => {
+				widgets.push({ key, content, options: widgetOptions });
+			},
 			setStatus: (key: string, text: string | undefined) => {
 				statusHistory.push({ key, text });
 			},
@@ -173,7 +196,7 @@ function makeHarness(options: HarnessOptions = {}) {
 		// the full ExtensionAPI contract is intentionally not modeled here.
 	} as unknown as Parameters<typeof registerYouShouldKnow>[0];
 
-	registerYouShouldKnow(pi);
+	registerYouShouldKnow(pi, { cardMs });
 
 	const fire = (event: string, evt: ExtensionEvent) => {
 		for (const handler of handlers.get(event) ?? []) handler(evt, ctx);
@@ -197,7 +220,7 @@ function makeHarness(options: HarnessOptions = {}) {
 		}
 	};
 
-	return { dir, settingsFile, fire, writeResult, entries, commands, notifications, statusHistory, completeCalls, ctx, restore };
+	return { dir, settingsFile, fire, writeResult, entries, commands, notifications, statusHistory, completeCalls, widgets, ctx, restore };
 }
 
 // =====================================================================
@@ -792,6 +815,103 @@ test("shutdown drops pending audit work scheduled before it", async () => {
 		h.fire("session_shutdown", { type: "session_shutdown", reason: "reload" });
 		await new Promise((resolve) => setTimeout(resolve, 60));
 		assert.equal(h.completeCalls.length, 0, "pending work scheduled before shutdown never audits");
+	} finally {
+		h.restore();
+	}
+});
+
+// =====================================================================
+// Findings card (btw answer-card idiom) + status diagnostics
+// =====================================================================
+
+test("findings install an above-editor card that auto-hides", async () => {
+	const h = makeHarness({
+		settings: { enabled: true, batchWindowMs: 15 },
+		reply: { text: CRITICAL_REPLY, usage: REPLY_USAGE },
+	});
+	try {
+		h.fire("session_start", { type: "session_start", reason: "startup" });
+		h.fire("tool_result", h.writeResult({ path: "src/app.ts", content: "x" }));
+		await waitFor("card install", () => h.widgets.length >= 1);
+		const install = h.widgets[0];
+		assert.equal(install.key, "aio-ysk-card");
+		assert.equal(install.options?.placement, "aboveEditor");
+		const rows = renderWidget(install, 60);
+		assert.ok(rows.some((row) => row.includes("YOU SHOULD KNOW")), "card label");
+		assert.ok(rows.some((row) => row.includes("✖ Unawaited promise discarded")), "severity head row");
+		assert.ok(rows.some((row) => row.includes("auto-hides in")), "countdown hint");
+		await waitFor("auto-hide", () => h.widgets.some((widget) => widget.content === undefined));
+		assert.ok(h.entries.some((entry) => entry.customType === YSK_ENTRY_TYPE), "permanent box entry landed too");
+	} finally {
+		h.restore();
+	}
+});
+
+test("warning-only findings get the card but never a toast", async () => {
+	const h = makeHarness({
+		settings: { enabled: true, batchWindowMs: 15 },
+		reply: {
+			text: JSON.stringify({
+				findings: [{ severity: "warning", title: "Router bound twice", detail: "duplicate handlers" }],
+			}),
+		},
+	});
+	try {
+		h.fire("tool_result", h.writeResult({ path: "src/app.ts", content: "x" }));
+		await waitFor("card install", () => h.widgets.length >= 1);
+		const rows = renderWidget(h.widgets[0], 60);
+		assert.ok(rows.some((row) => row.includes("▲ Router bound twice")), "warning head row");
+		assert.ok(!h.notifications.some((note) => note.type === "error"), "toast stays critical-only");
+	} finally {
+		h.restore();
+	}
+});
+
+test("a clean audit installs no card (silence contract)", async () => {
+	const h = makeHarness({ settings: { enabled: true, batchWindowMs: 15 } });
+	try {
+		h.fire("tool_result", h.writeResult({ path: "src/app.ts", content: "x" }));
+		await waitFor("audit call", () => h.completeCalls.length === 1);
+		await new Promise((resolve) => setTimeout(resolve, 80));
+		assert.equal(h.widgets.length, 0, "no card for a clean audit");
+		assert.equal(h.entries.length, 0, "no entry either");
+	} finally {
+		h.restore();
+	}
+});
+
+test("session shutdown clears a showing card", async () => {
+	const h = makeHarness({
+		settings: { enabled: true, batchWindowMs: 15 },
+		reply: { text: CRITICAL_REPLY },
+	});
+	try {
+		h.fire("tool_result", h.writeResult({ path: "src/app.ts", content: "x" }));
+		await waitFor("card install", () => h.widgets.length === 1);
+		h.fire("session_shutdown", { type: "session_shutdown", reason: "quit" });
+		const clear = h.widgets.find((widget) => widget.content === undefined);
+		assert.ok(clear, "shutdown cleared the card");
+	} finally {
+		h.restore();
+	}
+});
+
+test("/ysk status reports the recorded last audit failure", async () => {
+	const h = makeHarness({
+		settings: { enabled: true, batchWindowMs: 15 },
+		reply: { stopReason: "error", errorMessage: "no api key configured" },
+	});
+	try {
+		h.fire("tool_result", h.writeResult({ path: "src/app.ts", content: "x" }));
+		await waitFor("failure toast", () => h.notifications.some((note) => note.type === "warning"));
+		const command = h.commands.get("ysk");
+		assert.ok(command, "the ysk command registered");
+		await command!.handler("status", h.ctx as never);
+		const status = h.notifications.at(-1)!;
+		assert.match(status.message, /You Should Know: enabled · sub-agent: \(session model\)/);
+		assert.match(status.message, /last audit failure \(1m ago\)/);
+		assert.match(status.message, /no api key configured/);
+		assert.match(status.message, /failures stay silent until settings change/);
 	} finally {
 		h.restore();
 	}

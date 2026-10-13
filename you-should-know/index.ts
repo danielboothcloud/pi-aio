@@ -62,12 +62,15 @@ import {
 	type YskSettings,
 } from "./auditor.js";
 import {
+	buildYskCardRows,
 	criticalToastText,
 	frameAuditingMeta,
 	frameIdleMeta,
 	registerShouldKnowRenderer,
 	statusAuditingLine,
 	statusOnLine,
+	toChromeTheme,
+	YSK_CARD_KEY,
 	YSK_ENTRY_TYPE,
 	YSK_STATUS_KEY,
 	type YskEntryData,
@@ -169,16 +172,26 @@ interface ToolResultShape {
 const SUBCOMMANDS: Array<{ name: string; description: string }> = [
 	{ name: "enable", description: "Turn the shadow auditor on (persisted)" },
 	{ name: "disable", description: "Turn it off (persisted; children stop too)" },
-	{ name: "status", description: "Show settings and the audit model" },
+	{ name: "status", description: "Show settings, the audit model, and the last failure" },
 	{ name: "model", description: "Pin the sub-agent model: /ysk model <provider/id> | off" },
 	{ name: "severity", description: "Minimum severity shown: info | warning | critical" },
 	{ name: "tools", description: "Which tools are audited, comma-separated" },
 	{ name: "audit", description: "Manually audit one file: /ysk audit <path>" },
 ];
 
-export function registerYouShouldKnow(pi: ExtensionAPI): void {
+/** Options for registerYouShouldKnow. */
+export interface RegisterYskOptions {
+	/** How long a findings card stays above the editor (default 30s). */
+	cardMs?: number;
+}
+
+const DEFAULT_CARD_MS = 30_000;
+
+export function registerYouShouldKnow(pi: ExtensionAPI, options: RegisterYskOptions = {}): void {
 	// Custom entries only ever render for humans, in parents and children.
 	registerShouldKnowRenderer(pi);
+
+	const cardMs = Math.max(0, options.cardMs ?? DEFAULT_CARD_MS);
 
 	const child = childProcessInfo();
 	// Latest live context for sync lookups (command autocomplete); event
@@ -196,6 +209,10 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 		abort: new AbortController(),
 		dedupe: createFindingDedupe(),
 		failureLatched: false,
+		/** Above-editor findings-card timer; cleared on hide, replace, shutdown. */
+		cardTimer: null as ReturnType<typeof setTimeout> | null,
+		/** Latest infra failure recorded for `/ysk status` diagnostics. */
+		lastFailure: null as { message: string; at: number } | null,
 	};
 
 	// =====================================================================
@@ -246,9 +263,52 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 	}
 
 	function failureNotice(ctx: ExtensionContext, message: string): void {
-		if (state.failureLatched || child.isChild || !ctx.hasUI) return;
+		if (child.isChild) return;
+		// Recorded even while latched: /ysk status can still answer "why is
+		// nothing surfacing" without spending another toast.
+		state.lastFailure = { message, at: Date.now() };
+		if (state.failureLatched || !ctx.hasUI) return;
 		state.failureLatched = true;
 		ctx.ui.notify(`You Should Know: ${message} Further audit problems stay silent until settings change.`, "warning");
+	}
+
+	// =====================================================================
+	// One presentation for every surfacing path (btw answer-card idiom)
+	// =====================================================================
+
+	/**
+	 * Presents findings once per entry: the chrome transcript box (appended
+	 * here in the transcript, right after the edits that raised it — context
+	 * stays attached to context), the critical-only toast (unchanged
+	 * contract), and the above-editor findings card, which auto-hides; a
+	 * newer card replaces the older. Non-TUI modes degrade to box + toast.
+	 */
+	function surfaceFindings(entryData: YskEntryData, ctx: ExtensionContext): void {
+		pi.appendEntry(YSK_ENTRY_TYPE, entryData);
+
+		const toast = criticalToastText(entryData);
+		if (toast && ctx.hasUI) ctx.ui.notify(toast, "error");
+
+		if (cardMs <= 0 || ctx.mode !== "tui" || !ctx.hasUI) return;
+		if (state.cardTimer) {
+			clearTimeout(state.cardTimer);
+			state.cardTimer = null;
+		}
+		const dismissAt = Date.now() + cardMs;
+		ctx.ui.setWidget(
+			YSK_CARD_KEY,
+			(_tui, theme) => ({
+				render(width: number): string[] {
+					return buildYskCardRows(toChromeTheme(theme), entryData, width, dismissAt, Date.now());
+				},
+				invalidate(): void {},
+			}),
+			{ placement: "aboveEditor" },
+		);
+		state.cardTimer = setTimeout(() => {
+			state.cardTimer = null;
+			if (ctx.hasUI && ctx.mode === "tui") ctx.ui.setWidget(YSK_CARD_KEY, undefined);
+		}, cardMs);
 	}
 
 	// =====================================================================
@@ -310,7 +370,7 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 				latencyMs: outcome.latencyMs,
 				timestamp: Date.now(),
 			};
-			pi.appendEntry(YSK_ENTRY_TYPE, entryData);
+
 
 			// Child runs mirror the finding next to their runner-managed session
 			// file; the parent consumes it when the subagent result arrives.
@@ -333,8 +393,7 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 				}
 			}
 
-			const toast = criticalToastText(entryData);
-			if (toast && ctx.hasUI) ctx.ui.notify(toast, "error");
+			surfaceFindings(entryData, ctx);
 		} catch {
 			// A background auditor must never break the tool pipeline.
 		} finally {
@@ -396,9 +455,7 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 						latencyMs: record.latencyMs,
 						timestamp: record.auditAt,
 					};
-					pi.appendEntry(YSK_ENTRY_TYPE, entryData);
-					const toast = criticalToastText(entryData);
-					if (toast && ctx.hasUI) ctx.ui.notify(toast, "error");
+					surfaceFindings(entryData, ctx);
 				}
 			}
 		} catch {
@@ -478,7 +535,7 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 		syncStatus(ctx);
 	});
 
-	pi.on("session_shutdown", () => {
+	pi.on("session_shutdown", (_event, shutdownCtx) => {
 		setFrameMetadataContributor(FRAME_CONTRIBUTOR_KEY, undefined);
 		state.abort.abort();
 		state.abort = new AbortController();
@@ -486,9 +543,17 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 			clearTimeout(state.timer);
 			state.timer = null;
 		}
+		if (state.cardTimer) {
+			clearTimeout(state.cardTimer);
+			state.cardTimer = null;
+		}
+		if (shutdownCtx?.hasUI && shutdownCtx.mode === "tui") {
+			shutdownCtx.ui.setWidget(YSK_CARD_KEY, undefined);
+		}
 		state.pending.clear();
 		state.inFlight = false;
 		state.queuedRun = false;
+		state.lastFailure = null;
 	});
 
 	// =====================================================================
@@ -552,21 +617,29 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 				const current = settings();
 
 				switch (sub) {
-					case "": {
+					case "":
+					case "status": {
 						const pinned = current.model ?? "(session model)";
-						ctx.ui.notify(
-							[
-								`You Should Know: ${current.enabled ? "enabled" : "disabled"} · sub-agent: ${pinned}`,
-								`audited tools: ${current.auditTools.join(", ")} · min severity: ${current.minSeverity}`,
-								`commands: ${SUBCOMMANDS.map((cmd) => cmd.name).join(", ")}`,
-							].join("\n"),
-							"info",
-						);
+						const lines = [
+							`You Should Know: ${current.enabled ? "enabled" : "disabled"} · sub-agent: ${pinned}`,
+							`audited tools: ${current.auditTools.join(", ")} · min severity: ${current.minSeverity}`,
+						];
+						const failure = state.lastFailure;
+						if (failure) {
+							const age = Math.max(1, Math.round((Date.now() - failure.at) / 60_000));
+							const note = failure.message.length > 160 ? `${failure.message.slice(0, 160)}…` : failure.message;
+							lines.push(
+								`last audit failure (${age}m ago): ${note} — failures stay silent until settings change`,
+							);
+						}
+						lines.push(`commands: ${SUBCOMMANDS.map((cmd) => cmd.name).join(", ")}`);
+						ctx.ui.notify(lines.join("\n"), "info");
 						return;
 					}
 					case "enable": {
 						saveYskSettings({ enabled: true });
 						state.failureLatched = false;
+						state.lastFailure = null;
 						syncStatus(ctx);
 						ctx.ui.notify("You Should Know: enabled — file changes are audited in the background.", "info");
 						return;
@@ -598,6 +671,7 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 						if (body === "off") {
 							saveYskSettings({ model: null });
 							state.failureLatched = false;
+							state.lastFailure = null;
 							syncStatus(ctx);
 							ctx.ui.notify("You Should Know: sub-agent now follows the session model.", "info");
 							return;
@@ -609,6 +683,7 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 						}
 						saveYskSettings({ model: resolved.description });
 						state.failureLatched = false;
+						state.lastFailure = null;
 						syncStatus(ctx);
 						ctx.ui.notify(`You Should Know: sub-agent model set to ${resolved.description}.`, "info");
 						return;

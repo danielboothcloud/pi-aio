@@ -13,14 +13,17 @@ import { visibleWidth } from "@earendil-works/pi-tui";
 
 import {
 	buildYskBoxRows,
+	buildYskCardRows,
 	buildYskMetaRows,
 	criticalToastText,
 	formatAuditTokens,
+	MAX_CARD_ROWS,
 	registerShouldKnowRenderer,
 	statusAuditingLine,
 	statusOnLine,
 	toChromeTheme,
 	type YskEntryData,
+	YSK_CARD_KEY,
 	YSK_ENTRY_TYPE,
 	YskBoxComponent,
 } from "./display.ts";
@@ -72,34 +75,35 @@ const ENTRY: YskEntryData = {
 // Box rendering
 // =====================================================================
 
-test("box rows match the agreed frame shape and labels", () => {
+test("box rows match the btw frame shape and labels", () => {
 	const rows = buildYskBoxRows(plainTheme, ENTRY, false, 80);
 	assert.ok(rows.length > 0);
-	assert.match(rows[0], /^╭─ YOU SHOULD KNOW \(PI EDITION\) ─*/);
+	assert.match(rows[0], /^╭─ YOU SHOULD KNOW ─*/);
 	assert.ok(rows[0].endsWith("╮"));
+	assert.ok(!rows[0].includes("PI EDITION"), "old label suffix retired");
 	const bottom = rows.find((r) => r.startsWith("╰"));
 	assert.ok(bottom, "bottom rail present");
 	assert.ok(bottom!.endsWith("╯"));
-	assert.ok(rows.some((r) => r.includes("✖ [critical] Unawaited promise discarded")));
-	assert.ok(rows.some((r) => r.includes("▲ [warning] Router bound twice")));
+	assert.ok(rows.some((r) => r.includes("✖ Unawaited promise discarded")));
+	assert.ok(rows.some((r) => r.includes("▲ Router bound twice")));
 	assert.ok(rows.some((r) => r.includes("Errors pass silently. — src/app.ts")));
+	assert.ok(!rows.some((r) => r.includes("[critical]")), "severity tags dropped — glyphs carry them");
 });
-
 test("meta rows attribute the sub-agent and carry the audit stats", () => {
-	const rows = buildYskMetaRows(plainTheme, ENTRY, false, 100);
-	assert.ok(rows.some((r) => r.includes("sub-agent: anthropic/claude-haiku-5-5")));
+	const rows = buildYskMetaRows(plainTheme, ENTRY, false, 140);
+	assert.ok(rows.some((r) => r.includes("sub-agent anthropic/claude-haiku-5-5")));
 	assert.ok(rows.some((r) => r.includes("via subagent 'scout'")));
 	assert.ok(rows.some((r) => r.includes("2 shown / 3 raised")));
 	assert.ok(rows.some((r) => r.includes("4.5k tok")));
 	assert.ok(rows.some((r) => r.includes("min warning")));
 	assert.ok(rows.some((r) => r.includes("1.2s")));
 
-	const collapsed = buildYskMetaRows(plainTheme, ENTRY, false, 100).join("\n");
+	const collapsed = buildYskMetaRows(plainTheme, ENTRY, false, 140).join("\n");
 	assert.ok(!collapsed.includes("src/router.ts"), "collapsed view hides the file list");
 
-	const expanded = buildYskMetaRows(plainTheme, ENTRY, true, 100).join("\n");
+	const expanded = buildYskMetaRows(plainTheme, ENTRY, true, 140).join("\n");
 	assert.ok(expanded.includes("src/router.ts"), "expanded view lists files");
-	const local = buildYskMetaRows(plainTheme, { ...ENTRY, origin: null }, false, 100).join("\n");
+	const local = buildYskMetaRows(plainTheme, { ...ENTRY, origin: null }, false, 140).join("\n");
 	assert.ok(!local.includes("via "), "parent-local audits carry no origin");
 });
 
@@ -154,6 +158,46 @@ test("severity tones route through theme roles (error/warning + dim meta)", () =
 // =====================================================================
 // Component + renderer registration
 // =====================================================================
+
+
+test("the findings card renders head rows and a countdown hint", () => {
+	const dismissAt = Date.now() + 30_000;
+	const rows = buildYskCardRows(plainTheme, ENTRY, 60, dismissAt, Date.now());
+	assert.ok(rows[0].includes("YOU SHOULD KNOW"), "card label");
+	assert.ok(rows.some((r) => r.includes("✖ Unawaited promise discarded")), "critical head row");
+	assert.ok(rows.some((r) => r.includes("▲ Router bound twice")), "warning head row");
+	assert.ok(rows.some((r) => r.includes("auto-hides in 30s")), "countdown hint");
+	assert.ok(rows.some((r) => r.includes("full findings in the transcript")), "transcript pointer");
+	assert.ok(rows.some((r) => r.startsWith("╰")), "bottom rail present");
+});
+
+test("the card caps its findings and points surplus rows at the transcript", () => {
+	const many: YskEntryData = {
+		...ENTRY,
+		findings: Array.from({ length: 7 }, (_, index) => ({
+			severity: "warning",
+			title: `Overage ${index + 1}`,
+			detail: "d",
+		})),
+	};
+	const rows = buildYskCardRows(plainTheme, many, 60, Date.now() + 30_000, Date.now());
+	assert.ok(rows.length <= MAX_CARD_ROWS, `card within row budget (${rows.length})`);
+	assert.ok(rows.some((r) => r.includes("Overage 4")), "shows up to four findings");
+	assert.ok(!rows.some((r) => r.includes("Overage 5")), "fifth finding not rendered");
+	assert.ok(rows.some((r) => r.includes("…+3 more")), "overflow collapsed with a count");
+});
+
+test("the card fits narrow widths and drops to nothing without findings", () => {
+	for (const width of [80, 60, 40, 20]) {
+		const rows = buildYskCardRows(plainTheme, ENTRY, width, Date.now() + 30_000, Date.now());
+		assert.ok(rows.length > 0, `rows at width ${width}`);
+		for (const row of rows) {
+			assert.ok(visibleWidth(row) <= width, `row overflow at width ${width}: "${row}"`);
+		}
+	}
+	assert.deepEqual(buildYskCardRows(plainTheme, { ...ENTRY, findings: [] }, 80, Date.now()), []);
+	assert.deepEqual(buildYskCardRows(plainTheme, ENTRY, 0, Date.now() + 30_000, Date.now()), []);
+});
 
 test("YskBoxComponent renders identical rows for a width", () => {
 	const component = new YskBoxComponent(ENTRY, false, plainTheme);
