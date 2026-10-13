@@ -184,6 +184,20 @@ generated `dist/` tree without changing the package contract.
   resume manually. Tool description and promptGuidelines steer the parent
   toward generous `timeoutMs` budgets (pi's own HTTP idle timeout is 300s by
   default, so budgets below that kill children mid-recovery).
+- `you-should-know/` owns the YSK shadow auditor: successful
+  `write`/`edit`/`apply_patch` tool results are debounced into one bounded,
+  isolated `ctx.modelRegistry.complete()` audit (the sub-agent) whose findings
+  render as a chrome-composed custom entry; custom entries never enter LLM
+  context, and a clean audit renders nothing. Off by default — `/ysk
+  enable|disable|model|severity|tools|audit` persists to
+  `~/.pi/agent/aio-you-should-know.settings.json` (goal-settings contract;
+  `AIO_YSK_SETTINGS_FILE` overrides for tests). Subagent children resolve the
+  same file mid-run, so a disabled parent audits nothing in its children
+  either; children audit their own writes and mirror findings into a
+  `you-should-know.jsonl` sidecar beside their runner-managed session file,
+  which the parent consumes (and deletes) when the `subagent` tool result
+  arrives. It owns no tool and gates nothing; registration order is not
+  load-bearing (registered late, before yaml-hooks).
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

@@ -4,7 +4,7 @@ import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { CURSOR_MARKER, getKeybindings, visibleWidth, type EditorTheme, type TUI } from "@earendil-works/pi-tui";
 import { BashHintEditor } from "../user-bash/bash-hint-editor.ts";
 import { QueueEditor } from "../queue/queue-editor.ts";
-import { MinimalistFrameEditor, renderWithAutocompleteCapture } from "./editor.ts";
+import { MinimalistFrameEditor, parseBaseBorderRule, renderWithAutocompleteCapture } from "./editor.ts";
 import { DEFAULT_FRAME_STYLE } from "./render.ts";
 
 const theme = { fg: (_name: string, text: string) => text };
@@ -137,14 +137,32 @@ test("native shell fallback restores hints without changing status during render
 	for (const line of lines) assert.ok(visibleWidth(line) <= 80);
 });
 
-test("framed shell input retains native viewport indicators", () => {
+test("framed shell input retains viewport indicators without nested narrow rules", () => {
 	for (const prefix of ["!", "!!"]) {
-		const { base } = makeShellBase(false, 12);
+		const { base } = makeShellBase(true, 12);
 		const editor = new MinimalistFrameEditor(base as never, editorOptions);
 		editor.setText(`${prefix} first\n${Array.from({ length: 30 }, (_, index) => `line ${index}`).join("\n")}`);
-		const lines = editor.render(120);
-		assert.match(lines[0]!, /↑ [1-9]\d* more/);
-		assert.ok(lines.slice(1, -1).every((line) => !/─{3}/.test(line)), "no nested native borders");
+		for (const width of [12, 17, 20, 24, 40, 120]) {
+			const lines = editor.render(width);
+			assert.equal(lines.length, 7, `${prefix} at ${width}: two borders and five native content rows`);
+			if (width >= 17) {
+				assert.match(lines[0]!, /↑ [1-9]\d*/);
+				if (width >= 40) assert.match(lines[0]!, /↑ [1-9]\d* more/);
+				assert.match(lines[0]!, /^╭/);
+				assert.ok(lines.slice(1, -1).every((line) => !/─{3}/.test(line)), "no nested native borders");
+			} else {
+				assert.ok(lines.every((line) => !/[╭╰]/.test(line)), "unparseable truncated rules stay native");
+			}
+			for (const line of lines) assert.ok(visibleWidth(line) <= width);
+		}
+	}
+});
+
+test("viewport parsing accepts centered narrow rules but rejects truncated or unrelated labels", () => {
+	assert.deepEqual(parseBaseBorderRule("─ ↑ 26 more ─", "above"), { count: "26" });
+	assert.deepEqual(parseBaseBorderRule("─ ↓ 4 more ─", "below"), { count: "4" });
+	for (const line of ["─ ↑ 26 mo", "─ ↓ 4 more ─", "─ ↑ 0 more ─", "text ↑ 26 more ─"]) {
+		assert.equal(parseBaseBorderRule(line, "above"), undefined, line);
 	}
 });
 

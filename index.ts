@@ -3,7 +3,8 @@
  * permission modes, enhanced built-in tool output, syntax-highlighted diffs,
  * configurable web search, rtk shell-command rewriting, ast-grep structural
  * search, a message-queue UI with Enter-to-interrupt, YAML hook automation,
- * and the tuicr review loop (ported from @joelazar/pi-tuicr).
+ * the tuicr review loop (ported from @joelazar/pi-tuicr), and the You Should
+ * Know (YSK) dual-agent shadow auditor.
  *
  * Effort and permission modes are based on @pandi-coding-agent/pandi-effort
  * and @aprimediet/permission-modes. The questionnaire implementation is based
@@ -33,6 +34,7 @@ import registerTuicr from "./tuicr/index.js";
 import { registerUserBash } from "./user-bash/index.js";
 import { registerFrameEditor } from "./frame/index.js";
 import registerYamlHooks from "./yaml-hooks/index.js";
+import { registerYouShouldKnow } from "./you-should-know/index.js";
 
 export {
 	ASK_USER_PROMPT_EVENT,
@@ -84,6 +86,10 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// AIO's QueueEditor and become the single final visual owner (minimalist
 	// editor frame, proprietary — see frame/UPSTREAM.md).
 	registerFrameEditor(pi);
+	// YSK observes successful write/edit/apply_patch results and mutates
+	// nothing: no gating, no tool surface, no editor ownership, so its place in
+	// the chain is not load-bearing. It runs late, after the visual publishers.
+	registerYouShouldKnow(pi);
 	// Yaml hooks last: it owns no tool surface, but its user-bash interception
 	// (opt-in via env) must wrap the user-bash gate above.
 	registerYamlHooks(pi);

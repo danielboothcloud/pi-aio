@@ -322,6 +322,9 @@ export class MinimalistFrameEditor implements EditorComponent {
 		const top = parseBaseBorderRule(editorFrame[0] ?? "", "above");
 		const bottom = parseBaseBorderRule(editorFrame.at(-1) ?? "", "below");
 		const stripped = top !== undefined && bottom !== undefined;
+		// A known shell editor can emit truncated viewport labels at tiny widths.
+		// Keep those native rather than nesting unrecognizable rules in the frame.
+		if (!stripped && this.base.renderUnframed) return nativeFallback(baseRendered);
 		const editorLines = stripped ? editorFrame.slice(1, -1) : editorFrame;
 		const viewport =
 			stripped && style.viewportIndicators
@@ -357,7 +360,7 @@ function plainText(line: string): string {
  * Recognize the base editor's border rows: a bare rule (`────`) or a rule
  * carrying a scroll indicator (`─── ↑ 3 more ──`). Returns the indicator
  * count when present, `{}` for a bare rule, undefined for non-border rows.
- * Mirrors upstream's parseEditorBorder.
+ * Native centering can leave just one leading dash at narrow widths.
  */
 export function parseBaseBorderRule(
 	line: string,
@@ -366,6 +369,6 @@ export function parseBaseBorderRule(
 	const plain = plainText(line).trim();
 	if (/^─+$/.test(plain)) return {};
 	const arrow = direction === "above" ? "↑" : "↓";
-	const match = new RegExp(`^─{3,} ${arrow} ([1-9]\\d*) more ─*$`).exec(plain);
+	const match = new RegExp(`^─+ ${arrow} ([1-9]\\d*) more ─*$`).exec(plain);
 	return match?.[1] ? { count: match[1] } : undefined;
 }

@@ -1007,6 +1007,40 @@ the agent has no tool to open editor panes, so files are opened when
 you ask for them (`/nvim src/index.ts:42`, or `-r` for a read-only
 view). `path:line` and `path:line:col` shorthand work.
 
+## You Should Know (YSK) shadow auditor
+
+A dual-agent shadow auditor against tunnel vision. After every successful
+`write`, `edit`, or `apply_patch` (the diff-tools surface), YSK runs one
+bounded, isolated model call — the sub-agent — that re-examines the change
+with snapshots of the changed files, the nearest manifest, sibling listings,
+and your current task. It looks strictly for forgotten edge cases, broken
+in-project dependencies, unhandled errors, architectural mismatches, and
+operational footguns the implementing agent would not surface.
+
+- **The token guard is structural**: the audit runs outside the conversation
+  through `modelRegistry.complete()`, and findings are custom session entries,
+  which never enter LLM context. A clean audit renders nothing at all — no
+  entry, no toast, no noise.
+- **One cohesive surface**: findings render as a chrome-composed transcript
+  box labeled `YOU SHOULD KNOW (PI EDITION)` with severity-coded findings, the
+  sub-agent model, per-audit token spend, and an attribution line. Critical
+  findings also toast. While enabled, a `◉ YSK` pill shows in the muted status
+  row and flashes while an audit runs.
+- **Subagents included**: children spawned by the `subagent` tool audit their
+  own writes, mirror findings into a sidecar beside their runner-managed
+  session file, and the parent surfaces (and consumes) them through the same
+  box and toast when the child run completes.
+- **Settings persist** (goal-settings contract) in
+  `~/.pi/agent/aio-you-should-know.settings.json`; `AIO_YSK_SETTINGS_FILE`
+  overrides it for tests and sandboxes. YSK is **off by default** — enabling it
+  once keeps it on across sessions *and* in subagent children, and disabling
+  it stops both immediately.
+
+Commands: `/ysk` shows status; `/ysk enable`, `/ysk disable`,
+`/ysk model <provider/id> | off` (default: the session model),
+`/ysk severity info|warning|critical`, `/ysk tools <list>`, and
+`/ysk audit <path>` for a manual one-shot audit.
+
 ## Layout
 
 ```text
@@ -1029,6 +1063,7 @@ view). `path:line` and `path:line:col` shorthand work.
 ├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)
 ├── subagents/               # child-agent discovery, execution, and lifecycle
 ├── user-bash/               # !/!! command permission gating
+├── you-should-know/        # YSK dual-agent shadow auditor
 └── yaml-hooks/              # hooks.yaml automation (ported from pi-yaml-hooks)
 ```
 
