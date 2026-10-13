@@ -1024,8 +1024,11 @@ operational footguns the implementing agent would not surface.
 - **One cohesive surface**: findings render as a chrome-composed transcript
   box labeled `YOU SHOULD KNOW (PI EDITION)` with severity-coded findings, the
   sub-agent model, per-audit token spend, and an attribution line. Critical
-  findings also toast. While enabled, a `◉ YSK` pill shows in the muted status
-  row and flashes while an audit runs.
+  findings also toast. While enabled, YSK shows its state the way the rest of
+  AIO does: embedded in the minimalist frame's border (`mode · style ·
+  effort · context · time · ysk` — muted while armed, accent while auditing)
+  through the frame metadata protocol, and as a `◉ YSK` pill in the status
+  row's `statuses` segment in unframed sessions.
 - **Subagents included**: children spawned by the `subagent` tool audit their
   own writes, mirror findings into a sidecar beside their runner-managed
   session file, and the parent surfaces (and consumes) them through the same

@@ -17,6 +17,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { type Component, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
+import type { FrameMetadata } from "../frame/render.js";
 import {
 	chromeFrameRow,
 	chromeFrameRule,
@@ -208,6 +209,35 @@ export function statusOnLine(model: string | undefined): string {
 export function statusAuditingLine(files: number): string {
 	const noun = files === 1 ? "file" : "files";
 	return `${STATUS_GLYPH} YSK auditing (${files} ${noun})`;
+}
+
+// ============================================================
+// Frame metadata (the minimalist frame embeds state in its border;
+// footer pills are a dead channel while the frame is installed)
+// ============================================================
+
+export type YskFrameMeta = NonNullable<FrameMetadata["ysk"]>;
+
+/**
+ * Muted armed pill for the frame's top border: "◉ ysk on", or the pinned
+ * model id when the user explicitly chose a sub-agent model. The session
+ * model already shows top-right, so an unpinned auditor stays label-quiet.
+ */
+export function frameIdleMeta(pinnedModelId: string | undefined): YskFrameMeta {
+	return {
+		icon: STATUS_GLYPH,
+		label: pinnedModelId ? `ysk · ${pinnedModelId}` : "ysk on",
+		role: "muted",
+	};
+}
+
+/** Accent flash while an audit batch is in flight. */
+export function frameAuditingMeta(files: number): YskFrameMeta {
+	return {
+		icon: "◷",
+		label: `ysk auditing (${files})`,
+		role: "accent",
+	};
 }
 
 // ============================================================

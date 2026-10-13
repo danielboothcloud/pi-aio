@@ -35,6 +35,13 @@ import type {
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 
+import type { FrameMetadata } from "../frame/render.js";
+import {
+	probeFrameEditor,
+	requestFrameRepaint,
+	setFrameMetadataContributor,
+} from "../frame/protocol.js";
+
 import {
 	appendChildAuditRecord,
 	buildAuditPrompt,
@@ -56,6 +63,8 @@ import {
 } from "./auditor.js";
 import {
 	criticalToastText,
+	frameAuditingMeta,
+	frameIdleMeta,
 	registerShouldKnowRenderer,
 	statusAuditingLine,
 	statusOnLine,
@@ -67,12 +76,64 @@ import {
 /** The subagents tool whose results carry `details.children[].sessionFile`. */
 const SUBAGENT_TOOL_NAME = "subagent";
 
+/** Frame metadata slot key while a minimalist frame owns the visual surface. */
+const FRAME_CONTRIBUTOR_KEY = "you-should-know";
+
 /** Model resolution against the registry (pin → registry, else session model). */
 type SessionModel = NonNullable<ExtensionContext["model"]>;
 
 interface ModelRegistryLike {
 	find(provider: string, modelId: string): SessionModel | undefined;
 	getModelsOfType(type: "chat", provider?: string): SessionModel[];
+	getAvailableOfType(type: "chat"): Promise<readonly SessionModel[]>;
+}
+
+/**
+ * Resolves a pin spec against the registry and the session's enabled set.
+ * A provider prefix splits on the FIRST slash, but model ids may themselves
+ * contain slashes (e.g. "synthetic/hf:zai-org/GLM-5.3" and the bare
+ * "hf:zai-org/GLM-5.3" must both resolve), so the whole string is also tried
+ * as a bare id through the scoped set and the catalogue.
+ */
+function lookupModelSpec(ctx: ExtensionContext, spec: string): SessionModel | undefined {
+	const registry = registryFor(ctx);
+	const slash = spec.indexOf("/");
+	const split = slash > 0 ? { provider: spec.slice(0, slash), id: spec.slice(slash + 1) } : undefined;
+	if (split) {
+		const direct = registry.find(split.provider, split.id);
+		if (direct) return direct;
+	}
+	const scoped = ctx.scopedModels ?? [];
+	const scopedFull = scoped.find((entry) => entry.model?.id === spec)?.model as SessionModel | undefined;
+	if (scopedFull) return scopedFull;
+	if (split) {
+		const scopedSplit = scoped.find(
+			(entry) => entry.model?.provider === split.provider && entry.model?.id === split.id,
+		)?.model as SessionModel | undefined;
+		if (scopedSplit) return scopedSplit;
+	}
+	return registry.getModelsOfType("chat").find((m) =>
+		split ? (m.provider === split.provider && m.id === split.id) || m.id === spec : m.id === spec,
+	);
+}
+
+/**
+ * Models offered for `/ysk model`: the session's scoped (enabled) models
+ * first; otherwise models with working credentials; the full catalogue only
+ * as a last resort.
+ */
+async function enabledModelList(ctx: ExtensionContext): Promise<SessionModel[]> {
+	const scoped = ctx.scopedModels ?? [];
+	if (scoped.length > 0) {
+		return scoped.map((entry) => entry.model as SessionModel);
+	}
+	try {
+		const available = await registryFor(ctx).getAvailableOfType("chat");
+		if (available && available.length > 0) return [...available];
+	} catch {
+		// Availability probing must never break the command.
+	}
+	return registryFor(ctx).getModelsOfType("chat");
 }
 
 function registryFor(ctx: ExtensionContext): ModelRegistryLike {
@@ -87,11 +148,7 @@ function resolveAuditModel(
 	settings: YskSettings,
 ): { model: SessionModel | undefined; description: string } {
 	if (settings.model) {
-		const slash = settings.model.indexOf("/");
-		const provider = slash > 0 ? settings.model.slice(0, slash) : "";
-		const id = slash > 0 ? settings.model.slice(slash + 1) : settings.model;
-		const direct = provider ? registryFor(ctx).find(provider, id) : undefined;
-		const resolved = direct ?? registryFor(ctx).getModelsOfType("chat").find((m) => m.id === id);
+		const resolved = lookupModelSpec(ctx, settings.model);
 		if (resolved) return { model: resolved, description: `${resolved.provider}/${resolved.id}` };
 		return { model: undefined, description: settings.model };
 	}
@@ -145,9 +202,37 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 	// Status pill (never in children; cleared whenever disabled)
 	// =====================================================================
 
+	// Frame contribution is live: the closure re-reads settings and the pinned
+	// model on every frame render, so a flip is reflected without re-registering.
+	function frameContribution(auditing: number | null): () => Partial<FrameMetadata> {
+		return () => {
+			const current = settings();
+			if (!current.enabled) return {};
+			if (auditing !== null) {
+				return { ysk: frameAuditingMeta(auditing) };
+			}
+			const pinnedId = current.model ? current.model.split("/").pop() : undefined;
+			return { ysk: frameIdleMeta(pinnedId) };
+		};
+	}
+
 	function syncStatus(ctx: ExtensionContext, auditing: number | null = null): void {
-		if (child.isChild || !ctx.hasUI) return;
+		if (child.isChild) return;
 		const current = settings();
+		// While the minimalist frame owns the visual surface, state embeds in
+		// its border via the metadata protocol and the footer stays quiet;
+		// without the frame, the status-line pill carries the same texts.
+		if (probeFrameEditor(pi).supported) {
+			setFrameMetadataContributor(
+				FRAME_CONTRIBUTOR_KEY,
+				current.enabled ? frameContribution(auditing) : undefined,
+			);
+			requestFrameRepaint();
+			if (ctx.hasUI) ctx.ui.setStatus(YSK_STATUS_KEY, undefined);
+			return;
+		}
+		setFrameMetadataContributor(FRAME_CONTRIBUTOR_KEY, undefined);
+		if (!ctx.hasUI) return;
 		if (!current.enabled) {
 			ctx.ui.setStatus(YSK_STATUS_KEY, undefined);
 			return;
@@ -394,6 +479,7 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 	});
 
 	pi.on("session_shutdown", () => {
+		setFrameMetadataContributor(FRAME_CONTRIBUTOR_KEY, undefined);
 		state.abort.abort();
 		state.abort = new AbortController();
 		if (state.timer) {
@@ -412,15 +498,15 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 	if (!child.isChild) {
 		pi.registerCommand("ysk", {
 			description: "You Should Know (Pi Edition) — dual-agent shadow auditor",
-			getArgumentCompletions: (argumentPrefix: string) => {
+			getArgumentCompletions: async (argumentPrefix: string) => {
 				const trimmed = argumentPrefix ?? "";
 				const parts = trimmed.split(/\s+/);
 				const head = parts[0] ?? "";
 				const tail = parts.slice(1).join(" ");
 
 				if (head === "model" && lastCtx) {
-					return registryFor(lastCtx)
-						.getModelsOfType("chat")
+					const models = await enabledModelList(lastCtx);
+					return models
 						.map((m) => ({
 							value: `${m.provider}/${m.id}`,
 							label: m.id,

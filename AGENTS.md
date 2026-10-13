@@ -196,8 +196,11 @@ generated `dist/` tree without changing the package contract.
   either; children audit their own writes and mirror findings into a
   `you-should-know.jsonl` sidecar beside their runner-managed session file,
   which the parent consumes (and deletes) when the `subagent` tool result
-  arrives. It owns no tool and gates nothing; registration order is not
-  load-bearing (registered late, before yaml-hooks).
+  arrives. The state indicator is dual-channel: the minimalist frame's border
+  via the frame metadata protocol (muted armed, accent while auditing) while
+  a frame owns the surface, else the status row's `statuses` segment. It owns
+  no tool and gates nothing; registration order is not load-bearing
+  (registered late, before yaml-hooks).
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

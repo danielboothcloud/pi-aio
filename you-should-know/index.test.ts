@@ -16,6 +16,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 import { appendChildAuditRecord, sidecarPathFor } from "./auditor.ts";
+import { contributedFrameMetadata, FRAME_CAPABILITY_EVENT } from "../frame/protocol.ts";
 import { YSK_ENTRY_TYPE, type YskEntryData } from "./display.ts";
 import { registerYouShouldKnow } from "./index.ts";
 
@@ -34,6 +35,14 @@ interface HarnessOptions {
 		usage?: { input?: number; output?: number; cost?: { total?: number } };
 	};
 	failComplete?: Error;
+	/** Held unresolved while auditing; release it to finish the batch. */
+	completeGate?: Promise<void>;
+	/** ctx.scopedModels: enabled-model scoping ([] = unscoped). */
+	scopedModels?: Array<{ provider: string; id: string }>;
+	/** registry.getAvailableOfType: providers with working credentials. */
+	availableModels?: Array<{ provider: string; id: string }>;
+	/** When true, the harness pi answers the frame capability probe. */
+	frameSupported?: boolean;
 	/** Subagent-child environment for the registrar process. */
 	child?: { runId?: string; agent?: string; sessionFile: string } | null;
 }
@@ -87,6 +96,7 @@ function makeHarness(options: HarnessOptions = {}) {
 	const sessionModel = options.model ?? { provider: "openai", id: "gpt-test" };
 	const alternateModel = { provider: "anthropic", id: "claude-test" };
 	const replyText = options.reply?.text ?? JSON.stringify({ findings: [] });
+	const registryList = () => [sessionModel, alternateModel].filter(Boolean);
 
 	const handlers = new Map<string, Array<(event: ExtensionEvent, ctx: unknown) => unknown>>();
 	const commands = new Map<string, { description?: string; getArgumentCompletions?: (p: string) => unknown; handler: (args: string, ctx: unknown) => Promise<void> }>();
@@ -99,6 +109,7 @@ function makeHarness(options: HarnessOptions = {}) {
 		cwd: dir,
 		hasUI: true,
 		mode: "tui",
+		scopedModels: (options.scopedModels ?? []).map((m) => ({ model: m })),
 		ui: {
 			notify: (message: string, type?: string) => notifications.push({ message, type }),
 			setStatus: (key: string, text: string | undefined) => {
@@ -117,9 +128,11 @@ function makeHarness(options: HarnessOptions = {}) {
 					: provider === alternateModel.provider && id === alternateModel.id
 						? alternateModel
 						: undefined,
-			getModelsOfType: () => [sessionModel, alternateModel].filter(Boolean),
+			getModelsOfType: () => registryList(),
+			getAvailableOfType: async () => options.availableModels ?? [],
 			complete: async (_model: unknown, context: CompleteCall["context"]) => {
 				completeCalls.push({ context });
+				if (options.completeGate) await options.completeGate;
 				if (options.failComplete) throw options.failComplete;
 				return {
 					content: [{ type: "text", text: replyText }],
@@ -137,6 +150,13 @@ function makeHarness(options: HarnessOptions = {}) {
 	const pi = {
 		on: (event: string, handler: (event: ExtensionEvent, ctx: unknown) => unknown) => {
 			handlers.set(event, [...(handlers.get(event) ?? []), handler]);
+		},
+		events: {
+			emit: (event: string, payload: { supported?: boolean }) => {
+				if (event === FRAME_CAPABILITY_EVENT && options.frameSupported) {
+					payload.supported = true;
+				}
+			},
 		},
 		registerEntryRenderer: () => {},
 		appendEntry: (customType: string, data: YskEntryData) => entries.push({ customType, data }),
@@ -463,14 +483,19 @@ test("infra errors notify once, then stay silent", async () => {
 // /ysk command + completions
 // =====================================================================
 
-const commandHarness = () => {
-	const h = makeHarness({});
+const makeCommandHarness = (options: HarnessOptions = {}) => {
+	const h = makeHarness(options);
 	const ctx = h.ctx;
 	const handler = (args: string, ctx: unknown) => h.commands.get("ysk")!.handler(args, ctx);
-	const completions = (prefix: string) =>
-		(h.commands.get("ysk")!.getArgumentCompletions?.(prefix) ?? null) as Array<{ value: string; description?: string }> | null;
+	const completions = async (prefix: string) =>
+		((await h.commands.get("ysk")?.getArgumentCompletions?.(prefix)) ?? null) as Array<{
+			value: string;
+			description?: string;
+		}> | null;
 	return { h, ctx, handler, completions };
 };
+
+const commandHarness = () => makeCommandHarness({});
 
 test("/ysk enable/disable persist and manage the pill", async () => {
 	const { h, ctx, handler } = commandHarness();
@@ -540,18 +565,151 @@ test("completions cover subcommands, models, severities, and tools", async () =>
 		h.fire("tool_result", h.writeResult({ path: "src/app.ts", content: "x" })); // primes lastCtx
 		await new Promise((resolve) => setTimeout(resolve, 20));
 
-		const subs = completions("") ?? [];
+		const subs = (await completions("")) ?? [];
 		assert.ok(subs.some((c) => c.value === "enable"));
 		assert.ok(subs.some((c) => c.value === "model"));
 
-		const models = completions("model ") ?? [];
+		// Unscoped, nothing "available": the whole catalogue is the last resort.
+		const models = (await completions("model ")) ?? [];
 		assert.ok(models.some((c) => c.value === "anthropic/claude-test"));
 
-		const severities = completions("severity ") ?? [];
+		const severities = (await completions("severity ")) ?? [];
 		assert.deepEqual(severities.map((c) => c.value), ["info", "warning", "critical"]);
 
-		const tools = completions("tools ") ?? [];
+		const tools = (await completions("tools ")) ?? [];
 		assert.ok(tools.some((c) => c.value === "apply_patch"));
+	} finally {
+		h.restore();
+	}
+});
+
+// =====================================================================
+// Enabled-model completion tiers (scoped → available → catalogue)
+// =====================================================================
+
+test("/ysk model completions draw the session's scoped models first", async () => {
+	const scoped = [
+		{ provider: "synthetic", id: "hf:zai-org/GLM-5.3" },
+		{ provider: "anthropic", id: "claude-sonnet-5-5" },
+	];
+	const { h, completions } = makeCommandHarness({ scopedModels: scoped });
+	try {
+		h.fire("tool_result", h.writeResult({ path: "src/app.ts", content: "x" })); // primes lastCtx
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		const models = (await completions("model ")) ?? [];
+		assert.deepEqual(
+			new Set(models.map((c) => c.value)),
+			new Set(["synthetic/hf:zai-org/GLM-5.3", "anthropic/claude-sonnet-5-5"]),
+		);
+	} finally {
+		h.restore();
+	}
+});
+
+test("unscoped completions prefer auth-available models over the catalogue", async () => {
+	const { h, completions } = makeCommandHarness({
+		availableModels: [{ provider: "openai", id: "gpt-test" }],
+	});
+	try {
+		h.fire("tool_result", h.writeResult({ path: "src/app.ts", content: "x" }));
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		const models = (await completions("model ")) ?? [];
+		assert.deepEqual(
+			models.map((c) => c.value),
+			["openai/gpt-test"],
+			"catalogue-only models (anthropic/claude-test) are not offered",
+		);
+	} finally {
+		h.restore();
+	}
+});
+
+test("bare-id pins resolve through the enabled set", async () => {
+	const { h, ctx, handler } = makeCommandHarness({
+		scopedModels: [{ provider: "synthetic", id: "hf:zai-org/GLM-5.3" }],
+	});
+	try {
+		await handler("model hf:zai-org/GLM-5.3", ctx);
+		assert.equal(
+			JSON.parse(fsSync.readFileSync(h.settingsFile, "utf8")).model,
+			"synthetic/hf:zai-org/GLM-5.3",
+		);
+		assert.ok(h.notifications.some((n) => n.message.includes("hf:zai-org/GLM-5.3")));
+	} finally {
+		h.restore();
+	}
+});
+
+// =====================================================================
+// Frame-embedded pill (metadata protocol; footer pills die while framed)
+// =====================================================================
+
+test("framed sessions embed the pill in the border, not the footer", async () => {
+	const h = makeHarness({
+		settings: { enabled: true, batchWindowMs: 15 },
+		frameSupported: true,
+	});
+	try {
+		h.fire("session_start", { type: "session_start", reason: "startup" });
+		const meta = contributedFrameMetadata();
+		assert.equal(meta.ysk?.label, "ysk on");
+		assert.equal(meta.ysk?.role, "muted");
+		assert.ok(
+			h.statusHistory.every((entry) => entry.text !== undefined ? !entry.text.includes("◉ YSK") : true),
+			"footer pill stays quiet while framed",
+		);
+	} finally {
+		h.fire("session_shutdown", { type: "session_shutdown", reason: "quit" });
+		h.restore();
+	}
+});
+
+test("the frame pill flashes accent while auditing, then returns to armed", async () => {
+	let release!: () => void;
+	const gate = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const h = makeHarness({
+		settings: { enabled: true, batchWindowMs: 15 },
+		frameSupported: true,
+		reply: { text: CRITICAL_REPLY },
+		completeGate: gate,
+	});
+	try {
+		h.fire("tool_result", h.writeResult({ path: "src/app.ts", content: "a" }));
+		await waitFor("batch in flight", () => h.completeCalls.length === 1);
+		const midFlight = contributedFrameMetadata();
+		assert.match(midFlight.ysk?.label ?? "", /^ysk auditing \(1\)$/);
+		assert.equal(midFlight.ysk?.role, "accent");
+
+		release();
+		await waitFor("entry appended", () => h.entries.length === 1);
+		const settled = contributedFrameMetadata();
+		assert.equal(settled.ysk?.label, "ysk on");
+		assert.equal(settled.ysk?.role, "muted");
+	} finally {
+		h.fire("session_shutdown", { type: "session_shutdown", reason: "quit" });
+		h.restore();
+	}
+});
+
+test("disable and shutdown both retire the frame contributor", async () => {
+	const { h, ctx, handler } = makeCommandHarness({
+		settings: { enabled: true, batchWindowMs: 15 },
+		frameSupported: true,
+	});
+	try {
+		h.fire("session_start", { type: "session_start", reason: "startup" });
+		assert.ok(contributedFrameMetadata().ysk, "armed while enabled");
+
+		await handler("disable", ctx);
+		assert.equal(contributedFrameMetadata().ysk, undefined, "disabled ⇒ no border pill");
+
+		await handler("enable", ctx);
+		assert.ok(contributedFrameMetadata().ysk, "re-enabled ⇒ pill returns");
+
+		h.fire("session_shutdown", { type: "session_shutdown", reason: "reload" });
+		assert.equal(contributedFrameMetadata().ysk, undefined, "shutdown clears the contributor");
 	} finally {
 		h.restore();
 	}
