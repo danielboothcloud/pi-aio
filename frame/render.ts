@@ -133,7 +133,9 @@ function renderTopLeft(
 	const bashMode = bashModeLabel(inputText);
 	if (bashMode) {
 		parts.push(
-			bashMode === "no-context" ? muted("$") : safeThemeFg(uiTheme, "bashMode", "$"),
+			bashMode === "no-context"
+				? muted("!! hidden")
+				: safeThemeFg(uiTheme, "bashMode", "! bash"),
 		);
 	}
 	// Permission mode leads the metadata (it gates what the agent may do),
@@ -204,6 +206,7 @@ function renderTopLeft(
 }
 
 function renderTopRight(
+	inputText: string,
 	metadata: FrameMetadata,
 	uiTheme: ThemeLike,
 	style: FrameStyle,
@@ -214,6 +217,9 @@ function renderTopRight(
 	const parts: string[] = [];
 	const joinParts = (values: string[]) =>
 		values.map((part, index) => (index > 0 ? `${renderBorder(" – ")}${part}` : part)).join("");
+	if (bashModeLabel(inputText)) {
+		parts.push(safeThemeFg(uiTheme, "dim", "Enter to run"));
+	}
 	const cost = style.showCost ? (metadata.costLabel ?? "").trim() : "";
 	if (cost) {
 		parts.push(renderThemeStyle(uiTheme, COLORS.cost, cost));
@@ -377,9 +383,9 @@ export function renderMinimalistFrame({
 	const top = renderLabeledBorder({
 		width,
 		left: topLeft,
-		right: renderTopRight(metadata, uiTheme, style, topRightBudget, renderBorder),
+		right: renderTopRight(inputText, metadata, uiTheme, style, topRightBudget, renderBorder),
 		fitRight: (budget) =>
-			renderTopRight(metadata, uiTheme, style, budget, renderBorder, true),
+			renderTopRight(inputText, metadata, uiTheme, style, budget, renderBorder, true),
 		leftCorner: "╭",
 		rightCorner: "╮",
 		renderBorder,

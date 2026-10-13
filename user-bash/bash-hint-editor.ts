@@ -53,6 +53,8 @@ function fitBorder(
 }
 
 export class BashHintEditor extends CustomEditor {
+	private frameChrome = false;
+
 	constructor(
 		tui: TUI,
 		theme: EditorTheme,
@@ -62,6 +64,12 @@ export class BashHintEditor extends CustomEditor {
 	) {
 		super(tui, theme, keybindings, options);
 		syncBashHint(ctx, this.getText());
+	}
+
+	/** The AIO wrapper owns mode labels and hints; leave native rules intact. */
+	setFrameChrome(active: boolean): void {
+		this.frameChrome = active;
+		syncBashHint(this.ctx, this.getText(), active);
 	}
 
 	setPaddingX(padding: number): void {
@@ -75,18 +83,27 @@ export class BashHintEditor extends CustomEditor {
 		if (spaced !== null) {
 			this.setText(spaced);
 		}
-		syncBashHint(this.ctx, this.getText());
+		syncBashHint(this.ctx, this.getText(), this.frameChrome);
 	}
 
 	setText(text: string): void {
 		super.setText(text);
-		syncBashHint(this.ctx, text);
+		syncBashHint(this.ctx, text, this.frameChrome);
 	}
 
 	render(width: number): string[] {
+		return this.renderWithChrome(width, this.frameChrome);
+	}
+
+	/** Render-only fallback: restore native hints without changing status state. */
+	renderUnframed(width: number): string[] {
+		return this.renderWithChrome(width, false);
+	}
+
+	private renderWithChrome(width: number, frameChrome: boolean): string[] {
 		const lines = super.render(width);
 		const state = parseBashInput(this.getText());
-		if (!state.active || lines.length < 2) return lines;
+		if (frameChrome || !state.active || lines.length < 2) return lines;
 
 		const theme = this.ctx.ui.theme;
 		const modeLabel = state.hidden

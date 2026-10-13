@@ -49,6 +49,28 @@ test("syncBashHint keeps editor chrome singular and publishes !bash status", () 
 	assert.equal(status?.text, "!bash");
 });
 
+test("syncBashHint clears existing shell status when the frame takes ownership", () => {
+	for (const input of ["! pwd", "!! pwd"]) {
+		const { ctx, widgets, statuses } = makeCtx();
+		syncBashHint(ctx, input);
+		assert.notEqual(statuses.at(-1)?.text, undefined);
+		syncBashHint(ctx, input, true);
+		assert.equal(widgets.at(-1)?.content, undefined);
+		assert.equal(statuses.at(-1)?.text, undefined);
+	}
+});
+
+test("syncBashHint stays inert outside an interactive TUI", () => {
+	for (const overrides of [{ hasUI: false }, { mode: "rpc" }, { mode: "json" }]) {
+		const { ctx, widgets, statuses } = makeCtx();
+		const nonTui = { ...ctx, ...overrides } as ExtensionContext;
+		syncBashHint(nonTui, "!! pwd", true);
+		syncBashHint(nonTui, "! pwd");
+		assert.deepEqual(widgets, []);
+		assert.deepEqual(statuses, []);
+	}
+});
+
 test("syncBashHint labels hidden mode for !! input", () => {
 	const { ctx, widgets, statuses } = makeCtx();
 	syncBashHint(ctx, "!!npm test");

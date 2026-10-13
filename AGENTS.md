@@ -8,6 +8,14 @@ structural search.
 > repository. Its chezmoi, Homebrew, Fish, and Neovim instructions do not apply
 > here.
 
+> **All AIO work happens inside this repository, within this extension.** This
+> package *is* the extension: features are its modules, registered from
+> `index.ts`, and hosts load it through a `packages` reference (`git:…`, npm) or
+> `pi -e .` from a checkout. Never write feature code, configuration, settings,
+> or scratch state to home-directory or other out-of-repo locations (`~/.pi/`,
+> `~/.config/pi/`, `/tmp`): the running session never reads files placed there,
+> so the work is invisible at runtime and sits outside version control.
+
 ## Commands
 
 - `npm ci` — install the locked dependency set.

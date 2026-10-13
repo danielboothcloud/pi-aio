@@ -95,6 +95,10 @@ function makeAuditorResourceLoader(): ResourceLoader {
 				"Never modify files. Never approve unless the actual user objective is complete.",
 			].join("\n"),
 		getAppendSystemPrompt: () => [],
+		// SDK 1.2.0 contract: the auditor's system prompt is code-owned; there is
+		// no SYSTEM.md/APPEND_SYSTEM.md source to report.
+		getSystemPromptSource: () => undefined,
+		getAppendSystemPromptSources: () => [],
 		extendResources: () => {},
 		reload: async () => {},
 	};

@@ -159,6 +159,10 @@ export type FrameBaseEditor = EditorComponent &
 		onExtensionShortcut?: (data: string) => boolean;
 		actionHandlers?: Map<unknown, () => void>;
 		handleMouse?: (event: unknown) => void;
+		/** Opt-in shell-editor seam: the wrapper owns mode chrome and status. */
+		setFrameChrome?: (active: boolean) => void;
+		/** Native-chrome fallback without republishing an unframed status. */
+		renderUnframed?: (width: number) => string[];
 	};
 
 export class MinimalistFrameEditor implements EditorComponent {
@@ -167,7 +171,9 @@ export class MinimalistFrameEditor implements EditorComponent {
 	constructor(
 		private readonly base: FrameBaseEditor,
 		private readonly options: MinimalistFrameEditorOptions,
-	) {}
+	) {
+		this.base.setFrameChrome?.(true);
+	}
 
 	invalidate(): void {
 		this.base.invalidate?.();
@@ -288,28 +294,26 @@ export class MinimalistFrameEditor implements EditorComponent {
 
 	render(width: number): string[] {
 		const { style, uiTheme } = this.options;
-		if (width <= 4) return this.base.render(width);
+		const nativeFallback = (lines: string[]) =>
+			(this.base.renderUnframed?.(width) ?? lines).map((line) => truncateToWidth(line, width, ""));
+		if (width <= 4) return nativeFallback(this.base.render(width));
 
 		let captured: { value: string[]; capture?: AutocompleteCapture };
 		try {
 			captured = renderWithAutocompleteCapture(this.base, () => this.base.render(width - 4));
 		} catch {
-			return this.base.render(width);
+			return nativeFallback(this.base.render(width));
 		}
 		const baseRendered = captured.value;
-		if (baseRendered.length < 2) {
-			return baseRendered.map((line) => truncateToWidth(line, width, ""));
-		}
+		if (baseRendered.length < 2) return nativeFallback(baseRendered);
 
 		const autocomplete = autocompleteCount(this.base, captured.capture, baseRendered);
-		if (!autocomplete.known) return baseRendered.map((line) => truncateToWidth(line, width, ""));
+		if (!autocomplete.known) return nativeFallback(baseRendered);
 
 		// Use the list's rows, without the native editor's extra padding.
 		const autocompleteLines = autocomplete.count > 0 ? (captured.capture?.rows ?? []) : [];
 		const editorFrame = baseRendered.slice(0, baseRendered.length - autocomplete.count);
-		if (editorFrame.length < 1) {
-			return baseRendered.map((line) => truncateToWidth(line, width, ""));
-		}
+		if (editorFrame.length < 1) return nativeFallback(baseRendered);
 
 		// The base editor draws its own rule borders (plain `────` rows, with
 		// optional `─── ↑ N more ──` viewport indicators). Strip them so the

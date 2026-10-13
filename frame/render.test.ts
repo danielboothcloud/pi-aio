@@ -48,6 +48,33 @@ test("the frame wraps editor content with labeled borders", () => {
 	assert.match(lines[3]!, /repo ─╯$/);
 });
 
+test("shell labels and run hints share the outer border and preserve metadata", () => {
+	for (const [inputText, label, role] of [["! pwd", "! bash", "bashMode"], ["!! pwd", "!! hidden", "muted"]] as const) {
+		const seen: Array<{ role: string; text: string }> = [];
+		const lines = renderMinimalistFrame({
+			width: 160,
+			editorLines: [inputText],
+			inputText,
+			metadata: { ...metadata, mode: { icon: "▶", label: "Auto", role: "accent" } },
+			uiTheme: {
+				fg: (role, text) => {
+					seen.push({ role, text });
+					return `\x1b[32m${text}\x1b[39m`;
+				},
+			},
+			style: DEFAULT_FRAME_STYLE,
+		});
+		const top = lines[0]!.replace(/\x1b\[[0-9;]*m/g, "");
+		assert.ok(top.startsWith(`╭─ ${label} · ▶ Auto · high · 42% ─`));
+		assert.match(top, /Enter to run – \$0\.100 – test-model ─╮$/);
+		assert.ok(seen.some((entry) => entry.text === label && entry.role === role));
+		assert.ok(seen.some((entry) => entry.text === "Enter to run" && entry.role === "dim"));
+		assert.match(lines.at(-1)!.replace(/\x1b\[[0-9;]*m/g, ""), /^╰─ main · session .*repo ─╯$/);
+		assert.equal(lines.length, 3);
+		for (const line of lines) assert.equal(visibleWidth(line), 160);
+	}
+});
+
 test("effort renders directly to the right of the mode, left of the fill", () => {
 	const lines = renderMinimalistFrame({
 		width: 90,

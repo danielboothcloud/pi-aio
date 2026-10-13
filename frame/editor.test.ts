@@ -3,6 +3,7 @@ import test from "node:test";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { CURSOR_MARKER, getKeybindings, visibleWidth, type EditorTheme, type TUI } from "@earendil-works/pi-tui";
 import { BashHintEditor } from "../user-bash/bash-hint-editor.ts";
+import { QueueEditor } from "../queue/queue-editor.ts";
 import { MinimalistFrameEditor, renderWithAutocompleteCapture } from "./editor.ts";
 import { DEFAULT_FRAME_STYLE } from "./render.ts";
 
@@ -40,6 +41,123 @@ const editorOptions = {
 	style: DEFAULT_FRAME_STYLE,
 	getMetadata: () => ({ cwd: "/repo", modelLabel: "m" }),
 };
+
+function makeShellBase(queued = false, rows = 24) {
+	const statuses: Array<string | undefined> = [];
+	const editorTheme: EditorTheme = {
+		borderColor: (text) => `\x1b[32m${text}\x1b[39m`,
+		selectList: {
+			selectedPrefix: (text) => text,
+			selectedText: (text) => text,
+			description: (text) => text,
+			scrollInfo: (text) => text,
+			noMatch: (text) => text,
+		},
+	};
+	const ctx = {
+		mode: "tui", hasUI: true,
+		ui: { theme, setWidget() {}, setStatus(_key: string, text: string | undefined) { statuses.push(text); } },
+	} as unknown as ExtensionContext;
+	const tui = { terminal: { rows }, requestRender() {} } as unknown as TUI;
+	const keybindings = getKeybindings() as never;
+	const base = queued
+		? new QueueEditor(tui, editorTheme, keybindings, ctx, { onEmptySubmit: () => false })
+		: new BashHintEditor(tui, editorTheme, keybindings, ctx);
+	base.setPaddingX(0);
+	base.focused = true;
+	return { base, statuses };
+}
+
+test("! and !! use one frame with an integrated mode badge and run hint", () => {
+	for (const queued of [false, true]) {
+		const { base, statuses } = makeShellBase(queued);
+		const editor = new MinimalistFrameEditor(base as never, editorOptions);
+		for (const [input, label] of [
+			["!", "! bash"], ["!!", "!! hidden"],
+			["! pwd", "! bash"], ["!! pwd", "!! hidden"],
+			["! echo 日本語", "! bash"], ["!! echo 日本語", "!! hidden"],
+		] as const) {
+			editor.setText(input);
+			assert.equal(statuses.at(-1), undefined, "the frame owns the mode, not a duplicate footer");
+			const lines = editor.render(80);
+			assert.equal(lines.length, 3, `${input}: top, input, bottom only`);
+			assert.ok(lines[0]!.includes(label));
+			assert.match(lines[0]!, /Enter to run/);
+			assert.match(lines[0]!, /^╭/);
+			assert.match(lines.at(-1)!, /^╰/);
+			assert.doesNotMatch(lines[1]!, /─{3}|Enter to run|hidden|bash/);
+			assert.ok(lines[1]!.includes(CURSOR_MARKER), "IME cursor preserved");
+			// Native Pi wrapping needs room for a two-cell CJK glyph plus padding.
+			const widths = input.includes("日本語") ? [8, 12, 24, 40, 80, 160] : [1, 4, 5, 8, 12, 24, 40, 80, 160];
+			for (const width of widths) {
+				for (const line of editor.render(width)) assert.ok(visibleWidth(line) <= width, `${width}: ${line}`);
+			}
+		}
+		editor.setText("normal input");
+		assert.doesNotMatch(editor.render(80)[0]!, /bash|hidden|Enter to run/);
+	}
+});
+
+test("shell chrome ownership clears existing status and can be restored", () => {
+	const { base, statuses } = makeShellBase();
+	base.setText("!! pwd");
+	assert.equal(statuses.at(-1), "!!bash");
+	const editor = new MinimalistFrameEditor(base as never, editorOptions);
+	assert.equal(statuses.at(-1), undefined, "construction clears a preexisting shell status");
+	assert.match(editor.render(80)[0]!, /!! hidden/);
+	base.setFrameChrome(false);
+	assert.equal(statuses.at(-1), "!!bash");
+	assert.match(base.render(80)[0]!, /!! hidden/);
+});
+
+test("typing !, !!, and a command keeps framed shell status suppressed", () => {
+	const { base, statuses } = makeShellBase(true);
+	const editor = new MinimalistFrameEditor(base as never, editorOptions);
+	for (const [key, text, label] of [["!", "!", "! bash"], ["!", "!!", "!! hidden"], ["p", "!! p", "!! hidden"]] as const) {
+		editor.handleInput(key);
+		assert.equal(editor.getText(), text);
+		assert.match(editor.render(80)[0]!, new RegExp(label));
+		assert.equal(statuses.at(-1), undefined);
+	}
+});
+
+test("native shell fallback restores hints without changing status during render", () => {
+	const { base, statuses } = makeShellBase();
+	const editor = new MinimalistFrameEditor(base as never, editorOptions);
+	editor.setText("!! pwd");
+	// Force the frame's compatibility fallback without mutating native autocomplete state.
+	base.isShowingAutocomplete = () => true;
+	const before = statuses.length;
+	const lines = editor.render(80);
+	assert.match(lines[0]!, /!! hidden/);
+	assert.match(lines[0]!, /Enter to run/);
+	assert.doesNotMatch(lines[0]!, /╭/);
+	assert.equal(statuses.length, before, "render has no status side effects");
+	assert.equal(statuses.at(-1), undefined);
+	for (const line of lines) assert.ok(visibleWidth(line) <= 80);
+});
+
+test("framed shell input retains native viewport indicators", () => {
+	for (const prefix of ["!", "!!"]) {
+		const { base } = makeShellBase(false, 12);
+		const editor = new MinimalistFrameEditor(base as never, editorOptions);
+		editor.setText(`${prefix} first\n${Array.from({ length: 30 }, (_, index) => `line ${index}`).join("\n")}`);
+		const lines = editor.render(120);
+		assert.match(lines[0]!, /↑ [1-9]\d* more/);
+		assert.ok(lines.slice(1, -1).every((line) => !/─{3}/.test(line)), "no nested native borders");
+	}
+});
+
+test("unframed shell editors retain their own mode badge and status", () => {
+	const { base, statuses } = makeShellBase();
+	for (const [input, label, status] of [["! pwd", "! bash", "!bash"], ["!! pwd", "!! hidden", "!!bash"]]) {
+		base.setText(input!);
+		const lines = base.render(80);
+		assert.ok(lines[0]!.includes(label!));
+		assert.match(lines[0]!, /Enter to run/);
+		assert.equal(statuses.at(-1), status);
+	}
+});
 
 test("the wrapper frames the base render and preserves text handling", () => {
 	const base = makeBase();
