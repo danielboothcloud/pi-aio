@@ -669,6 +669,65 @@ the rare cases it cannot (messages queued during compaction, or across an
 extension reload) the widget simply hides and pi's built-in dim queue lines
 above the editor remain the fallback.
 
+## By the way (`/btw`)
+
+Quick aside questions while the agent is busy. Type `/btw` plus a question
+and the session model answers it in one isolated background call — the main
+run is never interrupted, queued, or steered, and nothing about the question
+or answer enters the agent's LLM context. Pi executes extension commands
+immediately even mid-flow, so it works the same whether the agent is
+streaming or idle.
+
+```text
+/btw why is this input not aligned with the synthetic variable?
+```
+
+The answer surfaces on chrome-composed layers that match the rest of aio:
+
+- A **card above the editor** — pending first (`↯ asking gpt-5 · 4s`, live),
+  then the answered card with the question and the wrapped answer. It
+  auto-hides after 60 seconds; asking again replaces it.
+- A **one-line toast** when the answer lands — easy to catch while watching a
+  stream scroll by.
+- A permanent **`BY THE WAY` transcript box** with the question, the full
+  answer, and its provenance. Custom entries never enter LLM context, so the
+  main agent never sees it.
+
+```text
+╭─ BY THE WAY ───────────────────────────────╮
+│ ✦ why is this input not aligned…?          │
+│                                            │
+│ The synthetic variable is built from the    │
+│ older payload schema (v2); the input was    │
+│ generated against v3.                      │
+╰────────────────────────────────────────────╯
+  · answered mid-flow · openai/gpt-5 · 1.2k tok · 3.4s
+```
+
+While the side call runs, the minimalist frame shows a transient
+`↯ btw asking` pill in its border (falling back to a footer status without
+the frame).
+
+The side model gets bounded context — never the live transcript: a digest of
+the recent flow (user/assistant text, tool-call one-liners, tool-result
+tails; 40 newest messages within a 12k-char budget) plus a workspace snapshot
+(root listing and the largest files by size, capped at 2,500 files), all
+packed under a 28 KB prompt cap. That is enough for questions like
+`/btw what is chunkiest in this repo` or
+`/btw what is this config file even for` without tool access. If the context
+cannot answer, the reply says what is missing instead of inventing details.
+
+Failure semantics: a failed side call clears the card and toasts the error —
+nothing is appended. Asking again replaces an in-flight question (last wins).
+The side call runs on the session model with its own abort controller:
+pressing `esc` to interrupt the main flow never cancels it; shutdown and
+replacement do. There is no settings file and no sub-model pin.
+
+Commands:
+
+- `/btw <question>` — ask the side question
+- `/btw` — usage plus in-flight state
+
 ## Pretty built-in tools
 
 `aio` replaces Pi's built-in `read`, `bash`, `ls`, `find`, and `grep` tool

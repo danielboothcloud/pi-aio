@@ -3,8 +3,9 @@
  * permission modes, enhanced built-in tool output, syntax-highlighted diffs,
  * configurable web search, rtk shell-command rewriting, ast-grep structural
  * search, a message-queue UI with Enter-to-interrupt, YAML hook automation,
- * the tuicr review loop (ported from @joelazar/pi-tuicr), and the You Should
- * Know (YSK) dual-agent shadow auditor.
+ * the tuicr review loop (ported from @joelazar/pi-tuicr), the You Should
+ * Know (YSK) dual-agent shadow auditor, and the /btw mid-flow side-question
+ * channel.
  *
  * Effort and permission modes are based on @pandi-coding-agent/pandi-effort
  * and @aprimediet/permission-modes. The questionnaire implementation is based
@@ -35,6 +36,7 @@ import { registerUserBash } from "./user-bash/index.js";
 import { registerFrameEditor } from "./frame/index.js";
 import registerYamlHooks from "./yaml-hooks/index.js";
 import { registerYouShouldKnow } from "./you-should-know/index.js";
+import { registerBtw } from "./btw/index.js";
 
 export {
 	ASK_USER_PROMPT_EVENT,
@@ -90,6 +92,11 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// nothing: no gating, no tool surface, no editor ownership, so its place in
 	// the chain is not load-bearing. It runs late, after the visual publishers.
 	registerYouShouldKnow(pi);
+	// btw owns the /btw command: quick side questions answered by the session
+	// model through one isolated complete() call — no gating, no tool surface,
+	// no editor ownership, so like YSK its place is not load-bearing. Runs
+	// after the visual publishers, before yaml-hooks.
+	registerBtw(pi);
 	// Yaml hooks last: it owns no tool surface, but its user-bash interception
 	// (opt-in via env) must wrap the user-bash gate above.
 	registerYamlHooks(pi);

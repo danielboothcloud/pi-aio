@@ -201,6 +201,22 @@ generated `dist/` tree without changing the package contract.
   a frame owns the surface, else the status row's `statuses` segment. It owns
   no tool and gates nothing; registration order is not load-bearing
   (registered late, before yaml-hooks).
+- `btw/` owns the `/btw` command — "by the way" side questions: pi executes
+  extension commands immediately even while streaming, so a mid-flow question
+  runs its handler without interrupting, queuing, or steering the run, and
+  nothing enters LLM context. One bounded, isolated `ctx.modelRegistry.complete()`
+  call on the session model (the YSK engine seam) with its own AbortController
+  — the main run's abort signal never touches it; a newer `/btw` replaces
+  (last wins) and shutdown aborts. Context is bounded: a 40-message / 12k-char
+  flow digest, a capped snapshot walk (excluded dirs, 2,500 files), and a 28k
+  prompt. Surfaces: chrome-composed `by-the-way` custom entry (transcript box,
+  never in context), above-editor card widget (pending → answered, answered
+  auto-hides after 60s, test-overridable via `registerBtw` options), one-line
+  arrival toast (warning toast on failure; no entry), and the transient
+  `btw asking` pill — frame metadata protocol when a frame owns the surface,
+  else footer status. No settings file, no tool names, no gating; registration
+  order is not load-bearing (late, beside YSK, before yaml-hooks). Subagent
+  children register no command but keep the entry renderer.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 
