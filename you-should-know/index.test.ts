@@ -14,6 +14,7 @@ import * as fsSync from "node:fs";
 import test from "node:test";
 import * as os from "node:os";
 import * as path from "node:path";
+import { CombinedAutocompleteProvider, type AutocompleteItem } from "@earendil-works/pi-tui";
 
 import { appendChildAuditRecord, sidecarPathFor } from "./auditor.ts";
 import { contributedFrameMetadata, FRAME_CAPABILITY_EVENT } from "../frame/protocol.ts";
@@ -99,7 +100,11 @@ function makeHarness(options: HarnessOptions = {}) {
 	const registryList = () => [sessionModel, alternateModel].filter(Boolean);
 
 	const handlers = new Map<string, Array<(event: ExtensionEvent, ctx: unknown) => unknown>>();
-	const commands = new Map<string, { description?: string; getArgumentCompletions?: (p: string) => unknown; handler: (args: string, ctx: unknown) => Promise<void> }>();
+	const commands = new Map<string, {
+		description?: string;
+		getArgumentCompletions?: (prefix: string) => AutocompleteItem[] | null | Promise<AutocompleteItem[] | null>;
+		handler: (args: string, ctx: unknown) => Promise<void>;
+	}>();
 	const entries: Array<{ customType: string; data: YskEntryData }> = [];
 	const notifications: Array<{ message: string; type?: string }> = [];
 	const statusHistory: Array<{ key: string; text: string | undefined }> = [];
@@ -529,6 +534,71 @@ test("/ysk model pins, validates, and resets", async () => {
 	}
 });
 
+test("selecting a scoped YSK model preserves the subcommand and saves the pin", async () => {
+	const model = { provider: "synthetic", id: "hf:zai-org/GLM-5.3-Flash" };
+	const h = makeHarness({ scopedModels: [model] });
+	try {
+		h.fire("session_start", { type: "session_start", reason: "startup" });
+		const command = h.commands.get("ysk")!;
+		const provider = new CombinedAutocompleteProvider([
+			{ name: "ysk", getArgumentCompletions: command.getArgumentCompletions },
+		], h.dir);
+		const reference = `${model.provider}/${model.id}`;
+
+		for (const input of ["/ysk model", "/ysk model ", "/ysk model synthetic/hf:zai-org/GLM-5.3-F"]) {
+			const suggestions = await provider.getSuggestions([input], 0, input.length, {
+				signal: new AbortController().signal,
+			});
+			assert.ok(suggestions, `model suggestions for ${input}`);
+			const selected = suggestions.items.find((item) => item.label === model.id);
+			assert.ok(selected);
+			const completed = provider.applyCompletion([input], 0, input.length, selected, suggestions.prefix);
+			assert.equal(completed.lines[0], `/ysk model ${reference}`);
+			assert.equal(completed.cursorCol, completed.lines[0].length);
+
+			await command.handler(completed.lines[0].slice("/ysk ".length), h.ctx);
+			const saved = JSON.parse(fsSync.readFileSync(h.settingsFile, "utf8"));
+			assert.equal(saved.model, reference);
+			assert.equal(saved.enabled, false, "selecting a model does not implicitly enable auditing");
+		}
+		assert.ok(h.notifications.some((n) => n.message.includes(`sub-agent model set to ${reference}`)));
+		assert.ok(h.notifications.every((n) => !n.message.includes("unknown subcommand")));
+	} finally {
+		h.restore();
+	}
+});
+
+test("YSK argument selections preserve severity, tools, and an existing tool list", async () => {
+	const h = makeHarness();
+	try {
+		const command = h.commands.get("ysk")!;
+		const provider = new CombinedAutocompleteProvider([
+			{ name: "ysk", getArgumentCompletions: command.getArgumentCompletions },
+		], h.dir);
+		const cases = [
+			{ input: "/ysk severity cr", label: "critical", expected: "/ysk severity critical", key: "minSeverity", value: "critical" },
+			{ input: "/ysk tools apply_p", label: "apply_patch", expected: "/ysk tools apply_patch", key: "auditTools", value: ["apply_patch"] },
+			{ input: "/ysk tools write,ed", label: "edit", expected: "/ysk tools write,edit", key: "auditTools", value: ["write", "edit"] },
+		];
+		for (const spec of cases) {
+			const suggestions = await provider.getSuggestions([spec.input], 0, spec.input.length, {
+				signal: new AbortController().signal,
+			});
+			assert.ok(suggestions, `argument suggestions for ${spec.input}`);
+			const selected = suggestions.items.find((item) => item.label === spec.label);
+			assert.ok(selected);
+			const completed = provider.applyCompletion([spec.input], 0, spec.input.length, selected, suggestions.prefix);
+			assert.equal(completed.lines[0], spec.expected);
+			await command.handler(completed.lines[0].slice("/ysk ".length), h.ctx);
+			const saved = JSON.parse(fsSync.readFileSync(h.settingsFile, "utf8"));
+			assert.deepEqual(saved[spec.key], spec.value);
+		}
+		assert.ok(h.notifications.every((n) => !n.message.includes("unknown subcommand")));
+	} finally {
+		h.restore();
+	}
+});
+
 test("/ysk severity and tools validate and persist", async () => {
 	const { h, ctx, handler } = commandHarness();
 	try {
@@ -571,13 +641,13 @@ test("completions cover subcommands, models, severities, and tools", async () =>
 
 		// Unscoped, nothing "available": the whole catalogue is the last resort.
 		const models = (await completions("model ")) ?? [];
-		assert.ok(models.some((c) => c.value === "anthropic/claude-test"));
+		assert.ok(models.some((c) => c.value === "model anthropic/claude-test"));
 
 		const severities = (await completions("severity ")) ?? [];
-		assert.deepEqual(severities.map((c) => c.value), ["info", "warning", "critical"]);
+		assert.deepEqual(severities.map((c) => c.value), ["severity info", "severity warning", "severity critical"]);
 
 		const tools = (await completions("tools ")) ?? [];
-		assert.ok(tools.some((c) => c.value === "apply_patch"));
+		assert.ok(tools.some((c) => c.value === "tools apply_patch"));
 	} finally {
 		h.restore();
 	}
@@ -599,7 +669,7 @@ test("/ysk model completions draw the session's scoped models first", async () =
 		const models = (await completions("model ")) ?? [];
 		assert.deepEqual(
 			new Set(models.map((c) => c.value)),
-			new Set(["synthetic/hf:zai-org/GLM-5.3", "anthropic/claude-sonnet-5-5"]),
+			new Set(["model synthetic/hf:zai-org/GLM-5.3", "model anthropic/claude-sonnet-5-5"]),
 		);
 	} finally {
 		h.restore();
@@ -616,7 +686,7 @@ test("unscoped completions prefer auth-available models over the catalogue", asy
 		const models = (await completions("model ")) ?? [];
 		assert.deepEqual(
 			models.map((c) => c.value),
-			["openai/gpt-test"],
+			["model openai/gpt-test"],
 			"catalogue-only models (anthropic/claude-test) are not offered",
 		);
 	} finally {

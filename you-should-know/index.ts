@@ -499,6 +499,8 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 		pi.registerCommand("ysk", {
 			description: "You Should Know (Pi Edition) — dual-agent shadow auditor",
 			getArgumentCompletions: async (argumentPrefix: string) => {
+				// Pi replaces the entire argument string after `/ysk ` with
+				// item.value, so nested completions must retain their subcommand.
 				const trimmed = argumentPrefix ?? "";
 				const parts = trimmed.split(/\s+/);
 				const head = parts[0] ?? "";
@@ -507,17 +509,17 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 				if (head === "model" && lastCtx) {
 					const models = await enabledModelList(lastCtx);
 					return models
+						.filter((m) => `${m.provider}/${m.id}`.startsWith(tail))
+						.slice(0, 30)
 						.map((m) => ({
-							value: `${m.provider}/${m.id}`,
+							value: `model ${m.provider}/${m.id}`,
 							label: m.id,
 							description: m.provider,
-						}))
-						.filter((item) => item.value.startsWith(tail))
-						.slice(0, 30);
+						}));
 				}
 				if (head === "severity") {
 					return SEVERITY_ORDER.filter((s) => s.startsWith(tail)).map((s) => ({
-						value: s,
+						value: `severity ${s}`,
 						label: s,
 						description: s === "info" ? "show everything" : s === "warning" ? "default" : "critical only",
 					}));
@@ -529,10 +531,13 @@ export function registerYouShouldKnow(pi: ExtensionAPI): void {
 					} catch {
 						// Tool info is optional flavor for completions.
 					}
+					const comma = tail.lastIndexOf(",");
+					const selectedTools = tail.slice(0, comma + 1);
+					const toolPrefix = tail.slice(comma + 1).trimStart();
 					return [...names]
-						.filter((n) => n.startsWith(tail))
+						.filter((n) => n.startsWith(toolPrefix))
 						.sort()
-						.map((n) => ({ value: n, label: n, description: "audit this tool" }));
+						.map((n) => ({ value: `tools ${selectedTools}${n}`, label: n, description: "audit this tool" }));
 				}
 				return SUBCOMMANDS.filter((sub) => sub.name.startsWith(trimmed)).map((sub) => ({
 					value: sub.name,
