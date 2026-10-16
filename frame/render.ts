@@ -61,6 +61,8 @@ export interface FrameMetadata {
 	mode?: { icon: string; label: string; role: string };
 	/** Opt-in interaction style, contributed by styles; absent when no style is set. */
 	style?: { icon: string; label: string; role: string };
+	/** Active launch recipe, contributed by recipes; absent when none is active. */
+	recipe?: { icon: string; label: string; role: string };
 	/** Shadow-auditor state, contributed by you-should-know; absent when disabled. */
 	ysk?: { icon: string; label: string; role: string };
 	/** Side-question state, contributed by btw; present only while a /btw call is in flight. */
@@ -144,9 +146,9 @@ function renderTopLeft(
 	}
 	// Permission mode leads the metadata (it gates what the agent may do),
 	// then the opt-in interaction style that rides on top of it, then the
-	// effort level, then the run timer, then the shadow-auditor pill,
-	// then any in-flight /btw side question —
-	// mode-style-effort-time-ysk-btw.
+	// active launch recipe (a session-scope backdrop), then the effort level,
+	// then the run timer, then the shadow-auditor pill, then any in-flight
+	// /btw side question — mode-style-recipe-effort-time-ysk-btw.
 	const mode = metadata.mode;
 	if (mode) {
 		parts.push(safeThemeFg(uiTheme, mode.role, `${mode.icon} ${mode.label}`));
@@ -160,6 +162,12 @@ function renderTopLeft(
 				`${interactionStyle.icon} ${interactionStyle.label}`,
 			),
 		);
+	}
+	// Active launch recipe: a backdrop pill naming the active --recipe while
+	// one is set; absent when the session runs without a recipe.
+	const recipe = metadata.recipe;
+	if (recipe) {
+		parts.push(safeThemeFg(uiTheme, recipe.role, `${recipe.icon} ${recipe.label}`));
 	}
 	const effort = (metadata.thinkingLevel ?? "").trim();
 	const effortKey = effort.toLowerCase();

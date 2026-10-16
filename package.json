@@ -1,13 +1,19 @@
 {
 	"name": "aio",
 	"version": "0.7.0",
-	"description": "Combined Pi extension with a Zentui-powered interface, structured questions, permission modes, subagents, enhanced tools and diffs, shell rewriting, structural search, web browsing, and context compression.",
+	"description": "Combined Pi extension with recipes (--recipe named launch configurations), a Zentui-powered interface, structured questions, permission modes, subagents, enhanced tools and diffs, shell rewriting, structural search, web browsing, and context compression.",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
 		"pi-package",
 		"pi",
 		"pi-extension",
+		"recipes",
+		"recipe",
+		"launch-profiles",
+		"named-launch-configurations",
+		"relaunch-bridge",
+		"profiles",
 		"terminal-ui",
 		"statusline",
 		"questionnaire",
@@ -100,6 +106,8 @@
 		"!queue/**/*.test.ts",
 		"pretty-tools/**/*.ts",
 		"!pretty-tools/**/*.test.ts",
+		"recipes/**/*.ts",
+		"!recipes/**/*.test.ts",
 		"pretty-tools/LICENSE",
 		"rtk/**/*.ts",
 		"!rtk/**/*.test.ts",
@@ -145,7 +153,7 @@
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
-		"test:node": "tsx --test ast-grep/*.test.ts btw/*.test.ts blocklist/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts effort/*.test.ts goal-loop/*.test.ts tuicr/*.test.ts hypa/*.test.ts init/*.test.ts nvim/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts rtk/*.test.ts status-line/*.test.ts styles/*.test.ts subagents/*.test.ts ui/*.test.ts user-bash/*.test.ts yaml-hooks/*.test.ts frame/*.test.ts you-should-know/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
+		"test:node": "tsx --test ast-grep/*.test.ts btw/*.test.ts blocklist/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts effort/*.test.ts goal-loop/*.test.ts tuicr/*.test.ts hypa/*.test.ts init/*.test.ts nvim/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts recipes/*.test.ts rtk/*.test.ts status-line/*.test.ts styles/*.test.ts subagents/*.test.ts ui/*.test.ts user-bash/*.test.ts yaml-hooks/*.test.ts frame/*.test.ts you-should-know/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts",
 		"postinstall": "node hypa/scripts/postinstall.js"
 	},

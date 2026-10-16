@@ -1,8 +1,15 @@
 # aio
 
-Combined Pi extension package for structured questions, permission modes,
-subagents, enhanced built-in tools, diff rendering, shell rewriting, and
-structural search.
+Combined Pi extension package for recipes (named launch configurations),
+structured questions, permission modes, subagents, enhanced built-in tools,
+diff rendering, shell rewriting, and structural search.
+
+> **Runtime user configuration lives in the agent directory.** Features read
+> their user-facing config from `<agent-dir>` at runtime (`aio-recipes.json`,
+> `aio-blocklist.json`, the goal/YSK settings files) — that is the shipped
+> contract. The rule below is about *development work*: never let the agent
+> place feature code, scratch state, or out-of-tree settings there during
+> edits or tests.
 
 > The inherited `/Users/danielbooth/CLAUDE.md` describes a different dotfiles
 > repository. Its chezmoi, Homebrew, Fish, and Neovim instructions do not apply
@@ -49,16 +56,46 @@ generated `dist/` tree without changing the package contract.
 
 - `index.ts` is the sole package entry point and composes feature-level
   registrars. Preserve registration order unless deliberately changing event
-  interception: `registerUserBash` must run before `registerRtk`, and hypa
+  interception: `registerRecipes` runs FIRST (its factory-time relaunch bridge
+  decides before anything else starts, and its session_start recipe tools set
+  the baseline permission-modes snapshots); `registerUserBash` must run before
+  `registerRtk`, and hypa
   must register after rtk (rtk precedence) but before queue and pretty tools,
-  which own the final bash behavior. `registerLoopPolice` sits between
-  blocklist and permission-modes (loop blocks preempt mode checks; the hard
-  blocklist wins over loop blocks). `registerAioZentui` runs after queue,
+  which own the final bash behavior. Blocklist gates run before
+  permission-modes (loop blocks preempt mode checks; the hard
+  blocklist wins over loop blocks). `registerFrameEditor` runs after queue,
   pretty-tools, and status-line so it can wrap the final editor and own
   the visual surfaces. Preloaded standalone Zentui editors are preserved by the
   user-bash and queue registrars rather than overwritten. `registerYamlHooks`
   runs LAST so its opt-in `user_bash`
   interception wraps the earlier gates.
+- `recipes/` owns `--recipe` and `/recipe`: named launch configurations from
+  `<agentDir>/aio-recipes.json` (two-tier: trusted project
+  `/.pi/aio-recipes.json` recipes override same-name globals; the global file
+  is also replaced whole by `AIO_RECIPES_FILE` for tests — goal-settings
+  contract — and is never written by AIO). Session-scoped keys (model plus
+  `:thinking` spec suffix, tools in the `defaultTools` grammar with `*`
+  globs, MCP servers registered through `registerMcpServer`/`unregisterMcpServer`
+  by this feature only, hidden `recipe-context` instructions with a
+  keep-latest-stray-strip context filter mirroring styles, and
+  skills/prompts/themes contributed via `resources_discover` while active)
+  apply at `session_start` and on `/recipe` switches — the command refreshes
+  the config itself so a mid-session file edit is honored. Restart-scoped
+  keys (`extensions`, `models`) are applied by the relaunch bridge in the
+  extension factory (`trampoline.ts`): a pure `decideRelaunch()` runs guards
+  (subagent children, staged relaunches, subcommands, `--help`/`--version`/
+  `--export`/`--list-models`, explicit user `-e`/`--models` flags, and it
+  reads only the global recipes file since project trust is unresolved during
+  factories), then `execRelaunch()` re-spawns pi once via pi's own argv
+  (`-ne -e <aio> -e <ext> --models …`), stripping the `--recipe` token and
+  handing the name over as `AIO_RECIPE_ACTIVE`; `AIO_RECIPE_STAGE=1` makes a
+  loop impossible and a failed spawn falls back in-session with a warning.
+  Selection precedence: flag > bridge env > session `recipe-state` entry
+  (branch-pinned; off pins `name: null`) > `defaultRecipe` on fresh startups
+  only. Subagent children register only the context filter (forked children
+  strip inherited recipe instructions). Status is dual-channel (frame
+  `recipe` pill beside the mode-style cluster, else a `statuses`-segment
+  pill). It owns no tools, gates nothing, and registers FIRST.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
   `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/` and
   `user-bash/` gate those mutations. Changes can cross feature boundaries.

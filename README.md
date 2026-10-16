@@ -1,12 +1,12 @@
 # aio
 
-Combined Pi extension with a **minimalist editor frame**, structured
-**`ask_user_question`** dialogs, a **`/pick`** code picker, **`/init`** AGENTS.md
-bootstrap, **`/effort`** thinking control, generic **subagent delegation**,
+Combined Pi extension with **recipes** (`--recipe`/`/recipe`), a **minimalist editor
+frame**, structured **`ask_user_question`** dialogs, a **`/pick`** code picker,
+**`/init`** AGENTS.md bootstrap, **`/effort`** thinking control, generic **subagent delegation**,
 configurable **`web_search`** and **`fetch_content`**, **`!` bash shortcuts**,
 **Shift+Tab** permission modes, opt-in **`/style`** interaction styles, enhanced
-built-in output with FFF-backed search,
-**rtk** shell-command rewriting, and syntax-highlighted write/edit/patch diffs.
+built-in output with FFF-backed search, **rtk** shell-command rewriting, and
+syntax-highlighted write/edit/patch diffs.
 
 The questionnaire implementation is based on
 [@juicesharp/rpiv-ask-user-question](https://www.npmjs.com/package/@juicesharp/rpiv-ask-user-question),
@@ -46,6 +46,98 @@ shortcut, add this to `~/.pi/agent/keybindings.json`:
 
 Then run `/reload` or restart Pi. Use `/effort` when you want to change the
 thinking level.
+
+## Recipes — `--recipe <name>`, `/recipe`
+
+A recipe is a named launch configuration: starting with
+`pi --recipe work` applies a saved selection of model, thinking level, tools,
+MCP servers, skills, and per-turn instructions in one shot. Recipes live with
+the user, not the repo — the agent dir's `aio-recipes.json`
+(`~/.pi/agent/aio-recipes.json` as documented by pi — this earendil-fork
+install hosts its agent dir at `~/.config/pi/agent/aio-recipes.json`;
+`getAgentDir()` decides, whatever the host's layout). Trusted projects may
+override or add recipes in `<project>/.pi/aio-recipes.json`):
+
+```json
+{
+  "defaultRecipe": "home",
+  "recipes": {
+    "home": {
+      "description": "Personal Claude/Codex subscriptions",
+      "model": "anthropic/claude-5:high",
+      "models": ["anthropic/*", "openai-codex/*"],
+      "tools": ["+codemode", "-hypa_*"],
+      "instructions": "Ship carefully; prefer the smallest correct change.",
+      "skills": ["skills/home/"],
+      "mcpServers": { "linear": { "url": "https://mcp.example.com/linear" } },
+      "extensions": ["otty-integration", "npm:pi-web-access"]
+    },
+    "work": {
+      "description": "Work subscriptions",
+      "model": "openai-codex/gpt-5.2-codex:medium",
+      "tools": ["read", "bash", "edit", "write", "grep"]
+    }
+  }
+}
+```
+
+Key semantics:
+
+- **`model` / `thinkingLevel`** — applied at session start. The model takes
+  `provider/id` or a bare id; a trailing `:thinking` suffix (as in
+  `anthropic/claude-5:high`) sets the thinking level unless `thinkingLevel`
+  is also given.
+- **`models`** — `--models` patterns scoping startup selection and Ctrl+P
+  cycling (restart-scoped: applied by the relaunch bridge below).
+- **`tools`** — the `defaultTools` grammar: plain names replace the active
+  set, `+name`/`-name` entries adjust it, and `*` globs match by pattern.
+- **`instructions`** — a hidden per-turn `[RECIPE … ACTIVE]` block sent to
+  the model while the recipe is active; `/recipe off` stops it.
+- **`skills` / `prompts` / `themes`** — resource paths (files or directories)
+  resolved from the file that declared them (`~` expands) and contributed
+  through resource discovery while the recipe is active.
+- **`mcpServers`** — `registerMcpServer` configs, registered while the recipe
+  is active. A server of the same name in `mcp.json` takes precedence, as
+  always; switching recipes unregisters only servers this feature added.
+- **`extensions`** — restart-scoped extension sources for the relaunch
+  bridge. Bare names resolve against `~/.pi/agent/extensions/` (like
+  `otty-integration`); `npm:`, `git:`, `builtin:`, and paths pass through;
+  AIO itself always re-loads in the child.
+
+### The relaunch bridge
+
+Pi fixes the extension set and the enabled-model scope from settings before
+any extension code runs, so recipes carrying `models` or `extensions` cannot
+remake the process they arrived in. When `pi --recipe work` selects a
+restart-scoped recipe, AIO restarts pi once during extension loading — before
+the TUI or session exist — with the recipe translated onto pi's own CLI flags
+(`--models …`, `-ne -e <aio> -e <ext> …`), hands the recipe over via
+`AIO_RECIPE_ACTIVE`, and exits with the child's exit code. You see at most a
+one-line notice; the child never relaunches (`AIO_RECIPE_STAGE=1`). Guards,
+in order: subagent children, staged relaunches, `pi` subcommands, and the
+print-and-exit flags (`--help`, `--version`, `--export`, `--list-models`);
+explicitly typed `-e`/`--models` flags win over recipe keys, and the bridge
+sees the **global** recipes file only — project recipes activate their
+session-scoped parts like normal but never change a launch. If the restart
+cannot run, AIO continues in-session and warns that the extension set and
+model scope stayed unchanged.
+
+### `/recipe` and selection rules
+
+- `/recipe` opens a selector (names with descriptions, plus `off`);
+  `/recipe work` switches mid-session (model, thinking, tools, MCP,
+  instructions; restart-scoped keys carry a “restart to fully apply”
+  advisory); `/recipe off` clears the recipe — instructions and this
+  feature's MCP servers stop, while model and tools keep their current state.
+- Selection precedence at session start: `--recipe` flag > bridged relaunch
+  (`AIO_RECIPE_ACTIVE`) > the session's most recent saved recipe (resumes) >
+  `defaultRecipe`, which auto-activates only on a fresh `pi` start.
+- The active recipe is pinned on the session branch, so forking and tree
+  navigation follow the branch's own timeline; subagent children never
+  inherit a recipe beyond stripping its instructions from forked context.
+- Config errors fail open: unreadable files warn once on `stderr` and the
+  session runs unrecipied. `AIO_RECIPES_FILE` replaces the global recipes
+  file for tests and sandboxes (the same contract YSK and goal settings use).
 
 ## `ask_user_question` tool
 

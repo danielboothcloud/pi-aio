@@ -1,11 +1,11 @@
 /**
- * Combined Pi extension: ask_user_question, /pick, /effort, Shift+Tab
- * permission modes, enhanced built-in tool output, syntax-highlighted diffs,
- * configurable web search, rtk shell-command rewriting, ast-grep structural
- * search, a message-queue UI with Enter-to-interrupt, YAML hook automation,
- * the tuicr review loop (ported from @joelazar/pi-tuicr), the You Should
- * Know (YSK) dual-agent shadow auditor, and the /btw mid-flow side-question
- * channel.
+ * Combined Pi extension: recipes (`--recipe`, `/recipe`), ask_user_question,
+ * /pick, /effort, Shift+Tab permission modes, enhanced built-in tool output,
+ * syntax-highlighted diffs, configurable web search, rtk shell-command
+ * rewriting, ast-grep structural search, a message-queue UI with
+ * Enter-to-interrupt, YAML hook automation, the tuicr review loop (ported
+ * from @joelazar/pi-tuicr), the You Should Know (YSK) dual-agent shadow
+ * auditor, and the /btw mid-flow side-question channel.
  *
  * Effort and permission modes are based on @pandi-coding-agent/pandi-effort
  * and @aprimediet/permission-modes. The questionnaire implementation is based
@@ -25,6 +25,7 @@ import registerNvim from "./nvim/index.js";
 import registerGoalLoop from "./goal-loop/index.js";
 import { registerHypa } from "./hypa/index.js";
 import { registerPermissionModes } from "./permission-modes/index.js";
+import { registerRecipes } from "./recipes/index.js";
 import { registerRtk } from "./rtk/index.js";
 import { registerQueue } from "./queue/index.js";
 import registerPrettyTools from "./pretty-tools/index.js";
@@ -46,6 +47,13 @@ export {
 } from "./ask-user-question/events.js";
 
 export default async function aio(pi: ExtensionAPI): Promise<void> {
+	// Recipes registers FIRST and is awaited: its factory-time relaunch
+	// bridge (restart-scoped recipes: extension set, model scope) must decide
+	// before anything else touches the process, and its session_start
+	// recipe application has to establish the baseline tool set before
+	// permission-modes snapshots passive-mode restrictions or ask-user-question
+	// reconciles its tool. Everything else may keep its registration order.
+	await registerRecipes(pi);
 	registerAskUserQuestion(pi);
 	registerGoalLoop(pi);
 	registerAstGrep(pi);
