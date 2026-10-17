@@ -84,6 +84,7 @@ interface MockState {
 	branchEntries: unknown[];
 	selectReturns: Array<string | undefined>;
 	uiHasUI: boolean;
+	startupExitCode: number | undefined;
 }
 
 function makeMocks(): { pi: Record<string, unknown>; state: MockState } {
@@ -103,6 +104,7 @@ function makeMocks(): { pi: Record<string, unknown>; state: MockState } {
 		branchEntries: [],
 		selectReturns: [],
 		uiHasUI: true,
+		startupExitCode: undefined,
 	};
 
 	const pi = {
@@ -306,6 +308,81 @@ test("session_start precedence: env (relaunched child) beats a session entry; fl
 	await fire(state, "session_start", { type: "session_start", reason: "resume" }, makeCtx(state));
 	assert.equal(recipeRuntime().source, "flag");
 	assert.equal(recipeRuntime().activeName, "home");
+});
+
+test("a relaunched recipe stops when its requested scope resolves to zero models", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never, {
+		exitOnInvalidScope: (code) => { state.startupExitCode = code; throw new Error("test startup exit"); },
+	});
+	const originalArgv = process.argv;
+	try {
+		process.env[ACTIVE_RECIPE_ENV] = "work";
+		process.argv = [...originalArgv.slice(0, 2), "--models", "cursor/grok-4.7"];
+		await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
+		assert.equal(state.startupExitCode, 1, "never start with Pi's implicit all-model scope");
+		assert.equal(recipeRuntime().activeName, undefined);
+		assert.equal(state.setModelCalls.length, 0);
+		assert.equal(state.entries.length, 0, "do not pin a recipe that did not activate");
+		assert.ok(state.notifications.some((notice) =>
+			notice.type === "error" && /cursor\/grok-4\.7/.test(notice.message) && /Stopping/.test(notice.message),
+		));
+	} finally {
+		process.argv = originalArgv;
+	}
+});
+
+test("an explicit --models override also stops an unbridged recipe if unresolved", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never, {
+		exitOnInvalidScope: (code) => { state.startupExitCode = code; throw new Error("test startup exit"); },
+	});
+	const originalArgv = process.argv;
+	try {
+		state.flagValues.set(RECIPE_FLAG, "work");
+		process.argv = [...originalArgv.slice(0, 2), "--models", "cursor/missing"];
+		await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
+		assert.equal(state.startupExitCode, 1);
+		assert.equal(recipeRuntime().activeName, undefined);
+	} finally {
+		process.argv = originalArgv;
+	}
+});
+
+test("a relaunched recipe with a resolved scope activates normally", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	const originalArgv = process.argv;
+	try {
+		process.env[ACTIVE_RECIPE_ENV] = "home";
+		process.argv = [...originalArgv.slice(0, 2), "--models", "anthropic/claude-5"];
+		const ctx = { ...makeCtx(state), scopedModels: [{ model: modelsHelper[0] }] };
+		await fire(state, "session_start", { type: "session_start", reason: "startup" }, ctx);
+		assert.equal(state.startupExitCode, undefined);
+		assert.equal(recipeRuntime().activeName, "home");
+		assert.equal(state.setModelCalls.length, 1);
+	} finally {
+		process.argv = originalArgv;
+	}
+});
+
+test("reload preserves a scope the user intentionally changed to all models", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never, {
+		exitOnInvalidScope: (code) => { state.startupExitCode = code; throw new Error("test startup exit"); },
+	});
+	const originalArgv = process.argv;
+	try {
+		process.env[ACTIVE_RECIPE_ENV] = "home";
+		process.argv = [...originalArgv.slice(0, 2), "--models", "anthropic/claude-5"];
+		const scopedCtx = { ...makeCtx(state), scopedModels: [{ model: modelsHelper[0] }] };
+		await fire(state, "session_start", { type: "session_start", reason: "startup" }, scopedCtx);
+		await fire(state, "session_start", { type: "session_start", reason: "reload" }, makeCtx(state));
+		assert.equal(state.startupExitCode, undefined);
+		assert.equal(recipeRuntime().activeName, "home");
+	} finally {
+		process.argv = originalArgv;
+	}
 });
 
 test("session_start auto-activates defaultRecipe on a fresh startup only", async () => {

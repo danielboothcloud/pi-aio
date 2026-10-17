@@ -35,6 +35,7 @@ import type {
 	ExtensionContext,
 	SessionStartEvent,
 } from "@earendil-works/pi-coding-agent";
+import { parseArgs } from "@earendil-works/pi-coding-agent";
 import { setFrameMetadataContributor } from "../frame/protocol.js";
 import {
 	ACTIVE_RECIPE_ENV,
@@ -180,6 +181,7 @@ async function sessionStart(
 	pi: ExtensionAPI,
 	event: SessionStartEvent,
 	ctx: ExtensionContext,
+	exitOnInvalidScope: (code: number) => never,
 ): Promise<void> {
 	const state = recipeRuntime();
 	refreshRecipes(ctx);
@@ -230,6 +232,22 @@ async function sessionStart(
 		notify(ctx, `Unknown recipe "${name}". Available: ${availableNamesText()}`, "warning");
 		return;
 	}
+	// Pi interprets an empty resolved scope as "all models". A missing
+	// provider or stale catalog must not silently turn a scoped startup into
+	// an unrestricted session. Check the actual CLI scope (including explicit
+	// --models overrides), not just the recipe's configured patterns.
+	const requestedModels = parseArgs(process.argv.slice(2)).models;
+	if (event.reason === "startup" && requestedModels?.length && !ctx.scopedModels?.length) {
+		deactivateRecipe(pi, ctx, { persist: false });
+		const message = `Recipe "${name}": no available models matched ${requestedModels.join(", ")}. Check that its provider extension loaded, authentication is available, and the model ID exists in its catalog. Stopping instead of enabling all models.`;
+		notify(ctx, message, "error");
+		process.stderr.write(`recipes: ${message}\n`);
+		// ctx.shutdown() is only a deferred request in TUI/RPC and is ignored
+		// by print mode. A startup configuration error must stop BEFORE any
+		// supplied prompt can reach the fallback provider, in every mode.
+		exitOnInvalidScope(1);
+	}
+
 	const result = await applyRecipe(pi, ctx, def, {
 		source: source ?? "session",
 		persist: source !== "session",
@@ -256,7 +274,11 @@ async function restoreFromBranch(pi: ExtensionAPI, ctx: ExtensionContext): Promi
 
 // -- registration -------------------------------------------------------------
 
-export async function registerRecipes(pi: ExtensionAPI): Promise<void> {
+export async function registerRecipes(
+	pi: ExtensionAPI,
+	options: { exitOnInvalidScope?: (code: number) => never } = {},
+): Promise<void> {
+	const exitOnInvalidScope = options.exitOnInvalidScope ?? ((code: number): never => process.exit(code));
 	pi.registerFlag(RECIPE_FLAG, {
 		description:
 			"Start with a named recipe from aio-recipes.json (extensions, model scope, tools, MCP, skills)",
@@ -308,7 +330,7 @@ export async function registerRecipes(pi: ExtensionAPI): Promise<void> {
 
 	pi.on("session_start", async (event, ctx) => {
 		try {
-			await sessionStart(pi, event, ctx);
+			await sessionStart(pi, event, ctx, exitOnInvalidScope);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			notify(ctx, `recipes: session activation failed: ${message}`, "warning");

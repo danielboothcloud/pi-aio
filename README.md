@@ -52,11 +52,10 @@ thinking level.
 A recipe is a named launch configuration: starting with
 `pi --recipe work` applies a saved selection of model, thinking level, tools,
 MCP servers, skills, and per-turn instructions in one shot. Recipes live with
-the user, not the repo — the agent dir's `aio-recipes.json`
-(`~/.pi/agent/aio-recipes.json` as documented by pi — this earendil-fork
-install hosts its agent dir at `~/.config/pi/agent/aio-recipes.json`;
-`getAgentDir()` decides, whatever the host's layout). Trusted projects may
-override or add recipes in `<project>/.pi/aio-recipes.json`):
+the user, not the repo — the agent dir's `aio-recipes.json`.
+Pi defaults to `~/.pi/agent`; `PI_CODING_AGENT_DIR` overrides it (for example,
+`PI_CODING_AGENT_DIR=~/.config/pi` means `~/.config/pi/aio-recipes.json`).
+Trusted projects may override or add recipes in `<project>/.pi/aio-recipes.json`:
 
 ```json
 {
@@ -106,9 +105,9 @@ Key semantics:
 
 ### The relaunch bridge
 
-Pi fixes the extension set and the enabled-model scope from settings before
-any extension code runs, so recipes carrying `models` or `extensions` cannot
-remake the process they arrived in. When `pi --recipe work` selects a
+Pi discovers the extension set before running extension factories and resolves
+model scope before `session_start`; its extension API cannot replace either
+in-session. When `pi --recipe work` selects a
 restart-scoped recipe, AIO restarts pi once during extension loading — before
 the TUI or session exist — with the recipe translated onto pi's own CLI flags
 (`--models …`, `-ne -e <aio> -e <ext> …`), hands the recipe over via
@@ -120,7 +119,33 @@ explicitly typed `-e`/`--models` flags win over recipe keys, and the bridge
 sees the **global** recipes file only — project recipes activate their
 session-scoped parts like normal but never change a launch. If the restart
 cannot run, AIO continues in-session and warns that the extension set and
-model scope stayed unchanged.
+model scope stayed unchanged. Compiled Bun binaries are restarted without
+forwarding their virtual `/$bunfs/...` or `B:\\~BUN\\...` entry point; Node
+and uncompiled Bun retain their real CLI script.
+
+### Checking a recipe's model scope
+
+- `models` controls the scoped picker/cycling list; it is not a provider
+  authentication boundary. Pi's separate All-models view can still expose
+  the broader catalog.
+- If a recipe startup's explicit `--models` scope matches **zero available
+  models**, AIO reports an error and exits with status 1 before any prompt
+  can run, rather than letting Pi interpret the empty scope as "all models".
+  This check applies only at initial startup, not `/reload` after an intentional
+  in-session scope change. Check that the provider extension
+  loaded, credentials are available, and the exact model ID exists in its
+  startup catalog. For Cursor, use `/login cursor` and `/cursor.models` with
+  its extension loaded to refresh/inspect the catalog before retrying.
+- `pi list` reports saved package configuration, not the effective extension
+  set of a recipe launch. An installed-package update notice can also come
+  from the original process before the relaunch.
+
+The compiled-binary startup regression test is opt-in and uses isolated,
+repository-local fixtures, no credentials, and no network or model calls:
+
+```bash
+AIO_RECIPES_SMOKE_PI="$(command -v pi)" npx tsx --test recipes/compiled-smoke.test.ts
+```
 
 ### `/recipe` and selection rules
 
@@ -136,7 +161,7 @@ model scope stayed unchanged.
   navigation follow the branch's own timeline; subagent children never
   inherit a recipe beyond stripping its instructions from forked context.
 - Config errors fail open: unreadable files warn once on `stderr` and the
-  session runs unrecipied. `AIO_RECIPES_FILE` replaces the global recipes
+  session runs without a recipe. `AIO_RECIPES_FILE` replaces the global recipes
   file for tests and sandboxes (the same contract YSK and goal settings use).
 
 ## `ask_user_question` tool

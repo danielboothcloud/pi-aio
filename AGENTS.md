@@ -89,7 +89,20 @@ generated `dist/` tree without changing the package contract.
   factories), then `execRelaunch()` re-spawns pi once via pi's own argv
   (`-ne -e <aio> -e <ext> --models …`), stripping the `--recipe` token and
   handing the name over as `AIO_RECIPE_ACTIVE`; `AIO_RECIPE_STAGE=1` makes a
-  loop impossible and a failed spawn falls back in-session with a warning.
+  loop impossible and a failed spawn falls back in-session with a warning
+  (a later `close` after a spawn `error` must not kill that fallback). Compiled
+  Bun's virtual argv entry (`/$bunfs/...` or `B:\\~BUN\\...`) is never forwarded
+  as an executable argument; real Node/Bun script entries are retained. A
+  recipe startup with an explicit model scope resolving to zero available
+  models reports an error and exits 1 before any prompt (deferred shutdown
+  requests are not reliable in print/JSON mode), rather than allowing Pi's
+  empty-scope = all-models fallback. Validation is initial-startup-only, not
+  reload after a deliberate in-session scope change. The opt-in
+  `compiled-smoke.test.ts` exercises actual binary relaunch + single-model
+  cycling + missing-scope rejection in RPC/JSON/text with local provider
+  fixtures, no credentials/network/model calls;
+  select the binary via `AIO_RECIPES_SMOKE_PI`. `pi list` describes saved
+  package configuration, not the recipe child's loaded extension set.
   Selection precedence: flag > bridge env > session `recipe-state` entry
   (branch-pinned; off pins `name: null`) > `defaultRecipe` on fresh startups
   only. Subagent children register only the context filter (forked children

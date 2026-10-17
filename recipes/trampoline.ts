@@ -1,9 +1,9 @@
 // ---------------------------------------------------------------------------
 // recipes/trampoline — the relaunch bridge.
 //
-// The extension set and the enabled-model scope are fixed by pi BEFORE any
-// extension code runs, so a recipe that changes them cannot be applied to the
-// process it arrived in. The bridge closes the gap: when `pi --recipe <name>`
+// Pi chooses the extension load set before factories and model scope before
+// session_start; its extension API cannot replace either in-session.
+// The bridge closes the gap: when `pi --recipe <name>`
 // selects a recipe with restart-scoped keys, AIO (always loaded at factory
 // time, before the session and TUI exist) restarts pi once with the recipe
 // translated onto pi's own CLI flags, then exits when the replacement exits.
@@ -49,7 +49,7 @@ export const SUBAGENT_CHILD_ENV = "AIO_SUBAGENT_CHILD";
 export interface RelaunchSpec {
 	/** What to execute (process.execPath of the parent). */
 	command: string;
-	/** Complete argv layout after the command, including argv[1] when pi runs under bun/node. */
+	/** Child arguments; only uncompiled Node/Bun launches include an on-disk CLI script. */
 	args: string[];
 	/** Child environment: parent env plus the stage guard and active-recipe marker. */
 	env: Record<string, string | undefined>;
@@ -59,7 +59,7 @@ export interface RelaunchSpec {
 }
 
 export interface TrampolineOptions {
-	/** `process.argv`: [binary, scriptOrBinary, ...cliArgs]. */
+	/** `process.argv`: [runtime, scriptOrVirtualEntry, ...cliArgs]. */
 	argv: string[];
 	/** What to spawn: `process.execPath`. */
 	command: string;
@@ -85,12 +85,19 @@ export type TrampolineDecision =
 	  };
 
 /**
- * The CLI args pi's own main() receives: argv[0] is the binary and argv[1]
- * is the binary again (bun --compile) or the script path (node) —
- * `main(process.argv.slice(2))` is pi's entry contract.
+ * Both Pi entry points call main(process.argv.slice(2)). In a compiled Bun
+ * binary argv[1] is a virtual script path (/$bunfs/root/pi or B:\\~BUN\\...),
+ * not an argument to pass back to the executable when spawning it again.
  */
 export function cliArgsFromArgv(argv: string[]): string[] {
 	return argv.slice(2);
+}
+
+/** Retain real script entry points for Node/Bun, never Bun's embedded path. */
+function relaunchEntryArgs(argv: string[]): string[] {
+	const entry = argv[1];
+	if (!entry || /(?:^|[\\/])(?:\$bunfs|~BUN)[\\/]/i.test(entry)) return [];
+	return [entry];
 }
 
 /**
@@ -226,7 +233,7 @@ export function decideRelaunch(options: TrampolineOptions): TrampolineDecision {
 	// its tokens too; if they ever disagree, forwarding the unstripped args is
 	// the conservative choice (no message text is ever dropped).
 	const bridgeable = stripped ?? cliArgs;
-	const args = [options.argv[1] as string, ...injected, ...bridgeable];
+	const args = [...relaunchEntryArgs(options.argv), ...injected, ...bridgeable];
 	const childEnv: Record<string, string | undefined> = {
 		...env,
 		[RECIPE_STAGE_ENV]: "1",
@@ -304,6 +311,10 @@ export function execRelaunch(
 			fail(error instanceof Error ? error.message : String(error));
 		});
 		child.on("close", (code) => {
+			// A failed spawn emits error and then close. Failure already resumed
+			// the in-session fallback; that trailing close must not exit it.
+			if (settled) return;
+			settled = true;
 			// A close without a prior error is the terminal handback. Signal deaths
 			// exit 1 so shell pipelines see the restart, not a silent success.
 			exit(typeof code === "number" ? code : 1);

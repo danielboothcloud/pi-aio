@@ -4,6 +4,7 @@ import test from "node:test";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { parseArgs } from "@earendil-works/pi-coding-agent";
 import {
 	AIO_RECIPE_EXTENSION_PATH,
 	decideRelaunch,
@@ -91,6 +92,54 @@ test("cliArgsFromArgv drops the binary and script slots", () => {
 		cliArgsFromArgv(["/bin/node", "/pi/dist/cli.js", "-p", "hi"]),
 		["-p", "hi"],
 	);
+});
+
+test("compiled Bun relaunch never forwards its virtual entry point as a prompt", () => {
+	const decision = decide([], {
+		argv: ["bun", "/$bunfs/root/pi", "--recipe", "work"],
+		command: "/opt/pi/pi",
+	});
+	const spec = relaunchSpec(decision);
+	assert.ok(spec);
+	assert.equal(spec.command, "/opt/pi/pi");
+	assert.equal(spec.args.includes("/$bunfs/root/pi"), false);
+	assert.deepEqual(parseArgs(spec.args).messages, []);
+	assert.deepEqual(parseArgs(spec.args).extensions, [
+		"/aio/index.ts",
+		"/opt/extensions/work-int.ts",
+	]);
+	assert.deepEqual(parseArgs(spec.args).models, ["openai-codex/*"]);
+});
+
+test("compiled Bun relaunch preserves real prompts, files, and the -- boundary", () => {
+	const spec = relaunchSpec(decide([], {
+		argv: ["bun", "/$bunfs/root/pi", "--recipe=work", "--", "@notes.md", "--recipe", "literal prompt"],
+		command: "/opt/pi/pi",
+	}));
+	assert.ok(spec);
+	assert.deepEqual(parseArgs(spec.args).fileArgs, ["notes.md"]);
+	assert.deepEqual(parseArgs(spec.args).messages, ["--recipe", "literal prompt"]);
+});
+
+test("Windows compiled Bun relaunch omits its virtual entry point", () => {
+	const spec = relaunchSpec(decide([], {
+		argv: ["bun", "B:\\~BUN\\root\\pi.exe", "--recipe", "work"],
+		command: "C:\\Tools\\pi.exe",
+	}));
+	assert.ok(spec);
+	assert.deepEqual(parseArgs(spec.args).messages, []);
+});
+
+test("Node and uncompiled Bun launches retain their on-disk CLI script", () => {
+	for (const runtime of ["/opt/node/bin/node", "/opt/bun/bin/bun"]) {
+		const spec = relaunchSpec(decide([], {
+			argv: [runtime, "/local packages/pi/cli.js", "--recipe", "work", "actual prompt"],
+			command: runtime,
+		}));
+		assert.ok(spec);
+		assert.equal(spec.args[0], "/local packages/pi/cli.js");
+		assert.deepEqual(parseArgs(spec.args.slice(1)).messages, ["actual prompt"]);
+	}
 });
 
 test("stripRecipeInvocation removes both flag forms and leaves the tail", () => {
@@ -353,9 +402,10 @@ test("execRelaunch reports spawn errors and yields false (in-session fallback)",
 	assert.match(lines[0]!, /could not relaunch.*ENOENT/);
 });
 
-test("execRelaunch recovers from an async spawn error", async () => {
+test("execRelaunch recovers from an async spawn error followed by close", async () => {
 	const child = new EventEmitter();
 	const lines: string[] = [];
+	const exitCalls: number[] = [];
 	const okPromise = execRelaunch(
 		{
 			command: "/bin/pi",
@@ -366,13 +416,17 @@ test("execRelaunch recovers from an async spawn error", async () => {
 		},
 		{
 			spawn: (() => child) as never,
-			exit: (() => undefined) as never,
+			exit: ((code: number) => { exitCalls.push(code); }) as never,
 			stderr: (line) => lines.push(line),
 		},
 	);
 	// The spawn error surfaces asynchronously through the "error" event.
 	child.emit("error", new Error("async spawn ENOENT"));
 	assert.equal(await okPromise, false);
+	// Node emits close after error even when no process was started. It must
+	// not kill the parent session after the in-process fallback has resumed.
+	child.emit("close", -2, null);
+	assert.deepEqual(exitCalls, []);
 	assert.equal(lines.length, 1);
 	assert.match(lines[0]!, /failed.*async spawn ENOENT/);
 });
