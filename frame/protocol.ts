@@ -21,6 +21,8 @@ export interface FrameCapability {
 export interface AioUiStateUpdate {
 	mode?: "default" | "ask" | "plan" | "auto";
 	effort?: string;
+	/** Active recipe name, contributed by recipes; absent when no recipe is active. */
+	recipe?: string;
 }
 
 export function isFrameEditorFactory(value: unknown): boolean {

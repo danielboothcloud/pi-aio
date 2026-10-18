@@ -61,6 +61,12 @@ export interface FrameMetadata {
 	mode?: { icon: string; label: string; role: string };
 	/** Opt-in interaction style, contributed by styles; absent when no style is set. */
 	style?: { icon: string; label: string; role: string };
+	/** Active launch recipe, contributed by recipes; absent when none is active. */
+	recipe?: { icon: string; label: string; role: string };
+	/** Shadow-auditor state, contributed by you-should-know; absent when disabled. */
+	ysk?: { icon: string; label: string; role: string };
+	/** Side-question state, contributed by btw; present only while a /btw call is in flight. */
+	btw?: { icon: string; label: string; role: string };
 	/** Provider quota line, contributed by status-line (pre-joined text + theme role). */
 	quota?: { text: string; role: string };
 	/** Codex 5h/week remaining windows, from the frame's own poller. */
@@ -133,12 +139,16 @@ function renderTopLeft(
 	const bashMode = bashModeLabel(inputText);
 	if (bashMode) {
 		parts.push(
-			bashMode === "no-context" ? muted("$") : safeThemeFg(uiTheme, "bashMode", "$"),
+			bashMode === "no-context"
+				? muted("!! hidden")
+				: safeThemeFg(uiTheme, "bashMode", "! bash"),
 		);
 	}
 	// Permission mode leads the metadata (it gates what the agent may do),
 	// then the opt-in interaction style that rides on top of it, then the
-	// effort level, then the run timer — mode-style-effort-time.
+	// active launch recipe (a session-scope backdrop), then the effort level,
+	// then the run timer, then the shadow-auditor pill, then any in-flight
+	// /btw side question — mode-style-recipe-effort-time-ysk-btw.
 	const mode = metadata.mode;
 	if (mode) {
 		parts.push(safeThemeFg(uiTheme, mode.role, `${mode.icon} ${mode.label}`));
@@ -152,6 +162,12 @@ function renderTopLeft(
 				`${interactionStyle.icon} ${interactionStyle.label}`,
 			),
 		);
+	}
+	// Active launch recipe: a backdrop pill naming the active --recipe while
+	// one is set; absent when the session runs without a recipe.
+	const recipe = metadata.recipe;
+	if (recipe) {
+		parts.push(safeThemeFg(uiTheme, recipe.role, `${recipe.icon} ${recipe.label}`));
 	}
 	const effort = (metadata.thinkingLevel ?? "").trim();
 	const effortKey = effort.toLowerCase();
@@ -199,11 +215,24 @@ function renderTopLeft(
 				: muted(duration),
 		);
 	}
+	// YSK shadow-auditor state: a muted pill while armed, an accent flash
+	// while a background audit runs. Absent when disabled.
+	const ysk = metadata.ysk;
+	if (ysk) {
+		parts.push(safeThemeFg(uiTheme, ysk.role, `${ysk.icon} ${ysk.label}`));
+	}
+	// The btw side-question pill flashes only while a /btw side call is in
+	// flight; it closes the cluster and is absent otherwise.
+	const btw = metadata.btw;
+	if (btw) {
+		parts.push(safeThemeFg(uiTheme, btw.role, `${btw.icon} ${btw.label}`));
+	}
 	// The session name renders bottom-left after the branch (branch · name).
 	return joinStyled(parts, muted(" · "));
 }
 
 function renderTopRight(
+	inputText: string,
 	metadata: FrameMetadata,
 	uiTheme: ThemeLike,
 	style: FrameStyle,
@@ -214,6 +243,9 @@ function renderTopRight(
 	const parts: string[] = [];
 	const joinParts = (values: string[]) =>
 		values.map((part, index) => (index > 0 ? `${renderBorder(" – ")}${part}` : part)).join("");
+	if (bashModeLabel(inputText)) {
+		parts.push(safeThemeFg(uiTheme, "dim", "Enter to run"));
+	}
 	const cost = style.showCost ? (metadata.costLabel ?? "").trim() : "";
 	if (cost) {
 		parts.push(renderThemeStyle(uiTheme, COLORS.cost, cost));
@@ -377,9 +409,9 @@ export function renderMinimalistFrame({
 	const top = renderLabeledBorder({
 		width,
 		left: topLeft,
-		right: renderTopRight(metadata, uiTheme, style, topRightBudget, renderBorder),
+		right: renderTopRight(inputText, metadata, uiTheme, style, topRightBudget, renderBorder),
 		fitRight: (budget) =>
-			renderTopRight(metadata, uiTheme, style, budget, renderBorder, true),
+			renderTopRight(inputText, metadata, uiTheme, style, budget, renderBorder, true),
 		leftCorner: "╭",
 		rightCorner: "╮",
 		renderBorder,

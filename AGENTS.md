@@ -1,12 +1,27 @@
 # aio
 
-Combined Pi extension package for structured questions, permission modes,
-subagents, enhanced built-in tools, diff rendering, shell rewriting, and
-structural search.
+Combined Pi extension package for recipes (named launch configurations),
+structured questions, permission modes, subagents, enhanced built-in tools,
+diff rendering, shell rewriting, and structural search.
+
+> **Runtime user configuration lives in the agent directory.** Features read
+> their user-facing config from `<agent-dir>` at runtime (`aio-recipes.json`,
+> `aio-blocklist.json`, the goal/YSK settings files) — that is the shipped
+> contract. The rule below is about *development work*: never let the agent
+> place feature code, scratch state, or out-of-tree settings there during
+> edits or tests.
 
 > The inherited `/Users/danielbooth/CLAUDE.md` describes a different dotfiles
 > repository. Its chezmoi, Homebrew, Fish, and Neovim instructions do not apply
 > here.
+
+> **All AIO work happens inside this repository, within this extension.** This
+> package *is* the extension: features are its modules, registered from
+> `index.ts`, and hosts load it through a `packages` reference (`git:…`, npm) or
+> `pi -e .` from a checkout. Never write feature code, configuration, settings,
+> or scratch state to home-directory or other out-of-repo locations (`~/.pi/`,
+> `~/.config/pi/`, `/tmp`): the running session never reads files placed there,
+> so the work is invisible at runtime and sits outside version control.
 
 ## Commands
 
@@ -41,16 +56,69 @@ generated `dist/` tree without changing the package contract.
 
 - `index.ts` is the sole package entry point and composes feature-level
   registrars. Preserve registration order unless deliberately changing event
-  interception: `registerUserBash` must run before `registerRtk`, and hypa
+  interception: `registerRecipes` runs FIRST (its factory-time relaunch bridge
+  decides before anything else starts, and its session_start recipe tools set
+  the baseline permission-modes snapshots); `registerUserBash` must run before
+  `registerRtk`, and hypa
   must register after rtk (rtk precedence) but before queue and pretty tools,
-  which own the final bash behavior. `registerLoopPolice` sits between
-  blocklist and permission-modes (loop blocks preempt mode checks; the hard
-  blocklist wins over loop blocks). `registerAioZentui` runs after queue,
+  which own the final bash behavior. Blocklist gates run before
+  permission-modes (loop blocks preempt mode checks; the hard
+  blocklist wins over loop blocks). `registerFrameEditor` runs after queue,
   pretty-tools, and status-line so it can wrap the final editor and own
   the visual surfaces. Preloaded standalone Zentui editors are preserved by the
   user-bash and queue registrars rather than overwritten. `registerYamlHooks`
   runs LAST so its opt-in `user_bash`
   interception wraps the earlier gates.
+- `recipes/` owns `--recipe` and `/recipe`: named launch configurations from
+  `<agentDir>/aio-recipes.json` (two-tier: trusted project
+  `/.pi/aio-recipes.json` recipes override same-name globals; the global file
+  is also replaced whole by `AIO_RECIPES_FILE` for tests — goal-settings
+  contract — and is never written by AIO). Session-scoped keys (model plus
+  `:thinking` spec suffix, tools in the `defaultTools` grammar with `*`
+  globs, MCP servers registered through `registerMcpServer`/`unregisterMcpServer`
+  by this feature only, hidden `recipe-context` instructions with a
+  keep-latest-stray-strip context filter mirroring styles, and
+  skills/prompts/themes contributed via `resources_discover` while active)
+  apply at `session_start` and on `/recipe` switches — the command refreshes
+  the config itself so a mid-session file edit is honored. Restart-scoped
+  keys (`extensions`, `models`) are applied by the relaunch bridge in the
+  extension factory (`trampoline.ts`): a pure `decideRelaunch()` runs guards
+  (subagent children, staged relaunches, subcommands, `--help`/`--version`/
+  `--export`/`--list-models`, explicit user `-e`/`--models` flags, and it
+  reads only the global recipes file since project trust is unresolved during
+  factories), then `execRelaunch()` re-spawns pi once via pi's own argv
+  (`-ne -e <aio> -e <ext> --models …`), stripping the `--recipe` token and
+  handing the name over as `AIO_RECIPE_ACTIVE`; `AIO_RECIPE_STAGE=1` makes a
+  loop impossible and a failed spawn falls back in-session with a warning
+  (a later `close` after a spawn `error` must not kill that fallback). Compiled
+  Bun's virtual argv entry (`/$bunfs/...` or `B:\\~BUN\\...`) is never forwarded
+  as an executable argument; real Node/Bun script entries are retained. A
+  recipe startup with an explicit model scope resolving to zero available
+  models reports an error and exits 1 before any prompt (deferred shutdown
+  requests are not reliable in print/JSON mode), rather than allowing Pi's
+  empty-scope = all-models fallback. Validation is initial-startup-only, not
+  reload after a deliberate in-session scope change. The opt-in
+  `compiled-smoke.test.ts` exercises actual binary relaunch + single-model
+  cycling + missing-scope rejection in RPC/JSON/text with local provider
+  fixtures, no credentials/network/model calls;
+  select the binary via `AIO_RECIPES_SMOKE_PI`. `pi list` describes saved
+  package configuration, not the recipe child's loaded extension set.
+  Selection precedence: flag > bridge env > session `recipe-state` entry
+  (branch-pinned; off pins `name: null`) > `defaultRecipe` on fresh startups
+  only. Subagent children register only the context filter (forked children
+  strip inherited recipe instructions). Status is dual-channel (frame
+  `recipe` pill beside the mode-style cluster, else a `statuses`-segment
+  pill). `/recipe status [--json]` (unambiguous alias `/recipe-status`) uses
+  `status.ts` to capture actual model/API/thinking/scope, launch extension
+  policy and sources, tool/command source metadata, and registered provider
+  IDs without a provider request or authentication refresh. Runtime facts and
+  configured expectations are labeled separately; observed registrations are
+  explicitly NOT a complete passive-extension inventory. An allowlisted,
+  credential-redacted `recipe-status-report` custom entry persists outside
+  model context and renders via shared chrome; RPC also notifies, while
+  print/JSON emits stderr diagnostics (notify is a no-op there). A recipe
+  actually named `status` keeps its old switching semantics. It owns no
+  tools, gates nothing, and registers FIRST.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
   `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/` and
   `user-bash/` gate those mutations. Changes can cross feature boundaries.
@@ -176,6 +244,48 @@ generated `dist/` tree without changing the package contract.
   resume manually. Tool description and promptGuidelines steer the parent
   toward generous `timeoutMs` budgets (pi's own HTTP idle timeout is 300s by
   default, so budgets below that kill children mid-recovery).
+- `you-should-know/` owns the YSK shadow auditor: successful
+  `write`/`edit`/`apply_patch` tool results are debounced into one bounded,
+  isolated `ctx.modelRegistry.complete()` audit (the sub-agent) whose findings
+  surface through one shared path: a chrome-composed custom entry in the btw
+  box idiom (`YOU SHOULD KNOW` label, severity-glyph head rows, wrapped
+  details, one dim provenance line) — custom entries never enter LLM context
+  — plus an above-editor findings card in the btw answer-card idiom (max 9
+  rows, auto-hides after 30s, TUI-only, replaced by newer findings,
+  test-overridable via `registerYouShouldKnow`'s `cardMs`); the critical-only
+  toast contract is unchanged, and a clean audit renders nothing. Infra
+  failures toast once then latch silent (reset by enable/model changes), but
+  the latest failure is always recorded and reported by `/ysk status` (age
+  + message); otherwise silence means clean audits, below-threshold
+  findings, or deduped repeats. Off by default — `/ysk
+  enable|disable|model|severity|tools|audit` persists to
+  `~/.pi/agent/aio-you-should-know.settings.json` (goal-settings contract;
+  `AIO_YSK_SETTINGS_FILE` overrides for tests). Subagent children resolve the
+  same file mid-run, so a disabled parent audits nothing in its children
+  either; children audit their own writes and mirror findings into a
+  `you-should-know.jsonl` sidecar beside their runner-managed session file,
+  which the parent consumes (and deletes) when the `subagent` tool result
+  arrives. The state indicator is dual-channel: the minimalist frame's border
+  via the frame metadata protocol (muted armed, accent while auditing) while
+  a frame owns the surface, else the status row's `statuses` segment. It owns
+  no tool and gates nothing; registration order is not load-bearing
+  (registered late, before yaml-hooks).
+- `btw/` owns the `/btw` command — "by the way" side questions: pi executes
+  extension commands immediately even while streaming, so a mid-flow question
+  runs its handler without interrupting, queuing, or steering the run, and
+  nothing enters LLM context. One bounded, isolated `ctx.modelRegistry.complete()`
+  call on the session model (the YSK engine seam) with its own AbortController
+  — the main run's abort signal never touches it; a newer `/btw` replaces
+  (last wins) and shutdown aborts. Context is bounded: a 40-message / 12k-char
+  flow digest, a capped snapshot walk (excluded dirs, 2,500 files), and a 28k
+  prompt. Surfaces: chrome-composed `by-the-way` custom entry (transcript box,
+  never in context), above-editor card widget (pending → answered, answered
+  auto-hides after 60s, test-overridable via `registerBtw` options), one-line
+  arrival toast (warning toast on failure; no entry), and the transient
+  `btw asking` pill — frame metadata protocol when a frame owns the surface,
+  else footer status. No settings file, no tool names, no gating; registration
+  order is not load-bearing (late, beside YSK, before yaml-hooks). Subagent
+  children register no command but keep the entry renderer.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

@@ -1,12 +1,12 @@
 # aio
 
-Combined Pi extension with a **minimalist editor frame**, structured
-**`ask_user_question`** dialogs, a **`/pick`** code picker, **`/init`** AGENTS.md
-bootstrap, **`/effort`** thinking control, generic **subagent delegation**,
+Combined Pi extension with **recipes** (`--recipe`/`/recipe`), a **minimalist editor
+frame**, structured **`ask_user_question`** dialogs, a **`/pick`** code picker,
+**`/init`** AGENTS.md bootstrap, **`/effort`** thinking control, generic **subagent delegation**,
 configurable **`web_search`** and **`fetch_content`**, **`!` bash shortcuts**,
 **Shift+Tab** permission modes, opt-in **`/style`** interaction styles, enhanced
-built-in output with FFF-backed search,
-**rtk** shell-command rewriting, and syntax-highlighted write/edit/patch diffs.
+built-in output with FFF-backed search, **rtk** shell-command rewriting, and
+syntax-highlighted write/edit/patch diffs.
 
 The questionnaire implementation is based on
 [@juicesharp/rpiv-ask-user-question](https://www.npmjs.com/package/@juicesharp/rpiv-ask-user-question),
@@ -46,6 +46,158 @@ shortcut, add this to `~/.pi/agent/keybindings.json`:
 
 Then run `/reload` or restart Pi. Use `/effort` when you want to change the
 thinking level.
+
+## Recipes — `--recipe <name>`, `/recipe`
+
+A recipe is a named launch configuration: starting with
+`pi --recipe work` applies a saved selection of model, thinking level, tools,
+MCP servers, skills, and per-turn instructions in one shot. Recipes live with
+the user, not the repo — the agent dir's `aio-recipes.json`.
+Pi defaults to `~/.pi/agent`; `PI_CODING_AGENT_DIR` overrides it (for example,
+`PI_CODING_AGENT_DIR=~/.config/pi` means `~/.config/pi/aio-recipes.json`).
+Trusted projects may override or add recipes in `<project>/.pi/aio-recipes.json`:
+
+```json
+{
+  "defaultRecipe": "home",
+  "recipes": {
+    "home": {
+      "description": "Personal Claude/Codex subscriptions",
+      "model": "anthropic/claude-5:high",
+      "models": ["anthropic/*", "openai-codex/*"],
+      "tools": ["+codemode", "-hypa_*"],
+      "instructions": "Ship carefully; prefer the smallest correct change.",
+      "skills": ["skills/home/"],
+      "mcpServers": { "linear": { "url": "https://mcp.example.com/linear" } },
+      "extensions": ["otty-integration", "npm:pi-web-access"]
+    },
+    "work": {
+      "description": "Work subscriptions",
+      "model": "openai-codex/gpt-5.2-codex:medium",
+      "tools": ["read", "bash", "edit", "write", "grep"]
+    }
+  }
+}
+```
+
+Key semantics:
+
+- **`model` / `thinkingLevel`** — applied at session start. The model takes
+  `provider/id` or a bare id; a trailing `:thinking` suffix (as in
+  `anthropic/claude-5:high`) sets the thinking level unless `thinkingLevel`
+  is also given.
+- **`models`** — `--models` patterns scoping startup selection and Ctrl+P
+  cycling (restart-scoped: applied by the relaunch bridge below).
+- **`tools`** — the `defaultTools` grammar: plain names replace the active
+  set, `+name`/`-name` entries adjust it, and `*` globs match by pattern.
+- **`instructions`** — a hidden per-turn `[RECIPE … ACTIVE]` block sent to
+  the model while the recipe is active; `/recipe off` stops it.
+- **`skills` / `prompts` / `themes`** — resource paths (files or directories)
+  resolved from the file that declared them (`~` expands) and contributed
+  through resource discovery while the recipe is active.
+- **`mcpServers`** — `registerMcpServer` configs, registered while the recipe
+  is active. A server of the same name in `mcp.json` takes precedence, as
+  always; switching recipes unregisters only servers this feature added.
+- **`extensions`** — restart-scoped extension sources for the relaunch
+  bridge. Bare names resolve against `~/.pi/agent/extensions/` (like
+  `otty-integration`); `npm:`, `git:`, `builtin:`, and paths pass through;
+  AIO itself always re-loads in the child.
+
+### The relaunch bridge
+
+Pi discovers the extension set before running extension factories and resolves
+model scope before `session_start`; its extension API cannot replace either
+in-session. When `pi --recipe work` selects a
+restart-scoped recipe, AIO restarts pi once during extension loading — before
+the TUI or session exist — with the recipe translated onto pi's own CLI flags
+(`--models …`, `-ne -e <aio> -e <ext> …`), hands the recipe over via
+`AIO_RECIPE_ACTIVE`, and exits with the child's exit code. You see at most a
+one-line notice; the child never relaunches (`AIO_RECIPE_STAGE=1`). Guards,
+in order: subagent children, staged relaunches, `pi` subcommands, and the
+print-and-exit flags (`--help`, `--version`, `--export`, `--list-models`);
+explicitly typed `-e`/`--models` flags win over recipe keys, and the bridge
+sees the **global** recipes file only — project recipes activate their
+session-scoped parts like normal but never change a launch. If the restart
+cannot run, AIO continues in-session and warns that the extension set and
+model scope stayed unchanged. Compiled Bun binaries are restarted without
+forwarding their virtual `/$bunfs/...` or `B:\\~BUN\\...` entry point; Node
+and uncompiled Bun retain their real CLI script.
+
+### Checking a recipe's model scope
+
+- `models` controls the scoped picker/cycling list; it is not a provider
+  authentication boundary. Pi's separate All-models view can still expose
+  the broader catalog.
+- If a recipe startup's explicit `--models` scope matches **zero available
+  models**, AIO reports an error and exits with status 1 before any prompt
+  can run, rather than letting Pi interpret the empty scope as "all models".
+  This check applies only at initial startup, not `/reload` after an intentional
+  in-session scope change. Check that the provider extension
+  loaded, credentials are available, and the exact model ID exists in its
+  startup catalog. For Cursor, use `/login cursor` and `/cursor.models` with
+  its extension loaded to refresh/inspect the catalog before retrying.
+- `pi list` reports saved package configuration, not the effective extension
+  set of a recipe launch. An installed-package update notice can also come
+  from the original process before the relaunch.
+
+The compiled-binary startup regression test is opt-in and uses isolated,
+repository-local fixtures, no credentials, and no network or model calls:
+
+```bash
+AIO_RECIPES_SMOKE_PI="$(command -v pi)" npx tsx --test recipes/compiled-smoke.test.ts
+```
+
+### Runtime inspection — `/recipe status`
+
+Inside the launched session, run:
+
+```text
+/recipe status
+/recipe status --json
+```
+
+This captures actual runtime state, not `pi list`'s saved package list:
+
+- selected recipe and its config origin;
+- current `provider/model`, API, thinking level, and resolved cycling scope;
+- configured expectations alongside the runtime values, including model drift;
+- actual extension CLI sources and whether discovery is disabled (`-ne`);
+- source paths observed from registered extension commands/tools, registered
+  provider IDs, and the tools currently declared to the model.
+
+The report explicitly distinguishes launch configuration from observed
+registrations. **It is not an exhaustive loaded-extension inventory:** Pi's
+public API cannot enumerate passive extensions with no command/tool
+registrations. Provider IDs are not plugin identities, and deferred/codemode
+registered tools may remain callable without being declared directly.
+
+No provider request, authentication refresh, config write, or recipe switch
+is performed. A timestamped diagnostic entry is saved in the session, outside
+model context. The TUI uses a width-safe framed report; RPC clients receive a
+notification too. Print/JSON modes emit the report on `stderr` (JSON form is a
+single `recipe-status: {…}` line) so protocol stdout stays intact.
+
+`/recipe-status [--json]` is an unambiguous alternate spelling. A recipe
+literally named `status` keeps its existing `/recipe status` switching
+behavior; use `/recipe-status` to inspect it. Inspection verifies current
+selection and registrations, **not whether a remote model can answer**.
+
+### `/recipe` and selection rules
+
+- `/recipe` opens a selector (names with descriptions, plus `off`);
+  `/recipe work` switches mid-session (model, thinking, tools, MCP,
+  instructions; restart-scoped keys carry a “restart to fully apply”
+  advisory); `/recipe off` clears the recipe — instructions and this
+  feature's MCP servers stop, while model and tools keep their current state.
+- Selection precedence at session start: `--recipe` flag > bridged relaunch
+  (`AIO_RECIPE_ACTIVE`) > the session's most recent saved recipe (resumes) >
+  `defaultRecipe`, which auto-activates only on a fresh `pi` start.
+- The active recipe is pinned on the session branch, so forking and tree
+  navigation follow the branch's own timeline; subagent children never
+  inherit a recipe beyond stripping its instructions from forked context.
+- Config errors fail open: unreadable files warn once on `stderr` and the
+  session runs without a recipe. `AIO_RECIPES_FILE` replaces the global recipes
+  file for tests and sandboxes (the same contract YSK and goal settings use).
 
 ## `ask_user_question` tool
 
@@ -669,6 +821,65 @@ the rare cases it cannot (messages queued during compaction, or across an
 extension reload) the widget simply hides and pi's built-in dim queue lines
 above the editor remain the fallback.
 
+## By the way (`/btw`)
+
+Quick aside questions while the agent is busy. Type `/btw` plus a question
+and the session model answers it in one isolated background call — the main
+run is never interrupted, queued, or steered, and nothing about the question
+or answer enters the agent's LLM context. Pi executes extension commands
+immediately even mid-flow, so it works the same whether the agent is
+streaming or idle.
+
+```text
+/btw why is this input not aligned with the synthetic variable?
+```
+
+The answer surfaces on chrome-composed layers that match the rest of aio:
+
+- A **card above the editor** — pending first (`↯ asking gpt-5 · 4s`, live),
+  then the answered card with the question and the wrapped answer. It
+  auto-hides after 60 seconds; asking again replaces it.
+- A **one-line toast** when the answer lands — easy to catch while watching a
+  stream scroll by.
+- A permanent **`BY THE WAY` transcript box** with the question, the full
+  answer, and its provenance. Custom entries never enter LLM context, so the
+  main agent never sees it.
+
+```text
+╭─ BY THE WAY ───────────────────────────────╮
+│ ✦ why is this input not aligned…?          │
+│                                            │
+│ The synthetic variable is built from the    │
+│ older payload schema (v2); the input was    │
+│ generated against v3.                      │
+╰────────────────────────────────────────────╯
+  · answered mid-flow · openai/gpt-5 · 1.2k tok · 3.4s
+```
+
+While the side call runs, the minimalist frame shows a transient
+`↯ btw asking` pill in its border (falling back to a footer status without
+the frame).
+
+The side model gets bounded context — never the live transcript: a digest of
+the recent flow (user/assistant text, tool-call one-liners, tool-result
+tails; 40 newest messages within a 12k-char budget) plus a workspace snapshot
+(root listing and the largest files by size, capped at 2,500 files), all
+packed under a 28 KB prompt cap. That is enough for questions like
+`/btw what is chunkiest in this repo` or
+`/btw what is this config file even for` without tool access. If the context
+cannot answer, the reply says what is missing instead of inventing details.
+
+Failure semantics: a failed side call clears the card and toasts the error —
+nothing is appended. Asking again replaces an in-flight question (last wins).
+The side call runs on the session model with its own abort controller:
+pressing `esc` to interrupt the main flow never cancels it; shutdown and
+replacement do. There is no settings file and no sub-model pin.
+
+Commands:
+
+- `/btw <question>` — ask the side question
+- `/btw` — usage plus in-flight state
+
 ## Pretty built-in tools
 
 `aio` replaces Pi's built-in `read`, `bash`, `ls`, `find`, and `grep` tool
@@ -1007,6 +1218,54 @@ the agent has no tool to open editor panes, so files are opened when
 you ask for them (`/nvim src/index.ts:42`, or `-r` for a read-only
 view). `path:line` and `path:line:col` shorthand work.
 
+## You Should Know (YSK) shadow auditor
+
+A dual-agent shadow auditor against tunnel vision. After every successful
+`write`, `edit`, or `apply_patch` (the diff-tools surface), YSK runs one
+bounded, isolated model call — the sub-agent — that re-examines the change
+with snapshots of the changed files, the nearest manifest, sibling listings,
+and your current task. It looks strictly for forgotten edge cases, broken
+in-project dependencies, unhandled errors, architectural mismatches, and
+operational footguns the implementing agent would not surface.
+
+- **The token guard is structural**: the audit runs outside the conversation
+  through `modelRegistry.complete()`, and findings are custom session entries,
+  which never enter LLM context. A clean audit renders nothing at all — no
+  entry, no toast, no noise.
+- **One cohesive surface**, in the same visual idiom as `/btw`: findings render
+  as a chrome-composed transcript box labeled `YOU SHOULD KNOW` (severity-glyph
+  head rows like the `✦` question row, wrapped details, one dim provenance
+  line: counts · threshold · sub-agent · tokens · latency), plus a transient
+  **above-editor card** that auto-hides after 30 seconds and points at the full
+  findings in the transcript — so a mid-flow surfacing is actually seen. The
+  box lands in the transcript right after the edits that raised it; context
+  stays attached to context. Critical findings also toast (critical-only,
+  unchanged). While enabled, YSK shows its state the way the rest of AIO does:
+  embedded in the minimalist frame's border (`mode · style · effort · context ·
+  time · ysk · btw` — muted while armed, accent while auditing) through the
+  frame metadata protocol, and as a `◉ YSK` pill in the status row's
+  `statuses` segment in unframed sessions.
+- **Subagents included**: children spawned by the `subagent` tool audit their
+  own writes, mirror findings into a sidecar beside their runner-managed
+  session file, and the parent surfaces (and consumes) them through the same
+  box and toast when the child run completes.
+- **Settings persist** (goal-settings contract) in
+  `~/.pi/agent/aio-you-should-know.settings.json`; `AIO_YSK_SETTINGS_FILE`
+  overrides it for tests and sandboxes. YSK is **off by default** — enabling it
+  once keeps it on across sessions *and* in subagent children, and disabling
+  it stops both immediately.
+
+Commands: `/ysk` shows status — including the **last audit failure** (age and
+message), so "why is it surfacing nothing" is answerable: once an
+infrastructure failure toasts (once), later failures stay silent until
+settings change, and `/ysk status` is the way to see them. Silence can also
+mean genuinely-clean audits (nothing found), findings below the `severity`
+threshold, or recent duplicates (a dedupe window suppresses repeats).
+`/ysk enable`, `/ysk disable`,
+`/ysk model <provider/id> | off` (default: the session model),
+`/ysk severity info|warning|critical`, `/ysk tools <list>`, and
+`/ysk audit <path>` for a manual one-shot audit.
+
 ## Layout
 
 ```text
@@ -1029,6 +1288,7 @@ view). `path:line` and `path:line:col` shorthand work.
 ├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)
 ├── subagents/               # child-agent discovery, execution, and lifecycle
 ├── user-bash/               # !/!! command permission gating
+├── you-should-know/        # YSK dual-agent shadow auditor
 └── yaml-hooks/              # hooks.yaml automation (ported from pi-yaml-hooks)
 ```
 
