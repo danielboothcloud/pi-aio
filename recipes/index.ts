@@ -67,6 +67,8 @@ import {
 	relaunchNotice,
 } from "./trampoline.js";
 
+import { registerRecipeStatusRenderer, showRecipeStatus } from "./status.js";
+
 function isSubagentChild(): boolean {
 	return process.env[SUBAGENT_CHILD_ENV] === "1";
 }
@@ -290,6 +292,7 @@ export async function registerRecipes(
 	// active recipe of its own this strips the parent's recipe instructions
 	// out of its context — the same contract /style keeps.
 	pi.on("context", recipeContextHandler);
+	registerRecipeStatusRenderer(pi);
 
 	// Everything below is interactive-session surface; children are pinned
 	// workloads whose agent config owns model, thinking, and tools.
@@ -394,12 +397,22 @@ export async function registerRecipes(
 					description: "clear the active recipe",
 				});
 			}
+			if ("status".startsWith(wanted) && !recipeRuntime().recipes.recipes.status) {
+				items.push({ label: "status", value: "status", description: "inspect actual runtime (no model request)" });
+			}
+			if (wanted.startsWith("status ") && "status --json".startsWith(wanted)) {
+				items.push({ label: "status --json", value: "status --json", description: "runtime report as JSON" });
+			}
 			return items.length > 0 ? items : null;
 		},
 		handler: async (args, ctx) => {
 			refreshRecipes(ctx);
-		const state = recipeRuntime();
-		const requested = (args ?? "").trim();
+			const state = recipeRuntime();
+			const requested = (args ?? "").trim();
+			if ((requested === "status" || requested === "status --json") && !state.recipes.recipes[requested]) {
+				showRecipeStatus(pi, ctx, { format: requested.endsWith("--json") ? "json" : "text" });
+				return;
+			}
 
 			if (!requested) {
 				const defs = state.recipes.recipes;
@@ -455,6 +468,23 @@ export async function registerRecipes(
 				const message = error instanceof Error ? error.message : String(error);
 				notify(ctx, `recipes: switch failed: ${message}`, "error");
 			}
+		},
+	});
+
+	// Dedicated spelling stays available even when a user named a recipe
+	// "status"; the existing /recipe <name> behavior remains compatible.
+	pi.registerCommand("recipe-status", {
+		description: "Inspect actual recipe runtime, model scope, tools, and registration sources (no model request)",
+		getArgumentCompletions: (prefix) => "--json".startsWith(prefix.trim())
+			? [{ label: "--json", value: "--json", description: "runtime report as JSON" }]
+			: null,
+		handler: async (args, ctx) => {
+			const value = args.trim();
+			if (value && value !== "--json") {
+				notify(ctx, "Use /recipe-status [--json]", "error");
+				return;
+			}
+			showRecipeStatus(pi, ctx, { format: value === "--json" ? "json" : "text" });
 		},
 	});
 

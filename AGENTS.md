@@ -108,7 +108,17 @@ generated `dist/` tree without changing the package contract.
   only. Subagent children register only the context filter (forked children
   strip inherited recipe instructions). Status is dual-channel (frame
   `recipe` pill beside the mode-style cluster, else a `statuses`-segment
-  pill). It owns no tools, gates nothing, and registers FIRST.
+  pill). `/recipe status [--json]` (unambiguous alias `/recipe-status`) uses
+  `status.ts` to capture actual model/API/thinking/scope, launch extension
+  policy and sources, tool/command source metadata, and registered provider
+  IDs without a provider request or authentication refresh. Runtime facts and
+  configured expectations are labeled separately; observed registrations are
+  explicitly NOT a complete passive-extension inventory. An allowlisted,
+  credential-redacted `recipe-status-report` custom entry persists outside
+  model context and renders via shared chrome; RPC also notifies, while
+  print/JSON emits stderr diagnostics (notify is a no-op there). A recipe
+  actually named `status` keeps its old switching semantics. It owns no
+  tools, gates nothing, and registers FIRST.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
   `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/` and
   `user-bash/` gate those mutations. Changes can cross feature boundaries.

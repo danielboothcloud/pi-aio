@@ -13,6 +13,7 @@ import {
 	RECIPES_FILE_ENV,
 } from "./config.ts";
 import { recipeRuntime, resetRecipeRuntimeForTests } from "./apply.ts";
+import { RECIPE_STATUS_ENTRY, type RecipeStatusReport } from "./status.ts";
 
 // Isolated agent dir for loadRecipes (PI_CODING_AGENT_DIR + the
 // AIO_RECIPES_FILE scratch contract the same way the blocklist suite does).
@@ -72,6 +73,7 @@ interface MockState {
 	events: Map<string, Handler[]>;
 	commands: Map<string, { description?: string; getArgumentCompletions?: (p: string) => unknown; handler: (args: string, ctx: unknown) => Promise<void> }>;
 	flagOptions: Map<string, Record<string, unknown>>;
+	entryRenderers: Map<string, unknown>;
 	flagValues: Map<string, boolean | string | undefined>;
 	entries: Array<{ customType: string; data: unknown }>;
 	notifications: Array<{ message: string; type: string }>;
@@ -92,6 +94,7 @@ function makeMocks(): { pi: Record<string, unknown>; state: MockState } {
 		events: new Map(),
 		commands: new Map(),
 		flagOptions: new Map(),
+		entryRenderers: new Map(),
 		flagValues: new Map(),
 		entries: [],
 		notifications: [],
@@ -111,6 +114,11 @@ function makeMocks(): { pi: Record<string, unknown>; state: MockState } {
 		registerFlag: (name: string, options: Record<string, unknown>) => {
 			state.flagOptions.set(name, options);
 		},
+		registerEntryRenderer: (name: string, renderer: unknown) => { state.entryRenderers.set(name, renderer); },
+		getCommands: () => [...state.commands.keys()].map(name => ({
+			name, source: "extension", sourceInfo: { path: "/fixture/aio/index.ts", source: "cli", scope: "temporary", origin: "top-level" },
+		})),
+		getThinkingLevel: () => state.thinkingCalls.at(-1) ?? "xhigh",
 		registerCommand: (name: string, command: unknown) => {
 			state.commands.set(name, command as MockState["commands"] extends Map<string, infer V> ? V : never);
 		},
@@ -533,6 +541,58 @@ await command.handler("ghost", makeCtx(state));
 assert.match(state.notifications.at(-1)!.message, /Unknown recipe "ghost". Available: home, work/);
 });
 
+test("/recipe status inspects runtime without changing recipe/model/tools or starting a turn", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	const ctx = makeCtx(state);
+	await fire(state, "session_start", { type: "session_start", reason: "startup" }, ctx);
+	const modelCalls = state.setModelCalls.length;
+	const toolCalls = state.setActiveCalls.length;
+	const recipeEntries = state.entries.filter(entry => entry.customType === RECIPE_STATE_ENTRY).length;
+	await state.commands.get("recipe")!.handler("status", ctx);
+	assert.equal(recipeRuntime().activeName, "home");
+	assert.equal(state.setModelCalls.length, modelCalls);
+	assert.equal(state.setActiveCalls.length, toolCalls);
+	assert.equal(state.entries.filter(entry => entry.customType === RECIPE_STATE_ENTRY).length, recipeEntries);
+	assert.ok(state.entryRenderers.has(RECIPE_STATUS_ENTRY));
+	const entry = state.entries.at(-1);
+	assert.equal(entry?.customType, RECIPE_STATUS_ENTRY);
+	// SAFETY: the status command stores this report type in its own entry.
+	const report = entry?.data as RecipeStatusReport;
+	assert.equal(report.runtime.model, "anthropic/claude-5");
+	assert.equal(report.runtime.scopeMode, "all");
+	assert.ok(report.observedExtensionSources.some(source => source.path === "/fixture/aio/index.ts"));
+});
+
+test("status JSON and the dedicated /recipe-status spelling are available", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	const ctx = makeCtx(state);
+	await state.commands.get("recipe")!.handler("status --json", ctx);
+	const notice = state.notifications.at(-1);
+	assert.ok(notice);
+	assert.equal(JSON.parse(notice.message).recipe, null);
+	await state.commands.get("recipe-status")!.handler("--json", ctx);
+	assert.equal(state.entries.at(-1)?.customType, RECIPE_STATUS_ENTRY);
+	const count = state.entries.length;
+	await state.commands.get("recipe-status")!.handler("unknown-option", ctx);
+	assert.equal(state.entries.length, count);
+	assert.match(state.notifications.at(-1)!.message, /Use \/recipe-status/);
+});
+
+test("an existing recipe named status keeps its switching semantics", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	writeRecipesFile({ recipes: { status: { model: "anthropic/claude-5" } } });
+	const ctx = makeCtx(state);
+	await state.commands.get("recipe")!.handler("status", ctx);
+	assert.equal(recipeRuntime().activeName, "status");
+	assert.equal(state.entries.at(-1)?.customType, RECIPE_STATE_ENTRY);
+	await state.commands.get("recipe-status")!.handler("", ctx);
+	assert.equal(recipeRuntime().activeName, "status");
+	assert.equal(state.entries.at(-1)?.customType, RECIPE_STATUS_ENTRY);
+});
+
 test("/recipe completions cover names, descriptions, and off", async () => {
 	const { pi, state } = makeMocks();
 	await registerRecipes(pi as never);
@@ -545,7 +605,7 @@ test("/recipe completions cover names, descriptions, and off", async () => {
 	}>;
 	assert.deepEqual(
 		completions.map((c) => c.value),
-		["home", "work", "off"],
+		["home", "work", "off", "status"],
 	);
 	// Each named recipe carries its configured description.
 	assert.equal(

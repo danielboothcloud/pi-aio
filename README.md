@@ -147,6 +147,41 @@ repository-local fixtures, no credentials, and no network or model calls:
 AIO_RECIPES_SMOKE_PI="$(command -v pi)" npx tsx --test recipes/compiled-smoke.test.ts
 ```
 
+### Runtime inspection — `/recipe status`
+
+Inside the launched session, run:
+
+```text
+/recipe status
+/recipe status --json
+```
+
+This captures actual runtime state, not `pi list`'s saved package list:
+
+- selected recipe and its config origin;
+- current `provider/model`, API, thinking level, and resolved cycling scope;
+- configured expectations alongside the runtime values, including model drift;
+- actual extension CLI sources and whether discovery is disabled (`-ne`);
+- source paths observed from registered extension commands/tools, registered
+  provider IDs, and the tools currently declared to the model.
+
+The report explicitly distinguishes launch configuration from observed
+registrations. **It is not an exhaustive loaded-extension inventory:** Pi's
+public API cannot enumerate passive extensions with no command/tool
+registrations. Provider IDs are not plugin identities, and deferred/codemode
+registered tools may remain callable without being declared directly.
+
+No provider request, authentication refresh, config write, or recipe switch
+is performed. A timestamped diagnostic entry is saved in the session, outside
+model context. The TUI uses a width-safe framed report; RPC clients receive a
+notification too. Print/JSON modes emit the report on `stderr` (JSON form is a
+single `recipe-status: {…}` line) so protocol stdout stays intact.
+
+`/recipe-status [--json]` is an unambiguous alternate spelling. A recipe
+literally named `status` keeps its existing `/recipe status` switching
+behavior; use `/recipe-status` to inspect it. Inspection verifies current
+selection and registrations, **not whether a remote model can answer**.
+
 ### `/recipe` and selection rules
 
 - `/recipe` opens a selector (names with descriptions, plus `off`);
