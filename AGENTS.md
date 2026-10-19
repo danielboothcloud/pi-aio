@@ -220,15 +220,22 @@ generated `dist/` tree without changing the package contract.
   the agent cannot open panes on its own. No gating, no tool-name overlap;
   degrades silently when nvim or every launcher is missing (the command
   reports the exact command to run).
-- `styles/` owns `/style` (`none | collaborate | mentor`): opt-in interaction
+- `styles/` owns `/style` (`none | collaborate | tutor | concise`): opt-in interaction
   styles layered on top of permission modes. A style only injects a hidden
   per-turn `styles-context` instruction (mode-aware, e.g. no `TODO(human)`
   markers in ask/plan); it never gates tools, and it is NOT a permission mode
   (keep it out of `mode-access.ts`, Shift+Tab, and `--permission-mode`).
   Off by default: no flag or setting enables it; only `/style` does, and the
   choice persists as a `styles` session entry restored from the current
-  branch. Its `context` handler keeps only the latest instruction and strips
-  all of them once the style is `none`. In subagent children
+  branch. Tutor teaches in small explain → practice → feedback steps, waits
+  for participation, and uses hands-on edits only with agreement; passive modes
+  keep exercises in chat. The former `mentor` command and persisted name map to
+  canonical `tutor` (not advertised as a separate style). Concise minimizes
+  commentary without hiding warnings, skipping checks/approvals, or dropping
+  the required plan format; user requests for detail override its brevity.
+  Its `context` handler
+  keeps only the latest instruction and strips all of them once the style is
+  `none`. In subagent children
   (`AIO_SUBAGENT_CHILD=1`) it registers only that stripping filter. Display:
   a `style` frame metadata contributor beside the mode, or a `style` footer
   status that status-line renders inside its mode segment.

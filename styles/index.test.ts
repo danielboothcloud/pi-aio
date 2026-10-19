@@ -29,6 +29,7 @@ function makeHarness(
 		branch?: unknown[];
 		selections?: string[];
 		frameSupported?: boolean;
+		hasUI?: boolean;
 	} = {},
 ) {
 	const commands = new Map<string, any>();
@@ -59,7 +60,7 @@ function makeHarness(
 	} as unknown as ExtensionAPI;
 
 	const ctx = {
-		hasUI: true,
+		hasUI: options.hasUI ?? true,
 		sessionManager: { getBranch: () => options.branch ?? [] },
 		ui: {
 			notify: (message: string, level?: string) => {
@@ -125,30 +126,136 @@ test("no style is active until /style is run", async () => {
 	assert.deepEqual(harness.entries, []);
 });
 
-test("/style mentor injects teaching guidance and shows in the footer", async () => {
+test("/style tutor teaches through active practice and shows in the footer", async () => {
 	const harness = makeHarness();
 	await harness.emit("session_start");
-	await harness.runStyle("Mentor");
+	await harness.runStyle(" Tutor ");
 
 	assert.deepEqual(harness.entries, [
-		{ customType: "styles", data: { style: "mentor" } },
+		{ customType: "styles", data: { style: "tutor" } },
 	]);
-	assert.equal(harness.statuses.get("style"), "✎ Mentor");
-	assert.match(harness.notifications.at(-1)?.message ?? "", /^Style: Mentor/);
+	assert.equal(harness.statuses.get("style"), "✎ Tutor");
+	assert.match(harness.notifications.at(-1)?.message ?? "", /^Style: Tutor/);
 
 	const result = await harness.emit("before_agent_start");
 	assert.equal(result.message.customType, STYLE_CONTEXT_TYPE);
 	assert.equal(result.message.display, false);
 	for (const cue of [
-		/\[MENTOR STYLE ACTIVE\]/,
-		/"Insight"/,
-		/TODO\(human\)/,
-		/guiding question/,
-		/What you learned/,
+		/\[TUTOR STYLE ACTIVE\]/,
+		/learning goals/,
+		/before a meaningful action, explain/,
+		/small worked example/,
+		/one focused question or exercise at a time/,
+		/stop and wait for their response/,
+		/Do not immediately answer your own question/,
+		/do not complete the whole task before inviting them in/,
+		/respond to the user's actual attempt before advancing/,
+		/targeted hint, then a partial worked example/,
+		/give a full explanation or solution promptly/,
+		/gradually let them do more of the reasoning/,
+		/do not insert TODO\(human\) markers/,
+		/unless they explicitly agree to a hands-on exercise/,
+		/not a compulsory quiz/,
+		/just do it or just answer/,
+		/do not claim they have learned something/,
+		/verify claims and changes with the cheapest available check/,
 		/never which tools you may use/,
 	]) {
 		assert.match(result.message.content, cue);
 	}
+});
+
+test("/style concise persists the choice and injects brief but complete guidance", async () => {
+	const harness = makeHarness();
+	await harness.emit("session_start");
+	await harness.runStyle(" Concise ");
+
+	assert.deepEqual(harness.entries, [
+		{ customType: "styles", data: { style: "concise" } },
+	]);
+	assert.equal(harness.statuses.get("style"), "≡ Concise");
+	assert.match(harness.notifications.at(-1)?.message ?? "", /^Style: Concise/);
+	const result = await harness.emit("before_agent_start");
+	assert.equal(result.message.customType, STYLE_CONTEXT_TYPE);
+	assert.equal(result.message.display, false);
+	for (const cue of [
+		/\[CONCISE STYLE ACTIVE\]/,
+		/minimal commentary and direct answers/,
+		/Do not narrate routine tool calls/,
+		/meaningful milestones/,
+		/result, verification performed/,
+		/Preserve essential warnings, risks, uncertainty, and failures/,
+		/required clarification or approval/,
+		/Expand when the user asks/,
+		/not a fixed word limit/,
+		/never which tools you may use/,
+	]) {
+		assert.match(result.message.content, cue);
+	}
+	assert.doesNotMatch(result.message.content, /\[(TUTOR|COLLABORATE) STYLE ACTIVE\]/);
+});
+
+test("concise respects every permission mode and retains the plan contract", () => {
+	for (const mode of ["ask", "plan", "default", "auto"] as const) {
+		const context = buildStyleContext("concise", mode);
+		assert.match(context, /active permission mode still decides/);
+		assert.match(context, /Brevity must not hide a caveat, skip verification/);
+		if (mode === "plan") {
+			assert.match(context, /required numbered implementation plan/);
+			assert.match(context, /actionable steps and verification/);
+			assert.match(context, /final plan is still the stopping point/);
+		} else {
+			assert.doesNotMatch(context, /In plan mode/);
+		}
+	}
+});
+
+test("switching from tutor to concise replaces teaching guidance; off clears it", async () => {
+	const harness = makeHarness();
+	await harness.emit("session_start");
+	await harness.runStyle("tutor");
+	const tutor = await harness.emit("before_agent_start");
+	await harness.runStyle("concise");
+	const concise = await harness.emit("before_agent_start");
+	const messages = [
+		styleMessage(tutor.message.content),
+		userMessage,
+		styleMessage(concise.message.content),
+	];
+	const filtered = await harness.emit("context", { messages });
+	assert.deepEqual(filtered.messages, [userMessage, messages[2]]);
+	await harness.runStyle("off");
+	assert.equal(await harness.emit("before_agent_start"), undefined);
+	assert.equal(harness.statuses.get("style"), undefined);
+	const cleared = await harness.emit("context", { messages });
+	assert.deepEqual(cleared.messages, [userMessage]);
+});
+
+test("concise works without UI dialogs", async () => {
+	const harness = makeHarness({ hasUI: false });
+	await harness.emit("session_start");
+	await harness.runStyle("concise");
+	await harness.runStyle("");
+	assert.equal(harness.notifications.at(-1)?.message, "Style: concise");
+	assert.deepEqual(harness.selectOptions, []);
+	assert.equal(harness.statuses.size, 0);
+	const result = await harness.emit("before_agent_start");
+	assert.match(result.message.content, /\[CONCISE STYLE ACTIVE\]/);
+});
+
+test("the former mentor command is an alias that persists the canonical tutor name", async () => {
+	const harness = makeHarness();
+	await harness.emit("session_start");
+	await harness.runStyle(" Mentor ");
+
+	assert.deepEqual(harness.entries, [
+		{ customType: "styles", data: { style: "tutor" } },
+	]);
+	assert.equal(harness.statuses.get("style"), "✎ Tutor");
+	assert.match(harness.notifications.at(-1)?.message ?? "", /^Style: Tutor/);
+	const result = await harness.emit("before_agent_start");
+	assert.match(result.message.content, /\[TUTOR STYLE ACTIVE\]/);
+	assert.doesNotMatch(result.message.content, /\[MENTOR STYLE ACTIVE\]/);
 });
 
 test("/style with no argument offers a selector; off and none clear it", async () => {
@@ -158,7 +265,7 @@ test("/style with no argument offers a selector; off and none clear it", async (
 	await harness.runStyle("");
 	assert.deepEqual(
 		harness.selectOptions[0]?.map((option) => option.split(" ")[0]),
-		["none", "collaborate", "mentor"],
+		["none", "collaborate", "tutor", "concise"],
 	);
 	assert.equal(harness.statuses.get("style"), "⇄ Collaborate");
 	const active = await harness.emit("before_agent_start");
@@ -174,40 +281,92 @@ test("/style with no argument offers a selector; off and none clear it", async (
 	});
 });
 
+test("tutor and concise can be selected from the menu", async () => {
+	for (const [style, status] of [["tutor", "✎ Tutor"], ["concise", "≡ Concise"]] as const) {
+		const harness = makeHarness({ selections: [style] });
+		await harness.emit("session_start");
+		await harness.runStyle("");
+		assert.equal(harness.statuses.get("style"), status);
+		assert.deepEqual(harness.entries.at(-1), {
+			customType: "styles",
+			data: { style },
+		});
+	}
+});
+
+test("tutor works without a UI and /style reports the canonical name", async () => {
+	const harness = makeHarness({ hasUI: false });
+	await harness.emit("session_start");
+	await harness.runStyle("mentor");
+	await harness.runStyle("");
+	assert.equal(harness.notifications.at(-1)?.message, "Style: tutor");
+	assert.deepEqual(harness.selectOptions, []);
+	assert.equal(harness.statuses.size, 0);
+	const result = await harness.emit("before_agent_start");
+	assert.match(result.message.content, /\[TUTOR STYLE ACTIVE\]/);
+});
+
 test("unknown styles are rejected without changing the active style", async () => {
 	const harness = makeHarness();
 	await harness.emit("session_start");
-	await harness.runStyle("mentor");
+	await harness.runStyle("tutor");
 	await harness.runStyle("teacher");
 
 	assert.equal(harness.notifications.at(-1)?.level, "error");
 	assert.match(
 		harness.notifications.at(-1)?.message ?? "",
-		/Use: none \| collaborate \| mentor/,
+		/Use: none \| collaborate \| tutor \| concise/,
 	);
 	const result = await harness.emit("before_agent_start");
-	assert.match(result.message.content, /\[MENTOR STYLE ACTIVE\]/);
+	assert.match(result.message.content, /\[TUTOR STYLE ACTIVE\]/);
 });
 
-test("/style completes style names", () => {
+test("/style completes canonical style names", () => {
 	const harness = makeHarness();
-	const complete = harness.commands.get("style").getArgumentCompletions;
+	const command = harness.commands.get("style");
+	const complete = command.getArgumentCompletions;
+	assert.match(command.description, /none \| collaborate \| tutor \| concise/);
 	assert.deepEqual(
-		complete("m").map((item: { value: string }) => item.value),
-		["mentor"],
+		complete(" T ").map((item: { value: string }) => item.value),
+		["tutor"],
 	);
+	assert.deepEqual(
+		complete("").map((item: { value: string }) => item.value),
+		["none", "collaborate", "tutor", "concise"],
+	);
+	assert.deepEqual(
+		complete("co").map((item: { value: string }) => item.value),
+		["collaborate", "concise"],
+	);
+	assert.deepEqual(
+		complete("con").map((item: { value: string }) => item.value),
+		["concise"],
+	);
+	assert.equal(complete("m"), null, "legacy alias is not advertised");
 	assert.equal(complete("zz"), null);
 });
 
 test("style guidance adapts to the active permission mode", async () => {
-	const planMentor = buildStyleContext("mentor", "plan");
-	assert.match(planMentor, /do not plant TODO\(human\) markers/);
-	assert.match(planMentor, /mark such steps as the user's to write/);
-	assert.doesNotMatch(planMentor, /Put a TODO\(human\) marker/);
+	for (const mode of ["ask", "plan"] as const) {
+		const context = buildStyleContext("tutor", mode);
+		assert.match(context, new RegExp(`File edits are disabled in ${mode} mode`));
+		assert.match(context, /do not plant TODO\(human\) markers or change files/);
+		assert.match(context, /draft a small snippet in chat/);
+		assert.doesNotMatch(context, /unless they explicitly agree to a hands-on exercise/);
+	}
+	const planTutor = buildStyleContext("tutor", "plan");
+	assert.match(planTutor, /user's to write only if they agree/);
+	assert.match(planTutor, /final plan is still the stopping point/);
 
-	const autoMentor = buildStyleContext("mentor", "auto");
-	assert.match(autoMentor, /Put a TODO\(human\) marker/);
-	assert.match(autoMentor, /Auto mode only removes permission prompts/);
+	for (const mode of ["default", "auto"] as const) {
+		const context = buildStyleContext("tutor", mode);
+		assert.match(context, /Ask whether they want to try it before reserving work/);
+		assert.match(context, /do not insert TODO\(human\) markers, leave broken code/);
+		assert.match(context, /unless they explicitly agree to a hands-on exercise/);
+	}
+	const autoTutor = buildStyleContext("tutor", "auto");
+	assert.match(autoTutor, /Auto mode only removes permission prompts/);
+	assert.match(autoTutor, /not to the practice pauses and learning questions/);
 
 	assert.match(
 		buildStyleContext("collaborate", "plan"),
@@ -228,7 +387,7 @@ test("style guidance adapts to the active permission mode", async () => {
 	try {
 		const harness = makeHarness();
 		await harness.emit("session_start");
-		await harness.runStyle("mentor");
+		await harness.runStyle("tutor");
 		const result = await harness.emit("before_agent_start");
 		assert.match(result.message.content, /disabled in plan mode/);
 	} finally {
@@ -240,24 +399,24 @@ test("style guidance adapts to the active permission mode", async () => {
 
 test("context keeps only the latest style instruction and drops all when off", async () => {
 	const messages = [
-		styleMessage("old"),
+		styleMessage("[MENTOR STYLE ACTIVE] old"),
 		userMessage,
-		styleMessage("new"),
+		styleMessage("[TUTOR STYLE ACTIVE] new"),
 	];
 	assert.deepEqual(
-		filterStyleContext(messages, "mentor")?.map(
+		filterStyleContext(messages, "tutor")?.map(
 			(message) => (message as { content: unknown }).content,
 		),
-		["hi", "new"],
+		["hi", "[TUTOR STYLE ACTIVE] new"],
 	);
 	assert.deepEqual(filterStyleContext(messages, "none"), [userMessage]);
 	assert.equal(filterStyleContext([userMessage], "none"), undefined);
-	assert.equal(filterStyleContext([styleMessage("x")], "mentor"), undefined);
+	assert.equal(filterStyleContext([styleMessage("x")], "tutor"), undefined);
 
 	// Through the handler: clearing the style strips earlier instructions.
 	const harness = makeHarness();
 	await harness.emit("session_start");
-	await harness.runStyle("mentor");
+	await harness.runStyle("tutor");
 	await harness.runStyle("none");
 	const filtered = await harness.emit("context", { messages });
 	assert.deepEqual(filtered.messages, [userMessage]);
@@ -277,7 +436,7 @@ test("session restore brings back this session's style, otherwise none", async (
 
 	const cleared = makeHarness({
 		branch: [
-			{ type: "custom", customType: "styles", data: { style: "mentor" } },
+			{ type: "custom", customType: "styles", data: { style: "tutor" } },
 			{ type: "custom", customType: "styles", data: { style: "none" } },
 		],
 	});
@@ -291,14 +450,75 @@ test("session restore brings back this session's style, otherwise none", async (
 	assert.equal(await corrupt.emit("before_agent_start"), undefined);
 });
 
+test("tutor and legacy mentor entries restore as tutor on resume and tree navigation", async () => {
+	for (const style of ["tutor", "mentor"]) {
+		for (const event of ["session_start", "session_tree"]) {
+			const harness = makeHarness({
+				branch: [
+					{ type: "custom", customType: "styles", data: { style: "collaborate" } },
+					{ type: "custom", customType: "styles", data: { style } },
+				],
+			});
+			await harness.emit(event);
+			assert.equal(harness.statuses.get("style"), "✎ Tutor");
+			assert.deepEqual(harness.entries, [], "restore must not rewrite session history");
+			const result = await harness.emit("before_agent_start");
+			assert.match(result.message.content, /\[TUTOR STYLE ACTIVE\]/);
+		}
+	}
+});
+
+test("concise restores on resume and tree navigation without rewriting history", async () => {
+	for (const event of ["session_start", "session_tree"]) {
+		const harness = makeHarness({
+			branch: [
+				{ type: "custom", customType: "styles", data: { style: "tutor" } },
+				{ type: "custom", customType: "styles", data: { style: "concise" } },
+			],
+		});
+		await harness.emit(event);
+		assert.equal(harness.statuses.get("style"), "≡ Concise");
+		assert.deepEqual(harness.entries, []);
+		const result = await harness.emit("before_agent_start");
+		assert.match(result.message.content, /\[CONCISE STYLE ACTIVE\]/);
+	}
+});
+
+test("concise contributes its own frame label and cleans up on shutdown", async () => {
+	const harness = makeHarness({ frameSupported: true });
+	await harness.emit("session_start");
+	await harness.runStyle("concise");
+	assert.deepEqual(contributedFrameMetadata().style, {
+		icon: "≡",
+		label: "Concise",
+		role: "accent",
+	});
+	assert.equal(harness.statuses.get("style"), undefined);
+	await harness.emit("session_shutdown");
+	assert.equal(contributedFrameMetadata().style, undefined);
+});
+
+test("a later off or invalid entry overrides a legacy mentor choice", async () => {
+	for (const style of ["none", 42]) {
+		const harness = makeHarness({
+			branch: [
+				{ type: "custom", customType: "styles", data: { style: "mentor" } },
+				{ type: "custom", customType: "styles", data: { style } },
+			],
+		});
+		await harness.emit("session_tree");
+		assert.equal(await harness.emit("before_agent_start"), undefined);
+	}
+});
+
 test("with the frame installed the style renders in the frame, not the footer", async () => {
 	const harness = makeHarness({ frameSupported: true });
 	await harness.emit("session_start");
-	await harness.runStyle("mentor");
+	await harness.runStyle("tutor");
 
 	assert.deepEqual(contributedFrameMetadata().style, {
 		icon: "✎",
-		label: "Mentor",
+		label: "Tutor",
 		role: "accent",
 	});
 	assert.equal(harness.statuses.get("style"), undefined);
@@ -313,7 +533,7 @@ test("subagent children never get a style and strip inherited instructions", asy
 	try {
 		const harness = makeHarness({
 			branch: [
-				{ type: "custom", customType: "styles", data: { style: "mentor" } },
+				{ type: "custom", customType: "styles", data: { style: "concise" } },
 			],
 		});
 		await harness.emit("session_start");
@@ -321,7 +541,11 @@ test("subagent children never get a style and strip inherited instructions", asy
 		assert.equal(harness.commands.has("style"), false);
 		assert.equal(harness.handlers.has("before_agent_start"), false);
 		const filtered = await harness.emit("context", {
-			messages: [styleMessage("inherited"), userMessage],
+			messages: [
+				styleMessage("[TUTOR STYLE ACTIVE] inherited"),
+				styleMessage("[CONCISE STYLE ACTIVE] inherited"),
+				userMessage,
+			],
 		});
 		assert.deepEqual(filtered.messages, [userMessage]);
 	} finally {

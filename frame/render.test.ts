@@ -97,12 +97,12 @@ test("effort renders directly to the right of the mode, left of the fill", () =>
 test("an interaction style renders between the mode and the effort level", () => {
 	const styled = frame(["x"], {
 		mode: { icon: "▶", label: "Auto", role: "accent" },
-		style: { icon: "✎", label: "Mentor", role: "accent" },
+		style: { icon: "✎", label: "Tutor", role: "accent" },
 	}, 90);
-	assert.match(styled[0]!, /^╭─ ▶ Auto · ✎ Mentor · high · 42% ─/);
+	assert.match(styled[0]!, /^╭─ ▶ Auto · ✎ Tutor · high · 42% ─/);
 
 	const unstyled = frame(["x"], { mode: { icon: "▶", label: "Auto", role: "accent" } }, 90);
-	assert.doesNotMatch(unstyled[0]!, /Mentor|Collaborate/);
+	assert.doesNotMatch(unstyled[0]!, /Tutor|Collaborate/);
 
 	for (const width of [24, 40]) {
 		const narrow = frame(["x"], {
@@ -112,6 +112,19 @@ test("an interaction style renders between the mode and the effort level", () =>
 		for (const line of narrow) {
 			assert.ok(visibleWidth(line) <= width, `line too wide at ${width}: ${line}`);
 		}
+	}
+});
+
+test("concise renders in the mode cluster and fits narrow frames", () => {
+	for (const width of [20, 40, 90]) {
+		const lines = frame(["x"], {
+			mode: { icon: "▶", label: "Auto", role: "accent" },
+			style: { icon: "≡", label: "Concise", role: "accent" },
+		}, width);
+		if (width === 90) {
+			assert.match(lines[0]!, /^╭─ ▶ Auto · ≡ Concise · high · 42% ─/);
+		}
+		for (const line of lines) assert.ok(visibleWidth(line) <= width);
 	}
 });
 

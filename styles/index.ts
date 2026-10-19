@@ -6,7 +6,8 @@
  * style). Every session starts with no style: `/style <name>` is the only way
  * to turn one on, and the choice persists only within that session.
  *  - collaborate: check in at decision points and use the user as a guide
- *  - mentor:      teach while working (insights, handoffs, Socratic prompts, recaps)
+ *  - tutor:       teach step by step through explanation, practice, and feedback
+ *  - concise:     minimal commentary; retain decisions, blockers, and results
  */
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
@@ -24,7 +25,7 @@ import {
 	type PermissionMode,
 } from "../permission-modes/mode-access.js";
 
-export const STYLES = ["none", "collaborate", "mentor"] as const;
+export const STYLES = ["none", "collaborate", "tutor", "concise"] as const;
 export type Style = (typeof STYLES)[number];
 export type ActiveStyle = Exclude<Style, "none">;
 
@@ -40,7 +41,8 @@ const FRAME_CONTRIBUTOR_KEY = "style";
 const STYLE_SUMMARIES: Record<Style, string> = {
 	none: "no interaction style (default)",
 	collaborate: "check in at decision points and build it together",
-	mentor: "teach while working: insights, handoffs, guiding questions, recaps",
+	tutor: "learn step by step: explanations, active practice, and feedback",
+	concise: "minimal commentary: key decisions, blockers, and results",
 };
 
 export function isStyle(value: unknown): value is Style {
@@ -49,10 +51,11 @@ export function isStyle(value: unknown): value is Style {
 	);
 }
 
-/** Accepts `off` as an alias for `none`; everything else must match exactly. */
+/** Accepts `off` for `none` and the former `mentor` name for `tutor`. */
 function parseStyle(value: string): Style | undefined {
 	const normalized = value.trim().toLowerCase();
 	if (normalized === "off") return "none";
+	if (normalized === "mentor") return "tutor";
 	return isStyle(normalized) ? normalized : undefined;
 }
 
@@ -61,9 +64,12 @@ export function styleMetadata(style: ActiveStyle): {
 	label: string;
 	role: "success" | "accent";
 } {
+	if (style === "concise") {
+		return { icon: "≡", label: "Concise", role: "accent" };
+	}
 	return style === "collaborate"
 		? { icon: "⇄", label: "Collaborate", role: "success" }
-		: { icon: "✎", label: "Mentor", role: "accent" };
+		: { icon: "✎", label: "Tutor", role: "accent" };
 }
 
 function isPassiveMode(mode: PermissionMode): boolean {
@@ -90,11 +96,11 @@ function collaborateModeNote(mode: PermissionMode): string {
 	}
 }
 
-function mentorHandoffGuidance(mode: PermissionMode): string {
+function tutorPracticeGuidance(mode: PermissionMode): string {
 	if (isPassiveMode(mode)) {
-		return `File edits are disabled in ${mode} mode, so do not plant TODO(human) markers. Instead, when a piece of work is small, well-scoped, and instructive, name it as something the user could write themselves: where it goes, what it must do, and the hints they need.${mode === "plan" ? " In the plan, mark such steps as the user's to write." : ""} Offer at most one per response, and skip it when the user asks you to just answer.`;
+		return `File edits are disabled in ${mode} mode, so do not plant TODO(human) markers or change files for an exercise. Invite the user to trace an example, predict a result, explain a trade-off, or draft a small snippet in chat.${mode === "plan" ? " Co-design the plan while teaching the reasoning; label a step as the user's to write only if they agree. The final plan is still the stopping point." : " Keep the lesson focused on the user's question."}`;
 	}
-	return "When a piece of work is small, well-scoped, and instructive (a function body, a condition, a test case, a few lines that encode a design decision), leave it for the user. Put a TODO(human) marker at the exact location, explain what it must do, give the context and hints they need, then stop and wait. When they return, review their attempt constructively (what works, what to improve, and why) before continuing. Offer at most one handoff at a time. Skip handoffs for boilerplate, urgent fixes, or when the user asks you to just do it.";
+	return "Offer a small, meaningful piece the user can try: a condition, function body, test case, or debugging check. Give the exact file or symbol, the goal, and a way to check their work. Ask whether they want to try it before reserving work for them; do not insert TODO(human) markers, leave broken code, or withhold a completed solution unless they explicitly agree to a hands-on exercise. They can also reason in chat while you handle the editing and tools.";
 }
 
 /** Build the per-turn instruction block for an active style under a mode. */
@@ -102,6 +108,20 @@ export function buildStyleContext(
 	style: ActiveStyle,
 	mode: PermissionMode,
 ): string {
+	if (style === "concise") {
+		return `[CONCISE STYLE ACTIVE]
+The user wants minimal commentary and direct answers. Be brief, not cryptic; preserve the detail needed for correctness and clarity.
+${SCOPE_NOTE}
+
+How to be concise:
+- Lead with the answer or action. Use short sentences or compact bullets; skip preambles, filler, repeated summaries, unsolicited tutorials, and teaching recaps.
+- Do not narrate routine tool calls. Give brief progress updates only for meaningful milestones, important decisions, blockers, or unexpected findings.
+- Keep the final response focused on the result, verification performed, and any unresolved issue or necessary next step. Include relevant file paths; do not dump logs or repeat code unless requested.
+- Preserve essential warnings, risks, uncertainty, and failures. Brevity must not hide a caveat, skip verification, or replace a required clarification or approval.
+- Expand when the user asks for an explanation, walkthrough, detailed plan, or code. Concision is a default, not a fixed word limit or a reason to omit requested content.
+${mode === "plan" ? "\nIn plan mode, still produce the required numbered implementation plan with actionable steps and verification. The final plan is still the stopping point." : ""}`;
+	}
+
 	if (style === "collaborate") {
 		return `[COLLABORATE STYLE ACTIVE]
 The user chose to build this together with you. Treat them as a collaborator and a resource that guides the work, not just an approver.
@@ -120,19 +140,21 @@ ${collaborateModeNote(mode)}`;
 	}
 
 	const autoNote =
-		mode === "auto" ? `\n${autoModeNote("handoffs and guiding questions")}` : "";
-	return `[MENTOR STYLE ACTIVE]
-The user wants to learn while you work. Leave them more capable, not just with a finished task.
+		mode === "auto" ? `\n${autoModeNote("practice pauses and learning questions")}` : "";
+	return `[TUTOR STYLE ACTIVE]
+The user wants you to teach them what you are doing as you do it, and actively involve them in the work. Be a personal tutor, not an agent that finishes the task and sprinkles in tips or facts. Build understanding and confidence alongside a correct result.
 ${SCOPE_NOTE}
 
-How to teach:
-- Explain as you go: after each meaningful decision or change, add a short "Insight" note on the why (the concept, trade-off, idiom, or pitfall) and point to the relevant file, symbol, or documentation so the user can dig deeper. Keep insights specific to this codebase and task, not generic tutorials.
-- Hands-on handoffs: ${mentorHandoffGuidance(mode)}
-- Socratic prompts: at key reasoning points such as diagnosing a bug or choosing a design, first ask one guiding question (what they think is happening, or which approach they would pick and why) before revealing your answer. Give the answer promptly if they ask for it or seem stuck.
-- Recap: end each response that completed meaningful work with a brief "What you learned" section of 1-3 transferable takeaways.
+How to tutor:
+- Calibrate personally: use what the user has already shown you about their knowledge and learning goals. If the starting point is unclear, ask one brief question about their familiarity or what they want to understand; do not start every task with an assessment. Adjust the pace and depth from their responses, use plain language, define new terms, and never be condescending.
+- Teach in small steps: before a meaningful action, explain what this step does, why it matters to the current task, and how it connects to what came before. Ground explanations in the actual file, symbol, input, or output. When a concept is new or difficult, walk through one small worked example and make your reasoning visible rather than only stating the answer. Avoid unrelated trivia, long lectures, and formulaic "Insight" notes.
+- Invite active participation early and at natural learning points: ask the user to predict an outcome, trace a value, suggest a test, explain an approach in their own words, or try a small piece themselves. Choose one focused question or exercise at a time, explain enough to make it approachable, then stop and wait for their response. Do not immediately answer your own question or do the exercise for them in the same response; do not complete the whole task before inviting them in. Participation is an invitation, not a compulsory quiz on every tool call.
+- Guide, then give feedback: respond to the user's actual attempt before advancing. Say what is right, identify any specific misconception, and explain why using a concrete example or check. If they are stuck, scaffold with a targeted hint, then a partial worked example; give a full explanation or solution promptly when they ask or hints are not helping. Never withhold help to force a discovery. As confidence grows, gradually let them do more of the reasoning.
+- Hands-on practice: ${tutorPracticeGuidance(mode)}
+- Consolidate at meaningful milestones: briefly connect the concept to the result and a way to apply it again. Use a light check for understanding when useful; do not claim they have learned something merely because you explained it, or append a rote recap to every reply.
+- Keep the task moving: skip routine boilerplate as a teaching exercise, respect urgent fixes, and if the user asks you to just do it or just answer, do so without forcing participation. Resume tutoring when they want it.
 
-Calibrate to the user: match the depth of explanation to their apparent experience, skip what they clearly know, and never be condescending.
-Teaching never replaces correctness: verify claims and changes with the cheapest available check instead of narrating why they should work.${autoNote}`;
+Teaching never replaces correctness: verify claims and changes with the cheapest available check, explain what that evidence shows, and distinguish predictions from observed results.${autoNote}`;
 }
 
 /**
@@ -173,6 +195,8 @@ function latestPersistedStyle(ctx: ExtensionContext): Style {
 		if (entry.type !== "custom" || entry.customType !== STYLE_ENTRY_TYPE) {
 			continue;
 		}
+		// Old branches retain their teaching style without rewriting history.
+		if (entry.data?.style === "mentor") return "tutor";
 		return isStyle(entry.data?.style) ? entry.data.style : "none";
 	}
 	return "none";

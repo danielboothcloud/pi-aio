@@ -538,7 +538,7 @@ pi --permission-mode plan
 
 A style changes how the agent works with you; it never changes what tools may
 do. Permission modes still own that, and any mode can be combined with any
-style (for example plan + collaborate, or ask + mentor).
+style (for example plan + collaborate, or ask + tutor).
 
 Styles are **off by default**. Every new session starts with `none`; there is no
 flag, setting, or shortcut that enables one. Run `/style <name>` to turn a style
@@ -549,19 +549,37 @@ restores the style chosen on that branch. Subagents never inherit a style.
 | ----------- | --------------------------------------------------------------------------------------------------------- |
 | none        | Default behavior: no extra interaction guidance                                                           |
 | collaborate | Surfaces decisions with 2-3 options and a recommendation, asks via `ask_user_question`, uses your domain knowledge, and confirms direction between small increments |
-| mentor      | Adds short "Insight" notes on the why, leaves occasional `TODO(human)` handoffs and reviews your attempt, asks guiding questions first, and ends with a "What you learned" recap |
+| tutor       | Teaches the current task in small steps, explains the reasoning with concrete examples, invites you to predict, explain, or try something, then pauses and gives feedback before continuing |
+| concise     | Gives direct answers with minimal commentary: key decisions, blockers, results, and verification; expands when you ask for detail |
 
-In ask and plan mode, mentor names the piece you could write instead of planting
-`TODO(human)` markers, because file edits are disabled there. Collaborate in plan
-mode co-designs the plan with you before emitting it.
+Tutor adapts to your familiarity and learning goals: explain a step → invite
+your participation → wait for your attempt → discuss it and build on it. It
+offers progressively more help when you are stuck, including the full answer
+when needed, rather than testing you without teaching first. You can reason in
+chat while the agent handles the tools, or agree to a small hands-on exercise.
+It does not leave unfinished code or `TODO(human)` markers without your agreement,
+force a quiz on every action, or add formulaic tip boxes and recaps. Say "just do
+it" or "just answer" to skip participation for the current task.
+
+In ask and plan mode, tutor keeps exercises in chat and never edits files or
+plants markers. In plan mode, the final plan remains the stopping point.
+Collaborate in plan mode co-designs the plan with you before emitting it.
+
+Concise skips routine tool narration, filler, and repeated summaries—not required
+clarifications, approvals, warnings, or checks. Plan mode still produces an
+actionable numbered plan. Ask for more detail whenever you want it.
 
 The active style appears beside the mode: in the frame's top border
-(`▶ Auto · ✎ Mentor`), in the legacy status line, or as a `style` footer status
+(`▶ Auto · ✎ Tutor`), in the legacy status line, or as a `style` footer status
 when the status line is disabled.
 
 - `/style` — selector
-- `/style collaborate`, `/style mentor` — switch directly
+- `/style collaborate`, `/style tutor`, `/style concise` — switch directly
 - `/style none` (or `/style off`) — turn the style off
+
+`mentor` is the former name: `/style mentor` remains an alias for `tutor`, and
+saved mentor selections restore as tutor. Menus, completions, and new session
+entries use `tutor`.
 
 ## Minimalist frame interface
 

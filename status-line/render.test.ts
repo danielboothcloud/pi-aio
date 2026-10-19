@@ -74,15 +74,29 @@ test("renderStatusLine shows an active style beside the mode, once", () => {
 		baseInput({
 			extensionStatuses: new Map([
 				["rtk", "rtk✓"],
-				["style", "✎ Mentor"],
+				["style", "✎ Tutor"],
 			]),
 		}),
 	);
-	assert.match(line, /^⏸ Plan · ✎ Mentor · /);
-	assert.equal(line.split("Mentor").length - 1, 1, "style must not repeat in statuses");
+	assert.match(line, /^⏸ Plan · ✎ Tutor · /);
+	assert.equal(line.split("Tutor").length - 1, 1, "style must not repeat in statuses");
 
 	const [unstyled] = renderStatusLine(baseInput());
 	assert.match(unstyled, /^⏸ Plan · ⌂/);
+});
+
+test("renderStatusLine shows concise once and fits narrow widths", () => {
+	for (const width of [24, 120]) {
+		const [line] = renderStatusLine(baseInput({
+			width,
+			extensionStatuses: new Map([["style", "≡ Concise"]]),
+		}));
+		assert.ok(visibleWidth(line) <= width);
+		if (width === 120) {
+			assert.match(line, /^⏸ Plan · ≡ Concise · /);
+			assert.equal(line.split("Concise").length - 1, 1);
+		}
+	}
 });
 
 test("renderStatusLine omits empty git segment", () => {
