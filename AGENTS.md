@@ -220,8 +220,8 @@ generated `dist/` tree without changing the package contract.
   the agent cannot open panes on its own. No gating, no tool-name overlap;
   degrades silently when nvim or every launcher is missing (the command
   reports the exact command to run).
-- `styles/` owns `/style` (`none | collaborate | tutor | concise`): opt-in interaction
-  styles layered on top of permission modes. A style only injects a hidden
+- `styles/` owns `/style` (`none | collaborate | tutor | concise | humanised`):
+  opt-in interaction styles layered on top of permission modes. A style only injects a hidden
   per-turn `styles-context` instruction (mode-aware, e.g. no `TODO(human)`
   markers in ask/plan); it never gates tools, and it is NOT a permission mode
   (keep it out of `mode-access.ts`, Shift+Tab, and `--permission-mode`).
@@ -233,6 +233,10 @@ generated `dist/` tree without changing the package contract.
   canonical `tutor` (not advertised as a separate style). Concise minimizes
   commentary without hiding warnings, skipping checks/approvals, or dropping
   the required plan format; user requests for detail override its brevity.
+  Humanised covers all user-facing communication: build shared understanding
+  before granular requirements/options, keep technical detail when useful, and
+  avoid forced formality or slang without bypassing required questions,
+  approvals, verification, or the plan contract.
   Its `context` handler
   keeps only the latest instruction and strips all of them once the style is
   `none`. In subagent children

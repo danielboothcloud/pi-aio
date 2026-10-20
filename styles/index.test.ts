@@ -210,6 +210,134 @@ test("concise respects every permission mode and retains the plan contract", () 
 	}
 });
 
+test("/style humanised communicates naturally without premature requirements gathering", async () => {
+	const harness = makeHarness();
+	await harness.emit("session_start");
+	await harness.runStyle(" Humanised ");
+
+	assert.deepEqual(harness.entries, [
+		{ customType: "styles", data: { style: "humanised" } },
+	]);
+	assert.equal(harness.statuses.get("style"), "◇ Humanised");
+	assert.match(harness.notifications.at(-1)?.message ?? "", /^Style: Humanised/);
+	const result = await harness.emit("before_agent_start");
+	assert.equal(result.message.customType, STYLE_CONTEXT_TYPE);
+	assert.equal(result.message.display, false);
+	for (const cue of [
+		/\[HUMANISED STYLE ACTIVE\]/,
+		/questions, progress updates, explanations, and final answers/,
+		/Technical language is welcome/,
+		/build shared understanding before narrowing/,
+		/If the request is already clear, act on it/,
+		/Do not jump from an early idea to granular feature bundles/,
+		/tentative suggestion, not as settled scope/,
+		/Ask the next useful question/,
+		/Do not force a menu of precise options/,
+		/Use required question and approval tools/,
+		/keep its choices at the conversation's current level/,
+		/Is finding suitable jobs the main thing/,
+		/Keep technical terms, exact identifiers/,
+		/without assuming the user is a beginner/,
+		/without forced slang/,
+		/not as a template for every reply/,
+		/never which tools you may use/,
+	]) {
+		assert.match(result.message.content, cue);
+	}
+	assert.doesNotMatch(result.message.content, /\[(TUTOR|COLLABORATE|CONCISE) STYLE ACTIVE\]/);
+});
+
+test("humanised respects every permission mode and keeps required plans and checks", () => {
+	for (const mode of ["ask", "plan", "default", "auto"] as const) {
+		const context = buildStyleContext("humanised", mode);
+		assert.match(context, /active permission mode still decides/);
+		assert.match(context, /must not hide warnings, risks, failures, or technical precision/);
+		assert.match(context, /must not skip verification, required clarifications, or approvals/);
+		if (mode === "plan") {
+			assert.match(context, /required numbered implementation plan/);
+			assert.match(context, /actionable steps and verification/);
+			assert.match(context, /final plan is still the stopping point/);
+		} else {
+			assert.doesNotMatch(context, /In plan mode/);
+		}
+	}
+});
+
+test("switching to and from humanised keeps only current guidance; off clears it", async () => {
+	const harness = makeHarness();
+	await harness.emit("session_start");
+	await harness.runStyle("collaborate");
+	const collaborate = await harness.emit("before_agent_start");
+	await harness.runStyle("humanised");
+	const humanised = await harness.emit("before_agent_start");
+	const messages = [
+		styleMessage(collaborate.message.content),
+		userMessage,
+		styleMessage(humanised.message.content),
+	];
+	assert.deepEqual((await harness.emit("context", { messages })).messages, [
+		userMessage,
+		messages[2],
+	]);
+
+	await harness.runStyle("concise");
+	const concise = await harness.emit("before_agent_start");
+	messages.push(styleMessage(concise.message.content));
+	assert.deepEqual((await harness.emit("context", { messages })).messages, [
+		userMessage,
+		messages[3],
+	]);
+
+	await harness.runStyle("humanised");
+	await harness.runStyle("off");
+	assert.equal(await harness.emit("before_agent_start"), undefined);
+	assert.equal(harness.statuses.get("style"), undefined);
+	assert.equal(contributedFrameMetadata().style, undefined);
+	assert.deepEqual((await harness.emit("context", { messages })).messages, [userMessage]);
+});
+
+test("humanised works without UI dialogs", async () => {
+	const harness = makeHarness({ hasUI: false });
+	await harness.emit("session_start");
+	await harness.runStyle("humanised");
+	await harness.runStyle("");
+	assert.equal(harness.notifications.at(-1)?.message, "Style: humanised");
+	assert.deepEqual(harness.selectOptions, []);
+	assert.equal(harness.statuses.size, 0);
+	const result = await harness.emit("before_agent_start");
+	assert.match(result.message.content, /\[HUMANISED STYLE ACTIVE\]/);
+});
+
+test("humanised restores on resume and tree navigation without rewriting history", async () => {
+	for (const event of ["session_start", "session_tree"]) {
+		const harness = makeHarness({
+			branch: [
+				{ type: "custom", customType: "styles", data: { style: "tutor" } },
+				{ type: "custom", customType: "styles", data: { style: "humanised" } },
+			],
+		});
+		await harness.emit(event);
+		assert.equal(harness.statuses.get("style"), "◇ Humanised");
+		assert.deepEqual(harness.entries, []);
+		const result = await harness.emit("before_agent_start");
+		assert.match(result.message.content, /\[HUMANISED STYLE ACTIVE\]/);
+	}
+});
+
+test("humanised contributes its own frame label and cleans up on shutdown", async () => {
+	const harness = makeHarness({ frameSupported: true });
+	await harness.emit("session_start");
+	await harness.runStyle("humanised");
+	assert.deepEqual(contributedFrameMetadata().style, {
+		icon: "◇",
+		label: "Humanised",
+		role: "accent",
+	});
+	assert.equal(harness.statuses.get("style"), undefined);
+	await harness.emit("session_shutdown");
+	assert.equal(contributedFrameMetadata().style, undefined);
+});
+
 test("switching from tutor to concise replaces teaching guidance; off clears it", async () => {
 	const harness = makeHarness();
 	await harness.emit("session_start");
@@ -265,7 +393,7 @@ test("/style with no argument offers a selector; off and none clear it", async (
 	await harness.runStyle("");
 	assert.deepEqual(
 		harness.selectOptions[0]?.map((option) => option.split(" ")[0]),
-		["none", "collaborate", "tutor", "concise"],
+		["none", "collaborate", "tutor", "concise", "humanised"],
 	);
 	assert.equal(harness.statuses.get("style"), "⇄ Collaborate");
 	const active = await harness.emit("before_agent_start");
@@ -281,8 +409,12 @@ test("/style with no argument offers a selector; off and none clear it", async (
 	});
 });
 
-test("tutor and concise can be selected from the menu", async () => {
-	for (const [style, status] of [["tutor", "✎ Tutor"], ["concise", "≡ Concise"]] as const) {
+test("tutor, concise, and humanised can be selected from the menu", async () => {
+	for (const [style, status] of [
+		["tutor", "✎ Tutor"],
+		["concise", "≡ Concise"],
+		["humanised", "◇ Humanised"],
+	] as const) {
 		const harness = makeHarness({ selections: [style] });
 		await harness.emit("session_start");
 		await harness.runStyle("");
@@ -315,7 +447,7 @@ test("unknown styles are rejected without changing the active style", async () =
 	assert.equal(harness.notifications.at(-1)?.level, "error");
 	assert.match(
 		harness.notifications.at(-1)?.message ?? "",
-		/Use: none \| collaborate \| tutor \| concise/,
+		/Use: none \| collaborate \| tutor \| concise \| humanised/,
 	);
 	const result = await harness.emit("before_agent_start");
 	assert.match(result.message.content, /\[TUTOR STYLE ACTIVE\]/);
@@ -325,14 +457,14 @@ test("/style completes canonical style names", () => {
 	const harness = makeHarness();
 	const command = harness.commands.get("style");
 	const complete = command.getArgumentCompletions;
-	assert.match(command.description, /none \| collaborate \| tutor \| concise/);
+	assert.match(command.description, /none \| collaborate \| tutor \| concise \| humanised/);
 	assert.deepEqual(
 		complete(" T ").map((item: { value: string }) => item.value),
 		["tutor"],
 	);
 	assert.deepEqual(
 		complete("").map((item: { value: string }) => item.value),
-		["none", "collaborate", "tutor", "concise"],
+		["none", "collaborate", "tutor", "concise", "humanised"],
 	);
 	assert.deepEqual(
 		complete("co").map((item: { value: string }) => item.value),
@@ -342,6 +474,13 @@ test("/style completes canonical style names", () => {
 		complete("con").map((item: { value: string }) => item.value),
 		["concise"],
 	);
+	assert.deepEqual(complete(" H "), [
+		{
+			label: "humanised",
+			value: "humanised",
+			description: "natural conversation: understand the idea before getting granular",
+		},
+	]);
 	assert.equal(complete("m"), null, "legacy alias is not advertised");
 	assert.equal(complete("zz"), null);
 });
@@ -533,7 +672,7 @@ test("subagent children never get a style and strip inherited instructions", asy
 	try {
 		const harness = makeHarness({
 			branch: [
-				{ type: "custom", customType: "styles", data: { style: "concise" } },
+				{ type: "custom", customType: "styles", data: { style: "humanised" } },
 			],
 		});
 		await harness.emit("session_start");
@@ -544,6 +683,7 @@ test("subagent children never get a style and strip inherited instructions", asy
 			messages: [
 				styleMessage("[TUTOR STYLE ACTIVE] inherited"),
 				styleMessage("[CONCISE STYLE ACTIVE] inherited"),
+				styleMessage("[HUMANISED STYLE ACTIVE] inherited"),
 				userMessage,
 			],
 		});

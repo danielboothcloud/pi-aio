@@ -551,6 +551,7 @@ restores the style chosen on that branch. Subagents never inherit a style.
 | collaborate | Surfaces decisions with 2-3 options and a recommendation, asks via `ask_user_question`, uses your domain knowledge, and confirms direction between small increments |
 | tutor       | Teaches the current task in small steps, explains the reasoning with concrete examples, invites you to predict, explain, or try something, then pauses and gives feedback before continuing |
 | concise     | Gives direct answers with minimal commentary: key decisions, blockers, results, and verification; expands when you ask for detail |
+| humanised   | Talks things through naturally, understands the idea before getting granular, and keeps technical detail where it helps |
 
 Tutor adapts to your familiarity and learning goals: explain a step → invite
 your participation → wait for your attempt → discuss it and build on it. It
@@ -569,12 +570,20 @@ Concise skips routine tool narration, filler, and repeated summaries—not requi
 clarifications, approvals, warnings, or checks. Plan mode still produces an
 actionable numbered plan. Ask for more detail whenever you want it.
 
+Humanised makes the whole conversation feel more natural—not just explanations.
+It follows where you are in the discussion: understand the idea first, ask the
+next useful question, and get specific as the direction becomes clearer. It
+avoids turning a newly introduced topic into a menu of precise feature bundles
+or release decisions. Technical language is fine; it does not assume you are a
+beginner, force slang, or replace useful detail with vague simplifications.
+Required questions, approvals, checks, and plan formats still apply.
+
 The active style appears beside the mode: in the frame's top border
 (`▶ Auto · ✎ Tutor`), in the legacy status line, or as a `style` footer status
 when the status line is disabled.
 
 - `/style` — selector
-- `/style collaborate`, `/style tutor`, `/style concise` — switch directly
+- `/style collaborate`, `/style tutor`, `/style concise`, `/style humanised` — switch directly
 - `/style none` (or `/style off`) — turn the style off
 
 `mentor` is the former name: `/style mentor` remains an alias for `tutor`, and
