@@ -1,4 +1,5 @@
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
+import type { ChildExtensionLaunch } from "./extensions.js";
 
 export type SubagentContext = "fresh" | "fork";
 export type SubagentThinking =
@@ -59,6 +60,37 @@ export interface ChildUsage {
 	cost: number;
 }
 
+/** A tool the child is executing right now (from tool_execution_* events). */
+export interface RunningTool {
+	id: string;
+	name: string;
+	summary: string;
+	startedAt: number;
+}
+
+export type ChildActivityPhase =
+	| "starting"
+	| "waiting"
+	| "thinking"
+	| "writing"
+	| "tool"
+	| "retrying"
+	| "compacting"
+	| "finishing";
+
+/** Live progress derived from the child's JSON event stream. JSON-safe. */
+export interface ChildActivity {
+	phase: ChildActivityPhase;
+	/** Wall-clock time of the last event of any kind from the child. */
+	lastEventAt: number;
+	turns: number;
+	toolCount: number;
+	runningTools: RunningTool[];
+	retry?: { attempt: number; maxAttempts: number; error?: string };
+	/** Set when the child reported agent_settled (it will not continue). */
+	settledAt?: number;
+}
+
 export interface ChildRunResult {
 	index: number;
 	agent: string;
@@ -73,6 +105,12 @@ export interface ChildRunResult {
 	endedAt: number;
 	usage: ChildUsage;
 	attempts: number;
+	/**
+	 * The child finished (agent_settled) but its process did not exit on its
+	 * own, so the runner terminated it. Usually an extension left a live
+	 * handle in the headless child.
+	 */
+	reapedAfterSettle?: boolean;
 }
 
 export interface ChildRunStatus {
@@ -87,6 +125,8 @@ export interface ChildRunStatus {
 	error?: string;
 	sessionFile?: string;
 	attempts?: number;
+	activity?: ChildActivity;
+	reapedAfterSettle?: boolean;
 	process?: ChildProcessWithoutNullStreams;
 }
 
@@ -108,9 +148,13 @@ export interface ParentLaunchContext {
 	cwd: string;
 	model?: string;
 	thinking?: SubagentThinking;
-	permissionMode: "default" | "ask" | "plan" | "auto";
 	parentSessionFile?: string;
-	extensionPaths?: string[];
+	/**
+	 * The parent's resolved extension set (see resolveChildExtensionLaunch).
+	 * There is no opt-out: the runner always normalizes this so a child can
+	 * never start with fewer extensions than its parent.
+	 */
+	extensionLaunch?: ChildExtensionLaunch;
 	modelProvider?: string;
 }
 

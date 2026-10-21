@@ -257,6 +257,65 @@ test("auto mode approves tools without queuing continuation prompts", async () =
 	assert.deepEqual(sentUserMessages, []);
 });
 
+async function startWithPersistedMode(
+	persistedMode: string,
+	child: boolean,
+): Promise<{ editResult: unknown; bashResult: unknown }> {
+	const saved = process.env.AIO_SUBAGENT_CHILD;
+	if (child) process.env.AIO_SUBAGENT_CHILD = "1";
+	else delete process.env.AIO_SUBAGENT_CHILD;
+	try {
+		const { ctx, handlers, pi } = makeHarness();
+		Object.assign(pi, { getFlag: () => "auto" });
+		Object.assign(ctx, {
+			hasUI: false,
+			model: { provider: "anthropic", id: "claude" },
+			sessionManager: {
+				// A forked child inherits the parent's persisted mode entry.
+				getEntries: () => [
+					{
+						type: "custom",
+						customType: "modes",
+						data: { currentMode: persistedMode },
+					},
+				],
+			},
+		});
+		registerPermissionModes(pi);
+		for (const handler of handlers.get("session_start") ?? []) {
+			await handler({}, ctx);
+		}
+		const call = async (toolName: string, input: Record<string, unknown>) => {
+			let result: unknown;
+			for (const handler of handlers.get("tool_call") ?? []) {
+				result = (await handler({ toolName, toolCallId: "c1", input }, ctx)) ?? result;
+			}
+			return result;
+		};
+		return {
+			editResult: await call("edit", { path: "a.ts" }),
+			bashResult: await call("bash", { command: "npm test" }),
+		};
+	} finally {
+		if (saved === undefined) delete process.env.AIO_SUBAGENT_CHILD;
+		else process.env.AIO_SUBAGENT_CHILD = saved;
+	}
+}
+
+test("subagent children always run in auto, even over a persisted mode", async () => {
+	for (const mode of ["plan", "ask", "default"]) {
+		const { editResult, bashResult } = await startWithPersistedMode(mode, true);
+		assert.equal(editResult, undefined, `${mode}: edit allowed in child`);
+		assert.equal(bashResult, undefined, `${mode}: bash allowed in child`);
+	}
+});
+
+test("non-child sessions still restore a persisted passive mode", async () => {
+	const { editResult, bashResult } = await startWithPersistedMode("plan", false);
+	assert.match(String((editResult as { reason?: string })?.reason), /Plan mode/);
+	assert.match(String((bashResult as { reason?: string })?.reason), /Plan mode/);
+});
+
 test("Cursor default mode exposes bridge built-ins and routes mutations through Pi tools", async () => {
 	const previous = process.env.PI_CURSOR_EXPOSE_BUILTIN_TOOLS;
 	delete process.env.PI_CURSOR_EXPOSE_BUILTIN_TOOLS;

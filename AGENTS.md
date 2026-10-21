@@ -220,8 +220,8 @@ generated `dist/` tree without changing the package contract.
   the agent cannot open panes on its own. No gating, no tool-name overlap;
   degrades silently when nvim or every launcher is missing (the command
   reports the exact command to run).
-- `styles/` owns `/style` (`none | collaborate | tutor | concise`): opt-in interaction
-  styles layered on top of permission modes. A style only injects a hidden
+- `styles/` owns `/style` (`none | collaborate | tutor | concise | humanised`):
+  opt-in interaction styles layered on top of permission modes. A style only injects a hidden
   per-turn `styles-context` instruction (mode-aware, e.g. no `TODO(human)`
   markers in ask/plan); it never gates tools, and it is NOT a permission mode
   (keep it out of `mode-access.ts`, Shift+Tab, and `--permission-mode`).
@@ -233,6 +233,10 @@ generated `dist/` tree without changing the package contract.
   canonical `tutor` (not advertised as a separate style). Concise minimizes
   commentary without hiding warnings, skipping checks/approvals, or dropping
   the required plan format; user requests for detail override its brevity.
+  Humanised covers all user-facing communication: build shared understanding
+  before granular requirements/options, keep technical detail when useful, and
+  avoid forced formality or slang without bypassing required questions,
+  approvals, verification, or the plan contract.
   Its `context` handler
   keeps only the latest instruction and strips all of them once the style is
   `none`. In subagent children
@@ -241,7 +245,21 @@ generated `dist/` tree without changing the package contract.
   status that status-line renders inside its mode segment.
 - `subagents/` owns the `subagent` tool: configured child Pi agents run as
   spawned `pi --mode json -p` processes (fresh or forked context, bounded
-  parallel group, background follow-up via `aio-subagent-complete`). A child
+  parallel group, background follow-up via `aio-subagent-complete`). Children
+  always run with the parent's extension set — there is no bare/opt-out
+  path, because extensions carry gates (blocklists, permission modes, hooks)
+  and provider auth (e.g. an OAuth request shaper; without it Anthropic bills
+  child requests as extra usage). `resolveChildExtensionLaunch` mirrors the
+  parent's own argv: a `-ne` parent (e.g. a recipe relaunch) forwards
+  `-ne -e <aio> -e <parent -e…>`; otherwise the child omits `-ne` and loads
+  the same configured packages plus the parent's `-e` entries.
+  `enforceChildExtensions` guarantees aio is listed whenever `-ne` is passed.
+  `AIO_SUBAGENT_EXTRA_EXTENSIONS` can only add. Children always run in
+  `auto` permission mode whatever the parent's mode (they are headless, so
+  any other mode blocks every edit and non-read-only command): the runner
+  passes `--permission-mode auto` and permission-modes pins `auto` under
+  `AIO_SUBAGENT_CHILD=1`, overriding a forked transcript's persisted mode.
+  Hard blocklists still apply in children. A child
   that dies from a provider stall, hard timeout, or crash is retried
   automatically (`RunnerDeps.maxAttempts`, default 2) by resuming the child's
   own session file with a continuation prompt — completed turns and usage
@@ -250,7 +268,21 @@ generated `dist/` tree without changing the package contract.
   failures report the preserved session file so the parent can inspect or
   resume manually. Tool description and promptGuidelines steer the parent
   toward generous `timeoutMs` budgets (pi's own HTTP idle timeout is 300s by
-  default, so budgets below that kill children mid-recovery).
+  default, so budgets below that kill children mid-recovery). Completion is
+  the child's `agent_settled` JSON event, NOT process exit: `pi -p` only exits
+  once its event loop drains, so any inherited extension that leaves a live
+  handle in the headless child would otherwise hang the parent tool until the
+  hard timeout (then fail and retry finished work). After `agent_settled`
+  the hard timeout is cancelled and the child gets `settleExitGraceMs`
+  (default 10s) to exit before SIGTERM → SIGKILL; a reaped child counts as
+  completed (`reapedAfterSettle`, noted in the result text). Live progress
+  (`activity.ts`) folds the child's JSON events — turns, streaming phase,
+  running tools with argument summaries, provider retries, compaction,
+  settle — into `ChildRunStatus.activity`, rendered as one line per child in
+  the foreground tool card (repainted every 1s), the above-editor widget
+  (1s ticker that stops when no run is active; stall warning tone after
+  120s without events outside a tool), and `subagent status`. Streaming
+  deltas are throttled to one repaint per 250ms.
 - `you-should-know/` owns the YSK shadow auditor: successful
   `write`/`edit`/`apply_patch` tool results are debounced into one bounded,
   isolated `ctx.modelRegistry.complete()` audit (the sub-agent) whose findings

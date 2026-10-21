@@ -6,7 +6,6 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import type { TUI } from "@earendil-works/pi-tui";
 import { Type, type Static } from "typebox";
-import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
 import {
 	chromeHeader,
 	chromeHint,
@@ -14,8 +13,9 @@ import {
 	plural,
 	type ChromeTheme,
 } from "../ui/chrome.js";
+import { formatChildActivity, formatRunProgress } from "./activity.js";
 import { discoverAgents } from "./agents.js";
-import { resolveChildExtensionPaths } from "./extensions.js";
+import { resolveChildExtensionLaunch } from "./extensions.js";
 import { clearRuns, getRun, listRuns, stopRun } from "./registry.js";
 import {
 	executeSubagentRun,
@@ -113,9 +113,8 @@ function parentContext(
 		model,
 		modelProvider,
 		thinking,
-		permissionMode: getPermissionModeAccess()?.getMode() ?? "default",
 		parentSessionFile: ctx.sessionManager.getSessionFile(),
-		extensionPaths: resolveChildExtensionPaths({ modelProvider }),
+		extensionLaunch: resolveChildExtensionLaunch({ modelProvider }),
 	};
 }
 
@@ -141,15 +140,28 @@ function publicRun(run: SubagentRun): Record<string, unknown> {
 			error: child.error,
 			sessionFile: child.sessionFile,
 			attempts: child.attempts ?? 1,
+			activity: child.activity
+				? {
+						...child.activity,
+						runningTools: child.activity.runningTools.map((tool) => ({
+							...tool,
+						})),
+					}
+				: undefined,
+			reapedAfterSettle: child.reapedAfterSettle,
 		})),
 	};
 }
+
+/** Running children shown under a parallel run before collapsing to a hint. */
+const MAX_CHILD_ROWS = 3;
 
 export function buildSubagentWidgetLines(
 	active: readonly SubagentRun[],
 	width: number,
 	theme: ChromeTheme,
 	maxRows = 4,
+	now = Date.now(),
 ): string[] {
 	if (active.length === 0 || width <= 0) return [];
 	const lines = [
@@ -161,6 +173,26 @@ export function buildSubagentWidgetLines(
 	];
 	const visible = active.slice(0, Math.max(1, maxRows));
 	for (const run of visible) {
+		const marker = run.state === "running" ? "◐" : "◌";
+		const only = run.children.length === 1 ? run.children[0] : undefined;
+		if (only) {
+			// Single child: one row carrying its live activity.
+			const { text, stale } = formatChildActivity(only, now);
+			lines.push(
+				chromeItem(
+					theme,
+					{
+						label: `${run.id.slice(0, 8)} ${only.agent}`,
+						meta: text,
+						marker,
+						tone: stale || only.state === "failed" ? "warning" : "accent",
+						indent: 1,
+					},
+					width,
+				),
+			);
+			continue;
+		}
 		const done = run.children.filter(
 			(child) => child.state === "completed",
 		).length;
@@ -173,23 +205,51 @@ export function buildSubagentWidgetLines(
 				{
 					label: run.id.slice(0, 8),
 					meta: `${done}/${run.children.length} done${failed ? ` · ${failed} failed` : ""}`,
-					marker: run.state === "running" ? "◐" : "◌",
+					marker,
 					tone: failed ? "warning" : "accent",
 					indent: 1,
 				},
 				width,
 			),
 		);
+		const running = run.children.filter((child) => child.state === "running");
+		for (const child of running.slice(0, MAX_CHILD_ROWS)) {
+			const { text, stale } = formatChildActivity(child, now);
+			lines.push(
+				chromeItem(
+					theme,
+					{
+						label: child.agent,
+						meta: text,
+						marker: "↳",
+						tone: stale ? "warning" : "muted",
+						indent: 3,
+					},
+					width,
+				),
+			);
+		}
+		if (running.length > MAX_CHILD_ROWS)
+			lines.push(
+				chromeHint(theme, `+${running.length - MAX_CHILD_ROWS} more running`, width, 5),
+			);
 	}
 	const remaining = active.length - visible.length;
 	if (remaining > 0) lines.push(chromeHint(theme, `+${remaining} more runs`, width));
 	return lines;
 }
 
-function activeWidgetContent() {
-	const active = listRuns().filter(
+/** Live elapsed/quiet timers need a repaint even when the child is silent. */
+const ACTIVITY_TICK_MS = 1_000;
+
+function activeRuns(): SubagentRun[] {
+	return listRuns().filter(
 		(run) => run.state === "queued" || run.state === "running",
 	);
+}
+
+function activeWidgetContent() {
+	const active = activeRuns();
 	if (!active.length) return undefined;
 	return (_tui: TUI, theme: Theme) => ({
 		invalidate() {},
@@ -197,6 +257,14 @@ function activeWidgetContent() {
 			return buildSubagentWidgetLines(active, width, theme);
 		},
 	});
+}
+
+function runActivitySuffix(run: SubagentRun): string {
+	if (run.state !== "running") return "";
+	const now = Date.now();
+	return run.children
+		.map((child) => `\n  ${child.agent} · ${formatChildActivity(child, now).text}`)
+		.join("");
 }
 
 function toolResult(text: string, details: Record<string, unknown> = {}) {
@@ -219,6 +287,32 @@ export function registerSubagents(
 	deps: SubagentExtensionDeps = {},
 ): void {
 	let shuttingDown = false;
+	let widgetCtx: ExtensionContext | undefined;
+	let widgetTicker: NodeJS.Timeout | undefined;
+	const stopWidgetTicker = () => {
+		if (widgetTicker) clearInterval(widgetTicker);
+		widgetTicker = undefined;
+	};
+	const refreshWidget = () => {
+		if (shuttingDown || !widgetCtx) return;
+		try {
+			widgetCtx.ui.setWidget("aio-subagents", activeWidgetContent());
+		} catch {
+			// A replaced session invalidates the captured context.
+			stopWidgetTicker();
+			return;
+		}
+		if (activeRuns().length === 0) stopWidgetTicker();
+	};
+	// Keeps the widget's elapsed/quiet timers moving for foreground and
+	// background runs alike; stops itself once no run is active.
+	const trackWidget = (ctx: ExtensionContext) => {
+		widgetCtx = ctx;
+		refreshWidget();
+		if (widgetTicker || !ctx.hasUI || activeRuns().length === 0) return;
+		widgetTicker = setInterval(refreshWidget, ACTIVITY_TICK_MS);
+		widgetTicker.unref?.();
+	};
 	pi.registerTool({
 		name: "subagent",
 		label: "Subagent",
@@ -251,14 +345,18 @@ export function registerSubagents(
 						throw new Error(
 							`Unknown or ambiguous subagent run '${params.id}'.`,
 						);
-					return toolResult(formatRunResult(run), { run: publicRun(run) });
+					const active = run.state === "queued" || run.state === "running";
+					return toolResult(
+						active ? formatRunProgress(run, Date.now()) : formatRunResult(run),
+						{ run: publicRun(run) },
+					);
 				}
 				const runs = listRuns();
 				const text = runs.length
 					? runs
 							.map(
 								(run) =>
-									`${run.id}  ${run.state}  ${run.mode}  ${run.children.length} child(ren)`,
+									`${run.id}  ${run.state}  ${run.mode}  ${run.children.length} child(ren)${runActivitySuffix(run)}`,
 							)
 							.join("\n")
 					: "No subagent runs are recorded in this process.";
@@ -267,7 +365,7 @@ export function registerSubagents(
 			if (params.action === "stop") {
 				if (!params.id) throw new Error("Subagent stop requires an id.");
 				const run = stopRun(params.id);
-				ctx.ui.setWidget("aio-subagents", activeWidgetContent());
+				trackWidget(ctx);
 				return toolResult(`Subagent run ${run.id} is ${run.state}.`, {
 					run: publicRun(run),
 				});
@@ -288,17 +386,16 @@ export function registerSubagents(
 			};
 			const agents = discoverAgents(ctx.cwd, { includeProject });
 			const parent = parentContext(ctx, pi);
-			const updateWidget = () => {
-				if (!shuttingDown)
-					ctx.ui.setWidget("aio-subagents", activeWidgetContent());
-			};
+			const updateWidget = () => trackWidget(ctx);
+			let foregroundRun: SubagentRun | undefined;
 			const updateForeground = (run: SubagentRun) => {
+				foregroundRun = run;
 				updateWidget();
+				if (shuttingDown) return;
 				onUpdate?.(
-					toolResult(
-						`Subagent run ${run.id.slice(0, 8)}: ${run.children.map((child) => `${child.agent}=${child.state}`).join(", ")}`,
-						{ run: publicRun(run) },
-					),
+					toolResult(formatRunProgress(run, Date.now()), {
+						run: publicRun(run),
+					}),
 				);
 			};
 
@@ -352,14 +449,25 @@ export function registerSubagents(
 				);
 			}
 
-			const run = await executeSubagentRun({
-				request,
-				agents,
-				parent,
-				signal,
-				onUpdate: updateForeground,
-				deps: deps.runner,
-			});
+			// Repaint the tool card each second so elapsed and quiet times move
+			// even while the child is silent (a long command, a stalled provider).
+			const foregroundTicker = setInterval(() => {
+				if (foregroundRun?.state === "running") updateForeground(foregroundRun);
+			}, ACTIVITY_TICK_MS);
+			foregroundTicker.unref?.();
+			let run: SubagentRun;
+			try {
+				run = await executeSubagentRun({
+					request,
+					agents,
+					parent,
+					signal,
+					onUpdate: updateForeground,
+					deps: deps.runner,
+				});
+			} finally {
+				clearInterval(foregroundTicker);
+			}
 			updateWidget();
 			return toolResult(formatRunResult(run), { run: publicRun(run) });
 		},
@@ -372,6 +480,8 @@ export function registerSubagents(
 
 	pi.on("session_shutdown", (_event, ctx) => {
 		shuttingDown = true;
+		stopWidgetTicker();
+		widgetCtx = undefined;
 		for (const run of listRuns()) {
 			if (run.state === "queued" || run.state === "running") stopRun(run.id);
 		}

@@ -9,10 +9,17 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
+import {
+	applyActivityEvent,
+	createActivity,
+	resetActivityForAttempt,
+} from "./activity.js";
 import { findAgent } from "./agents.js";
 import {
+	type ChildExtensionLaunch,
 	childSupportsModel,
-	resolveChildExtensionPaths,
+	enforceChildExtensions,
+	resolveChildExtensionLaunch,
 } from "./extensions.js";
 import { createRun } from "./registry.js";
 import type {
@@ -30,6 +37,12 @@ import type {
 
 const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
 const DEFAULT_TERMINATION_GRACE_MS = 3_000;
+// `pi -p` only exits once its event loop drains; an extension that leaves a
+// live handle in the headless child would otherwise hang the parent until
+// the hard timeout. After agent_settled, allow this long for a natural exit.
+const DEFAULT_SETTLE_EXIT_GRACE_MS = 10_000;
+// Streaming deltas arrive per token; re-render at most this often for them.
+const DELTA_UPDATE_INTERVAL_MS = 250;
 const DEFAULT_CONCURRENCY = 4;
 const DEFAULT_MAX_ATTEMPTS = 2;
 const MAX_ATTEMPTS_CAP = 5;
@@ -52,6 +65,14 @@ export interface RunnerDeps {
 	piArgsPrefix?: string[];
 	runsBaseDir?: string;
 	terminationGraceMs?: number;
+	/**
+	 * After the child reports agent_settled, how long to wait for its process
+	 * to exit before terminating it (default 10s). A reaped child still counts
+	 * as completed.
+	 */
+	settleExitGraceMs?: number;
+	/** Clock seam for activity timestamps (default Date.now). */
+	now?: () => number;
 	/** Total attempts per child (default 2: one automatic retry). */
 	maxAttempts?: number;
 	/** Delay before a retry attempt (default 1s). */
@@ -72,6 +93,8 @@ interface ParsedChildOutput {
 	model?: string;
 	usage: ChildUsage;
 	assistantError?: string;
+	/** agent_settled was received: pi will not continue this run. */
+	settled?: { aborted: boolean };
 }
 
 function emptyUsage(): ChildUsage {
@@ -92,14 +115,26 @@ function textFromContent(content: unknown): string {
 		.join("\n");
 }
 
-function parseEventLine(line: string, parsed: ParsedChildOutput): void {
+function parseEventLine(line: string): Record<string, unknown> | undefined {
 	const clean = line.replace(ANSI_PATTERN, "").trim();
 	const objectStart = clean.indexOf("{");
-	if (objectStart === -1) return;
-	let event: Record<string, unknown>;
+	if (objectStart === -1) return undefined;
 	try {
-		event = JSON.parse(clean.slice(objectStart)) as Record<string, unknown>;
+		const event: unknown = JSON.parse(clean.slice(objectStart));
+		return typeof event === "object" && event !== null && !Array.isArray(event)
+			? (event as Record<string, unknown>)
+			: undefined;
 	} catch {
+		return undefined;
+	}
+}
+
+function applyOutputEvent(
+	event: Record<string, unknown>,
+	parsed: ParsedChildOutput,
+): void {
+	if (event.type === "agent_settled") {
+		parsed.settled = { aborted: event.aborted === true };
 		return;
 	}
 	if (
@@ -149,10 +184,18 @@ function resolvedModel(
 ): string | undefined {
 	const model = task.model ?? request.model ?? agent.model ?? parent.model;
 	if (!model) return undefined;
-	const extensionPaths =
-		parent.extensionPaths ??
-		resolveChildExtensionPaths({ modelProvider: parent.modelProvider });
-	return childSupportsModel(extensionPaths, model) ? model : undefined;
+	return childSupportsModel(childExtensionLaunch(parent), model)
+		? model
+		: undefined;
+}
+
+function childExtensionLaunch(
+	parent: ParentLaunchContext,
+): ChildExtensionLaunch {
+	return enforceChildExtensions(
+		parent.extensionLaunch ??
+			resolveChildExtensionLaunch({ modelProvider: parent.modelProvider }),
+	);
 }
 
 function resolvedThinking(
@@ -207,14 +250,12 @@ export function buildSpawnSpec(input: {
 	});
 
 	const args = [...(input.deps?.piArgsPrefix ?? []), "--mode", "json", "-p"];
-	const extensionPaths =
-		input.parent.extensionPaths ??
-		resolveChildExtensionPaths({ modelProvider: input.parent.modelProvider });
-	if (extensionPaths.length) {
-		args.push("--no-extensions");
-		for (const extensionPath of extensionPaths) {
-			args.push("--extension", extensionPath);
-		}
+	// Mirror the parent's extension set: provider/auth extensions (e.g. an
+	// OAuth request shaper) must load in the child or its requests differ.
+	const extensionLaunch = childExtensionLaunch(input.parent);
+	if (extensionLaunch.noExtensions) args.push("--no-extensions");
+	for (const extensionPath of extensionLaunch.paths) {
+		args.push("--extension", extensionPath);
 	}
 	const context = input.request.context ?? "fresh";
 	let requestedSessionFile: string | undefined;
@@ -253,7 +294,9 @@ export function buildSpawnSpec(input: {
 		input.parent,
 	);
 	if (thinking) args.push("--thinking", thinking);
-	args.push("--permission-mode", input.parent.permissionMode);
+	// Children are headless: any other mode would block every edit and
+	// non-read-only command. permission-modes also pins auto for children.
+	args.push("--permission-mode", "auto");
 	args.push(
 		input.agent.systemPromptMode === "append"
 			? "--append-system-prompt"
@@ -329,16 +372,21 @@ interface AttemptOutcome {
 	code: number;
 	signal: NodeJS.Signals | null;
 	timedOut: boolean;
+	/** Child finished (agent_settled) but lingered; the runner terminated it. */
+	reapedAfterSettle: boolean;
 	stderr: string;
 	parsed: ParsedChildOutput;
 	sessionFile?: string;
 }
 
 function attemptFailed(outcome: AttemptOutcome): boolean {
+	// A child reaped after agent_settled finished its work; the exit code of
+	// the termination says nothing about the run.
+	const exitedCleanly = outcome.code === 0 || outcome.reapedAfterSettle;
 	return (
 		outcome.timedOut ||
 		outcome.parsed.assistantError !== undefined ||
-		outcome.code !== 0
+		!exitedCleanly
 	);
 }
 
@@ -431,6 +479,7 @@ async function runChildAttempt(input: {
 	spec: SpawnSpec;
 	timeoutMs: number;
 	terminationGraceMs: number;
+	settleExitGraceMs: number;
 	signal?: AbortSignal;
 	onUpdate?: (run: SubagentRun) => void;
 	deps?: RunnerDeps;
@@ -451,26 +500,62 @@ async function runChildAttempt(input: {
 	}) as unknown as ChildProcessWithoutNullStreams;
 	input.status.process = process;
 
-	const stdoutLines = createInterface({ input: process.stdout });
-	stdoutLines.on("line", (line) => {
-		parseEventLine(line, parsed);
-		if (parsed.finalOutput) input.status.output = parsed.finalOutput;
-		input.onUpdate?.(input.run);
-	});
-	process.stderr.on("data", (chunk: Buffer | string) => {
-		stderr = `${stderr}${chunk.toString()}`.slice(-MAX_STDERR_CHARS);
-	});
-
-	const timeout = setTimeout(() => {
-		timedOut = true;
+	const now = input.deps?.now ?? Date.now;
+	const activity = (input.status.activity ??= createActivity(now()));
+	resetActivityForAttempt(activity, now());
+	const terminate = () => {
 		process.kill("SIGTERM");
 		const killTimer = setTimeout(() => {
 			if (process.exitCode === null && process.signalCode === null)
 				process.kill("SIGKILL");
 		}, input.terminationGraceMs);
 		killTimer.unref?.();
+	};
+
+	const timeout = setTimeout(() => {
+		timedOut = true;
+		terminate();
 	}, input.timeoutMs);
 	timeout.unref?.();
+
+	// Once the child reports agent_settled it has finished. `pi -p` still has
+	// to drain its event loop to exit, which a leaked extension handle can
+	// block forever; give it a grace period, then reap it.
+	let settleTimer: NodeJS.Timeout | undefined;
+	let reapedAfterSettle = false;
+	const onSettled = () => {
+		if (settleTimer) return;
+		clearTimeout(timeout);
+		settleTimer = setTimeout(() => {
+			if (process.exitCode !== null || process.signalCode !== null) return;
+			reapedAfterSettle = true;
+			terminate();
+		}, input.settleExitGraceMs);
+		settleTimer.unref?.();
+	};
+
+	let lastNotifyAt = 0;
+	const stdoutLines = createInterface({ input: process.stdout });
+	stdoutLines.on("line", (line) => {
+		const event = parseEventLine(line);
+		if (!event) return;
+		applyOutputEvent(event, parsed);
+		if (parsed.finalOutput) input.status.output = parsed.finalOutput;
+		const significant = applyActivityEvent(activity, event, now());
+		if (parsed.settled) onSettled();
+		const at = now();
+		if (
+			!significant &&
+			event.type !== "message_end" &&
+			at - lastNotifyAt < DELTA_UPDATE_INTERVAL_MS
+		)
+			return;
+		lastNotifyAt = at;
+		input.onUpdate?.(input.run);
+	});
+	process.stderr.on("data", (chunk: Buffer | string) => {
+		stderr = `${stderr}${chunk.toString()}`.slice(-MAX_STDERR_CHARS);
+	});
 
 	if (input.signal) {
 		abortListener = () => {
@@ -498,6 +583,7 @@ async function runChildAttempt(input: {
 		);
 	});
 	clearTimeout(timeout);
+	if (settleTimer) clearTimeout(settleTimer);
 	if (abortKillTimer) clearTimeout(abortKillTimer);
 	if (abortListener && input.signal)
 		input.signal.removeEventListener("abort", abortListener);
@@ -512,6 +598,7 @@ async function runChildAttempt(input: {
 		code,
 		signal,
 		timedOut,
+		reapedAfterSettle,
 		stderr,
 		parsed,
 		sessionFile,
@@ -554,6 +641,9 @@ async function runChild(input: {
 		input.request.timeoutMs ?? input.agent.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 	const terminationGraceMs =
 		input.deps?.terminationGraceMs ?? DEFAULT_TERMINATION_GRACE_MS;
+	const settleExitGraceMs =
+		input.deps?.settleExitGraceMs ?? DEFAULT_SETTLE_EXIT_GRACE_MS;
+	input.status.activity = createActivity((input.deps?.now ?? Date.now)());
 
 	let resumeSessionFile: string | undefined;
 	let promptOverride: string | undefined;
@@ -593,6 +683,7 @@ async function runChild(input: {
 			spec,
 			timeoutMs,
 			terminationGraceMs,
+			settleExitGraceMs,
 			signal: input.signal,
 			onUpdate: input.onUpdate,
 			deps: input.deps,
@@ -626,6 +717,8 @@ async function runChild(input: {
 	});
 
 	const sessionFile = outcome?.sessionFile;
+	const reapedAfterSettle =
+		state === "completed" && outcome?.reapedAfterSettle === true;
 	let output = lastOutput;
 	if (!output && !error)
 		output = "(Subagent completed without a textual result.)";
@@ -636,6 +729,7 @@ async function runChild(input: {
 		endedAt,
 		sessionFile,
 		attempts,
+		reapedAfterSettle,
 		model: lastModel ?? input.status.model,
 	});
 	input.onUpdate?.(input.run);
@@ -653,6 +747,7 @@ async function runChild(input: {
 		endedAt,
 		usage: totalUsage,
 		attempts,
+		reapedAfterSettle,
 	};
 }
 
@@ -725,6 +820,8 @@ export function formatRunResult(run: SubagentRun): string {
 			body = result.output
 				? `${result.error}\n\n${result.output}`
 				: result.error;
+		if (result.reapedAfterSettle)
+			body = `${body}\n\n(Note: the child finished but its process did not exit on its own — a loaded extension likely kept it alive — so it was terminated.)`;
 		return `${title}\n${body}`;
 	});
 	return [header, ...results].join("\n\n");

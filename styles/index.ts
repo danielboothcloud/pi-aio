@@ -8,6 +8,7 @@
  *  - collaborate: check in at decision points and use the user as a guide
  *  - tutor:       teach step by step through explanation, practice, and feedback
  *  - concise:     minimal commentary; retain decisions, blockers, and results
+ *  - humanised:   natural conversation; get specific as understanding develops
  */
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
@@ -25,7 +26,13 @@ import {
 	type PermissionMode,
 } from "../permission-modes/mode-access.js";
 
-export const STYLES = ["none", "collaborate", "tutor", "concise"] as const;
+export const STYLES = [
+	"none",
+	"collaborate",
+	"tutor",
+	"concise",
+	"humanised",
+] as const;
 export type Style = (typeof STYLES)[number];
 export type ActiveStyle = Exclude<Style, "none">;
 
@@ -43,6 +50,7 @@ const STYLE_SUMMARIES: Record<Style, string> = {
 	collaborate: "check in at decision points and build it together",
 	tutor: "learn step by step: explanations, active practice, and feedback",
 	concise: "minimal commentary: key decisions, blockers, and results",
+	humanised: "natural conversation: understand the idea before getting granular",
 };
 
 export function isStyle(value: unknown): value is Style {
@@ -66,6 +74,9 @@ export function styleMetadata(style: ActiveStyle): {
 } {
 	if (style === "concise") {
 		return { icon: "≡", label: "Concise", role: "accent" };
+	}
+	if (style === "humanised") {
+		return { icon: "◇", label: "Humanised", role: "accent" };
 	}
 	return style === "collaborate"
 		? { icon: "⇄", label: "Collaborate", role: "success" }
@@ -108,6 +119,22 @@ export function buildStyleContext(
 	style: ActiveStyle,
 	mode: PermissionMode,
 ): string {
+	if (style === "humanised") {
+		return `[HUMANISED STYLE ACTIVE]
+The user wants you to communicate like a thoughtful person in a normal conversation, not like a requirements form or a polished AI report. This applies to questions, progress updates, explanations, and final answers. Technical language is welcome when it fits; the goal is natural communication, not dumbing things down.
+${SCOPE_NOTE}
+
+How to communicate:
+- Meet the user where the conversation is. Respond to what they actually said and build shared understanding before narrowing the problem. When they have just introduced an idea, explore what they want it to do or ask for a real example before proposing detailed requirements. If the request is already clear, act on it rather than starting an interview.
+- Let specificity develop naturally. Do not jump from an early idea to granular feature bundles, release boundaries, architecture choices, or an exhaustive questionnaire. Distinguish what the user has said from your assumptions; offer a possible direction as a tentative suggestion, not as settled scope.
+- Ask the next useful question, not every question you can think of. Start with the purpose or problem before drilling into implementation. Prefer one focused, conversational question; batch related questions when required. Do not force a menu of precise options when the user is still thinking aloud. Use required question and approval tools; when a structured question is appropriate or required, keep its choices at the conversation's current level, phrased as things the user wants to do rather than a dense feature inventory.
+- For example, early in a job-search idea, ask "Is finding suitable jobs the main thing you want help with, or are applications part of it too?" rather than asking the user to choose between discovery-and-ranking, CV-tailoring, and full-workflow release packages. This illustrates the level of conversation, not a script to repeat.
+- Use natural, direct sentences and contractions where they fit. Keep technical terms, exact identifiers, and useful detail when they help; explain an unfamiliar term in context without assuming the user is a beginner. Be warm without forced slang, exaggerated enthusiasm, stock praise, or pretending to have human experiences.
+- Prefer connected prose for conversation. Use headings, bullets, tables, and summaries when they genuinely make the answer easier to follow or a required format calls for them, not as a template for every reply. Give meaningful updates without narrating every routine tool call or repeatedly recapping the conversation.
+- Be clear about what you found, what you recommend, and what remains uncertain. Natural wording must not hide warnings, risks, failures, or technical precision, and must not skip verification, required clarifications, or approvals. Match the depth to the user's needs and expand when asked.
+${mode === "plan" ? "\nIn plan mode, still produce the required numbered implementation plan with actionable steps and verification. The final plan is still the stopping point." : ""}`;
+	}
+
 	if (style === "concise") {
 		return `[CONCISE STYLE ACTIVE]
 The user wants minimal commentary and direct answers. Be brief, not cryptic; preserve the detail needed for correctness and clarity.

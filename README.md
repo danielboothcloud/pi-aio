@@ -258,18 +258,23 @@ The questionnaire UI is English by default. Install
 
 ## `/pick` command
 
-Run `/pick` to select a fenced code block from the latest assistant
-response and copy its contents to the system clipboard. The centered TUI
-overlay provides a rendered preview of the selected block.
+Run `/pick` to select a fenced code block or a block quote from the latest
+assistant response and copy its contents to the system clipboard. The
+centered TUI overlay provides a rendered preview of the selected block.
 
-- **Up/Down** or **j/k** — move between code blocks
+- **Up/Down** or **j/k** — move between blocks
 - **Page Up/Page Down** or **Ctrl+d/Ctrl+u** — jump through longer lists
 - **g/G** — jump to the first or last block
-- **Enter** — copy the selected block without its Markdown fences
+- **Enter** — copy the selected block: code without its Markdown fences, quotes
+  without their `>` markers
 - **Escape/Ctrl+C/q** — close without copying
 
-The command only searches the latest assistant response and ignores inline or
-indented code. Pi does not expose focusable renderers for existing assistant
+Quotes (for example a drafted message) are copied as plain text: soft-wrapped
+source lines are joined into one line per paragraph, so the text reflows
+wherever it is pasted, while paragraph breaks, hard line breaks, lists, and
+nested quotes are kept. Only outermost quotes are listed; code inside a quote is
+also listed on its own. The command only searches the latest assistant response
+and ignores inline or indented code. Pi does not expose focusable renderers for existing assistant
 transcript entries, so selection happens in the overlay rather than directly in
 the transcript. Pi's existing Ctrl+X whole-message copy remains unchanged.
 
@@ -551,6 +556,7 @@ restores the style chosen on that branch. Subagents never inherit a style.
 | collaborate | Surfaces decisions with 2-3 options and a recommendation, asks via `ask_user_question`, uses your domain knowledge, and confirms direction between small increments |
 | tutor       | Teaches the current task in small steps, explains the reasoning with concrete examples, invites you to predict, explain, or try something, then pauses and gives feedback before continuing |
 | concise     | Gives direct answers with minimal commentary: key decisions, blockers, results, and verification; expands when you ask for detail |
+| humanised   | Talks things through naturally, understands the idea before getting granular, and keeps technical detail where it helps |
 
 Tutor adapts to your familiarity and learning goals: explain a step → invite
 your participation → wait for your attempt → discuss it and build on it. It
@@ -569,12 +575,20 @@ Concise skips routine tool narration, filler, and repeated summaries—not requi
 clarifications, approvals, warnings, or checks. Plan mode still produces an
 actionable numbered plan. Ask for more detail whenever you want it.
 
+Humanised makes the whole conversation feel more natural—not just explanations.
+It follows where you are in the discussion: understand the idea first, ask the
+next useful question, and get specific as the direction becomes clearer. It
+avoids turning a newly introduced topic into a menu of precise feature bundles
+or release decisions. Technical language is fine; it does not assume you are a
+beginner, force slang, or replace useful detail with vague simplifications.
+Required questions, approvals, checks, and plan formats still apply.
+
 The active style appears beside the mode: in the frame's top border
 (`▶ Auto · ✎ Tutor`), in the legacy status line, or as a `style` footer status
 when the status line is disabled.
 
 - `/style` — selector
-- `/style collaborate`, `/style tutor`, `/style concise` — switch directly
+- `/style collaborate`, `/style tutor`, `/style concise`, `/style humanised` — switch directly
 - `/style none` (or `/style off`) — turn the style off
 
 `mentor` is the former name: `/style mentor` remains an alias for `tutor`, and
@@ -621,7 +635,7 @@ looking like separate plugins:
   state glyphs, consistent metadata separators, and responsive summaries.
 - Queue, goal, and subagent widgets render compact live dashboards with bounded
   rows and ANSI-aware width guarantees.
-- `/pick` uses framed preview sections and selected-row treatment matching the
+- `/pick` (code blocks and quotes) uses framed preview sections and selected-row treatment matching the
   editor; questionnaire tabs carry the same accent rail.
 - `!bash` keeps command text in the editor only and publishes one compact status,
   eliminating the old repeated command echo below the editor.
