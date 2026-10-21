@@ -258,18 +258,23 @@ The questionnaire UI is English by default. Install
 
 ## `/pick` command
 
-Run `/pick` to select a fenced code block from the latest assistant
-response and copy its contents to the system clipboard. The centered TUI
-overlay provides a rendered preview of the selected block.
+Run `/pick` to select a fenced code block or a block quote from the latest
+assistant response and copy its contents to the system clipboard. The
+centered TUI overlay provides a rendered preview of the selected block.
 
-- **Up/Down** or **j/k** — move between code blocks
+- **Up/Down** or **j/k** — move between blocks
 - **Page Up/Page Down** or **Ctrl+d/Ctrl+u** — jump through longer lists
 - **g/G** — jump to the first or last block
-- **Enter** — copy the selected block without its Markdown fences
+- **Enter** — copy the selected block: code without its Markdown fences, quotes
+  without their `>` markers
 - **Escape/Ctrl+C/q** — close without copying
 
-The command only searches the latest assistant response and ignores inline or
-indented code. Pi does not expose focusable renderers for existing assistant
+Quotes (for example a drafted message) are copied as plain text: soft-wrapped
+source lines are joined into one line per paragraph, so the text reflows
+wherever it is pasted, while paragraph breaks, hard line breaks, lists, and
+nested quotes are kept. Only outermost quotes are listed; code inside a quote is
+also listed on its own. The command only searches the latest assistant response
+and ignores inline or indented code. Pi does not expose focusable renderers for existing assistant
 transcript entries, so selection happens in the overlay rather than directly in
 the transcript. Pi's existing Ctrl+X whole-message copy remains unchanged.
 
@@ -630,7 +635,7 @@ looking like separate plugins:
   state glyphs, consistent metadata separators, and responsive summaries.
 - Queue, goal, and subagent widgets render compact live dashboards with bounded
   rows and ANSI-aware width guarantees.
-- `/pick` uses framed preview sections and selected-row treatment matching the
+- `/pick` (code blocks and quotes) uses framed preview sections and selected-row treatment matching the
   editor; questionnaire tabs carry the same accent rail.
 - `!bash` keeps command text in the editor only and publishes one compact status,
   eliminating the old repeated command echo below the editor.

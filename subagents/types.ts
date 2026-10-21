@@ -60,6 +60,37 @@ export interface ChildUsage {
 	cost: number;
 }
 
+/** A tool the child is executing right now (from tool_execution_* events). */
+export interface RunningTool {
+	id: string;
+	name: string;
+	summary: string;
+	startedAt: number;
+}
+
+export type ChildActivityPhase =
+	| "starting"
+	| "waiting"
+	| "thinking"
+	| "writing"
+	| "tool"
+	| "retrying"
+	| "compacting"
+	| "finishing";
+
+/** Live progress derived from the child's JSON event stream. JSON-safe. */
+export interface ChildActivity {
+	phase: ChildActivityPhase;
+	/** Wall-clock time of the last event of any kind from the child. */
+	lastEventAt: number;
+	turns: number;
+	toolCount: number;
+	runningTools: RunningTool[];
+	retry?: { attempt: number; maxAttempts: number; error?: string };
+	/** Set when the child reported agent_settled (it will not continue). */
+	settledAt?: number;
+}
+
 export interface ChildRunResult {
 	index: number;
 	agent: string;
@@ -74,6 +105,12 @@ export interface ChildRunResult {
 	endedAt: number;
 	usage: ChildUsage;
 	attempts: number;
+	/**
+	 * The child finished (agent_settled) but its process did not exit on its
+	 * own, so the runner terminated it. Usually an extension left a live
+	 * handle in the headless child.
+	 */
+	reapedAfterSettle?: boolean;
 }
 
 export interface ChildRunStatus {
@@ -88,6 +125,8 @@ export interface ChildRunStatus {
 	error?: string;
 	sessionFile?: string;
 	attempts?: number;
+	activity?: ChildActivity;
+	reapedAfterSettle?: boolean;
 	process?: ChildProcessWithoutNullStreams;
 }
 

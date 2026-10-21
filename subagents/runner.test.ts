@@ -18,7 +18,11 @@ import {
 	resolveCursorExtensionPath,
 } from "./extensions.ts";
 import { clearRuns, listRuns, stopRun } from "./registry.ts";
-import { buildSpawnSpec, executeSubagentRun } from "./runner.ts";
+import {
+	buildSpawnSpec,
+	executeSubagentRun,
+	formatRunResult,
+} from "./runner.ts";
 import type { AgentConfig, ParentLaunchContext } from "./types.ts";
 
 const fixture = join(
@@ -490,6 +494,82 @@ test("cursor parent models omit --model when pi-cursor-sdk is unavailable", () =
 		deps: { runsBaseDir: temporaryDirectory() },
 	});
 	assert.equal(spec.args.includes("--model"), false);
+});
+
+test("a child that settles but never exits is reaped and counts as completed", async () => {
+	const spawnedArgs: string[][] = [];
+	const started = Date.now();
+	const run = await executeSubagentRun({
+		request: {
+			agent: "reviewer",
+			task: "linger review",
+			// Without settle handling this child would only end via the hard timeout.
+			timeoutMs: 2_000,
+		},
+		agents: [agent()],
+		parent: parent(),
+		deps: {
+			piBinary: process.execPath,
+			piArgsPrefix: [fixture],
+			runsBaseDir: temporaryDirectory(),
+			spawnProcess: recordingSpawn(spawnedArgs),
+			settleExitGraceMs: 50,
+			terminationGraceMs: 50,
+			maxAttempts: 1,
+		},
+	});
+	assert.equal(run.state, "completed");
+	assert.equal(run.results[0].state, "completed");
+	assert.equal(run.results[0].attempts, 1, "no retry for a finished child");
+	assert.equal(spawnedArgs.length, 1);
+	assert.equal(run.results[0].reapedAfterSettle, true);
+	assert.equal(run.results[0].output, "completed:Task: linger review");
+	assert.match(formatRunResult(run), /did not exit on its own/);
+	// Well under the 15-minute default timeout the old behavior waited for.
+	assert.ok(Date.now() - started < 5_000);
+	const activity = run.children[0].activity;
+	assert.equal(activity?.toolCount, 1);
+	assert.equal(activity?.turns, 1);
+	assert.equal(activity?.phase, "finishing");
+});
+
+test("a settled child that ignores SIGTERM is SIGKILLed and still completes", async () => {
+	const run = await executeSubagentRun({
+		request: {
+			agent: "reviewer",
+			task: "linger-stubborn review",
+			timeoutMs: 2_000,
+		},
+		agents: [agent()],
+		parent: parent(),
+		deps: {
+			piBinary: process.execPath,
+			piArgsPrefix: [fixture],
+			runsBaseDir: temporaryDirectory(),
+			settleExitGraceMs: 30,
+			terminationGraceMs: 30,
+			maxAttempts: 1,
+		},
+	});
+	assert.equal(run.results[0].state, "completed");
+	assert.equal(run.results[0].reapedAfterSettle, true);
+});
+
+test("a child that exits on its own after settling is not marked reaped", async () => {
+	const run = await executeSubagentRun({
+		request: { agent: "reviewer", task: "review this" },
+		agents: [agent()],
+		parent: parent(),
+		deps: {
+			piBinary: process.execPath,
+			piArgsPrefix: [fixture],
+			runsBaseDir: temporaryDirectory(),
+			settleExitGraceMs: 5_000,
+		},
+	});
+	assert.equal(run.results[0].state, "completed");
+	assert.equal(run.results[0].reapedAfterSettle, false);
+	assert.doesNotMatch(formatRunResult(run), /did not exit/);
 });
 
 function recordingSpawn(spawnedArgs: string[][]): typeof spawn {

@@ -6,7 +6,7 @@ import {
 	truncateToWidth,
 	type Component,
 } from "@earendil-works/pi-tui";
-import type { CopyableCodeBlock } from "./parse.js";
+import type { CopyableBlock } from "./parse.js";
 import {
 	chromeFrameRow,
 	chromeFrameRule,
@@ -18,6 +18,7 @@ import {
 
 const MAX_VISIBLE_ITEMS = 6;
 const MAX_PREVIEW_LINES = 8;
+const QUOTE_SNIPPET_CHARS = 40;
 
 function longestRun(text: string, character: "`" | "~"): number {
 	let longest = 0;
@@ -33,40 +34,62 @@ function longestRun(text: string, character: "`" | "~"): number {
 	return longest;
 }
 
-function asFencedMarkdown(block: CopyableCodeBlock): string {
-	const backtickLength = Math.max(3, longestRun(block.code, "`") + 1);
-	const tildeLength = Math.max(3, longestRun(block.code, "~") + 1);
+function asFencedMarkdown(block: CopyableBlock): string {
+	const backtickLength = Math.max(3, longestRun(block.text, "`") + 1);
+	const tildeLength = Math.max(3, longestRun(block.text, "~") + 1);
 	const marker = backtickLength <= tildeLength ? "`" : "~";
 	const fenceLength = marker === "`" ? backtickLength : tildeLength;
 	const fence = marker.repeat(fenceLength);
 	const language = block.language ?? "";
-	const code = block.code.endsWith("\n") ? block.code : `${block.code}\n`;
+	const code = block.text.endsWith("\n") ? block.text : `${block.text}\n`;
 	return `${fence}${language}\n${code}${fence}`;
 }
 
-function blockLabel(block: CopyableCodeBlock): string {
+function asQuotedMarkdown(block: CopyableBlock): string {
+	return block.text
+		.split("\n")
+		.map((line) => (line ? `> ${line}` : ">"))
+		.join("\n");
+}
+
+function previewMarkdown(block: CopyableBlock): string {
+	return block.kind === "quote" ? asQuotedMarkdown(block) : asFencedMarkdown(block);
+}
+
+function quoteSnippet(text: string): string {
+	const flat = text.replace(/\s+/g, " ").trim();
+	return flat.length > QUOTE_SNIPPET_CHARS
+		? `${flat.slice(0, QUOTE_SNIPPET_CHARS - 1).trimEnd()}…`
+		: flat;
+}
+
+export function blockLabel(block: CopyableBlock): string {
+	if (block.kind === "quote") {
+		const words = block.text.split(/\s+/).filter(Boolean).length;
+		return `#${block.ordinal} · quote · ${plural(words, "word")} · ${quoteSnippet(block.text)}`;
+	}
 	const language = block.language ?? "plain text";
 	const lines = `${block.lineCount} ${block.lineCount === 1 ? "line" : "lines"}`;
 	return `#${block.ordinal} · ${language} · ${lines}`;
 }
 
-export interface CodeBlockPickerOptions {
-	blocks: readonly CopyableCodeBlock[];
+export interface CopyBlockPickerOptions {
+	blocks: readonly CopyableBlock[];
 	theme: Theme;
 	requestRender: () => void;
 	getMaxRows: () => number;
-	done: (result: CopyableCodeBlock | undefined) => void;
+	done: (result: CopyableBlock | undefined) => void;
 }
 
-export class CodeBlockPicker implements Component {
-	private readonly blocks: readonly CopyableCodeBlock[];
+export class CopyBlockPicker implements Component {
+	private readonly blocks: readonly CopyableBlock[];
 	private readonly theme: Theme;
 	private readonly requestRender: () => void;
 	private readonly getMaxRows: () => number;
-	private readonly done: (result: CopyableCodeBlock | undefined) => void;
+	private readonly done: (result: CopyableBlock | undefined) => void;
 	private selectedIndex = 0;
 
-	constructor(options: CodeBlockPickerOptions) {
+	constructor(options: CopyBlockPickerOptions) {
 		this.blocks = options.blocks;
 		this.theme = options.theme;
 		this.requestRender = options.requestRender;
@@ -120,7 +143,7 @@ export class CodeBlockPicker implements Component {
 	}
 
 	render(width: number): string[] {
-		if (width <= 4) return [truncateToWidth("Copy code block", Math.max(0, width), "")];
+		if (width <= 4) return [truncateToWidth("Copy block", Math.max(0, width), "")];
 
 		const innerWidth = width - 4;
 		const row = (content = ""): string => chromeFrameRow(this.theme, content, width);
@@ -133,7 +156,7 @@ export class CodeBlockPicker implements Component {
 			const header = row(
 				chromeHeader(
 					this.theme,
-					{ title: "copy code", meta: plural(this.blocks.length, "block") },
+					{ title: "copy", meta: plural(this.blocks.length, "block") },
 					innerWidth,
 				),
 			);
@@ -150,7 +173,7 @@ export class CodeBlockPicker implements Component {
 							innerWidth,
 						),
 					)
-				: row(` ${this.theme.fg("warning", "No code block selected")}`);
+				: row(` ${this.theme.fg("warning", "No block selected")}`);
 			const help = row(
 				chromeHint(this.theme, "j/k move · Enter copy · q cancel", innerWidth, 0),
 			);
@@ -168,7 +191,7 @@ export class CodeBlockPicker implements Component {
 				chromeHeader(
 					this.theme,
 					{
-						title: "copy code",
+						title: "copy",
 						meta: `${plural(this.blocks.length, "block")} in last response`,
 					},
 					innerWidth,
@@ -205,7 +228,7 @@ export class CodeBlockPicker implements Component {
 
 		lines.push(chromeFrameRule(this.theme, width, "divider"));
 		if (!selectedBlock) {
-			lines.push(row(` ${this.theme.fg("warning", "No code block selected")}`));
+			lines.push(row(` ${this.theme.fg("warning", "No block selected")}`));
 			lines.push(chromeFrameRule(this.theme, width, "bottom"));
 			return lines;
 		}
@@ -219,7 +242,7 @@ export class CodeBlockPicker implements Component {
 			),
 		);
 
-		const preview = new Markdown(asFencedMarkdown(selectedBlock), 1, 0, getMarkdownTheme()).render(innerWidth);
+		const preview = new Markdown(previewMarkdown(selectedBlock), 1, 0, getMarkdownTheme()).render(innerWidth);
 		const remainingRows = maxRows - lines.length - 2; // Help row and closing border.
 		const previewCapacity = Math.max(0, Math.min(MAX_PREVIEW_LINES, remainingRows));
 		const previewLines = preview.slice(0, previewCapacity);

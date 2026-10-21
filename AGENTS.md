@@ -268,7 +268,21 @@ generated `dist/` tree without changing the package contract.
   failures report the preserved session file so the parent can inspect or
   resume manually. Tool description and promptGuidelines steer the parent
   toward generous `timeoutMs` budgets (pi's own HTTP idle timeout is 300s by
-  default, so budgets below that kill children mid-recovery).
+  default, so budgets below that kill children mid-recovery). Completion is
+  the child's `agent_settled` JSON event, NOT process exit: `pi -p` only exits
+  once its event loop drains, so any inherited extension that leaves a live
+  handle in the headless child would otherwise hang the parent tool until the
+  hard timeout (then fail and retry finished work). After `agent_settled`
+  the hard timeout is cancelled and the child gets `settleExitGraceMs`
+  (default 10s) to exit before SIGTERM → SIGKILL; a reaped child counts as
+  completed (`reapedAfterSettle`, noted in the result text). Live progress
+  (`activity.ts`) folds the child's JSON events — turns, streaming phase,
+  running tools with argument summaries, provider retries, compaction,
+  settle — into `ChildRunStatus.activity`, rendered as one line per child in
+  the foreground tool card (repainted every 1s), the above-editor widget
+  (1s ticker that stops when no run is active; stall warning tone after
+  120s without events outside a tool), and `subagent status`. Streaming
+  deltas are throttled to one repaint per 250ms.
 - `you-should-know/` owns the YSK shadow auditor: successful
   `write`/`edit`/`apply_patch` tool results are debounced into one bounded,
   isolated `ctx.modelRegistry.complete()` audit (the sub-agent) whose findings

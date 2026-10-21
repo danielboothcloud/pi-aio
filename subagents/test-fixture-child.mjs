@@ -70,9 +70,38 @@ const emitCompletion = (text) => {
 	);
 };
 
+let hanging = false;
 const hang = () => {
+	hanging = true;
 	setInterval(() => {}, 1_000);
 };
+
+const emit = (event) => process.stdout.write(`${JSON.stringify(event)}\n`);
+
+// "linger" reproduces a child whose run finished (agent_settled) but whose
+// process never exits because something keeps its event loop alive.
+// "linger-stubborn" additionally ignores SIGTERM so only SIGKILL ends it.
+const lingering = task.includes("linger");
+if (lingering) {
+	if (task.includes("linger-stubborn")) process.on("SIGTERM", () => {});
+	emit({ type: "agent_start" });
+	emit({ type: "turn_start" });
+	emit({
+		type: "tool_execution_start",
+		toolCallId: "call-1",
+		toolName: "bash",
+		args: { command: "npm test" },
+	});
+	emit({
+		type: "tool_execution_end",
+		toolCallId: "call-1",
+		toolName: "bash",
+		isError: false,
+	});
+	emitCompletion(`completed:${task}`);
+	emit({ type: "agent_settled", aborted: false });
+	setInterval(() => {}, 1_000);
+}
 
 if (task.includes("ignore-term")) process.on("SIGTERM", () => {});
 let delay = 5;
@@ -94,10 +123,13 @@ if (effectiveTask.includes("always-hang")) {
 	hang();
 }
 
-setTimeout(() => {
-	if (task.includes("fail")) {
-		process.stderr.write("fixture failure\n");
-		process.exit(2);
-	}
-	emitCompletion(`completed:${task}`);
-}, delay);
+if (!lingering)
+	setTimeout(() => {
+		if (task.includes("fail")) {
+			process.stderr.write("fixture failure\n");
+			process.exit(2);
+		}
+		emitCompletion(`completed:${task}`);
+		// A stalled child never settles; a healthy one settles, then exits.
+		if (!hanging) emit({ type: "agent_settled", aborted: false });
+	}, delay);

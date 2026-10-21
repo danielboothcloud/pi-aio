@@ -4,8 +4,8 @@ import {
 	type ExtensionAPI,
 	type ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import { CodeBlockPicker } from "./picker.js";
-import { extractFencedCodeBlocks } from "./parse.js";
+import { CopyBlockPicker } from "./picker.js";
+import { extractCopyableBlocks } from "./parse.js";
 
 function getLastAssistantText(ctx: ExtensionContext): string | undefined {
 	const branch = ctx.sessionManager.getBranch();
@@ -43,10 +43,10 @@ export function registerCopyWidget(pi: ExtensionAPI): void {
 			return;
 		}
 
-		const blocks = extractFencedCodeBlocks(assistantText);
+		const blocks = extractCopyableBlocks(assistantText);
 		if (blocks.length === 0) {
 			ctx.ui.notify(
-				"The last assistant response has no fenced code blocks",
+				"The last assistant response has no fenced code blocks or quotes",
 				"warning",
 			);
 			return;
@@ -54,7 +54,7 @@ export function registerCopyWidget(pi: ExtensionAPI): void {
 
 		const selected = await ctx.ui.custom<(typeof blocks)[number] | undefined>(
 			(tui, theme, _keybindings, done) =>
-				new CodeBlockPicker({
+				new CopyBlockPicker({
 					blocks,
 					theme,
 					requestRender: () => tui.requestRender(),
@@ -74,26 +74,24 @@ export function registerCopyWidget(pi: ExtensionAPI): void {
 		);
 		if (!selected) return;
 
+		const noun = selected.kind === "quote" ? "quote" : "code block";
 		try {
-			await copyToClipboard(selected.code);
-			ctx.ui.notify(
-				`Copied code block #${selected.ordinal} to the clipboard`,
-				"info",
-			);
+			await copyToClipboard(selected.text);
+			ctx.ui.notify(`Copied ${noun} #${selected.ordinal} to the clipboard`, "info");
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			ctx.ui.notify(`Could not copy code block: ${message}`, "error");
+			ctx.ui.notify(`Could not copy ${noun}: ${message}`, "error");
 		}
 	}
 
 	pi.registerCommand("pick", {
 		description:
-			"Select a fenced code block from the last assistant response and copy it",
+			"Select a fenced code block or quote from the last assistant response and copy it",
 		handler: async (_args, ctx) => openPicker(ctx),
 	});
 
 	pi.registerShortcut("ctrl+p", {
-		description: "Open the fenced code block picker",
+		description: "Open the code block and quote picker",
 		handler: openPicker,
 	});
 }
