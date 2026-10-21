@@ -11,8 +11,10 @@ import { join } from "node:path";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
 import { findAgent } from "./agents.js";
 import {
+	type ChildExtensionLaunch,
 	childSupportsModel,
-	resolveChildExtensionPaths,
+	enforceChildExtensions,
+	resolveChildExtensionLaunch,
 } from "./extensions.js";
 import { createRun } from "./registry.js";
 import type {
@@ -149,10 +151,18 @@ function resolvedModel(
 ): string | undefined {
 	const model = task.model ?? request.model ?? agent.model ?? parent.model;
 	if (!model) return undefined;
-	const extensionPaths =
-		parent.extensionPaths ??
-		resolveChildExtensionPaths({ modelProvider: parent.modelProvider });
-	return childSupportsModel(extensionPaths, model) ? model : undefined;
+	return childSupportsModel(childExtensionLaunch(parent), model)
+		? model
+		: undefined;
+}
+
+function childExtensionLaunch(
+	parent: ParentLaunchContext,
+): ChildExtensionLaunch {
+	return enforceChildExtensions(
+		parent.extensionLaunch ??
+			resolveChildExtensionLaunch({ modelProvider: parent.modelProvider }),
+	);
 }
 
 function resolvedThinking(
@@ -207,14 +217,12 @@ export function buildSpawnSpec(input: {
 	});
 
 	const args = [...(input.deps?.piArgsPrefix ?? []), "--mode", "json", "-p"];
-	const extensionPaths =
-		input.parent.extensionPaths ??
-		resolveChildExtensionPaths({ modelProvider: input.parent.modelProvider });
-	if (extensionPaths.length) {
-		args.push("--no-extensions");
-		for (const extensionPath of extensionPaths) {
-			args.push("--extension", extensionPath);
-		}
+	// Mirror the parent's extension set: provider/auth extensions (e.g. an
+	// OAuth request shaper) must load in the child or its requests differ.
+	const extensionLaunch = childExtensionLaunch(input.parent);
+	if (extensionLaunch.noExtensions) args.push("--no-extensions");
+	for (const extensionPath of extensionLaunch.paths) {
+		args.push("--extension", extensionPath);
 	}
 	const context = input.request.context ?? "fresh";
 	let requestedSessionFile: string | undefined;

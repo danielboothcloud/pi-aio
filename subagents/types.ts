@@ -1,4 +1,5 @@
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
+import type { ChildExtensionLaunch } from "./extensions.js";
 
 export type SubagentContext = "fresh" | "fork";
 export type SubagentThinking =
@@ -110,7 +111,12 @@ export interface ParentLaunchContext {
 	thinking?: SubagentThinking;
 	permissionMode: "default" | "ask" | "plan" | "auto";
 	parentSessionFile?: string;
-	extensionPaths?: string[];
+	/**
+	 * The parent's resolved extension set (see resolveChildExtensionLaunch).
+	 * There is no opt-out: the runner always normalizes this so a child can
+	 * never start with fewer extensions than its parent.
+	 */
+	extensionLaunch?: ChildExtensionLaunch;
 	modelProvider?: string;
 }
 

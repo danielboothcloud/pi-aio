@@ -14,6 +14,7 @@ import { afterEach, test } from "node:test";
 import { discoverAgents } from "./agents.ts";
 import {
 	AIO_EXTENSION_PATH,
+	resolveChildExtensionLaunch,
 	resolveCursorExtensionPath,
 } from "./extensions.ts";
 import { clearRuns, listRuns, stopRun } from "./registry.ts";
@@ -110,7 +111,9 @@ test("spawn specification inherits the active parent model and thinking level", 
 		task: { agent: "reviewer", task: "review this" },
 		request: { agent: "reviewer", task: "review this" },
 		agent: agent(),
-		parent: parent({ extensionPaths: [AIO_EXTENSION_PATH] }),
+		parent: parent({
+			extensionLaunch: { noExtensions: true, paths: [AIO_EXTENSION_PATH] },
+		}),
 		deps: { runsBaseDir },
 	});
 
@@ -140,18 +143,41 @@ test("spawn specification inherits the active parent model and thinking level", 
 	assert.equal(spec.args[spec.args.indexOf("--tools") + 1], "read,grep");
 });
 
-test("spawn specification omits extension flags when extension paths are empty", () => {
+test("spawn specification inherits configured packages when the parent did", () => {
 	const spec = buildSpawnSpec({
 		runId: "run-1",
 		index: 0,
 		task: { agent: "reviewer", task: "review this" },
 		request: { agent: "reviewer", task: "review this" },
 		agent: agent(),
-		parent: parent({ extensionPaths: [] }),
+		parent: parent({ extensionLaunch: { noExtensions: false, paths: [] } }),
 		deps: { runsBaseDir: temporaryDirectory() },
 	});
+	// No -ne: pi loads the same settings packages (incl. aio) as the parent.
 	assert.equal(spec.args.includes("--extension"), false);
 	assert.equal(spec.args.includes("--no-extensions"), false);
+});
+
+test("a child can never launch bare: -ne always keeps aio loaded", () => {
+	const spec = buildSpawnSpec({
+		runId: "run-bare",
+		index: 0,
+		task: { agent: "reviewer", task: "review this" },
+		request: { agent: "reviewer", task: "review this" },
+		agent: agent(),
+		parent: parent({
+			extensionLaunch: { noExtensions: true, paths: ["/ext/auth.ts"] },
+		}),
+		deps: { runsBaseDir: temporaryDirectory() },
+	});
+	const flags = spec.args.slice(0, spec.args.indexOf("--session"));
+	assert.deepEqual(flags.slice(flags.indexOf("--no-extensions")), [
+		"--no-extensions",
+		"--extension",
+		AIO_EXTENSION_PATH,
+		"--extension",
+		"/ext/auth.ts",
+	]);
 });
 
 test("explicit task model wins over run, agent, and parent models", () => {
@@ -347,6 +373,83 @@ test("request timeoutMs overrides the agent's declared timeout", async () => {
 	assert.match(run.results[0].error ?? "", /timed out after 150ms/);
 });
 
+function withoutExtraExtensions<T>(fn: () => T): T {
+	const saved = process.env.AIO_SUBAGENT_EXTRA_EXTENSIONS;
+	delete process.env.AIO_SUBAGENT_EXTRA_EXTENSIONS;
+	try {
+		return fn();
+	} finally {
+		if (saved !== undefined)
+			process.env.AIO_SUBAGENT_EXTRA_EXTENSIONS = saved;
+	}
+}
+
+test("child mirrors a -ne parent's explicit extensions (recipe relaunch)", () => {
+	const launch = withoutExtraExtensions(() =>
+		resolveChildExtensionLaunch({
+			modelProvider: "anthropic",
+			cwd: "/work",
+			argv: [
+				"node",
+				"pi",
+				"-ne",
+				"-e",
+				AIO_EXTENSION_PATH,
+				"-e",
+				"/ext/pi-anthropic-auth/src/index.ts",
+				"--extension",
+				"npm:pi-lens",
+				"-e",
+				"local/ext.ts",
+			],
+		}),
+	);
+	assert.deepEqual(launch, {
+		noExtensions: true,
+		paths: [
+			AIO_EXTENSION_PATH,
+			"/ext/pi-anthropic-auth/src/index.ts",
+			"npm:pi-lens",
+			"/work/local/ext.ts",
+		],
+	});
+});
+
+test("child inherits configured packages when the parent did not pass -ne", () => {
+	const launch = withoutExtraExtensions(() =>
+		resolveChildExtensionLaunch({
+			modelProvider: "anthropic",
+			cwd: "/work",
+			argv: ["node", "pi", "--model", "anthropic/x"],
+		}),
+	);
+	assert.deepEqual(launch, { noExtensions: false, paths: [] });
+
+	const dev = withoutExtraExtensions(() =>
+		resolveChildExtensionLaunch({
+			cwd: "/repo",
+			argv: ["node", "pi", "-e", "."],
+		}),
+	);
+	assert.deepEqual(dev, { noExtensions: false, paths: ["/repo"] });
+});
+
+test("spawn specification omits --no-extensions when inheriting packages", () => {
+	const spec = buildSpawnSpec({
+		runId: "run-inherit",
+		index: 0,
+		task: { agent: "reviewer", task: "review this" },
+		request: { agent: "reviewer", task: "review this" },
+		agent: agent(),
+		parent: parent({
+			extensionLaunch: { noExtensions: false, paths: ["/repo"] },
+		}),
+		deps: { runsBaseDir: temporaryDirectory() },
+	});
+	assert.equal(spec.args.includes("--no-extensions"), false);
+	assert.equal(spec.args[spec.args.indexOf("--extension") + 1], "/repo");
+});
+
 test("cursor parent models include pi-cursor-sdk when it is installed", () => {
 	const cursorExtension = resolveCursorExtensionPath();
 	if (!cursorExtension) return;
@@ -359,7 +462,10 @@ test("cursor parent models include pi-cursor-sdk when it is installed", () => {
 		parent: parent({
 			model: "cursor/composer-2.5",
 			modelProvider: "cursor",
-			extensionPaths: [AIO_EXTENSION_PATH, cursorExtension],
+			extensionLaunch: {
+				noExtensions: true,
+				paths: [AIO_EXTENSION_PATH, cursorExtension],
+			},
 		}),
 		deps: { runsBaseDir: temporaryDirectory() },
 	});
@@ -380,7 +486,7 @@ test("cursor parent models omit --model when pi-cursor-sdk is unavailable", () =
 		parent: parent({
 			model: "cursor/composer-2.5",
 			modelProvider: "cursor",
-			extensionPaths: [AIO_EXTENSION_PATH],
+			extensionLaunch: { noExtensions: true, paths: [AIO_EXTENSION_PATH] },
 		}),
 		deps: { runsBaseDir: temporaryDirectory() },
 	});

@@ -15,7 +15,7 @@ import {
 	type ChromeTheme,
 } from "../ui/chrome.js";
 import { discoverAgents } from "./agents.js";
-import { resolveChildExtensionPaths } from "./extensions.js";
+import { resolveChildExtensionLaunch } from "./extensions.js";
 import { clearRuns, getRun, listRuns, stopRun } from "./registry.js";
 import {
 	executeSubagentRun,
@@ -115,7 +115,7 @@ function parentContext(
 		thinking,
 		permissionMode: getPermissionModeAccess()?.getMode() ?? "default",
 		parentSessionFile: ctx.sessionManager.getSessionFile(),
-		extensionPaths: resolveChildExtensionPaths({ modelProvider }),
+		extensionLaunch: resolveChildExtensionLaunch({ modelProvider }),
 	};
 }
 

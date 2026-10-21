@@ -245,7 +245,16 @@ generated `dist/` tree without changing the package contract.
   status that status-line renders inside its mode segment.
 - `subagents/` owns the `subagent` tool: configured child Pi agents run as
   spawned `pi --mode json -p` processes (fresh or forked context, bounded
-  parallel group, background follow-up via `aio-subagent-complete`). A child
+  parallel group, background follow-up via `aio-subagent-complete`). Children
+  always run with the parent's extension set — there is no bare/opt-out
+  path, because extensions carry gates (blocklists, permission modes, hooks)
+  and provider auth (e.g. an OAuth request shaper; without it Anthropic bills
+  child requests as extra usage). `resolveChildExtensionLaunch` mirrors the
+  parent's own argv: a `-ne` parent (e.g. a recipe relaunch) forwards
+  `-ne -e <aio> -e <parent -e…>`; otherwise the child omits `-ne` and loads
+  the same configured packages plus the parent's `-e` entries.
+  `enforceChildExtensions` guarantees aio is listed whenever `-ne` is passed.
+  `AIO_SUBAGENT_EXTRA_EXTENSIONS` can only add. A child
   that dies from a provider stall, hard timeout, or crash is retried
   automatically (`RunnerDeps.maxAttempts`, default 2) by resuming the child's
   own session file with a continuation prompt — completed turns and usage
