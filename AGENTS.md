@@ -254,7 +254,12 @@ generated `dist/` tree without changing the package contract.
   `-ne -e <aio> -e <parent -e…>`; otherwise the child omits `-ne` and loads
   the same configured packages plus the parent's `-e` entries.
   `enforceChildExtensions` guarantees aio is listed whenever `-ne` is passed.
-  `AIO_SUBAGENT_EXTRA_EXTENSIONS` can only add. A child
+  `AIO_SUBAGENT_EXTRA_EXTENSIONS` can only add. Children always run in
+  `auto` permission mode whatever the parent's mode (they are headless, so
+  any other mode blocks every edit and non-read-only command): the runner
+  passes `--permission-mode auto` and permission-modes pins `auto` under
+  `AIO_SUBAGENT_CHILD=1`, overriding a forked transcript's persisted mode.
+  Hard blocklists still apply in children. A child
   that dies from a provider stall, hard timeout, or crash is retried
   automatically (`RunnerDeps.maxAttempts`, default 2) by resuming the child's
   own session file with a continuation prompt — completed turns and usage

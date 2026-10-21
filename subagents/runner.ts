@@ -261,7 +261,9 @@ export function buildSpawnSpec(input: {
 		input.parent,
 	);
 	if (thinking) args.push("--thinking", thinking);
-	args.push("--permission-mode", input.parent.permissionMode);
+	// Children are headless: any other mode would block every edit and
+	// non-read-only command. permission-modes also pins auto for children.
+	args.push("--permission-mode", "auto");
 	args.push(
 		input.agent.systemPromptMode === "append"
 			? "--append-system-prompt"

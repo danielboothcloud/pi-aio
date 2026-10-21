@@ -6,7 +6,6 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import type { TUI } from "@earendil-works/pi-tui";
 import { Type, type Static } from "typebox";
-import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
 import {
 	chromeHeader,
 	chromeHint,
@@ -113,7 +112,6 @@ function parentContext(
 		model,
 		modelProvider,
 		thinking,
-		permissionMode: getPermissionModeAccess()?.getMode() ?? "default",
 		parentSessionFile: ctx.sessionManager.getSessionFile(),
 		extensionLaunch: resolveChildExtensionLaunch({ modelProvider }),
 	};

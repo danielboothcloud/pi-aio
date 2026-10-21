@@ -109,7 +109,6 @@ export interface ParentLaunchContext {
 	cwd: string;
 	model?: string;
 	thinking?: SubagentThinking;
-	permissionMode: "default" | "ask" | "plan" | "auto";
 	parentSessionFile?: string;
 	/**
 	 * The parent's resolved extension set (see resolveChildExtensionLaunch).

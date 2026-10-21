@@ -55,7 +55,6 @@ function parent(
 		cwd: process.cwd(),
 		model: "openai-codex/gpt-parent",
 		thinking: "high",
-		permissionMode: "auto",
 		parentSessionFile: "/tmp/parent.jsonl",
 		...overrides,
 	};

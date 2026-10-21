@@ -941,6 +941,16 @@ Prefer running a cheap check (test, command, log line) over reasoning about beha
 			);
 		}
 
+		// Subagent children always run in auto mode: they have no UI to approve
+		// anything, and a forked transcript must not restore the parent's mode
+		// (or its plan-execution state). Hard blocklists still apply.
+		if (process.env.AIO_SUBAGENT_CHILD === "1") {
+			currentMode = "auto";
+			planExecuting = false;
+			planTodos = [];
+			toolsBeforePassiveMode = undefined;
+		}
+
 		// 4) Apply passive-mode tool restrictions
 		if (isPassiveMode(currentMode)) {
 			toolsBeforePassiveMode ??= pi.getActiveTools();
