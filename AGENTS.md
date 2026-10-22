@@ -124,7 +124,9 @@ generated `dist/` tree without changing the package contract.
   `AIO_RECIPE_ORIGIN=directory`, which keeps it at default priority in the
   child so a `/resume`d session entry still wins. `/recipe init [name]`
   writes a `.pi-recipe` (exclusive create; always a full self-contained
-  scaffold seeded with the live model/thinking) and trusts it. The file is
+  scaffold — blank, seeded with the live model/thinking, or a COPY of a home
+  recipe chosen in a picker or via `--from`, with relative resource paths
+  rebased to `~/`/absolute) and trusts it. The file is
   portable: its `defaultRecipe` resolves only against its own `recipes`
   (never global/project ones; otherwise ignored with a warning);
   `/recipe trust` / `/recipe untrust` record or forget the decision.

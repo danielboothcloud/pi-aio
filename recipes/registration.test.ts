@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import { registerRecipes } from "./index.ts";
+import { recipeScaffold, registerRecipes } from "./index.ts";
 import { ProjectTrustStore } from "@earendil-works/pi-coding-agent";
 import {
 	ACTIVE_RECIPE_ENV,
@@ -819,15 +819,26 @@ test("/recipe init always scaffolds a full, self-contained, trusted .pi-recipe a
 	const completions = (await state.commands.get("recipe")!.getArgumentCompletions?.("in")) as Array<{ value: string }>;
 	assert.deepEqual(completions.map((c) => c.value), ["init"]);
 
-	// UI path: name suggested from the folder; no picker of global recipes.
-	state.selectReturns = ["must not be consumed"];
+	// UI path: blank template, name suggested from the folder.
+	let pickerOptions: string[] = [];
 	let placeholder: string | undefined;
 	await state.commands.get("recipe")!.handler("init", {
 		...ctx,
-		ui: { ...ctx.ui, input: async (_t: string, p?: string) => { placeholder = p; return ""; } },
+		ui: {
+			...ctx.ui,
+			select: async (_t: string, options: string[]) => {
+				pickerOptions = options;
+				return options[0];
+			},
+			input: async (_t: string, p?: string) => { placeholder = p; return ""; },
+		},
 	});
+	assert.deepEqual(pickerOptions, [
+		"Blank recipe (current model)",
+		"Copy home — Personal stack",
+		"Copy work — Work subscriptions",
+	]);
 	assert.equal(placeholder, "my-repo");
-	assert.equal(state.selectReturns.length, 1, "no recipe picker");
 	const file = join(fresh, ".pi-recipe");
 	const written = JSON.parse(readFileSync(file, "utf-8"));
 	assert.equal(written.defaultRecipe, "my-repo");
@@ -835,6 +846,9 @@ test("/recipe init always scaffolds a full, self-contained, trusted .pi-recipe a
 	// Seeded from the live session (startup applied home's `:high`).
 	assert.equal(written.recipes["my-repo"].thinkingLevel, "high");
 	assert.deepEqual(written.recipes["my-repo"].extensions, []);
+	// Scoped to its own model: an empty `models` would leave every
+	// settings.json enabledModels entry selectable.
+	assert.deepEqual(written.recipes["my-repo"].models, ["anthropic/claude-5"]);
 	assert.equal(recipeFileTrust(file), "trusted", "a file you created is trusted");
 	assert.equal(recipeRuntime().recipes.recipes["my-repo"]?.source, "directory");
 
@@ -844,6 +858,7 @@ test("/recipe init always scaffolds a full, self-contained, trusted .pi-recipe a
 	// A name matching a global recipe still gets its own full definition
 	// (it overrides the global one in this folder) — never a reference.
 	rmSync(file);
+	state.selectReturns = ["Blank recipe (current model)"];
 	await state.commands.get("recipe")!.handler("init work", ctx);
 	const named = JSON.parse(readFileSync(file, "utf-8"));
 	assert.equal(named.defaultRecipe, "work");
@@ -858,6 +873,89 @@ test("/recipe init always scaffolds a full, self-contained, trusted .pi-recipe a
 	await state.commands.get("recipe")!.handler("init a b", ctx);
 	assert.match(state.notifications.at(-1)!.message, /Invalid recipe name/);
 	assert.equal(existsSync(file), false);
+	assert.equal(state.selectReturns.length, 0, "bad names fail before the template picker");
+
+	// Cancelling the picker writes nothing.
+	state.selectReturns = [undefined];
+	await state.commands.get("recipe")!.handler("init", ctx);
+	assert.equal(existsSync(file), false);
+});
+
+test("/recipe init copies a home recipe as a self-contained template (picker or --from)", async () => {
+	writeRecipesFile({
+		recipes: {
+			work: {
+				description: "Work subscriptions",
+				model: "openai-codex/gpt-5:medium",
+				models: ["openai-codex/*"],
+				tools: ["+codemode"],
+				instructions: "Ship carefully.",
+				skills: ["skills/work.md", "/abs/skill.md"],
+				mcpServers: { linear: { url: "https://mcp.example.com/linear" } },
+				extensions: ["otty-integration", "npm:pi-web-access"],
+			},
+		},
+	});
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	const repo = join(tmp, "template-repo");
+	rmSync(repo, { recursive: true, force: true });
+	mkdirSync(repo, { recursive: true });
+	const ctx = { ...makeCtx(state), cwd: repo };
+	const file = join(repo, ".pi-recipe");
+
+	// Picker path.
+	state.selectReturns = ["Copy work — Work subscriptions"];
+	await state.commands.get("recipe")!.handler("init", {
+		...ctx,
+		ui: { ...ctx.ui, input: async () => "team" },
+	});
+	const written = JSON.parse(readFileSync(file, "utf-8"));
+	assert.equal(written.defaultRecipe, "team");
+	const team = written.recipes.team;
+	assert.equal(team.description, "Work subscriptions");
+	assert.equal(team.model, "openai-codex/gpt-5:medium");
+	assert.deepEqual(team.models, ["openai-codex/*"]);
+	assert.deepEqual(team.tools, ["+codemode"]);
+	assert.equal(team.instructions, "Ship carefully.");
+	assert.deepEqual(team.extensions, ["otty-integration", "npm:pi-web-access"]);
+	assert.deepEqual(team.mcpServers, { linear: { url: "https://mcp.example.com/linear" } });
+	// Relative resource paths are rebased off the home file's folder.
+	assert.equal(team.skills[1], "/abs/skill.md");
+	assert.ok(
+		team.skills[0].endsWith(join("agent", "skills", "work.md")) && !team.skills[0].startsWith("skills/"),
+		team.skills[0],
+	);
+	assert.deepEqual(team.prompts, [], "missing keys still scaffolded");
+
+	// A template without its own scope gets scoped to its model (suffix stripped).
+	assert.deepEqual(
+		JSON.parse(recipeScaffold("x", {}, { model: "openai-codex/gpt-5:medium" })).recipes.x.models,
+		["openai-codex/gpt-5"],
+	);
+	assert.equal(Object.hasOwn(written, "extends"), false);
+	assert.equal(recipeRuntime().recipes.recipes.team?.source, "directory");
+	assert.equal(recipeRuntime().recipes.defaultSource, "directory", "self-contained default");
+	assert.match(state.notifications.at(-2)!.message, /copied from your "work" recipe/);
+	assert.match(state.notifications.at(-1)!.message, /MCP server configs copied verbatim/);
+
+	// Argument path, no prompts at all.
+	rmSync(file);
+	state.selectReturns = ["must not be consumed"];
+	await state.commands.get("recipe")!.handler("init repo --from work", ctx);
+	assert.equal(state.selectReturns.length, 1);
+	assert.deepEqual(JSON.parse(readFileSync(file, "utf-8")).recipes.repo.extensions, [
+		"otty-integration",
+		"npm:pi-web-access",
+	]);
+
+	rmSync(file);
+	await state.commands.get("recipe")!.handler("init --from ghost", ctx);
+	assert.match(state.notifications.at(-1)!.message, /Unknown home recipe "ghost". Available: work/);
+	assert.equal(existsSync(file), false);
+
+	const completions = (await state.commands.get("recipe")!.getArgumentCompletions?.("init x --from w")) as Array<{ value: string }>;
+	assert.deepEqual(completions.map((c) => c.value), ["init x --from work"]);
 });
 
 test("/recipe trust leaves an active recipe alone and explains when there is no file", async () => {

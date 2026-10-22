@@ -43,7 +43,8 @@ import type {
 import { parseArgs } from "@earendil-works/pi-coding-agent";
 import { setFrameMetadataContributor } from "../frame/protocol.js";
 import { writeFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { homedir } from "node:os";
+import { basename, isAbsolute, join, relative } from "node:path";
 import {
 	ACTIVE_RECIPE_ENV,
 	DIRECTORY_RECIPE_FILE_NAMES,
@@ -56,6 +57,8 @@ import {
 	directoryRecipesPath,
 	isRestartScoped,
 	loadRecipes,
+	parseModelSpec,
+	type RecipeConfig,
 	type RecipeDefinition,
 } from "./config.js";
 import {
@@ -275,23 +278,98 @@ export function suggestRecipeName(cwd: string): string {
 export function recipeScaffold(
 	name: string,
 	seed: { description?: string; model?: string; thinkingLevel?: string } = {},
+	template?: Partial<RecipeConfig>,
 ): string {
 	const recipe: Record<string, unknown> = {
-		description: seed.description ?? `Recipe for ${name}`,
+		description: template?.description ?? seed.description ?? `Recipe for ${name}`,
 	};
-	if (seed.model) recipe.model = seed.model;
-	if (seed.thinkingLevel) recipe.thinkingLevel = seed.thinkingLevel;
+	const model = template ? template.model : seed.model;
+	const thinkingLevel = template ? template.thinkingLevel : seed.thinkingLevel;
+	if (model) recipe.model = model;
+	if (thinkingLevel) recipe.thinkingLevel = thinkingLevel;
+	// An empty `models` means "no scope": pi falls back to settings.json
+	// enabledModels, so other models stay selectable. Scope the scaffold to
+	// its own model so the file alone decides what is available.
+	const models = template?.models?.length
+		? template.models
+		: model
+			? [parseModelSpec(model).model]
+			: [];
 	Object.assign(recipe, {
-		models: [],
-		tools: [],
-		instructions: "",
-		skills: [],
-		prompts: [],
-		themes: [],
-		mcpServers: {},
-		extensions: [],
+		models,
+		tools: template?.tools ?? [],
+		instructions: template?.instructions ?? "",
+		skills: template?.skills ?? [],
+		prompts: template?.prompts ?? [],
+		themes: template?.themes ?? [],
+		mcpServers: template?.mcpServers ?? {},
+		extensions: template?.extensions ?? [],
 	});
 	return `${JSON.stringify({ defaultRecipe: name, recipes: { [name]: recipe } }, null, 2)}\n`;
+}
+
+/**
+ * Copy a home recipe's settings for a `.pi-recipe` — a snapshot, never a
+ * reference. Resource paths in the home file resolve from the agent dir, so
+ * relative ones are rewritten to absolute (`~/…` when under home) to keep
+ * pointing at the same files once they live in another folder. Extension
+ * entries are kept verbatim: bare names resolve in each user's own
+ * `<agent-dir>/extensions`, and package sources are already portable.
+ */
+export function templateFromRecipe(def: RecipeDefinition): Partial<RecipeConfig> {
+	const home = homedir();
+	const rebase = (entries: string[] | undefined): string[] | undefined =>
+		entries?.map((entry) => {
+			if (entry === "~" || entry.startsWith("~/") || isAbsolute(entry)) return entry;
+			const absolute = join(def.baseDir, entry);
+			const fromHome = relative(home, absolute);
+			return fromHome && !fromHome.startsWith("..") && !isAbsolute(fromHome)
+				? `~/${fromHome}${entry.endsWith("/") ? "/" : ""}`
+				: absolute;
+		});
+	const config = structuredClone(def.config);
+	return {
+		...config,
+		skills: rebase(config.skills),
+		prompts: rebase(config.prompts),
+		themes: rebase(config.themes),
+	};
+}
+
+function validRecipeName(name: string): boolean {
+	return RECIPE_NAME.test(name) && !RESERVED_NAMES.has(name.toLowerCase());
+}
+
+function notifyInvalidName(ctx: ExtensionContext, name: string): void {
+	notify(
+		ctx,
+		`Invalid recipe name "${name}" — use letters, digits, ".", "_" or "-" (not ${[...RESERVED_NAMES].join("/")})`,
+		"error",
+	);
+}
+
+/** Parse `init [name] [--from <recipe>]`. */
+export function parseInitArgs(arg: string): { name: string; from?: string; error?: string } {
+	const tokens = arg.trim().split(/\s+/).filter(Boolean);
+	let from: string | undefined;
+	const rest: string[] = [];
+	for (let i = 0; i < tokens.length; i++) {
+		const token = tokens[i] ?? "";
+		if (token === "--from") {
+			from = tokens[++i];
+			if (!from) return { name: "", error: "--from needs one of your recipe names" };
+		} else if (token.startsWith("--from=")) {
+			from = token.slice("--from=".length);
+		} else {
+			rest.push(token);
+		}
+	}
+	return { name: rest.join(" "), from };
+}
+
+/** Recipes in the user's home (global) file — the templates `/recipe init` offers. */
+function homeRecipes(): Record<string, RecipeDefinition> {
+	return loadRecipes(undefined).recipes;
 }
 
 async function initDirectoryRecipe(
@@ -305,27 +383,63 @@ async function initDirectoryRecipe(
 		return;
 	}
 	// A `.pi-recipe` is portable: it always carries its own full recipe
-	// definition, never a reference to this user's global recipes.
+	// definition — a home recipe can seed it as a template (copied), but it
+	// never references the user's global recipes.
+	const parsed = parseInitArgs(arg);
+	if (parsed.error) {
+		notify(ctx, `recipes: ${parsed.error}`, "error");
+		return;
+	}
+	if (parsed.name && !validRecipeName(parsed.name)) {
+		notifyInvalidName(ctx, parsed.name);
+		return;
+	}
+	const templates = homeRecipes();
+	let template: RecipeDefinition | undefined;
+	if (parsed.from) {
+		template = templates[parsed.from];
+		if (!template) {
+			const names = Object.keys(templates).sort().join(", ") || "none configured";
+			notify(ctx, `Unknown home recipe "${parsed.from}". Available: ${names}`, "error");
+			return;
+		}
+	} else if (ctx.hasUI && Object.keys(templates).length > 0) {
+		const { names, labels } = selectionLabels(templates);
+		const blank = "Blank recipe (current model)";
+		const choice = await ctx.ui.select("Create .pi-recipe — start from:", [
+			blank,
+			...labels.map((label) => `Copy ${label}`),
+		]);
+		if (!choice) return;
+		if (choice !== blank) {
+			template = templates[names[labels.indexOf(choice.slice("Copy ".length))] ?? ""];
+		}
+	}
+
 	const suggestion = suggestRecipeName(ctx.cwd);
-	let name = arg.trim();
+	let name = parsed.name;
 	if (!name && ctx.hasUI) {
 		const typed = await ctx.ui.input("Recipe name for this folder's .pi-recipe", suggestion);
 		if (typed === undefined) return;
 		name = typed.trim();
 	}
 	if (!name) name = suggestion;
-	if (!RECIPE_NAME.test(name) || RESERVED_NAMES.has(name.toLowerCase())) {
-		notify(ctx, `Invalid recipe name "${name}" — use letters, digits, ".", "_" or "-" (not ${[...RESERVED_NAMES].join("/")})`, "error");
+	if (!validRecipeName(name)) {
+		notifyInvalidName(ctx, name);
 		return;
 	}
 
 	const model = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
 	const level = pi.getThinkingLevel();
-	const content = recipeScaffold(name, {
-		description: `Recipe for ${basename(ctx.cwd) || name}`,
-		model,
-		thinkingLevel: THINKING_LEVELS.includes(level) ? level : undefined,
-	});
+	const content = recipeScaffold(
+		name,
+		{
+			description: `Recipe for ${basename(ctx.cwd) || name}`,
+			model,
+			thinkingLevel: THINKING_LEVELS.includes(level) ? level : undefined,
+		},
+		template ? templateFromRecipe(template) : undefined,
+	);
 	const file = join(ctx.cwd, DIRECTORY_RECIPE_FILE_NAMES[0] ?? ".pi-recipe");
 	try {
 		writeFileSync(file, content, { encoding: "utf-8", flag: "wx" });
@@ -342,11 +456,21 @@ async function initDirectoryRecipe(
 	}
 	refreshRecipes(ctx);
 	const trustNote = trusted ? "trusted" : "trust not saved — run /recipe trust";
+	const seeded = template
+		? `copied from your "${template.name}" recipe`
+		: "seeded from the current model";
 	notify(
 		ctx,
-		`Created ${file} with recipe "${name}" seeded from the current model (${trustNote}). Fill in the fields you need; after you edit it, the next start asks once to trust the new version. /recipe ${name} switches now.`,
+		`Created ${file} with recipe "${name}" ${seeded} (${trustNote}). Fill in the fields you need; after you edit it, the next start asks once to trust the new version. /recipe ${name} switches now.`,
 		"info",
 	);
+	if (template && Object.keys(template.config.mcpServers).length > 0) {
+		notify(
+			ctx,
+			`${basename(file)} includes MCP server configs copied verbatim from "${template.name}" — remove any tokens or headers before committing it`,
+			"warning",
+		);
+	}
 }
 
 /** Switch the live session onto a recipe (the /recipe command path). */
@@ -663,6 +787,20 @@ export async function registerRecipes(
 		description:
 			"Show, switch, or clear the active launch recipe (aio-recipes.json); init/trust/untrust manage this folder's .pi-recipe",
 		getArgumentCompletions: (prefix) => {
+			// `init [name] --from <home recipe>`: complete the template name.
+			const fromMatch = /^(init\b.*--from\s+)(\S*)$/.exec(prefix.trimStart());
+			if (fromMatch) {
+				const [, head = "", partial = ""] = fromMatch;
+				const options = Object.entries(homeRecipes())
+					.filter(([name]) => name.startsWith(partial))
+					.sort(([a], [b]) => a.localeCompare(b))
+					.map(([name, def]) => ({
+						label: name,
+						value: `${head}${name}`,
+						description: def.config.description?.trim() || "home recipe template",
+					}));
+				return options.length > 0 ? options : null;
+			}
 			const wanted = prefix.trim().toLowerCase();
 			const entries = Object.entries(recipeRuntime().recipes.recipes);
 			const items: Array<{ label: string; value: string; description: string }> = [];

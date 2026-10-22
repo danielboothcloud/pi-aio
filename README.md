@@ -153,10 +153,17 @@ global config, so the file works the same for every clone:
 - `/recipe trust` trusts the current contents (overriding a "never") and
   starts the default if no recipe is active; `/recipe untrust` forgets the
   decision so the next start asks again.
-- `/recipe init [name]` creates `.pi-recipe` in the session folder and
-  trusts it (you wrote it): a full recipe seeded with the current model and
-  thinking level, every other key present but empty. Without a name it asks
-  for one, suggesting the folder name. It never overwrites an existing file;
+- `/recipe init [name] [--from <recipe>]` creates `.pi-recipe` in the
+  session folder and trusts it (you wrote it). It first asks what to start
+  from: a **blank recipe** (current model and thinking level, `models` scoped
+  to that one model, every other key present but empty) or **a copy of one of your home recipes**
+  (`aio-recipes.json`) — its model, scope, tools, instructions, MCP servers,
+  and extensions are copied into the file, so it stays self-contained and
+  never depends on your home config. `--from` picks the template without the
+  picker. Copied relative skill/prompt/theme paths are rewritten to `~/…` or
+  absolute paths (they point at your agent dir); MCP configs are copied
+  verbatim, so remove tokens before committing. Without a name it asks for
+  one, suggesting the folder name. It never overwrites an existing file;
   edits you make afterwards are asked about once on the next start.
 - Resource paths (`skills`, `prompts`, `themes`) resolve from the folder.
 
