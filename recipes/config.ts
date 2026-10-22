@@ -6,8 +6,13 @@
 // every other global recipe stays. Project recipes are only read for trusted
 // projects (same gate as browser-search's aio.browserSearch).
 //
-//   Global:  <agentDir>/aio-recipes.json      (getAgentDir(), ~/.pi/agent)
-//   Project: <cwd>/.pi/aio-recipes.json       (CONFIG_DIR_NAME)
+//   Global:    <agentDir>/aio-recipes.json      (getAgentDir(), ~/.pi/agent)
+//   Project:   <cwd>/.pi/aio-recipes.json       (CONFIG_DIR_NAME)
+//   Directory: <cwd>/.pi-recipe or <cwd>/.pi-recipe.json (same JSON shape;
+//              launch cwd only, no parent walk). Gated by explicit,
+//              content-pinned per-file trust (trust.ts) — folder trust never
+//              covers it. Its defaultRecipe wins over the other tiers
+//              and starts like `pi --recipe <name>` (see trampoline.ts).
 //
 // AIO_RECIPES_FILE replaces the global file path (tests + sandboxes), the
 // same contract goal-settings and YSK use for their settings files.
@@ -38,7 +43,7 @@
 // warning per unreadable file so the user can fix it).
 // ---------------------------------------------------------------------------
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
@@ -86,7 +91,12 @@ export const PI_SUBCOMMANDS: readonly string[] = [
 	"mcp",
 ];
 
-export type RecipeSource = "global" | "project";
+export type RecipeSource = "global" | "project" | "directory";
+
+/** Per-directory recipe files, checked in this order in the launch cwd only. */
+export const DIRECTORY_RECIPE_FILE_NAMES: readonly string[] = [".pi-recipe", ".pi-recipe.json"];
+/** Set beside ACTIVE_RECIPE_ENV when the relaunch came from a directory default. */
+export const RECIPE_ORIGIN_ENV = "AIO_RECIPE_ORIGIN";
 
 /** One recipe, strictly JSON-native so it round-trips through load/merge. */
 export interface RecipeConfig {
@@ -124,6 +134,10 @@ export interface RecipesConfig {
 	recipes: Record<string, RecipeDefinition>;
 	/** Optional recipe that auto-activates on fresh `pi` starts. */
 	defaultRecipe?: string;
+	/** Which tier supplied defaultRecipe. */
+	defaultSource?: RecipeSource;
+	/** The cwd's `.pi-recipe`/`.pi-recipe.json`, present whether or not it was trusted. */
+	directoryFile?: string;
 	/** True when no recipes are configured anywhere. */
 	empty: boolean;
 }
@@ -146,6 +160,29 @@ export function globalRecipesPath(): string | undefined {
 
 export function projectRecipesPath(cwd: string): string {
 	return join(cwd, CONFIG_DIR_NAME, RECIPES_FILE_NAME);
+}
+
+function isFile(path: string): boolean {
+	try {
+		return statSync(path).isFile();
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * The cwd's directory recipe file: `.pi-recipe` first, then
+ * `.pi-recipe.json`. When both exist the first wins and the other is
+ * reported once, so a stale copy never silently shadows edits.
+ */
+export function directoryRecipesPath(cwd: string): string | undefined {
+	const found = DIRECTORY_RECIPE_FILE_NAMES.map((name) => join(cwd, name)).filter(isFile);
+	const ignored = found[1];
+	if (ignored && !warnedFiles.has(ignored)) {
+		warnedFiles.add(ignored);
+		warnOnce(`both ${found[0]} and ${ignored} exist; using the first and ignoring ${ignored}`);
+	}
+	return found[0];
 }
 
 function agentDirFor(extensionName: string): string {
@@ -326,11 +363,13 @@ function collectRecipes(
  * global ones; other global recipes survive (an override, not a union — a
  * work recipe can neutralize a home MCP server by redefining the recipe).
  * `loadRecipes` itself reads the project file only when `projectTrusted` is
- * true, mirroring browser-search's config gate.
+ * true, mirroring browser-search's config gate, and the directory file
+ * (`.pi-recipe`) only when `directoryTrusted` is true (see trust.ts).
+ * Override order: global < project < directory, for recipes and default.
  */
 export function loadRecipes(
 	cwd?: string,
-	options: { projectTrusted?: boolean } = {},
+	options: { projectTrusted?: boolean; directoryTrusted?: boolean } = {},
 ): RecipesConfig {
 	const globalPath = globalRecipesPath();
 	const recipes: Record<string, RecipeDefinition> = {};
@@ -349,19 +388,51 @@ export function loadRecipes(
 		);
 	}
 
+	const directoryFile = cwd ? directoryRecipesPath(cwd) : undefined;
+	let directoryRecipes: Record<string, RecipeDefinition> = {};
+	if (cwd && directoryFile && options.directoryTrusted) {
+		// Resource paths in a directory recipe resolve from the folder itself.
+		directoryRecipes = collectRecipes(directoryFile, "directory", cwd);
+		Object.assign(recipes, directoryRecipes);
+	}
+
 	let defaultRecipe: string | undefined;
+	let defaultSource: RecipeSource | undefined;
 	if (globalPath) {
 		defaultRecipe = readDefaultRecipe(globalPath, "global");
+		if (defaultRecipe) defaultSource = "global";
 	}
 	if (cwd && options.projectTrusted) {
 		const projectDefault = readDefaultRecipe(projectRecipesPath(cwd), "project");
-		if (projectDefault) defaultRecipe = projectDefault;
+		if (projectDefault) {
+			defaultRecipe = projectDefault;
+			defaultSource = "project";
+		}
 	}
-	if (defaultRecipe && !recipes[defaultRecipe]) defaultRecipe = undefined;
+	if (directoryFile && options.directoryTrusted) {
+		// A `.pi-recipe` is portable: its default must be defined in the file
+		// itself, never resolved against this user's global/project recipes.
+		const directoryDefault = readDefaultRecipe(directoryFile, "directory");
+		if (directoryDefault && directoryRecipes[directoryDefault]) {
+			defaultRecipe = directoryDefault;
+			defaultSource = "directory";
+		} else if (directoryDefault && !warnedFiles.has(`${directoryFile}#default`)) {
+			warnedFiles.add(`${directoryFile}#default`);
+			warnOnce(
+				`${directoryFile}: defaultRecipe "${directoryDefault}" must be defined in that file's "recipes"; ignoring it`,
+			);
+		}
+	}
+	if (defaultRecipe && !recipes[defaultRecipe]) {
+		defaultRecipe = undefined;
+		defaultSource = undefined;
+	}
 
 	return {
 		recipes,
 		defaultRecipe,
+		defaultSource,
+		directoryFile,
 		empty: Object.keys(recipes).length === 0,
 	};
 }

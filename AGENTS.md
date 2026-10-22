@@ -105,7 +105,30 @@ generated `dist/` tree without changing the package contract.
   package configuration, not the recipe child's loaded extension set.
   Selection precedence: flag > bridge env > session `recipe-state` entry
   (branch-pinned; off pins `name: null`) > `defaultRecipe` on fresh startups
-  only. Subagent children register only the context filter (forked children
+  only. A launch-cwd `.pi-recipe` (or `.pi-recipe.json`; same JSON shape,
+  no parent walk, `.pi-recipe` wins) is a third tier above
+  `.pi/aio-recipes.json`. Folder trust never covers it: `trust.ts` requires
+  explicit per-file trust stored in `<agentDir>/aio-recipe-trust.json`
+  (`AIO_RECIPE_TRUST_FILE` for tests), keyed by realpath and pinned to a
+  SHA-256 of the contents, so a new or edited file asks again; "never" is
+  remembered per version, "not now" is not, `--no-approve` skips one run.
+  The factory asks on the terminal (`promptRecipeTrust`, readline
+  `terminal: false`, closed before pi's TUI starts) only when
+  `canPromptAtLaunch` holds (interactive mode, both TTYs, no stage/child/
+  subcommand/print-and-exit/--no-approve), so a just-trusted restart-scoped
+  default still relaunches; otherwise session_start asks via a
+  non-blocking `ctx.ui.select` (RPC) or writes a stderr hint (print/JSON),
+  once per process (`directoryAsked`). A trusted directory default is
+  bridged like `--recipe` on fresh starts (never on
+  `-c`/`-r`/`--session`/`--session-id`/`--fork`) with
+  `AIO_RECIPE_ORIGIN=directory`, which keeps it at default priority in the
+  child so a `/resume`d session entry still wins. `/recipe init [name]`
+  writes a `.pi-recipe` (exclusive create; always a full self-contained
+  scaffold seeded with the live model/thinking) and trusts it. The file is
+  portable: its `defaultRecipe` resolves only against its own `recipes`
+  (never global/project ones; otherwise ignored with a warning);
+  `/recipe trust` / `/recipe untrust` record or forget the decision.
+  Recipes literally named `init`/`trust`/`untrust` keep switching. Subagent children register only the context filter (forked children
   strip inherited recipe instructions). Status is dual-channel (frame
   `recipe` pill beside the mode-style cluster, else a `statuses`-segment
   pill). `/recipe status [--json]` (unambiguous alias `/recipe-status`) uses

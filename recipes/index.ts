@@ -19,7 +19,12 @@
 //
 // Selection precedence at session_start: --recipe flag > AIO_RECIPE_ACTIVE
 // (set on a bridged relaunch child) > the session's persisted recipe-state
-// entry (resume) > defaultRecipe on a fresh startup. Subagent children
+// entry (resume) > defaultRecipe on a fresh startup. A trusted `.pi-recipe`
+// (or `.pi-recipe.json`) in the cwd supplies the highest-priority default
+// and is bridged like --recipe. Each version of that file must be trusted
+// explicitly (trust.ts: asked on the terminal before launch, remembered by
+// content hash); `/recipe init` scaffolds one; its relaunch marks AIO_RECIPE_ORIGIN=directory
+// so the child still treats it as a default, not an override. Subagent children
 // register nothing but the inherited-instruction filter: their workloads are
 // pinned by the parent.
 //
@@ -37,15 +42,31 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { parseArgs } from "@earendil-works/pi-coding-agent";
 import { setFrameMetadataContributor } from "../frame/protocol.js";
+import { writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
 import {
 	ACTIVE_RECIPE_ENV,
+	DIRECTORY_RECIPE_FILE_NAMES,
 	RECIPES_FILE_NAME,
 	RECIPE_CONTEXT_TYPE,
 	RECIPE_FLAG,
+	RECIPE_ORIGIN_ENV,
+	RECIPE_STAGE_ENV,
+	THINKING_LEVELS,
+	directoryRecipesPath,
 	isRestartScoped,
 	loadRecipes,
 	type RecipeDefinition,
 } from "./config.js";
+import {
+	TRUST_CHOICE_LABELS,
+	forgetRecipeFileTrust,
+	promptRecipeTrust,
+	recipeFileTrust,
+	recordRecipeFileTrust,
+	trustPromptTitle,
+	type TrustChoice,
+} from "./trust.js";
 import {
 	activeRecipe,
 	applyRecipe,
@@ -62,6 +83,8 @@ import {
 import {
 	AIO_RECIPE_EXTENSION_PATH,
 	SUBAGENT_CHILD_ENV,
+	canPromptAtLaunch,
+	cliArgsFromArgv,
 	decideRelaunch,
 	execRelaunch,
 	relaunchNotice,
@@ -96,13 +119,24 @@ function notifyActivation(
 	let text = `Recipe "${def.name}" active${bits}`;
 	if (result.warnings.length > 0) text += `; ${result.warnings.join("; ")}`;
 	notify(ctx, text, result.warnings.length > 0 ? "warning" : "info");
-	if (isRestartScoped(def.config) && source !== "env") {
+	if (isRestartScoped(def.config) && !bridgedRecipe(def.name)) {
+		const next =
+			source === "directory"
+				? "the next fresh `pi` start in this folder"
+				: `the next \`pi --recipe "${def.name}"\` start`;
 		notify(
 			ctx,
-			`"${def.name}" also scopes the extension set and enabled models — they apply fully on the next \`pi --recipe "${def.name}"\` start`,
+			`"${def.name}" also scopes the extension set and enabled models — they apply fully on ${next}`,
 			"info",
 		);
 	}
+}
+
+/** True in a relaunched child whose extension set/model scope came from this recipe. */
+function bridgedRecipe(name: string): boolean {
+	return (
+		process.env[RECIPE_STAGE_ENV] === "1" && process.env[ACTIVE_RECIPE_ENV]?.trim() === name
+	);
 }
 
 function selectionLabels(
@@ -127,9 +161,192 @@ function availableNamesText(): string {
 
 /** Reload the recipes for the session cwd (fresh pick for every command run). */
 function refreshRecipes(ctx: ExtensionContext): void {
-	recipeRuntime().recipes = loadRecipes(ctx.cwd, {
+	const state = recipeRuntime();
+	const file = directoryRecipesPath(ctx.cwd);
+	state.directoryTrust = file
+		? recipeFileTrust(file, { cliArgs: cliArgsFromArgv(process.argv) })
+		: undefined;
+	state.recipes = loadRecipes(ctx.cwd, {
 		projectTrusted: ctx.isProjectTrusted(),
+		directoryTrusted: state.directoryTrust === "trusted",
 	});
+}
+
+function errorText(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
+}
+
+/** Start a freshly trusted `.pi-recipe` default unless a recipe is already active. */
+async function activateDirectoryDefault(
+	pi: ExtensionAPI,
+	ctx: ExtensionContext,
+	fileName: string,
+): Promise<void> {
+	const state = recipeRuntime();
+	const name = state.recipes.defaultSource === "directory" ? state.recipes.defaultRecipe : undefined;
+	const def = name ? state.recipes.recipes[name] : undefined;
+	if (!name || !def) {
+		notify(ctx, `${fileName} is trusted; its recipes are available in /recipe (no valid defaultRecipe)`, "info");
+		return;
+	}
+	if (state.activeName) {
+		notify(
+			ctx,
+			`${fileName} is trusted; "${name}" starts automatically on the next fresh \`pi\` here (active recipe "${state.activeName}" unchanged — /recipe ${name} switches now)`,
+			"info",
+		);
+		return;
+	}
+	const result = await applyRecipe(pi, ctx, def, { source: "directory", persist: true });
+	notifyActivation(ctx, def, result, "directory");
+}
+
+/** `/recipe trust`: trust the `.pi-recipe` as it is now and start its default. */
+async function trustDirectoryRecipe(pi: ExtensionAPI, ctx: ExtensionContext): Promise<void> {
+	const file = recipeRuntime().recipes.directoryFile;
+	if (!file) {
+		notify(ctx, `No ${DIRECTORY_RECIPE_FILE_NAMES.join(" or ")} in ${ctx.cwd} — /recipe init creates one`, "info");
+		return;
+	}
+	const fileName = basename(file);
+	try {
+		recordRecipeFileTrust(file, true);
+	} catch (error) {
+		notify(ctx, `recipes: could not save trust for ${file}: ${errorText(error)}`, "error");
+		return;
+	}
+	refreshRecipes(ctx);
+	if (recipeRuntime().directoryTrust !== "trusted") {
+		notify(ctx, `Trusted ${fileName}, but --no-approve skips it for this run; it applies on the next start`, "warning");
+		return;
+	}
+	await activateDirectoryDefault(pi, ctx, fileName);
+}
+
+/** `/recipe untrust`: forget the decision; the next start asks again. */
+function untrustDirectoryRecipe(ctx: ExtensionContext): void {
+	const file = recipeRuntime().recipes.directoryFile;
+	if (!file) {
+		notify(ctx, `No ${DIRECTORY_RECIPE_FILE_NAMES.join(" or ")} in ${ctx.cwd}`, "info");
+		return;
+	}
+	try {
+		const forgot = forgetRecipeFileTrust(file);
+		refreshRecipes(ctx);
+		notify(
+			ctx,
+			forgot
+				? `Forgot the trust decision for ${basename(file)} — the next start asks again (the active recipe stays for this session)`
+				: `${basename(file)} has no saved trust decision`,
+			"info",
+		);
+	} catch (error) {
+		notify(ctx, `recipes: could not update trust for ${file}: ${errorText(error)}`, "error");
+	}
+}
+
+/** Session-side trust question (RPC, or a TUI whose launch could not ask). */
+async function askDirectoryTrust(pi: ExtensionAPI, ctx: ExtensionContext, file: string): Promise<void> {
+	const order: TrustChoice[] = ["trust", "skip", "deny"];
+	const labels = order.map((choice) => TRUST_CHOICE_LABELS[choice]);
+	const picked = await ctx.ui.select(trustPromptTitle(file), labels);
+	const choice = order[labels.indexOf(picked ?? "")] ?? "skip";
+	if (choice === "skip") return;
+	recordRecipeFileTrust(file, choice === "trust");
+	refreshRecipes(ctx);
+	if (choice === "trust") await activateDirectoryDefault(pi, ctx, basename(file));
+}
+
+// -- /recipe init -------------------------------------------------------------
+
+/** `/recipe <word>` subcommands; a recipe literally named one keeps switching. */
+const RESERVED_NAMES = new Set(["off", "none", "status", "trust", "untrust", "init"]);
+const RECIPE_NAME = /^[A-Za-z0-9][\w.-]*$/;
+
+export function suggestRecipeName(cwd: string): string {
+	const base = basename(cwd)
+		.toLowerCase()
+		.replace(/[^\w.-]+/g, "-")
+		.replace(/^[^a-z0-9]+/, "");
+	return base && !RESERVED_NAMES.has(base) ? base : "project";
+}
+
+/** The `.pi-recipe` scaffold: every key present, empty values are no-ops. */
+export function recipeScaffold(
+	name: string,
+	seed: { description?: string; model?: string; thinkingLevel?: string } = {},
+): string {
+	const recipe: Record<string, unknown> = {
+		description: seed.description ?? `Recipe for ${name}`,
+	};
+	if (seed.model) recipe.model = seed.model;
+	if (seed.thinkingLevel) recipe.thinkingLevel = seed.thinkingLevel;
+	Object.assign(recipe, {
+		models: [],
+		tools: [],
+		instructions: "",
+		skills: [],
+		prompts: [],
+		themes: [],
+		mcpServers: {},
+		extensions: [],
+	});
+	return `${JSON.stringify({ defaultRecipe: name, recipes: { [name]: recipe } }, null, 2)}\n`;
+}
+
+async function initDirectoryRecipe(
+	pi: ExtensionAPI,
+	ctx: ExtensionContext,
+	arg: string,
+): Promise<void> {
+	const existing = directoryRecipesPath(ctx.cwd);
+	if (existing) {
+		notify(ctx, `${basename(existing)} already exists in ${ctx.cwd} — edit it, or delete it to start over`, "warning");
+		return;
+	}
+	// A `.pi-recipe` is portable: it always carries its own full recipe
+	// definition, never a reference to this user's global recipes.
+	const suggestion = suggestRecipeName(ctx.cwd);
+	let name = arg.trim();
+	if (!name && ctx.hasUI) {
+		const typed = await ctx.ui.input("Recipe name for this folder's .pi-recipe", suggestion);
+		if (typed === undefined) return;
+		name = typed.trim();
+	}
+	if (!name) name = suggestion;
+	if (!RECIPE_NAME.test(name) || RESERVED_NAMES.has(name.toLowerCase())) {
+		notify(ctx, `Invalid recipe name "${name}" — use letters, digits, ".", "_" or "-" (not ${[...RESERVED_NAMES].join("/")})`, "error");
+		return;
+	}
+
+	const model = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
+	const level = pi.getThinkingLevel();
+	const content = recipeScaffold(name, {
+		description: `Recipe for ${basename(ctx.cwd) || name}`,
+		model,
+		thinkingLevel: THINKING_LEVELS.includes(level) ? level : undefined,
+	});
+	const file = join(ctx.cwd, DIRECTORY_RECIPE_FILE_NAMES[0] ?? ".pi-recipe");
+	try {
+		writeFileSync(file, content, { encoding: "utf-8", flag: "wx" });
+	} catch (error) {
+		notify(ctx, `recipes: could not create ${file}: ${errorText(error)}`, "error");
+		return;
+	}
+	// You created it yourself: this exact version is trusted.
+	let trusted = true;
+	try {
+		recordRecipeFileTrust(file, true);
+	} catch {
+		trusted = false;
+	}
+	refreshRecipes(ctx);
+	const trustNote = trusted ? "trusted" : "trust not saved — run /recipe trust";
+	notify(
+		ctx,
+		`Created ${file} with recipe "${name}" seeded from the current model (${trustNote}). Fill in the fields you need; after you edit it, the next start asks once to trust the new version. /recipe ${name} switches now.`,
+		"info",
+	);
 }
 
 /** Switch the live session onto a recipe (the /recipe command path). */
@@ -188,6 +405,28 @@ async function sessionStart(
 	const state = recipeRuntime();
 	refreshRecipes(ctx);
 
+	// A new or changed `.pi-recipe` the launch could not ask about (RPC,
+	// print/JSON, an unusual TTY setup): ask through the session UI without
+	// blocking startup, or leave a one-line hint where no UI exists.
+	const directoryFile = state.recipes.directoryFile;
+	if (
+		directoryFile &&
+		state.directoryTrust === "unknown" &&
+		event.reason === "startup" &&
+		!state.directoryAsked
+	) {
+		state.directoryAsked = true;
+		if (ctx.hasUI) {
+			void askDirectoryTrust(pi, ctx, directoryFile).catch((error: unknown) => {
+				notify(ctx, `recipes: trust prompt failed: ${errorText(error)}`, "warning");
+			});
+		} else {
+			process.stderr.write(
+				`recipes: ${directoryFile} is new or changed and not trusted yet — skipped (run pi interactively, or /recipe trust)\n`,
+			);
+		}
+	}
+
 	if (state.launchNotice && !state.launchNoticeFired) {
 		state.launchNoticeFired = true;
 		// The bridge already wrote this to stderr; the session gets the same
@@ -205,12 +444,13 @@ async function sessionStart(
 	} else if (flag === true) {
 		notify(ctx, "recipes: --recipe needs a recipe name (see /recipe)", "warning");
 	}
-	if (name === undefined) {
-		const envName = process.env[ACTIVE_RECIPE_ENV]?.trim();
-		if (envName) {
-			name = envName;
-			source = "env";
-		}
+	// A relaunch for a `.pi-recipe` default carries the name as a DEFAULT:
+	// it must not outrank a session entry restored by an in-process /resume.
+	const envName = process.env[ACTIVE_RECIPE_ENV]?.trim();
+	const envIsDefault = process.env[RECIPE_ORIGIN_ENV] === "directory";
+	if (name === undefined && envName && !envIsDefault) {
+		name = envName;
+		source = "env";
 	}
 	if (name === undefined) {
 		const persisted = persistedRecipeFor(ctx);
@@ -219,9 +459,14 @@ async function sessionStart(
 			source = "session";
 		}
 	}
-	if (name === undefined && event.reason === "startup" && state.recipes.defaultRecipe) {
-		name = state.recipes.defaultRecipe;
-		source = "default";
+	if (name === undefined && event.reason === "startup") {
+		if (envName && envIsDefault) {
+			name = envName;
+			source = "directory";
+		} else if (state.recipes.defaultRecipe) {
+			name = state.recipes.defaultRecipe;
+			source = state.recipes.defaultSource === "directory" ? "directory" : "default";
+		}
 	}
 
 	if (name === undefined) {
@@ -278,7 +523,13 @@ async function restoreFromBranch(pi: ExtensionAPI, ctx: ExtensionContext): Promi
 
 export async function registerRecipes(
 	pi: ExtensionAPI,
-	options: { exitOnInvalidScope?: (code: number) => never } = {},
+	options: {
+		exitOnInvalidScope?: (code: number) => never;
+		/** Test seam: the before-launch terminal trust question. */
+		promptTrust?: (file: string) => Promise<TrustChoice>;
+		/** Test seam: whether this launch may ask on the terminal. */
+		interactiveLaunch?: boolean;
+	} = {},
 ): Promise<void> {
 	const exitOnInvalidScope = options.exitOnInvalidScope ?? ((code: number): never => process.exit(code));
 	pi.registerFlag(RECIPE_FLAG, {
@@ -303,15 +554,48 @@ export async function registerRecipes(
 
 	// ---- Factory-time relaunch bridge: only recipes with restart-scoped
 	// keys reach the relaunch at all, and the decision sees the global file
-	// only — project trust is not resolved while extension factories run,
-	// so launch decisions never depend on untrusted project files.
+	// plus a `.pi-recipe` whose current contents were explicitly trusted
+	// (trust.ts) — pi's project trust is not resolved while extension
+	// factories run, so `.pi/aio-recipes.json` is never consulted. A new or
+	// changed `.pi-recipe` is asked about HERE, on the terminal, before the
+	// TUI starts, so a just-trusted restart-scoped recipe can still relaunch.
 	let launchNotice: string | undefined;
 	try {
+		const launchCwd = process.cwd();
+		const launchFile = directoryRecipesPath(launchCwd);
+		let launchTrust = launchFile
+			? recipeFileTrust(launchFile, { cliArgs: cliArgsFromArgv(process.argv) })
+			: undefined;
+		const interactive =
+			options.interactiveLaunch ??
+			canPromptAtLaunch({
+				argv: process.argv,
+				env: process.env,
+				stdinIsTTY: process.stdin.isTTY === true,
+				stdoutIsTTY: process.stdout.isTTY === true,
+			});
+		if (launchFile && launchTrust === "unknown" && interactive) {
+			recipeRuntime().directoryAsked = true;
+			const choice = await (options.promptTrust ?? promptRecipeTrust)(launchFile);
+			if (choice !== "skip") {
+				try {
+					recordRecipeFileTrust(launchFile, choice === "trust");
+				} catch (error) {
+					process.stderr.write(`recipes: could not save trust for ${launchFile}: ${errorText(error)}\n`);
+				}
+			}
+			if (choice === "trust") launchTrust = "trusted";
+		}
+		const launch = loadRecipes(launchCwd, {
+			projectTrusted: false,
+			directoryTrusted: launchTrust === "trusted",
+		});
 		const decision = decideRelaunch({
 			argv: process.argv,
 			command: process.execPath,
 			env: { ...process.env },
-			recipes: loadRecipes(process.cwd(), { projectTrusted: false }).recipes,
+			recipes: launch.recipes,
+			directoryRecipe: launch.defaultSource === "directory" ? launch.defaultRecipe : undefined,
 			aioExtensionPath: AIO_RECIPE_EXTENSION_PATH,
 		});
 		if (decision.action === "relaunch") {
@@ -376,7 +660,8 @@ export async function registerRecipes(
 	});
 
 	pi.registerCommand("recipe", {
-		description: "Show, switch, or clear the active launch recipe (aio-recipes.json)",
+		description:
+			"Show, switch, or clear the active launch recipe (aio-recipes.json); init/trust/untrust manage this folder's .pi-recipe",
 		getArgumentCompletions: (prefix) => {
 			const wanted = prefix.trim().toLowerCase();
 			const entries = Object.entries(recipeRuntime().recipes.recipes);
@@ -397,6 +682,18 @@ export async function registerRecipes(
 					description: "clear the active recipe",
 				});
 			}
+			const runtime = recipeRuntime();
+			const file = runtime.recipes.directoryFile;
+			const subcommands: Array<[string, boolean, string]> = [
+				["init", !file, "create a .pi-recipe for this folder"],
+				["trust", file !== undefined && runtime.directoryTrust !== "trusted", "trust this folder's .pi-recipe and start its default"],
+				["untrust", file !== undefined && runtime.directoryTrust !== "unknown", "forget the .pi-recipe trust decision"],
+			];
+			for (const [word, offered, description] of subcommands) {
+				if (offered && word.startsWith(wanted) && !runtime.recipes.recipes[word]) {
+					items.push({ label: word, value: word, description });
+				}
+			}
 			if ("status".startsWith(wanted) && !recipeRuntime().recipes.recipes.status) {
 				items.push({ label: "status", value: "status", description: "inspect actual runtime (no model request)" });
 			}
@@ -412,6 +709,21 @@ export async function registerRecipes(
 			if ((requested === "status" || requested === "status --json") && !state.recipes.recipes[requested]) {
 				showRecipeStatus(pi, ctx, { format: requested.endsWith("--json") ? "json" : "text" });
 				return;
+			}
+			// Like `status`, a recipe literally named trust/untrust/init keeps switching.
+			if (!state.recipes.recipes[requested]) {
+				if (requested === "trust") {
+					await trustDirectoryRecipe(pi, ctx);
+					return;
+				}
+				if (requested === "untrust") {
+					untrustDirectoryRecipe(ctx);
+					return;
+				}
+				if (requested === "init" || requested.startsWith("init ")) {
+					await initDirectoryRecipe(pi, ctx, requested.slice("init".length));
+					return;
+				}
 			}
 
 			if (!requested) {

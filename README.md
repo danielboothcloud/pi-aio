@@ -103,6 +103,63 @@ Key semantics:
   `otty-integration`); `npm:`, `git:`, `builtin:`, and paths pass through;
   AIO itself always re-loads in the child.
 
+### Per-directory recipes — `.pi-recipe`
+
+Commit a `.pi-recipe` (or `.pi-recipe.json`) to a repo to give everyone who
+works in it the same recipe — or run `/recipe init` to create one. It uses the
+same JSON shape as `aio-recipes.json` and is **self-contained**: its
+`defaultRecipe` must be defined in its own `recipes`, never in anyone's
+global config, so the file works the same for every clone:
+
+```json
+{
+  "defaultRecipe": "repo",
+  "recipes": {
+    "repo": {
+      "description": "Team defaults for this repo",
+      "model": "anthropic/claude-5:high",
+      "tools": ["+codemode"],
+      "instructions": "Run npm test before finishing."
+    }
+  }
+}
+```
+
+- Its recipes override same-name global/project recipes in that folder, and
+  its `defaultRecipe` wins over theirs. A `defaultRecipe` the file does not
+  define is ignored with a warning (your own default, if any, applies).
+
+- A plain `pi` started in that folder behaves like `pi --recipe <default>`,
+  including the relaunch bridge for `extensions` and `models`. Only the launch
+  directory is checked (no parent walk); with both files, `.pi-recipe` wins.
+- `pi --recipe other` beats the folder default, and `/recipe other` switches
+  for the rest of that session. Resumes and forks (`-c`, `-r`, `--session`,
+  `--session-id`, `--fork`, `/resume`) keep the session's own recipe.
+- Each version of the file must be trusted explicitly — trusting the folder
+  in pi is not enough, and `--approve`/`defaultProjectTrust` do not count.
+  The first interactive `pi` start with a new or **changed** file asks on the
+  terminal before launch, showing what it would set (default, model, model
+  scope, extensions, MCP servers, tools, instructions):
+  `[y] trust  [N] not now  [d] never (until it changes)`. Trusting it before
+  launch means a restart-scoped default still relaunches straight away.
+- Decisions are remembered in `<agent-dir>/aio-recipe-trust.json`, keyed by
+  the file's path and pinned to a SHA-256 of its contents
+  (`AIO_RECIPE_TRUST_FILE` overrides the path). "Not now" is not remembered;
+  "never" is, until the file changes. `--no-approve` skips the file for one
+  run without asking.
+- RPC sessions ask through the session UI instead (startup is not blocked;
+  a trusted default activates in-session). Print/JSON runs never ask: an
+  untrusted file is skipped with a `stderr` line.
+- `/recipe trust` trusts the current contents (overriding a "never") and
+  starts the default if no recipe is active; `/recipe untrust` forgets the
+  decision so the next start asks again.
+- `/recipe init [name]` creates `.pi-recipe` in the session folder and
+  trusts it (you wrote it): a full recipe seeded with the current model and
+  thinking level, every other key present but empty. Without a name it asks
+  for one, suggesting the folder name. It never overwrites an existing file;
+  edits you make afterwards are asked about once on the next start.
+- Resource paths (`skills`, `prompts`, `themes`) resolve from the folder.
+
 ### The relaunch bridge
 
 Pi discovers the extension set before running extension factories and resolves
@@ -116,8 +173,9 @@ one-line notice; the child never relaunches (`AIO_RECIPE_STAGE=1`). Guards,
 in order: subagent children, staged relaunches, `pi` subcommands, and the
 print-and-exit flags (`--help`, `--version`, `--export`, `--list-models`);
 explicitly typed `-e`/`--models` flags win over recipe keys, and the bridge
-sees the **global** recipes file only — project recipes activate their
-session-scoped parts like normal but never change a launch. If the restart
+sees the **global** recipes file plus a trusted `.pi-recipe` only —
+`.pi/aio-recipes.json` recipes activate their session-scoped parts like
+normal but never change a launch. If the restart
 cannot run, AIO continues in-session and warns that the extension set and
 model scope stayed unchanged. Compiled Bun binaries are restarted without
 forwarding their virtual `/$bunfs/...` or `B:\\~BUN\\...` entry point; Node
@@ -191,7 +249,12 @@ selection and registrations, **not whether a remote model can answer**.
   feature's MCP servers stop, while model and tools keep their current state.
 - Selection precedence at session start: `--recipe` flag > bridged relaunch
   (`AIO_RECIPE_ACTIVE`) > the session's most recent saved recipe (resumes) >
-  `defaultRecipe`, which auto-activates only on a fresh `pi` start.
+  `defaultRecipe` (`.pi-recipe` > `.pi/aio-recipes.json` > global), which
+  auto-activates only on a fresh `pi` start. A relaunch for a `.pi-recipe`
+  default is marked `AIO_RECIPE_ORIGIN=directory` and keeps default priority.
+- `/recipe init`, `/recipe trust`, and `/recipe untrust` manage the folder's
+  `.pi-recipe`; a recipe literally named `init`, `trust`, or `untrust` keeps
+  switching, like `status`.
 - The active recipe is pinned on the session branch, so forking and tree
   navigation follow the branch's own timeline; subagent children never
   inherit a recipe beyond stripping its instructions from forked context.

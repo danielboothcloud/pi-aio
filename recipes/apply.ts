@@ -36,6 +36,7 @@ import {
 	type RecipeDefinition,
 	type RecipesConfig,
 } from "./config.js";
+import type { RecipeFileTrust } from "./trust.js";
 
 /** Session model type narrowed the way YSK narrows it. */
 export type SessionModel = NonNullable<ExtensionContext["model"]>;
@@ -54,6 +55,7 @@ export type RecipeSourceMarker =
 	| "env" // set by the relaunch bridge on the child process
 	| "session" // restored from the session's recipe-state entry
 	| "default" // auto-activated defaultRecipe on a fresh startup
+	| "directory" // the cwd's .pi-recipe defaultRecipe on a fresh startup
 	| "command"; // switched mid-session via /recipe
 
 export interface RecipeRuntimeState {
@@ -65,6 +67,10 @@ export interface RecipeRuntimeState {
 	/** Set by the factory when the bridge stood down or failed. */
 	launchNotice: string | undefined;
 	launchNoticeFired: boolean;
+	/** Trust of the cwd's `.pi-recipe` (current contents) at the last reload. */
+	directoryTrust: RecipeFileTrust | undefined;
+	/** The `.pi-recipe` trust question (or its hint) is raised once per process. */
+	directoryAsked: boolean;
 	/** MCP servers this feature registered (never any other origin's). */
 	registeredMcp: Set<string>;
 }
@@ -77,6 +83,8 @@ function freshRuntime(): RecipeRuntimeState {
 		source: undefined,
 		launchNotice: undefined,
 		launchNoticeFired: false,
+		directoryTrust: undefined,
+		directoryAsked: false,
 		registeredMcp: new Set(),
 	};
 }

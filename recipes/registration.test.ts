@@ -1,18 +1,22 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { registerRecipes } from "./index.ts";
+import { ProjectTrustStore } from "@earendil-works/pi-coding-agent";
 import {
 	ACTIVE_RECIPE_ENV,
 	RECIPE_CONTEXT_TYPE,
 	RECIPE_FLAG,
+	RECIPE_ORIGIN_ENV,
+	RECIPE_STAGE_ENV,
 	RECIPE_STATE_ENTRY,
 	RECIPES_FILE_ENV,
 } from "./config.ts";
 import { recipeRuntime, resetRecipeRuntimeForTests } from "./apply.ts";
+import { TRUST_CHOICE_LABELS, recipeFileTrust, recordRecipeFileTrust } from "./trust.ts";
 import { RECIPE_STATUS_ENTRY, type RecipeStatusReport } from "./status.ts";
 
 // Isolated agent dir for loadRecipes (PI_CODING_AGENT_DIR + the
@@ -605,7 +609,7 @@ test("/recipe completions cover names, descriptions, and off", async () => {
 	}>;
 	assert.deepEqual(
 		completions.map((c) => c.value),
-		["home", "work", "off", "status"],
+		["home", "work", "off", "init", "status"],
 	);
 	// Each named recipe carries its configured description.
 	assert.equal(
@@ -614,4 +618,262 @@ test("/recipe completions cover names, descriptions, and off", async () => {
 	);
 	const none = await command.getArgumentCompletions?.("zzz");
 	assert.equal(none, null, "empty completions yield null");
+});
+
+// ---------------------------------------------------------------------------
+// .pi-recipe directory defaults
+// ---------------------------------------------------------------------------
+
+function makeRepo(name: string, config: unknown): string {
+	const dir = join(tmp, name);
+	rmSync(dir, { recursive: true, force: true });
+	mkdirSync(dir, { recursive: true });
+	writeFileSync(join(dir, ".pi-recipe"), JSON.stringify(config));
+	return dir;
+}
+
+async function withEnv(values: Record<string, string>, body: () => Promise<void>): Promise<void> {
+	const saved = Object.fromEntries(Object.keys(values).map((key) => [key, process.env[key]]));
+	Object.assign(process.env, values);
+	try {
+		await body();
+	} finally {
+		for (const [key, value] of Object.entries(saved)) {
+			if (value === undefined) delete process.env[key];
+			else process.env[key] = value;
+		}
+	}
+}
+
+test("a trusted .pi-recipe default activates on a fresh startup with its own marker", async () => {
+	const cwd = makeRepo("repo-trusted", {
+		defaultRecipe: "repo",
+		recipes: { repo: { description: "Repo stack", instructions: "Repo rules." } },
+	});
+	recordRecipeFileTrust(join(cwd, ".pi-recipe"), true);
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+
+	await fire(state, "session_start", { type: "session_start", reason: "startup" }, { ...makeCtx(state), cwd });
+	assert.equal(state.selectReturns.length, 0);
+	assert.equal(recipeRuntime().activeName, "repo");
+	assert.equal(recipeRuntime().source, "directory");
+	assert.equal(recipeRuntime().active?.source, "directory");
+	assert.deepEqual(state.entries.at(-1), { customType: RECIPE_STATE_ENTRY, data: { name: "repo" } });
+
+	// A recipe picked mid-session is pinned and restored on resume.
+	await state.commands.get("recipe")!.handler("work", { ...makeCtx(state), cwd });
+	state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name: "work" } }];
+	await fire(state, "session_start", { type: "session_start", reason: "resume" }, { ...makeCtx(state), cwd });
+	assert.equal(recipeRuntime().activeName, "work");
+});
+
+test("a directory relaunch is a default: a restored session recipe outranks it", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	await withEnv(
+		{ [ACTIVE_RECIPE_ENV]: "work", [RECIPE_ORIGIN_ENV]: "directory", [RECIPE_STAGE_ENV]: "1" },
+		async () => {
+			// Fresh relaunched child: the bridged default applies.
+			await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
+			assert.equal(recipeRuntime().activeName, "work");
+			assert.equal(recipeRuntime().source, "directory");
+
+			// /resume inside that child: the resumed session's recipe wins.
+			state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name: "home" } }];
+			await fire(state, "session_start", { type: "session_start", reason: "resume" }, makeCtx(state));
+			assert.equal(recipeRuntime().activeName, "home");
+			assert.equal(recipeRuntime().source, "session");
+
+			// /new never re-applies a default.
+			state.branchEntries = [];
+			await fire(state, "session_start", { type: "session_start", reason: "new" }, makeCtx(state));
+			assert.equal(recipeRuntime().activeName, undefined);
+		},
+	);
+});
+
+async function flush(): Promise<void> {
+	for (let i = 0; i < 10; i++) await new Promise((resolve) => setImmediate(resolve));
+}
+
+test("a new .pi-recipe is asked about before launch, even when pi trusts the folder", async () => {
+	const cwd = makeRepo("repo-launch", {
+		defaultRecipe: "repo",
+		recipes: { repo: { instructions: "Repo rules." } },
+	});
+	const file = join(cwd, ".pi-recipe");
+	new ProjectTrustStore(agentDir).set(cwd, true);
+	const asked: string[] = [];
+	const original = process.cwd();
+	process.chdir(cwd);
+	try {
+		const { pi, state } = makeMocks();
+		await registerRecipes(pi as never, {
+			interactiveLaunch: true,
+			promptTrust: async (path) => {
+				asked.push(path);
+				return "trust";
+			},
+		});
+		assert.equal(asked.length, 1);
+		assert.equal(recipeFileTrust(file), "trusted", "the answer is remembered");
+
+		await fire(state, "session_start", { type: "session_start", reason: "startup" }, { ...makeCtx(state), cwd });
+		assert.equal(recipeRuntime().activeName, "repo");
+		assert.equal(state.selectReturns.length, 0);
+
+		// Remembered: the next launch does not ask.
+		resetRecipeRuntimeForTests();
+		await registerRecipes(makeMocks().pi as never, {
+			interactiveLaunch: true,
+			promptTrust: async () => assert.fail("must not ask again"),
+		});
+	} finally {
+		process.chdir(original);
+	}
+});
+
+test("\"not now\" at launch skips the file without a second question in the session", async () => {
+	const cwd = makeRepo("repo-skip", { defaultRecipe: "repo", recipes: { repo: {} } });
+	writeRecipesFile({ recipes: { home: {} } });
+	const original = process.cwd();
+	process.chdir(cwd);
+	try {
+		const { pi, state } = makeMocks();
+		await registerRecipes(pi as never, { interactiveLaunch: true, promptTrust: async () => "skip" });
+		state.selectReturns = ["must not be consumed"];
+		await fire(state, "session_start", { type: "session_start", reason: "startup" }, { ...makeCtx(state), cwd });
+		await flush();
+		assert.equal(recipeRuntime().activeName, undefined);
+		assert.equal(state.selectReturns.length, 1);
+		assert.equal(recipeFileTrust(join(cwd, ".pi-recipe")), "unknown", "skip is not remembered");
+	} finally {
+		process.chdir(original);
+	}
+});
+
+test("without a launch prompt the session UI asks; trust activates, never is remembered", async () => {
+	const cwd = makeRepo("repo-session", {
+		defaultRecipe: "repo",
+		recipes: { repo: { instructions: "Repo rules." } },
+	});
+	const file = join(cwd, ".pi-recipe");
+	writeRecipesFile({ recipes: { home: {} } }); // no global default
+
+	const first = makeMocks();
+	await registerRecipes(first.pi as never);
+	let title = "";
+	const ctx = {
+		...makeCtx(first.state),
+		cwd,
+		mode: "rpc",
+		ui: {
+			...makeCtx(first.state).ui,
+			select: async (t: string) => {
+				title = t;
+				return TRUST_CHOICE_LABELS.trust;
+			},
+		},
+	};
+	await fire(first.state, "session_start", { type: "session_start", reason: "startup" }, ctx);
+	await flush();
+	assert.match(title, /Trust this recipe file\?/);
+	assert.match(title, /default recipe: repo/);
+	assert.equal(recipeFileTrust(file), "trusted");
+	assert.equal(recipeRuntime().activeName, "repo");
+	assert.equal(recipeRuntime().source, "directory");
+
+	// Editing the file asks again; "never" is remembered for that version.
+	writeFileSync(file, JSON.stringify({ defaultRecipe: "repo", recipes: { repo: { model: "x/y" } } }));
+	resetRecipeRuntimeForTests();
+	const second = makeMocks();
+	await registerRecipes(second.pi as never);
+	second.state.selectReturns = [TRUST_CHOICE_LABELS.deny];
+	await fire(second.state, "session_start", { type: "session_start", reason: "startup" }, { ...makeCtx(second.state), cwd });
+	await flush();
+	assert.equal(recipeFileTrust(file), "denied");
+	assert.equal(recipeRuntime().activeName, undefined);
+
+	// /recipe trust overrides a remembered "never"; /recipe untrust forgets.
+	const completions = (await second.state.commands.get("recipe")!.getArgumentCompletions?.("")) as Array<{ value: string }>;
+	assert.ok(completions.some((c) => c.value === "trust"));
+	assert.ok(completions.some((c) => c.value === "untrust"));
+	assert.ok(!completions.some((c) => c.value === "init"), "no init while a file exists");
+	await second.state.commands.get("recipe")!.handler("trust", { ...makeCtx(second.state), cwd });
+	assert.equal(recipeFileTrust(file), "trusted");
+	assert.equal(recipeRuntime().activeName, "repo");
+	await second.state.commands.get("recipe")!.handler("untrust", { ...makeCtx(second.state), cwd });
+	assert.equal(recipeFileTrust(file), "unknown");
+	assert.match(second.state.notifications.at(-1)!.message, /next start asks again/);
+});
+
+test("/recipe init always scaffolds a full, self-contained, trusted .pi-recipe and refuses to overwrite", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	const fresh = join(tmp, "My Repo");
+	rmSync(fresh, { recursive: true, force: true });
+	mkdirSync(fresh, { recursive: true });
+	const ctx = { ...makeCtx(state), cwd: fresh };
+	await fire(state, "session_start", { type: "session_start", reason: "startup" }, ctx);
+	const completions = (await state.commands.get("recipe")!.getArgumentCompletions?.("in")) as Array<{ value: string }>;
+	assert.deepEqual(completions.map((c) => c.value), ["init"]);
+
+	// UI path: name suggested from the folder; no picker of global recipes.
+	state.selectReturns = ["must not be consumed"];
+	let placeholder: string | undefined;
+	await state.commands.get("recipe")!.handler("init", {
+		...ctx,
+		ui: { ...ctx.ui, input: async (_t: string, p?: string) => { placeholder = p; return ""; } },
+	});
+	assert.equal(placeholder, "my-repo");
+	assert.equal(state.selectReturns.length, 1, "no recipe picker");
+	const file = join(fresh, ".pi-recipe");
+	const written = JSON.parse(readFileSync(file, "utf-8"));
+	assert.equal(written.defaultRecipe, "my-repo");
+	assert.equal(written.recipes["my-repo"].model, "anthropic/claude-5");
+	// Seeded from the live session (startup applied home's `:high`).
+	assert.equal(written.recipes["my-repo"].thinkingLevel, "high");
+	assert.deepEqual(written.recipes["my-repo"].extensions, []);
+	assert.equal(recipeFileTrust(file), "trusted", "a file you created is trusted");
+	assert.equal(recipeRuntime().recipes.recipes["my-repo"]?.source, "directory");
+
+	await state.commands.get("recipe")!.handler("init", ctx);
+	assert.match(state.notifications.at(-1)!.message, /already exists/);
+
+	// A name matching a global recipe still gets its own full definition
+	// (it overrides the global one in this folder) — never a reference.
+	rmSync(file);
+	await state.commands.get("recipe")!.handler("init work", ctx);
+	const named = JSON.parse(readFileSync(file, "utf-8"));
+	assert.equal(named.defaultRecipe, "work");
+	assert.equal(named.recipes.work.model, "anthropic/claude-5");
+	assert.equal(recipeRuntime().recipes.recipes.work?.source, "directory");
+	assert.equal(recipeFileTrust(file), "trusted");
+
+	// Reserved or malformed names are refused.
+	rmSync(file);
+	await state.commands.get("recipe")!.handler("init off", ctx);
+	assert.match(state.notifications.at(-1)!.message, /Invalid recipe name "off"/);
+	await state.commands.get("recipe")!.handler("init a b", ctx);
+	assert.match(state.notifications.at(-1)!.message, /Invalid recipe name/);
+	assert.equal(existsSync(file), false);
+});
+
+test("/recipe trust leaves an active recipe alone and explains when there is no file", async () => {
+	const cwd = makeRepo("repo-busy", { defaultRecipe: "repo", recipes: { repo: {} } });
+	recordRecipeFileTrust(join(cwd, ".pi-recipe"), false); // no session prompt
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	state.flagValues.set(RECIPE_FLAG, "home");
+	const ctx = { ...makeCtx(state), cwd };
+	await fire(state, "session_start", { type: "session_start", reason: "startup" }, ctx);
+	await state.commands.get("recipe")!.handler("trust", ctx);
+	assert.equal(recipeRuntime().activeName, "home");
+	assert.match(state.notifications.at(-1)!.message, /starts automatically on the next fresh `pi`/);
+
+	const empty = join(tmp, "repo-empty");
+	mkdirSync(empty, { recursive: true });
+	await state.commands.get("recipe")!.handler("trust", { ...makeCtx(state), cwd: empty });
+	assert.match(state.notifications.at(-1)!.message, /No \.pi-recipe or \.pi-recipe\.json .*\/recipe init/);
 });
