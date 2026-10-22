@@ -3,6 +3,8 @@ import type { SubagentContext, SubagentRun } from "./types.js";
 
 const runs = new Map<string, SubagentRun>();
 const MAX_COMPLETED_RUNS = 50;
+/** Finished runs that keep their inspector transcripts (memory bound). */
+export const MAX_TRANSCRIPT_RUNS = 10;
 
 function pruneRuns(): void {
 	const terminal = [...runs.values()]
@@ -14,6 +16,9 @@ function pruneRuns(): void {
 		)
 		.sort((a, b) => (b.endedAt ?? b.startedAt) - (a.endedAt ?? a.startedAt));
 	for (const run of terminal.slice(MAX_COMPLETED_RUNS)) runs.delete(run.id);
+	for (const run of terminal.slice(MAX_TRANSCRIPT_RUNS, MAX_COMPLETED_RUNS)) {
+		for (const child of run.children) child.transcript = undefined;
+	}
 }
 
 export function createRun(input: {

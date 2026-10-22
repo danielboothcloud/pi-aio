@@ -306,7 +306,18 @@ generated `dist/` tree without changing the package contract.
   the foreground tool card (repainted every 1s), the above-editor widget
   (1s ticker that stops when no run is active; stall warning tone after
   120s without events outside a tool), and `subagent status`. Streaming
-  deltas are throttled to one repaint per 250ms.
+  deltas are throttled to one repaint per 250ms. The same events (plus
+  child stderr) also fold into a bounded per-child `ChildRunStatus.transcript`
+  (`transcript.ts`: thinking, responses, tool calls with args/results,
+  logs, retry/compaction/attempt notices; ≤500 entries / 250k chars per
+  child, blocks clipped head+tail; only the 10 most recent finished runs
+  keep theirs). It is in-memory only — never in tool details, `publicRun`,
+  or model context. `/subagents` and `alt+s` (TUI-only) open the
+  `inspector.ts` overlay: a list of every child of every run (active runs
+  first; parallel, queued, failed, stopped, background and foreground) and a
+  live follow-tail detail view (`tab`/`shift+tab` cycles all children across
+  runs, `o` expands tool output like ctrl+o, `t` hides thinking). It repaints
+  on its own 500ms ticker over the registry and closes on shutdown.
 - `you-should-know/` owns the YSK shadow auditor: successful
   `write`/`edit`/`apply_patch` tool results are debounced into one bounded,
   isolated `ctx.modelRegistry.complete()` audit (the sub-agent) whose findings

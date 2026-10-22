@@ -1,5 +1,6 @@
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import type { ChildExtensionLaunch } from "./extensions.js";
+import type { ChildTranscript } from "./transcript.js";
 
 export type SubagentContext = "fresh" | "fork";
 export type SubagentThinking =
@@ -126,6 +127,11 @@ export interface ChildRunStatus {
 	sessionFile?: string;
 	attempts?: number;
 	activity?: ChildActivity;
+	/**
+	 * Bounded live transcript for the inspector overlay. In-memory only: never
+	 * published in tool details or model context; discarded for older runs.
+	 */
+	transcript?: ChildTranscript;
 	reapedAfterSettle?: boolean;
 	process?: ChildProcessWithoutNullStreams;
 }

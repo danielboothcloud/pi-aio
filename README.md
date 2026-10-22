@@ -437,6 +437,29 @@ originating session when complete:
 { action: "stop", id: "<run-id>" }
 ```
 
+### Inspecting running subagents
+
+Run `/subagents` (or press **alt+s**) to open the live inspector overlay. The list
+shows every child of every run in the session, including foreground and
+background runs, parallel groups, and queued, running, failed, stopped, and
+finished children. Press **Enter** on a child to open its live transcript:
+thinking, responses, each tool call with its result, stderr logs, and
+retry, compaction, and attempt notices. The view follows the tail as the child
+works.
+
+| Key | Action |
+| --- | --- |
+| `j`/`k`, `^u`/`^d`, PgUp/PgDn | Scroll (scrolling up stops following) |
+| `g` / `G` | Jump to the top / jump to the bottom and follow |
+| `tab` / `shift+tab` (`]`/`[`) | Next or previous child, across all runs |
+| `o` | Expand or collapse tool arguments and full output, like ctrl+o |
+| `t` | Show or hide thinking |
+| `esc` / `q` | Back to the list / close |
+
+Transcripts are bounded and held in memory only. They never enter model
+context. Only the 10 most recent finished runs keep theirs. A child's session
+file, shown at the bottom of its transcript, holds the complete record.
+
 AIO ships neutral `scout`, `planner`, `worker`, `reviewer`, `researcher`, and
 `validator` agents. Override them or add agents with Markdown files in:
 

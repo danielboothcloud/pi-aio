@@ -686,3 +686,39 @@ test("fork retries resume the forked child session without --fork", async () => 
 	assert.equal(retryArgs.includes("--session"), true);
 	assert.equal(retryArgs.includes("--fork"), false);
 });
+
+test("each parallel child keeps its own live transcript: output, stderr logs, retries", async () => {
+	const run = await executeSubagentRun({
+		request: {
+			tasks: [
+				{ agent: "reviewer", task: "linger transcript review" },
+				{ agent: "reviewer", task: "fail transcript validation" },
+			],
+			concurrency: 2,
+		},
+		agents: [agent()],
+		parent: parent(),
+		deps: {
+			piBinary: process.execPath,
+			piArgsPrefix: [fixture],
+			runsBaseDir: temporaryDirectory(),
+			retryBackoffMs: 0,
+			settleExitGraceMs: 20,
+		},
+	});
+	const [ok, failed] = run.children;
+	const okKinds = ok?.transcript?.entries.map((entry) => entry.kind) ?? [];
+	assert.deepEqual(okKinds, ["notice", "tool", "text", "notice", "notice"]);
+	const tool = ok?.transcript?.entries[1];
+	assert.equal(tool?.kind === "tool" && tool.summary, "npm test");
+	assert.equal(tool?.kind === "tool" && tool.status, "done");
+
+	const texts = (failed?.transcript?.entries ?? []).map((entry) =>
+		entry.kind === "tool" ? entry.name : `${entry.kind}:${entry.text}`,
+	);
+	assert.ok(texts.includes("log:fixture failure\n"));
+	assert.ok(texts.some((text) => /^notice:attempt 2\/2/.test(text)));
+	assert.match(texts.at(-1) ?? "", /^notice:fixture failure/);
+	// The transcript stays in memory: never in the published result text.
+	assert.doesNotMatch(formatRunResult(run), /resuming child session|turn 1/);
+});

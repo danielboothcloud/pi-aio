@@ -8,7 +8,15 @@ import type { SubagentRun } from "./types.ts";
 function createHarness() {
 	const tools = new Map<string, Record<string, unknown>>();
 	const handlers = new Map<string, Array<(...args: unknown[]) => unknown>>();
+	const commands = new Map<string, Record<string, unknown>>();
+	const shortcuts = new Map<string, Record<string, unknown>>();
 	const pi = {
+		registerCommand(name: string, options: Record<string, unknown>) {
+			commands.set(name, options);
+		},
+		registerShortcut(key: string, options: Record<string, unknown>) {
+			shortcuts.set(key, options);
+		},
 		registerTool(tool: Record<string, unknown>) {
 			tools.set(String(tool.name), tool);
 		},
@@ -22,7 +30,7 @@ function createHarness() {
 		},
 		sendMessage() {},
 	} as unknown as ExtensionAPI;
-	return { handlers, pi, tools };
+	return { commands, handlers, pi, shortcuts, tools };
 }
 
 test("subagent widget is branded, bounded, and width-safe", () => {
@@ -56,6 +64,29 @@ test("registers the reduced subagent tool and lifecycle hooks", () => {
 	assert.equal(harness.tools.has("subagent"), true);
 	assert.equal(harness.handlers.has("session_start"), true);
 	assert.equal(harness.handlers.has("session_shutdown"), true);
+	assert.equal(harness.commands.has("subagents"), true);
+	assert.equal(harness.shortcuts.has("alt+s"), true);
+});
+
+test("inspector refuses non-TUI modes and empty sessions without opening", async () => {
+	const harness = createHarness();
+	registerSubagents(harness.pi);
+	const command = harness.commands.get("subagents") as {
+		handler: (args: string, ctx: unknown) => Promise<void>;
+	};
+	const notes: string[] = [];
+	let opened = false;
+	const ui = {
+		notify: (message: string) => notes.push(message),
+		custom: async () => {
+			opened = true;
+		},
+	};
+	await command.handler("", { mode: "rpc", ui });
+	await command.handler("", { mode: "tui", ui });
+	assert.equal(opened, false);
+	assert.match(notes[0] ?? "", /only available in the interactive TUI/);
+	assert.match(notes[1] ?? "", /No subagent runs/);
 });
 
 test("list action exposes the neutral builtin agents", async () => {

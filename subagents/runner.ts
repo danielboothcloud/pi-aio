@@ -16,6 +16,12 @@ import {
 } from "./activity.js";
 import { findAgent } from "./agents.js";
 import {
+	appendTranscriptLog,
+	applyTranscriptEvent,
+	createTranscript,
+	pushTranscriptNotice,
+} from "./transcript.js";
+import {
 	type ChildExtensionLaunch,
 	childSupportsModel,
 	enforceChildExtensions,
@@ -542,6 +548,8 @@ async function runChildAttempt(input: {
 		applyOutputEvent(event, parsed);
 		if (parsed.finalOutput) input.status.output = parsed.finalOutput;
 		const significant = applyActivityEvent(activity, event, now());
+		if (input.status.transcript)
+			applyTranscriptEvent(input.status.transcript, event, now());
 		if (parsed.settled) onSettled();
 		const at = now();
 		if (
@@ -554,7 +562,10 @@ async function runChildAttempt(input: {
 		input.onUpdate?.(input.run);
 	});
 	process.stderr.on("data", (chunk: Buffer | string) => {
-		stderr = `${stderr}${chunk.toString()}`.slice(-MAX_STDERR_CHARS);
+		const text = chunk.toString();
+		stderr = `${stderr}${text}`.slice(-MAX_STDERR_CHARS);
+		if (input.status.transcript)
+			appendTranscriptLog(input.status.transcript, text, now());
 	});
 
 	if (input.signal) {
@@ -644,6 +655,8 @@ async function runChild(input: {
 	const settleExitGraceMs =
 		input.deps?.settleExitGraceMs ?? DEFAULT_SETTLE_EXIT_GRACE_MS;
 	input.status.activity = createActivity((input.deps?.now ?? Date.now)());
+	const transcript = createTranscript();
+	input.status.transcript = transcript;
 
 	let resumeSessionFile: string | undefined;
 	let promptOverride: string | undefined;
@@ -657,6 +670,12 @@ async function runChild(input: {
 	while (attempts < maxAttempts) {
 		attempts++;
 		input.status.attempts = attempts;
+		if (attempts > 1)
+			pushTranscriptNotice(
+				transcript,
+				`attempt ${attempts}/${maxAttempts}${resumeSessionFile ? " · resuming child session" : ""}`,
+				"warning",
+			);
 		input.onUpdate?.(input.run);
 
 		let spec: SpawnSpec;
@@ -696,6 +715,11 @@ async function runChild(input: {
 			input.run.stopRequested || input.signal?.aborted === true;
 		if (wasStopped || !attemptFailed(outcome) || attempts >= maxAttempts)
 			break;
+		pushTranscriptNotice(
+			transcript,
+			describedFailure({ outcome, timeoutMs, attempts, maxAttempts }),
+			"warning",
+		);
 
 		// Resume the child's preserved session so completed turns survive the
 		// failed attempt instead of being discarded.
@@ -716,6 +740,8 @@ async function runChild(input: {
 		maxAttempts,
 	});
 
+	if (state === "failed") pushTranscriptNotice(transcript, error ?? "failed", "error");
+	else pushTranscriptNotice(transcript, state, state === "completed" ? "success" : "warning");
 	const sessionFile = outcome?.sessionFile;
 	const reapedAfterSettle =
 		state === "completed" && outcome?.reapedAfterSettle === true;

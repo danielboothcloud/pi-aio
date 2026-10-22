@@ -16,6 +16,7 @@ import {
 import { formatChildActivity, formatRunProgress } from "./activity.js";
 import { discoverAgents } from "./agents.js";
 import { resolveChildExtensionLaunch } from "./extensions.js";
+import { SubagentInspector } from "./inspector.js";
 import { clearRuns, getRun, listRuns, stopRun } from "./registry.js";
 import {
 	executeSubagentRun,
@@ -153,6 +154,9 @@ function publicRun(run: SubagentRun): Record<string, unknown> {
 	};
 }
 
+/** Opens the live subagent inspector overlay (also `/subagents`). */
+export const INSPECTOR_SHORTCUT = "alt+s";
+
 /** Running children shown under a parallel run before collapsing to a hint. */
 const MAX_CHILD_ROWS = 3;
 
@@ -167,7 +171,10 @@ export function buildSubagentWidgetLines(
 	const lines = [
 		chromeHeader(
 			theme,
-			{ title: "subagents", meta: plural(active.length, "active run") },
+			{
+				title: "subagents",
+				meta: `${plural(active.length, "active run")} · ${INSPECTOR_SHORTCUT} inspect`,
+			},
 			width,
 		),
 	];
@@ -287,6 +294,57 @@ export function registerSubagents(
 	deps: SubagentExtensionDeps = {},
 ): void {
 	let shuttingDown = false;
+	let closeInspector: (() => void) | undefined;
+	const openInspector = async (ctx: ExtensionContext): Promise<void> => {
+		if (ctx.mode !== "tui") {
+			ctx.ui.notify(
+				"The subagent inspector is only available in the interactive TUI; use subagent action=status instead.",
+				"warning",
+			);
+			return;
+		}
+		if (closeInspector) return;
+		if (listRuns().length === 0) {
+			ctx.ui.notify("No subagent runs in this session yet.", "info");
+			return;
+		}
+		try {
+			await ctx.ui.custom<void>(
+				(tui, theme, _keybindings, done) => {
+					const inspector = new SubagentInspector({
+						theme,
+						getRuns: listRuns,
+						getMaxRows: () => Math.floor(tui.terminal.rows * 0.9),
+						requestRender: () => tui.requestRender(),
+						done: () => done(undefined),
+					});
+					closeInspector = () => inspector.close();
+					return inspector;
+				},
+				{
+					overlay: true,
+					overlayOptions: {
+						anchor: "center",
+						margin: 1,
+						maxHeight: "90%",
+						minWidth: 50,
+						width: "90%",
+					},
+				},
+			);
+		} finally {
+			closeInspector = undefined;
+		}
+	};
+	pi.registerCommand("subagents", {
+		description:
+			"Inspect subagent runs live: thinking, responses, tool calls and results, logs",
+		handler: async (_args, ctx) => openInspector(ctx),
+	});
+	pi.registerShortcut(INSPECTOR_SHORTCUT, {
+		description: "Open the live subagent inspector",
+		handler: openInspector,
+	});
 	let widgetCtx: ExtensionContext | undefined;
 	let widgetTicker: NodeJS.Timeout | undefined;
 	const stopWidgetTicker = () => {
@@ -480,6 +538,7 @@ export function registerSubagents(
 
 	pi.on("session_shutdown", (_event, ctx) => {
 		shuttingDown = true;
+		closeInspector?.();
 		stopWidgetTicker();
 		widgetCtx = undefined;
 		for (const run of listRuns()) {
