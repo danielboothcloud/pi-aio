@@ -418,6 +418,17 @@ children read-only in a shared checkout and use one writer for changes.
 Do not load standalone `pi-subagents` alongside AIO because both packages
 register a tool named `subagent`.
 
+## Automatic session names
+
+New sessions receive a short AI-generated title after their first successful
+response, making them easier to identify in `pi --resume` and `/resume`.
+One small, bounded background request uses the session's model and a text-only
+snapshot of the first request and response. Naming never changes model context.
+Existing sessions, forked/subagent sessions, and manually assigned names are
+left alone; there is no bulk backfill. Use Pi's `/name` to choose your own title.
+Naming is best-effort: failures, timeouts, or closing the session before the
+request finishes leave it unnamed rather than interrupting your work.
+
 ## `!` bash shortcuts
 
 Pi runs shell commands when your prompt starts with `!`:
@@ -431,18 +442,11 @@ Pi runs shell commands when your prompt starts with `!`:
 - `!command` — runs the command, shows output in the transcript, and sends it to the model
 - `!!command` — runs the command and shows output, but excludes it from model context
 
-The `aio` extension applies the same permission-mode rules to your `!` commands as it
-does to agent `bash` tool calls:
-
-| Mode    | `!` read-only commands | `!` mutating commands |
-| ------- | ---------------------- | --------------------- |
-| default | allow                  | prompt                |
-| ask     | allow                  | blocked               |
-| plan    | allow                  | blocked               |
-| auto    | allow                  | allow                 |
-
-Read-only commands include things like `ls`, `cat`, `git status`, and `grep`. Mutating
-commands include `rm`, redirects, package installs, and most `git write` operations.
+Commands you explicitly type with `!` or `!!` are user-authorized and run via
+Pi's native shell path in every permission mode. AIO does not evaluate them
+against permission rules, the blocklist, or YAML hooks, and does not rewrite
+them through RTK/Hypa. Agent-issued tool calls retain all their existing gates.
+Other separately loaded extensions and Pi's own shell settings still apply.
 
 While typing a `!` command, aio shows live feedback:
 
@@ -453,9 +457,9 @@ While typing a `!` command, aio shows live feedback:
 
 ## Command blocklist
 
-`aio` ships a hard blocklist: shell commands you list in it NEVER run, no
-matter the permission mode (even `auto`), and for both agent `bash` tool calls
-and your `!`/`!!` commands. A blocked command fails with an error explaining
+`aio` ships a hard blocklist for agent `bash` tool calls: listed commands
+never run, regardless of permission mode (even `auto`). Explicit user `!`/`!!`
+commands bypass this gate. A blocked agent command fails with an error explaining
 which rule matched — it cannot be approved, and the model is told about the
 blocklist at the start of every turn so it does not waste attempts on it.
 
@@ -492,7 +496,7 @@ only display work that already ran outside Pi's gate.
 
 Cycle with **Shift+Tab**: default → ask → plan → auto → default
 
-| Mode    | Edit/Write/Patch | Mutating bash / `!` | Reads |
+| Mode    | Edit/Write/Patch | Agent mutating bash | Reads |
 | ------- | ---------------- | ------------------- | ----- |
 | default | prompt           | prompt              | allow |
 | ask     | disabled         | blocked             | allow |
@@ -976,23 +980,22 @@ own the same built-in tool names and would register duplicate FFF commands.
 ## rtk shell rewriting
 
 `aio` enforces [rtk](https://github.com/rtk-ai/rtk) routing wherever RTK has a
-representation. Agent `bash`, `!command`, and `!!command` inputs are offered to
-`rtk rewrite`; `read`, `ls`, `find`, and `grep` invoke their RTK subcommands
+representation. Agent `bash` inputs are offered to `rtk rewrite`; `read`, `ls`, `find`, and `grep` invoke their RTK subcommands
 directly. Commands for which RTK has no equivalent run unchanged because routing
 them is impossible.
 
 - **Agent `bash` tool** — an asynchronous `tool_call` hook rewrites the command
   after permission checks and before execution. This works independently of the
   pretty bash renderer.
-- **`!command` and `!!command`** — both execute rewritten commands; Pi still keeps
-  `!!` output out of model context.
+- **`!command` and `!!command`** — run unchanged through Pi's native shell path;
+  Pi still keeps `!!` output out of model context.
 - **Read-only built-ins** — text `read`, `ls`, `find`, and `grep` calls execute
   through RTK even if their names appear in `PRETTY_DISABLE_TOOLS`.
 - **Impossible RTK cases** — images retain Pi's native image path, file mutation
   tools remain native, and unsupported or unavailable RTK commands fail open to
   the existing implementation.
 
-There is no disable toggle or `RTK_DISABLED=1` bypass. Bypass assignments at
+For agent calls there is no disable toggle or `RTK_DISABLED=1` bypass. Bypass assignments at
 shell-command boundaries are stripped before rewriting. If RTK is missing, not
 executable, times out, or has no equivalent, aio falls back to normal behavior and
 warns once when the binary is unavailable. Permission modes remain responsible
@@ -1108,7 +1111,7 @@ confirmations, and status entries from one `hooks.yaml` file. The
 implementation is ported from
 [pi-yaml-hooks](https://github.com/KristjanPikhof/pi-yaml-hooks) (MIT — see
 [`yaml-hooks/UPSTREAM.md`](yaml-hooks/UPSTREAM.md)); the YAML contract and all
-`PI_YAML_HOOKS_*` environment variables are unchanged.
+`PI_YAML_HOOKS_*` names are retained, with the retired user-bash setting ignored.
 
 Config is two-tier with global-first merge and project overrides by hook `id`:
 
@@ -1174,10 +1177,9 @@ Important limitations (matching upstream):
 - `action: stop` only takes effect on `tool.before.*`.
 - Prompt hooks receive the expanded text prompt only; they cannot rewrite or
   block the submitted prompt.
-- Human `!`/`!!` commands are intercepted only when
-  `PI_YAML_HOOKS_ENABLE_USER_BASH=1` is set; every trusted-project hook can
-  then read and block typed commands, so enable it only when you trust every
-  loaded hook. The startup warning lists which projects will have access.
+- Human `!`/`!!` commands are never intercepted. The legacy
+  `PI_YAML_HOOKS_ENABLE_USER_BASH` variable is accepted but ignored; tool hooks
+  apply to agent-issued calls only.
 
 ## tuicr review loop
 
@@ -1319,7 +1321,8 @@ threshold, or recent duplicates (a dedupe window suppresses repeats).
 ├── pretty-tools/            # pretty built-ins + FFF search
 ├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)
 ├── subagents/               # child-agent discovery, execution, and lifecycle
-├── user-bash/               # !/!! command permission gating
+├── session-naming/          # background AI titles for new sessions
+├── user-bash/               # !/!! editor hints; native shell execution
 ├── you-should-know/        # YSK dual-agent shadow auditor
 └── yaml-hooks/              # hooks.yaml automation (ported from pi-yaml-hooks)
 ```

@@ -3,24 +3,14 @@
  * token usage. Mirrors the behavior of {@link https://github.com/sherif-fanous/pi-rtk}
  * integrated natively into aio.
  *
- * Two execution paths consume this module:
- *
- * 1. Agent `bash` tool calls — {@link rewriteAgentBashCommand} asynchronously
- *    asks `rtk rewrite` for the command that Pi should execute.
- * 2. User `!<cmd>` shell commands — {@link buildRtkUserBashResult} returns custom
- *    bash operations that execute the rewritten command.
- *
- * Both paths fall back silently only when rtk is unavailable or cannot rewrite
+ * Agent `bash` calls use {@link rewriteAgentBashCommand}; explicit user !/!!
+ * commands are not rewritten. Agent calls fall back when rtk cannot rewrite
  * a command. Routing is enforced for the process: there is no session toggle or
  * RTK_DISABLED escape hatch in aio.
  */
 
 import { spawnSync } from "node:child_process";
-import type {
-	BashOperations,
-	ExtensionAPI,
-	UserBashEventResult,
-} from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const REWRITE_TIMEOUT_MS = 2_000;
 
@@ -146,9 +136,7 @@ function removeRtkDisabledPrefix(command: string): string {
 }
 
 /**
- * Rewrite a user-shell command synchronously. User-bash interception must return
- * custom operations before Pi starts the command, so it retains the lightweight
- * synchronous path used by the original integration.
+ * Synchronous compatibility API, also used by the injected agent test seam.
  */
 export function rtkRewriteCommand(command: string): string | undefined {
 	delete process.env.RTK_DISABLED;
@@ -203,24 +191,4 @@ export function probeRtkAvailability(): void {
 	if (!result.error) return;
 	const reason = classifySpawnError(result.error as NodeJS.ErrnoException);
 	if (reason !== "other") alertRtkUnavailable(reason);
-}
-
-/**
- * Build a {@link UserBashEventResult} that executes the rewritten command via
- * the supplied bash operations. Returns `undefined` only when rtk cannot rewrite
- * the command, so the caller falls through to Pi's normal user shell handling.
- */
-export function buildRtkUserBashResult(
-	command: string,
-	operations: BashOperations,
-): UserBashEventResult | undefined {
-	const rewritten = rtkRewriteCommand(command);
-	if (rewritten === undefined) return undefined;
-
-	return {
-		operations: {
-			exec: (_command, cwd, options) =>
-				operations.exec(rewritten, cwd, options),
-		},
-	};
 }

@@ -141,8 +141,8 @@ export async function dispatchHooks(
 	context: RuntimeActionContext = {},
 	options: { canBlock?: boolean } = {},
 ): Promise<HookExecutionResult> {
-	const hooksForEvent = hooks.get(event);
-	if (!hooksForEvent || hooksForEvent.length === 0) {
+	const hooksForEvent = hooks.get(event) ?? [];
+	if (hooksForEvent.length === 0) {
 		return { blocked: false };
 	}
 

@@ -71,7 +71,7 @@ test("registerRtk registers the /rtk command and lifecycle handlers", () => {
 	);
 	// No session_shutdown handler: there is no footer status to clean up.
 	assert.ok(h.handlers.has("tool_call"), "tool_call handler registered");
-	assert.ok(h.handlers.has("user_bash"), "user_bash handler registered");
+	assert.equal(h.handlers.has("user_bash"), false, "typed commands are not intercepted");
 });
 
 test("session_start sets no footer status", () => {
@@ -168,71 +168,11 @@ test("tool_call leaves non-bash tools untouched but cannot disable RTK", async (
 	assert.equal(bashEvent.input.command, "rtk-test:git status");
 });
 
-test("user_bash routes !! commands while preserving Pi's context flag", async () => {
+test("RTK leaves typed commands on Pi's native execution path", () => {
 	const h = makeHarness();
-	setRtkRewriteFn(() => "rewritten");
+	setRtkRewriteFn(() => assert.fail("typed commands must not be rewritten"));
 	registerRtk(h.pi);
-	const [handler] = h.handlers.get("user_bash")!;
-	const result = await handler(
-		{ type: "user_bash", command: "ls", excludeFromContext: true, cwd: "/tmp" },
-		h.ctx,
-	);
-	assert.ok(result?.operations?.exec);
-});
-
-test("user_bash routing cannot be disabled", async () => {
-	const h = makeHarness();
-	setRtkEnabled(false);
-	setRtkRewriteFn(() => "rewritten");
-	registerRtk(h.pi);
-	const [handler] = h.handlers.get("user_bash")!;
-	const result = await handler(
-		{
-			type: "user_bash",
-			command: "ls",
-			excludeFromContext: false,
-			cwd: "/tmp",
-		},
-		h.ctx,
-	);
-	assert.ok(result?.operations?.exec);
-});
-
-test("user_bash handler returns operations when rewrite succeeds", async () => {
-	const h = makeHarness();
-	setRtkRewriteFn(() => "rtk-rewritten");
-	registerRtk(h.pi);
-	const [handler] = h.handlers.get("user_bash")!;
-	const result = await handler(
-		{
-			type: "user_bash",
-			command: "ls",
-			excludeFromContext: false,
-			cwd: "/tmp",
-		},
-		h.ctx,
-	);
-	assert.ok(
-		result?.operations?.exec,
-		"expected operations.exec to be returned",
-	);
-});
-
-test("user_bash handler falls through when rewrite has no equivalent", async () => {
-	const h = makeHarness();
-	setRtkRewriteFn(() => undefined);
-	registerRtk(h.pi);
-	const [handler] = h.handlers.get("user_bash")!;
-	const result = await handler(
-		{
-			type: "user_bash",
-			command: "ls",
-			excludeFromContext: false,
-			cwd: "/tmp",
-		},
-		h.ctx,
-	);
-	assert.equal(result, undefined);
+	assert.equal(h.handlers.has("user_bash"), false);
 });
 
 test("registerRtkCommand can be used standalone", () => {

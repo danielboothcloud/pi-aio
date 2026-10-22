@@ -25,7 +25,7 @@ repository at the time of the port.
   and the action recursion guard.
 - Environment-variable names (all `PI_YAML_HOOKS_*`, plus the documented
   `OPENCODE_*` aliases) so existing hooks.yaml docs, examples, and shell
-  profiles keep working unchanged.
+  profiles remain recognized. `PI_YAML_HOOKS_ENABLE_USER_BASH` is now ignored.
 - The `/hooks-status`, `/hooks-validate`, `/hooks-trust`, `/hooks-reload`,
   and `/hooks-tail-log` commands, and the context-free diagnostics message
   surface.
@@ -47,6 +47,11 @@ repository at the time of the port.
 - `OPENCODE_*` env aliases remain injected for hooks that migrated, matching
   upstream; the OpenCode host itself is not supported (same as upstream).
 
+- Human `!`/`!!` interception was retired: explicit user commands bypass all
+  AIO checks and rewriting. The old registration function is a compatibility
+  no-op and `PI_YAML_HOOKS_ENABLE_USER_BASH` is an ignored legacy setting.
+  Agent tool hooks and their blocking semantics are unchanged.
+
 ## Syncing
 
 Upstream is actively developed. When porting upstream changes, keep:
@@ -54,5 +59,5 @@ Upstream is actively developed. When porting upstream changes, keep:
 - the MIT license and this attribution file,
 - the `PI_YAML_HOOKS_*` env names (append-only contract),
 - the YAML validation error codes (append-only contract),
-- the failure semantics: prompt hooks fail-open, user-bash interception fails
-  closed, post-tool hooks fail-open, cleanup hooks are best-effort.
+- the failure semantics: prompt hooks fail-open, post-tool hooks fail-open,
+  cleanup hooks are best-effort; never reintroduce human !/!! interception.

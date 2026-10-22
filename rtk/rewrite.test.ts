@@ -1,11 +1,7 @@
 import assert from "node:assert/strict";
-import type {
-	BashOperations,
-	ExtensionAPI,
-} from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { afterEach, beforeEach, test } from "node:test";
 import {
-	buildRtkUserBashResult,
 	isRtkEnabled,
 	resetRtkState,
 	rewriteAgentBashCommand,
@@ -127,50 +123,4 @@ test("rewriteAgentBashCommand supports the injected rewrite seam", async () => {
 		"ls",
 	);
 	assert.equal(rewritten, "rtk-test:ls");
-});
-
-function fakeOperations(capture: { cmd?: string }): BashOperations {
-	return {
-		exec: async (command) => {
-			capture.cmd = command;
-			return { exitCode: 0 };
-		},
-	};
-}
-
-test("buildRtkUserBashResult returns operations that execute the rewritten command", async () => {
-	setRtkRewriteFn(() => "rtk-rewritten");
-	const captured: { cmd?: string } = {};
-	const result = buildRtkUserBashResult("git status", fakeOperations(captured));
-
-	assert.ok(result?.operations?.exec, "expected operations.exec to be defined");
-	const res = await result!.operations!.exec("ignored-original", "/repo", {
-		onData: () => {},
-	});
-	assert.equal(res.exitCode, 0);
-	assert.equal(
-		captured.cmd,
-		"rtk-rewritten",
-		"exec should receive the rewritten command",
-	);
-});
-
-test("buildRtkUserBashResult falls through without an equivalent", () => {
-	setRtkRewriteFn(() => undefined);
-	const result = buildRtkUserBashResult("git status", fakeOperations({}));
-	assert.equal(result, undefined);
-});
-
-test("buildRtkUserBashResult cannot be disabled or bypassed", () => {
-	const seen: string[] = [];
-	setRtkRewriteFn((command) => {
-		seen.push(command);
-		return `rtk:${command}`;
-	});
-	setRtkEnabled(false);
-	assert.ok(buildRtkUserBashResult("git status", fakeOperations({})));
-	assert.ok(
-		buildRtkUserBashResult("RTK_DISABLED=1 git status", fakeOperations({})),
-	);
-	assert.deepEqual(seen, ["git status", "git status"]);
 });

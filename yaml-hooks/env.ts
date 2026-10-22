@@ -38,7 +38,8 @@ export const ENV = {
 	asyncWatchdogMs: () => positiveIntEnv("PI_YAML_HOOKS_ASYNC_WATCHDOG_MS"),
 	confirmAutoApprove: () => isEnvEnabled("PI_YAML_HOOKS_CONFIRM_AUTO_APPROVE"),
 	trustProject: () => isEnvEnabled("PI_YAML_HOOKS_TRUST_PROJECT"),
-	enableUserBash: () => isEnvEnabled("PI_YAML_HOOKS_ENABLE_USER_BASH"),
+	// PI_YAML_HOOKS_ENABLE_USER_BASH is an ignored legacy setting.
+	enableUserBash: () => false,
 	allowGlobalImports: () => isEnvEnabled("PI_YAML_HOOKS_ALLOW_GLOBAL_IMPORTS"),
 	allowPackageImports: () => isEnvEnabled("PI_YAML_HOOKS_ALLOW_PACKAGE_IMPORTS"),
 	allowProjectImportsOutsideAnchor: () =>

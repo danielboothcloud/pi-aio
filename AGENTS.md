@@ -58,8 +58,7 @@ generated `dist/` tree without changing the package contract.
   registrars. Preserve registration order unless deliberately changing event
   interception: `registerRecipes` runs FIRST (its factory-time relaunch bridge
   decides before anything else starts, and its session_start recipe tools set
-  the baseline permission-modes snapshots); `registerUserBash` must run before
-  `registerRtk`, and hypa
+  the baseline permission-modes snapshots); hypa
   must register after rtk (rtk precedence) but before queue and pretty tools,
   which own the final bash behavior. Blocklist gates run before
   permission-modes (loop blocks preempt mode checks; the hard
@@ -67,8 +66,9 @@ generated `dist/` tree without changing the package contract.
   pretty-tools, and status-line so it can wrap the final editor and own
   the visual surfaces. Preloaded standalone Zentui editors are preserved by the
   user-bash and queue registrars rather than overwritten. `registerYamlHooks`
-  runs LAST so its opt-in `user_bash`
-  interception wraps the earlier gates.
+  runs LAST for agent tool-hook composition. AIO registers no `user_bash`
+  interceptor: explicit !/!! commands use Pi's native shell path without AIO
+  permission checks, blocklists, rewrites, or YAML evaluation.
 - `recipes/` owns `--recipe` and `/recipe`: named launch configurations from
   `<agentDir>/aio-recipes.json` (two-tier: trusted project
   `/.pi/aio-recipes.json` recipes override same-name globals; the global file
@@ -120,8 +120,9 @@ generated `dist/` tree without changing the package contract.
   actually named `status` keeps its old switching semantics. It owns no
   tools, gates nothing, and registers FIRST.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
-  `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/` and
-  `user-bash/` gate those mutations. Changes can cross feature boundaries.
+  `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/`
+  gates agent mutations. `user-bash/` owns editor hints only. Changes can cross
+  feature boundaries.
 - `ui/chrome.ts` is the shared visual vocabulary for AIO-owned surfaces:
   theme-aware accent rails, headers, items, hints, dividers, pluralization, and
   ANSI-aware width fitting. Diff/approval, pretty tools, copy picker, queue,
@@ -154,14 +155,12 @@ generated `dist/` tree without changing the package contract.
 - `yaml-hooks/` is ported from pi-yaml-hooks (MIT, KristjanPikhof — see
   `yaml-hooks/LICENSE` and `yaml-hooks/UPSTREAM.md`). It owns the
   `hooks.yaml` automation surface: discovery + trust, bash/tool/notify/
-  confirm/setStatus actions, `/hooks-*` commands, prompt context injection,
-  and the opt-in `PI_YAML_HOOKS_ENABLE_USER_BASH=1` interception. It
-  registers LAST so its `user_bash` interception wraps the blocklist,
-  permission-modes, and user-bash gates (the runner honors the first
-  non-undefined `user_bash` result; the earlier gates win). It owns no tool
-  names. Failure semantics: prompt hooks fail-open, post-tool hooks
-  fail-open, user-bash interception fails closed, cleanup hooks are
-  best-effort. All `PI_YAML_HOOKS_*` env names and YAML validation error
+  confirm/setStatus actions, `/hooks-*` commands, and prompt context injection.
+  It registers LAST for agent tool-hook composition and owns no tool names.
+  Explicit user !/!! commands are never intercepted; the legacy
+  `PI_YAML_HOOKS_ENABLE_USER_BASH` name is retained but ignored. Failure
+  semantics: prompt hooks fail-open, post-tool hooks fail-open, cleanup hooks
+  are best-effort. All `PI_YAML_HOOKS_*` env names and YAML validation error
   codes are append-only contracts.
 - `tuicr/` is ported from @joelazar/pi-tuicr v1.1.0 (MIT, joelazar — see
   `tuicr/UPSTREAM.md` and `tuicr/LICENSE`). It owns the `/tuicr` command and
@@ -325,6 +324,12 @@ generated `dist/` tree without changing the package contract.
   else footer status. No settings file, no tool names, no gating; registration
   order is not load-bearing (late, beside YSK, before yaml-hooks). Subagent
   children register no command but keep the entry renderer.
+- `session-naming/` gives fresh unnamed parent sessions a native Pi title after
+  their first successful `agent_end`, using one isolated, bounded background
+  request on the session model. No model-context injection, tools, settings,
+  or backfill. Existing/resumed/reloaded/forked sessions and manual names are
+  preserved. Shutdown aborts work; session identity and name are rechecked
+  before applying a late result. Subagent children register nothing.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

@@ -19,10 +19,12 @@ type EventHandler = (event: any, ctx: ExtensionContext) => Promise<any>;
 const tmp = mkdtempSync(join(tmpdir(), "aio-blocklist-index-"));
 const agentDir = join(tmp, "agent");
 const projectDir = join(tmp, "project");
+const previousAgentDir = process.env.PI_CODING_AGENT_DIR;
 process.env.PI_CODING_AGENT_DIR = agentDir;
 
 test.after(() => {
-	delete process.env.PI_CODING_AGENT_DIR;
+	if (previousAgentDir === undefined) delete process.env.PI_CODING_AGENT_DIR;
+	else process.env.PI_CODING_AGENT_DIR = previousAgentDir;
 	rmSync(tmp, { recursive: true, force: true });
 });
 
@@ -124,11 +126,11 @@ function makeHarness(options: { selections?: string[] } = {}) {
 			}
 			return undefined;
 		},
-		async runUserBash(command: string, cwd = "/tmp") {
+		async runUserBash(command: string, cwd = projectDir, excludeFromContext = false) {
 			// Mirrors the runner: first non-undefined result wins.
 			for (const handler of handlers.get("user_bash") ?? []) {
 				const result = await handler(
-					{ type: "user_bash", command, cwd, excludeFromContext: false },
+					{ type: "user_bash", command, cwd, excludeFromContext },
 					ctx,
 				);
 				if (result) return result;
@@ -240,68 +242,21 @@ test("tool_call: blocklist applies even in default mode (no prompt shown)", asyn
 	);
 });
 
-test("user_bash: blocks blocklisted commands before the mode gate (no prompt)", async () => {
-	writeGlobal({ enabled: true, entries: ["npm run drop-db"] });
-	const harness = makeHarness();
-
-	const result = await harness.runUserBash("npm run drop-db");
-	assert.ok(result);
-	assert.equal(result.result.exitCode, 1);
-	assert.match(String(result.result.output), /Blocked by aio blocklist/);
-	assert.deepEqual(harness.selectPrompts, [], "user-bash gate must not prompt");
-});
-
-test("user_bash: blocks in auto mode too", async () => {
-	writeGlobal({ enabled: true, entries: ["npm run drop-db"] });
-	const harness = makeHarness();
-	await harness.setMode("auto");
-
-	const result = await harness.runUserBash("npm run drop-db");
-	assert.ok(result);
-	assert.equal(result.result.exitCode, 1);
-});
-
-test("user_bash: non-blocklisted commands pass through to the mode gate", async () => {
-	writeGlobal({ enabled: true, entries: ["rm -rf /"] });
-	const harness = makeHarness();
-	await harness.setMode("auto");
-
-	const result = await harness.runUserBash("npm install");
-	assert.equal(
-		result,
-		undefined,
-		"auto mode should approve a non-blocked command",
-	);
-});
-
-test("user_bash: project config is resolved from the event cwd", async () => {
-	writeProject(projectDir, {
-		enabled: true,
-		entries: [{ pattern: "kubectl delete", reason: "no cluster deletions" }],
-	});
-	const harness = makeHarness();
-
-	const blockedHere = await harness.runUserBash(
-		"kubectl delete ns",
-		projectDir,
-	);
-	assert.ok(blockedHere);
-	assert.match(String(blockedHere.result.output), /no cluster deletions/);
-
-	// Same command from a different cwd (no project config) hits only the
-	// (empty) global blocklist, so it falls through to the mode gate — in
-	// auto mode that means approval.
-	await harness.setMode("auto");
-	const elsewhere = await harness.runUserBash(
-		"kubectl delete ns",
-		"/tmp/other",
-	);
-	assert.equal(
-		elsewhere,
-		undefined,
-		"falls through when no project rule applies",
-	);
-});
+for (const mode of ["default", "ask", "plan", "auto"] as const) {
+	for (const hidden of [false, true]) {
+		test(`user_bash: ${hidden ? "!!" : "!"} bypasses global and project blocks in ${mode}`, async () => {
+			writeGlobal({ enabled: true, entries: ["npm run drop-db"] });
+			writeProject(projectDir, { entries: ["npm run drop-db"] });
+			const harness = makeHarness();
+			await harness.setMode(mode);
+			assert.equal(harness.handlers.has("user_bash"), false);
+			assert.equal(await harness.runUserBash("npm run drop-db", projectDir, hidden), undefined);
+			assert.deepEqual(harness.selectPrompts, []);
+			const agentResult = await harness.runToolCall("bash", { command: "npm run drop-db" });
+			assert.equal(agentResult?.block, true, "the same agent command remains blocked");
+		});
+	}
+}
 
 test("before_agent_start: injects blocklist context when rules exist", async () => {
 	writeGlobal({
