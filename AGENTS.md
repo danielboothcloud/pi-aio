@@ -316,7 +316,7 @@ generated `dist/` tree without changing the package contract.
   logs, retry/compaction/attempt notices; ≤500 entries / 250k chars per
   child, blocks clipped head+tail; only the 10 most recent finished runs
   keep theirs). It is in-memory only — never in tool details, `publicRun`,
-  or model context. `/subagents` and `alt+s` (TUI-only) open the
+  or model context. `/subagents` and `ctrl+s` (TUI-only) open the
   `inspector.ts` overlay: a list of every child of every run (active runs
   first; parallel, queued, failed, stopped, background and foreground) and a
   live follow-tail detail view (`tab`/`shift+tab` cycles all children across

@@ -155,7 +155,8 @@ function publicRun(run: SubagentRun): Record<string, unknown> {
 }
 
 /** Opens the live subagent inspector overlay (also `/subagents`). */
-export const INSPECTOR_SHORTCUT = "alt+s";
+// Use a plain Control chord: Option-letter keys can produce text on macOS.
+export const INSPECTOR_SHORTCUT = "ctrl+s";
 
 /** Running children shown under a parallel run before collapsing to a hint. */
 const MAX_CHILD_ROWS = 3;

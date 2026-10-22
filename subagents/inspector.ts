@@ -1,5 +1,5 @@
 /**
- * Live subagent inspector overlay (`/subagents`, alt+s).
+ * Live subagent inspector overlay (`/subagents`, ctrl+s).
  *
  * A list view covers every shape a delegation can take: several runs at once
  * (foreground and background), parallel runs with up to 12 children, and

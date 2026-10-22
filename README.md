@@ -432,7 +432,7 @@ originating session when complete:
 
 ### Inspecting running subagents
 
-Run `/subagents` (or press **alt+s**) to open the live inspector overlay. The list
+Run `/subagents` (or press **Ctrl+S**, Control—not Command—on Mac) to open the live inspector overlay. The list
 shows every child of every run in the session, including foreground and
 background runs, parallel groups, and queued, running, failed, stopped, and
 finished children. Press **Enter** on a child to open its live transcript:
