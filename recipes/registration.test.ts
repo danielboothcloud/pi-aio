@@ -23,11 +23,7 @@ import { RECIPE_STATUS_ENTRY, type RecipeStatusReport } from "./status.ts";
 // AIO_RECIPES_FILE scratch contract the same way the blocklist suite does).
 const tmp = mkdtempSync(join(tmpdir(), "aio-recipes-registration-"));
 const agentDir = join(tmp, "agent");
-mkdirSync(join(agentDir, "skills"), { recursive: true });
-writeFileSync(
-	join(agentDir, "skills", "work.md"),
-	"# work skill",
-);
+mkdirSync(agentDir, { recursive: true });
 function writeRecipesFile(config: unknown): void {
 	writeFileSync(join(agentDir, "aio-recipes.json"), JSON.stringify(config));
 }
@@ -38,12 +34,9 @@ function restoreRecipesFile(): void {
 			home: {
 				description: "Personal stack",
 				model: "anthropic/claude-5:high",
-				tools: ["+codemode"],
 			},
 			work: {
 				description: "Work subscriptions",
-				instructions: "Ship carefully.",
-				skills: ["skills/work.md"],
 				mcpServers: { linear: { url: "https://mcp.example.com/linear" } },
 			},
 		},
@@ -222,8 +215,6 @@ test("registration wires the flag, command, and lifecycle events", async () => {
 		"context",
 		"session_start",
 		"session_tree",
-		"resources_discover",
-		"before_agent_start",
 		"session_shutdown",
 	]) {
 		assert.ok(state.events.has(event), `${event} handler registered`);
@@ -279,18 +270,16 @@ test("session_start applies a --recipe flag selection end to end", async () => {
 	assert.equal(runtime.activeName, "home");
 	assert.equal(runtime.source, "flag");
 	assert.match(state.statuses.get("recipe")!, /recipe:home/);
-	// Model + `:high` suffix thinking + tools delta applied, and the state
+	// Model + `:high` suffix thinking applied, and the state
 	// entry pins the selection on the branch.
 	assert.deepEqual(state.setModelCalls, [{ provider: "anthropic", id: "claude-5" }]);
 	assert.deepEqual(state.thinkingCalls, ["high"]);
-	assert.deepEqual(state.setActiveCalls, [
-		["read", "bash", "edit", "write", "codemode"],
-	]);
+	assert.deepEqual(state.setActiveCalls, []);
 	assert.deepEqual(state.entries, [{ customType: RECIPE_STATE_ENTRY, data: { name: "home" } }]);
 	assert.match(
 		state.notifications.find((n) =>
 			n.message.includes('Recipe "home" active'))!.message,
-		/applied: model, thinking, tools/,
+		/applied: model, thinking/,
 	);
 });
 
@@ -460,33 +449,28 @@ test("the bridge's opening notice is stored and fired once", async () => {
 	);
 });
 
-test("before_agent_start injects instructions and resources_discover exposes active paths", async () => {
+test("legacy recipe options neither inject context nor discover resources nor change tools", async () => {
+	writeRecipesFile({ recipes: { work: {
+		tools: ["read"], instructions: "Old rules", skills: ["skills/work.md"],
+		prompts: ["prompts/work.md"], themes: ["theme.json"],
+	} } });
 	const { pi, state } = makeMocks();
 	await registerRecipes(pi as never);
 	state.flagValues.set(RECIPE_FLAG, "work");
 	await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
-
-	const message = (await fire(state, "before_agent_start", {}, makeCtx(state))) as {
-		message: { customType: string; content: string; display: boolean };
-	};
-	assert.equal(message.message.customType, RECIPE_CONTEXT_TYPE);
-	assert.equal(message.message.display, false);
-	assert.match(message.message.content, /\[RECIPE "work" ACTIVE\]/);
-
-	const discovered = (await fire(
-		state,
-		"resources_discover",
-		{ type: "resources_discover", cwd: "/tmp/project", reason: "startup" },
-		makeCtx(state),
-	)) as { skillPaths: string[]; promptPaths: string[]; themePaths: string[] };
-	assert.deepEqual(discovered.skillPaths, [join(agentDir, "skills", "work.md")]);
-	assert.deepEqual(discovered.promptPaths, []);
-	assert.deepEqual(discovered.themePaths, []);
-
-	// No active recipe: resources_discover contributes nothing.
-	state.flagValues.clear();
-	await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
-	assert.equal(await fire(state, "resources_discover", { reason: "reload" }, makeCtx(state)), undefined);
+	assert.equal(recipeRuntime().activeName, "work");
+	assert.equal(state.events.has("before_agent_start"), false);
+	assert.equal(state.events.has("resources_discover"), false);
+	assert.deepEqual(state.activeTools, ["read", "bash", "edit", "write"]);
+	assert.deepEqual(state.setActiveCalls, []);
+	const plain = { role: "user", content: "Hello" };
+	const result = await fire(state, "context", { messages: [
+		{ role: "custom", customType: RECIPE_CONTEXT_TYPE, content: "Old rules" }, plain,
+	] }, makeCtx(state)) as { messages: unknown[] };
+	assert.deepEqual(result.messages, [plain], "active recipes also strip legacy instructions");
+	await state.commands.get("recipe")!.handler("off", makeCtx(state));
+	await state.commands.get("recipe")!.handler("work", makeCtx(state));
+	assert.deepEqual(state.setActiveCalls, [], "switching never changes tools");
 });
 
 test("/recipe switches mid-session and /recipe off clears", async () => {
@@ -648,7 +632,7 @@ async function withEnv(values: Record<string, string>, body: () => Promise<void>
 test("a trusted .pi-recipe default activates on a fresh startup with its own marker", async () => {
 	const cwd = makeRepo("repo-trusted", {
 		defaultRecipe: "repo",
-		recipes: { repo: { description: "Repo stack", instructions: "Repo rules." } },
+		recipes: { repo: { description: "Repo stack" } },
 	});
 	recordRecipeFileTrust(join(cwd, ".pi-recipe"), true);
 	const { pi, state } = makeMocks();
@@ -700,7 +684,7 @@ async function flush(): Promise<void> {
 test("a new .pi-recipe is asked about before launch, even when pi trusts the folder", async () => {
 	const cwd = makeRepo("repo-launch", {
 		defaultRecipe: "repo",
-		recipes: { repo: { instructions: "Repo rules." } },
+		recipes: { repo: { description: "Repo stack" } },
 	});
 	const file = join(cwd, ".pi-recipe");
 	new ProjectTrustStore(agentDir).set(cwd, true);
@@ -756,7 +740,7 @@ test("\"not now\" at launch skips the file without a second question in the sess
 test("without a launch prompt the session UI asks; trust activates, never is remembered", async () => {
 	const cwd = makeRepo("repo-session", {
 		defaultRecipe: "repo",
-		recipes: { repo: { instructions: "Repo rules." } },
+		recipes: { repo: { description: "Repo stack" } },
 	});
 	const file = join(cwd, ".pi-recipe");
 	writeRecipesFile({ recipes: { home: {} } }); // no global default
@@ -845,6 +829,9 @@ test("/recipe init always scaffolds a full, self-contained, trusted .pi-recipe a
 	assert.equal(written.recipes["my-repo"].model, "anthropic/claude-5");
 	// Seeded from the live session (startup applied home's `:high`).
 	assert.equal(written.recipes["my-repo"].thinkingLevel, "high");
+	assert.deepEqual(Object.keys(written.recipes["my-repo"]), [
+		"description", "model", "thinkingLevel", "models", "mcpServers", "extensions",
+	]);
 	assert.deepEqual(written.recipes["my-repo"].extensions, []);
 	// Scoped to its own model: an empty `models` would leave every
 	// settings.json enabledModels entry selectable.
@@ -888,9 +875,11 @@ test("/recipe init copies a home recipe as a self-contained template (picker or 
 				description: "Work subscriptions",
 				model: "openai-codex/gpt-5:medium",
 				models: ["openai-codex/*"],
-				tools: ["+codemode"],
 				instructions: "Ship carefully.",
 				skills: ["skills/work.md", "/abs/skill.md"],
+				prompts: ["prompts/work.md"],
+				themes: ["theme.json"],
+				tools: ["read"],
 				mcpServers: { linear: { url: "https://mcp.example.com/linear" } },
 				extensions: ["otty-integration", "npm:pi-web-access"],
 			},
@@ -916,17 +905,11 @@ test("/recipe init copies a home recipe as a self-contained template (picker or 
 	assert.equal(team.description, "Work subscriptions");
 	assert.equal(team.model, "openai-codex/gpt-5:medium");
 	assert.deepEqual(team.models, ["openai-codex/*"]);
-	assert.deepEqual(team.tools, ["+codemode"]);
-	assert.equal(team.instructions, "Ship carefully.");
 	assert.deepEqual(team.extensions, ["otty-integration", "npm:pi-web-access"]);
 	assert.deepEqual(team.mcpServers, { linear: { url: "https://mcp.example.com/linear" } });
-	// Relative resource paths are rebased off the home file's folder.
-	assert.equal(team.skills[1], "/abs/skill.md");
-	assert.ok(
-		team.skills[0].endsWith(join("agent", "skills", "work.md")) && !team.skills[0].startsWith("skills/"),
-		team.skills[0],
-	);
-	assert.deepEqual(team.prompts, [], "missing keys still scaffolded");
+	for (const key of ["tools", "instructions", "skills", "prompts", "themes"]) {
+		assert.equal(Object.hasOwn(team, key), false, key);
+	}
 
 	// A template without its own scope gets scoped to its model (suffix stripped).
 	assert.deepEqual(

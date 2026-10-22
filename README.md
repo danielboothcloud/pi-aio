@@ -50,8 +50,8 @@ thinking level.
 ## Recipes — `--recipe <name>`, `/recipe`
 
 A recipe is a named launch configuration: starting with
-`pi --recipe work` applies a saved selection of model, thinking level, tools,
-MCP servers, skills, and per-turn instructions in one shot. Recipes live with
+`pi --recipe work` applies a saved selection of model, thinking level, model
+scope, MCP servers, and extensions in one shot. Recipes live with
 the user, not the repo — the agent dir's `aio-recipes.json`.
 Pi defaults to `~/.pi/agent`; `PI_CODING_AGENT_DIR` overrides it (for example,
 `PI_CODING_AGENT_DIR=~/.config/pi` means `~/.config/pi/aio-recipes.json`).
@@ -65,20 +65,19 @@ Trusted projects may override or add recipes in `<project>/.pi/aio-recipes.json`
       "description": "Personal Claude/Codex subscriptions",
       "model": "anthropic/claude-5:high",
       "models": ["anthropic/*", "openai-codex/*"],
-      "tools": ["+codemode", "-hypa_*"],
-      "instructions": "Ship carefully; prefer the smallest correct change.",
-      "skills": ["skills/home/"],
       "mcpServers": { "linear": { "url": "https://mcp.example.com/linear" } },
       "extensions": ["otty-integration", "npm:pi-web-access"]
     },
     "work": {
       "description": "Work subscriptions",
-      "model": "openai-codex/gpt-5.2-codex:medium",
-      "tools": ["read", "bash", "edit", "write", "grep"]
+      "model": "openai-codex/gpt-5.2-codex:medium"
     }
   }
 }
 ```
+
+Recipes support only `description`, `model`, `thinkingLevel`, `models`,
+`mcpServers`, and `extensions`; other keys are ignored.
 
 Key semantics:
 
@@ -88,13 +87,6 @@ Key semantics:
   is also given.
 - **`models`** — `--models` patterns scoping startup selection and Ctrl+P
   cycling (restart-scoped: applied by the relaunch bridge below).
-- **`tools`** — the `defaultTools` grammar: plain names replace the active
-  set, `+name`/`-name` entries adjust it, and `*` globs match by pattern.
-- **`instructions`** — a hidden per-turn `[RECIPE … ACTIVE]` block sent to
-  the model while the recipe is active; `/recipe off` stops it.
-- **`skills` / `prompts` / `themes`** — resource paths (files or directories)
-  resolved from the file that declared them (`~` expands) and contributed
-  through resource discovery while the recipe is active.
 - **`mcpServers`** — `registerMcpServer` configs, registered while the recipe
   is active. A server of the same name in `mcp.json` takes precedence, as
   always; switching recipes unregisters only servers this feature added.
@@ -117,9 +109,11 @@ global config, so the file works the same for every clone:
   "recipes": {
     "repo": {
       "description": "Team defaults for this repo",
-      "model": "anthropic/claude-5:high",
-      "tools": ["+codemode"],
-      "instructions": "Run npm test before finishing."
+      "model": "anthropic/claude-5",
+      "thinkingLevel": "high",
+      "models": [],
+      "mcpServers": {},
+      "extensions": []
     }
   }
 }
@@ -139,7 +133,7 @@ global config, so the file works the same for every clone:
   in pi is not enough, and `--approve`/`defaultProjectTrust` do not count.
   The first interactive `pi` start with a new or **changed** file asks on the
   terminal before launch, showing what it would set (default, model, model
-  scope, extensions, MCP servers, tools, instructions):
+  scope, extensions, MCP servers):
   `[y] trust  [N] not now  [d] never (until it changes)`. Trusting it before
   launch means a restart-scoped default still relaunches straight away.
 - Decisions are remembered in `<agent-dir>/aio-recipe-trust.json`, keyed by
@@ -157,15 +151,13 @@ global config, so the file works the same for every clone:
   session folder and trusts it (you wrote it). It first asks what to start
   from: a **blank recipe** (current model and thinking level, `models` scoped
   to that one model, every other key present but empty) or **a copy of one of your home recipes**
-  (`aio-recipes.json`) — its model, scope, tools, instructions, MCP servers,
+  (`aio-recipes.json`) — its model, thinking level, scope, MCP servers,
   and extensions are copied into the file, so it stays self-contained and
   never depends on your home config. `--from` picks the template without the
-  picker. Copied relative skill/prompt/theme paths are rewritten to `~/…` or
-  absolute paths (they point at your agent dir); MCP configs are copied
-  verbatim, so remove tokens before committing. Without a name it asks for
-  one, suggesting the folder name. It never overwrites an existing file;
+  picker. MCP configs are copied verbatim, so remove tokens before committing.
+  Without a name it asks for one, suggesting the folder name. It never
+  overwrites an existing file;
   edits you make afterwards are asked about once on the next start.
-- Resource paths (`skills`, `prompts`, `themes`) resolve from the folder.
 
 ### The relaunch bridge
 
@@ -250,10 +242,10 @@ selection and registrations, **not whether a remote model can answer**.
 ### `/recipe` and selection rules
 
 - `/recipe` opens a selector (names with descriptions, plus `off`);
-  `/recipe work` switches mid-session (model, thinking, tools, MCP,
-  instructions; restart-scoped keys carry a “restart to fully apply”
-  advisory); `/recipe off` clears the recipe — instructions and this
-  feature's MCP servers stop, while model and tools keep their current state.
+  `/recipe work` switches mid-session (model, thinking, MCP;
+  restart-scoped keys carry a “restart to fully apply” advisory);
+  `/recipe off` clears the recipe and this feature's MCP servers,
+  while the model keeps its current state.
 - Selection precedence at session start: `--recipe` flag > bridged relaunch
   (`AIO_RECIPE_ACTIVE`) > the session's most recent saved recipe (resumes) >
   `defaultRecipe` (`.pi-recipe` > `.pi/aio-recipes.json` > global), which
@@ -264,7 +256,8 @@ selection and registrations, **not whether a remote model can answer**.
   switching, like `status`.
 - The active recipe is pinned on the session branch, so forking and tree
   navigation follow the branch's own timeline; subagent children never
-  inherit a recipe beyond stripping its instructions from forked context.
+  activate a recipe. Legacy recipe instruction messages are stripped from
+  resumed and forked context.
 - Config errors fail open: unreadable files warn once on `stderr` and the
   session runs without a recipe. `AIO_RECIPES_FILE` replaces the global recipes
   file for tests and sandboxes (the same contract YSK and goal settings use).

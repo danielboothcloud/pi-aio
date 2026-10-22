@@ -1,22 +1,15 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import test from "node:test";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { parseRecipeConfig, RECIPE_STATE_ENTRY } from "./config.ts";
 import {
 	applyRecipe,
-	buildRecipeContext,
 	deactivateRecipe,
 	filterRecipeContext,
 	findRecipeModel,
 	latestPersistedRecipe,
-	matchToolPattern,
 	recipeRuntime,
 	resetRecipeRuntimeForTests,
-	resolveRecipePaths,
-	resolveToolSet,
 	updateRecipeStatus,
 } from "./apply.ts";
 
@@ -172,72 +165,6 @@ test.beforeEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// matchToolPattern
-// ---------------------------------------------------------------------------
-
-test("matchToolPattern: exact, case-insensitive, and glob forms", () => {
-	assert.equal(matchToolPattern("bash", "bash"), true);
-	assert.equal(matchToolPattern("Bash", "BASH"), true);
-	assert.equal(matchToolPattern("bash", "write"), false);
-	assert.equal(matchToolPattern("hypa_search", "hypa_*"), true);
-	assert.equal(matchToolPattern("hypa_grep", "hypa_*"), true);
-	assert.equal(matchToolPattern("read", "hypa_*"), false);
-	assert.equal(matchToolPattern("hypa_search", "hypa*_search"), true);
-	assert.equal(matchToolPattern("hypa_search", "h*p*a*ch"), true);
-	assert.equal(matchToolPattern("hypa_search", "*search"), true);
-	assert.equal(matchToolPattern("hypa_search", "hypa"), false);
-	assert.equal(matchToolPattern("anything", "*"), true);
-	// A suffix must not match before the remaining text runs out.
-	assert.equal(matchToolPattern("hypa", "hypa*_search"), false);
-});
-
-// ---------------------------------------------------------------------------
-// resolveToolSet
-// ---------------------------------------------------------------------------
-
-test("resolveToolSet: +name/-name deltas change the inherited selection", () => {
-	const active = ["read", "bash", "edit", "write"];
-	const ALL = ["read", "bash", "grep", "find", "ls", "edit", "write", "codemode", "hypa_search", "hypa_grep"];
-	const result = resolveToolSet(active, ALL, ["+codemode", "-write"]);
-	assert.deepEqual(result.error, undefined);
-	assert.deepEqual(result.tools, ["read", "bash", "edit", "codemode"]);
-	assert.deepEqual(result.unmatched, []);
-});
-
-test("resolveToolSet: delta +glob adds every registered match once, in order", () => {
-	const ALL = ["read", "ls", "codemode", "hypa_search", "hypa_grep"];
-	const result = resolveToolSet(["read"], ALL, ["+hypa_*", "+codemode", "+read"]);
-	assert.deepEqual(result.tools, ["read", "hypa_search", "hypa_grep", "codemode"]);
-});
-
-test("resolveToolSet: plain names replace the selection; globs expand in order", () => {
-	const ALL = ["read", "bash", "grep", "find", "ls", "hypa_search"];
-	const result = resolveToolSet(["read", "edit", "write"], ALL, ["read", "hypa_*", "grep"]);
-	assert.deepEqual(result.tools, ["read", "hypa_search", "grep"]);
-	assert.deepEqual(result.unmatched, []);
-});
-
-test("resolveToolSet: unknown plain names are reported, globs stay silent", () => {
-	const plain = resolveToolSet(["read"], ["read"], ["read", "missing"]);
-	assert.deepEqual(plain.tools, ["read"]);
-	assert.deepEqual(plain.unmatched, ["missing"]);
-	const wildcard = resolveToolSet(["read"], ["read"], ["zzz_*"]);
-	assert.deepEqual(wildcard.tools, []);
-	assert.deepEqual(wildcard.unmatched, []);
-});
-
-test("resolveToolSet: mixing plain names and deltas is rejected wholesale", () => {
-	const result = resolveToolSet(["read"], ["read"], ["read", "+codemode"]);
-	assert.equal(result.error, "mixed");
-	assert.deepEqual(result.tools, ["read"]);
-});
-
-test("resolveToolSet: empty entries keep the active set", () => {
-	const result = resolveToolSet(["read", "bash"], ["read"], []);
-	assert.deepEqual(result.tools, ["read", "bash"]);
-});
-
-// ---------------------------------------------------------------------------
 // filterRecipeContext + latestPersistedRecipe
 // ---------------------------------------------------------------------------
 
@@ -247,25 +174,15 @@ function message(customType: string): AgentMessage & { customType: string } {
 	};
 }
 
-test("filterRecipeContext keeps only the latest block while a recipe is active", () => {
+test("filterRecipeContext strips all legacy blocks without mutating history", () => {
 	const messages = [message("a"), message("recipe-context"), message("b"), message("recipe-context")];
-	const filtered = filterRecipeContext(messages, "work");
+	const filtered = filterRecipeContext(messages);
 	assert.ok(filtered);
-	assert.deepEqual(filtered.map((m) => (m as { customType: string }).customType), [
-		"a",
-		"b",
-		"recipe-context",
-	]);
-	assert.equal(filterRecipeContext([message("recipe-context")], "work"), undefined);
-	assert.equal(filterRecipeContext([message("a")], "work"), undefined);
-});
-
-test("filterRecipeContext strips every block once no recipe is active", () => {
-	const messages = [message("recipe-context"), message("a"), message("recipe-context")];
-	const filtered = filterRecipeContext(messages, undefined);
-	assert.ok(filtered);
-	assert.deepEqual(filtered.map((m) => (m as { customType: string }).customType), ["a"]);
-	assert.equal(filterRecipeContext([message("a")], undefined), undefined);
+	assert.deepEqual(filtered.map((m) => (m as { customType: string }).customType), ["a", "b"]);
+	assert.equal(messages.length, 4);
+	assert.deepEqual(filterRecipeContext([message("recipe-context")]), []);
+	assert.equal(filterRecipeContext([message("a")]), undefined);
+	assert.equal(filterRecipeContext([]), undefined);
 });
 
 test("latestPersistedRecipe reads the branch's latest entry, off included", () => {
@@ -313,35 +230,10 @@ test("findRecipeModel resolves provider/id, bare ids, colon ids, and scoped sets
 });
 
 // ---------------------------------------------------------------------------
-// resolveRecipePaths
-// ---------------------------------------------------------------------------
-
-test("resolveRecipePaths expands ~, resolves from baseDir, drops missing paths", (t) => {
-	const agentDir = mkdtempSync(join(tmpdir(), "aio-recipes-paths-"));
-	t.after(() => rmSync(agentDir, { recursive: true, force: true }));
-	mkdirSync(join(agentDir, "skills"), { recursive: true });
-	writeFileSync(join(agentDir, "skills", "home.md"), "# home skill");
-	writeFileSync(join(agentDir, "theme.json"), "{}");
-
-	const def = recipe(
-		{
-			skills: ["skills/home.md", "skills/missing.md"],
-			themes: ["theme.json"],
-			prompts: ["~/definitely-not-here.md"],
-		},
-		agentDir,
-	);
-	const paths = resolveRecipePaths(def);
-	assert.deepEqual(paths.skillPaths, [join(agentDir, "skills", "home.md")]);
-	assert.deepEqual(paths.promptPaths, []);
-	assert.deepEqual(paths.themePaths, [join(agentDir, "theme.json")]);
-});
-
-// ---------------------------------------------------------------------------
 // applyRecipe / deactivateRecipe
 // ---------------------------------------------------------------------------
 
-test("applyRecipe applies model, thinking, tools, and MCP servers", async () => {
+test("applyRecipe applies model, thinking, and MCP servers without changing tools", async () => {
 	const h = makeHarness();
 	const def = recipe({
 		model: "anthropic/claude-5:high",
@@ -352,13 +244,12 @@ test("applyRecipe applies model, thinking, tools, and MCP servers", async () => 
 		source: "flag",
 		persist: true,
 	});
-	assert.deepEqual(result.applied, ["model", "thinking", "tools", "mcp"]);
+	assert.deepEqual(result.applied, ["model", "thinking", "mcp"]);
 	assert.deepEqual(result.warnings, []);
 	assert.deepEqual(h.state.setModelCalls, [{ provider: "anthropic", id: "claude-5" }]);
 	assert.deepEqual(h.state.thinkingCalls, ["high"]);
-	assert.deepEqual(h.state.setActiveCalls, [
-		["read", "bash", "edit", "write", "codemode"],
-	]);
+	assert.deepEqual(h.state.setActiveCalls, []);
+	assert.deepEqual(h.state.activeTools, ["read", "bash", "edit", "write"]);
 	assert.deepEqual([...h.state.registeredMcp.keys()], ["linear"]);
 	assert.deepEqual(h.state.entries, [{ customType: RECIPE_STATE_ENTRY, data: { name: "work" } }]);
 
@@ -455,7 +346,7 @@ test("deactivateRecipe clears state, unregisters this feature's MCP servers, and
 
 test("updateRecipeStatus paints the footer pill when no frame owns the surface", async () => {
 	const h = makeHarness();
-	const def = recipe({ tools: ["+codemode"] });
+	const def = recipe({});
 	await applyRecipe(h.pi as never, h.ctx as never, def, { source: "flag", persist: false });
 	updateRecipeStatus(h.pi as never, h.ctx as never);
 	const status = h.state.statuses.get("recipe");
@@ -481,13 +372,4 @@ test("updateRecipeStatus: a frame-capable host hides the footer fallback", async
 	await applyRecipe(h.pi as never, h.ctx as never, def, { source: "flag", persist: false });
 	updateRecipeStatus(h.pi as never, h.ctx as never);
 	assert.equal(h.state.statuses.get("recipe"), undefined, "framed hosts use the border pill");
-});
-
-// ---------------------------------------------------------------------------
-// instructions block
-// ---------------------------------------------------------------------------
-
-test("buildRecipeContext wraps instructions in the recipe header", () => {
-	const text = buildRecipeContext("work", "Always run tests.");
-	assert.equal(text, '[RECIPE "work" ACTIVE]\n\nAlways run tests.');
 });

@@ -27,11 +27,6 @@
 //                                            // `:thinking` suffix honored
 //       "thinkingLevel": "high",              // off|minimal|low|medium|high|xhigh|max
 //       "models": ["anthropic/*", "openai-codex/*"], // --models scope (restart-scoped)
-//       "tools": ["+codemode", "-hypa_*"],     // defaultTools grammar (see resolveToolSet)
-//       "instructions": "Always wire the coffee machine integration first.",
-//       "skills": ["skills/home/"],            // resource paths, resolved from
-//       "prompts": ["prompts/home-review.md"], // the file that declared them
-//       "themes": [],
 //       "mcpServers": { "linear": { "url": "https://mcp.example.com/linear" } },
 //       "extensions": ["otty-integration", "npm:pi-web-access"] // restart-scoped
 //     }
@@ -64,7 +59,7 @@ export const RECIPE_STAGE_ENV = "AIO_RECIPE_STAGE";
 export const RECIPE_FLAG = "recipe";
 /** Session entry that pins the active recipe on the branch. */
 export const RECIPE_STATE_ENTRY = "recipe-state";
-/** Hidden per-turn message customType; only the latest one reaches the model. */
+/** Legacy recipe instruction messages, stripped from resumed/forked context. */
 export const RECIPE_CONTEXT_TYPE = "recipe-context";
 /** Footer status key (status-line's `statuses` segment renders it). */
 export const RECIPE_STATUS_KEY = "recipe";
@@ -106,14 +101,6 @@ export interface RecipeConfig {
 	thinkingLevel?: ThinkingLevel;
 	/** `--models` patterns (restart-scoped: applied only by the relaunch bridge). */
 	models?: string[];
-	/** defaultTools grammar: plain names replace, `+name`/`-name` entries delta. */
-	tools?: string[];
-	/** Sent to the model as a hidden per-turn `[RECIPE ACTIVE]` block. */
-	instructions?: string;
-	/** Skill paths (files or directories), resolved from the declaring file. */
-	skills?: string[];
-	prompts?: string[];
-	themes?: string[];
 	/** registerMcpServer configs, validated at registration time. */
 	mcpServers: Record<string, McpServerConfig>;
 	/** Extension sources for the relaunch bridge (restart-scoped). */
@@ -124,7 +111,7 @@ export interface RecipeConfig {
 export interface RecipeDefinition {
 	name: string;
 	source: RecipeSource;
-	/** Resource paths declared by this recipe resolve from here. */
+	/** Directory of the declaring config, retained for status provenance. */
 	baseDir: string;
 	config: RecipeConfig;
 }
@@ -254,13 +241,6 @@ export function parseRecipeConfig(
 	const thinkingLevel = parseThinkingLevel(entry.thinkingLevel);
 	if (thinkingLevel) config.thinkingLevel = thinkingLevel;
 	config.models = parseStringList(entry.models);
-	config.tools = parseStringList(entry.tools);
-	if (typeof entry.instructions === "string" && entry.instructions.trim()) {
-		config.instructions = entry.instructions;
-	}
-	config.skills = parseStringList(entry.skills);
-	config.prompts = parseStringList(entry.prompts);
-	config.themes = parseStringList(entry.themes);
 	config.mcpServers = parseMcpServers(entry.mcpServers);
 	config.extensions = parseStringList(entry.extensions);
 
@@ -375,8 +355,8 @@ export function loadRecipes(
 	const recipes: Record<string, RecipeDefinition> = {};
 	let globalDir = homedir();
 	if (globalPath) {
-		// Resource paths in the global file resolve from the agent dir (or the
-		// sandbox root AIO_RECIPES_FILE points into).
+		// Record the declaring agent dir (or the sandbox root AIO_RECIPES_FILE
+		// points into) for status provenance.
 		globalDir = globalRecipesBaseDir(globalPath);
 		Object.assign(recipes, collectRecipes(globalPath, "global", globalDir));
 	}
@@ -391,7 +371,7 @@ export function loadRecipes(
 	const directoryFile = cwd ? directoryRecipesPath(cwd) : undefined;
 	let directoryRecipes: Record<string, RecipeDefinition> = {};
 	if (cwd && directoryFile && options.directoryTrusted) {
-		// Resource paths in a directory recipe resolve from the folder itself.
+		// Directory recipes retain the folder itself as their config source.
 		directoryRecipes = collectRecipes(directoryFile, "directory", cwd);
 		Object.assign(recipes, directoryRecipes);
 	}

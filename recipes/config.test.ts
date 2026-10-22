@@ -70,11 +70,6 @@ test("global recipes load with their fields parsed", () => {
 				description: "Personal stack",
 				model: "anthropic/claude-5:high",
 				models: ["anthropic/*", "openai-codex/*"],
-				tools: ["+codemode", "-hypa_*"],
-				instructions: "Ship carefully.",
-				skills: ["skills/home/", " ~/extra-skill.md "],
-				prompts: [],
-				themes: ["/tmp/themes/home.json"],
 				mcpServers: { linear: { url: "https://mcp.example.com/linear" } },
 				extensions: ["otty-integration"],
 			},
@@ -96,15 +91,26 @@ test("global recipes load with their fields parsed", () => {
 	assert.equal(home.config.thinkingLevel, undefined);
 	assert.equal(parseModelSpec(home.config.model!).thinking, "high");
 	assert.deepEqual(home.config.models, ["anthropic/*", "openai-codex/*"]);
-	assert.deepEqual(home.config.tools, ["+codemode", "-hypa_*"]);
-	assert.equal(home.config.instructions, "Ship carefully.");
-	// Whitespace-only entries are dropped; "~" paths stay verbatim for the
-	// apply step to expand.
-	assert.deepEqual(home.config.skills, ["skills/home/", "~/extra-skill.md"]);
-	assert.equal(home.config.prompts, undefined);
-	assert.deepEqual(home.config.themes, ["/tmp/themes/home.json"]);
 	assert.deepEqual(Object.keys(home.config.mcpServers), ["linear"]);
 	assert.deepEqual(home.config.extensions, ["otty-integration"]);
+});
+
+test("removed recipe options are ignored in every config tier", () => {
+	const removed = {
+		tools: ["read"], instructions: "Old rules", skills: ["skills/"],
+		prompts: ["prompts/"], themes: ["theme.json"],
+	};
+	clearConfigs();
+	writeGlobal({ recipes: { global: removed } });
+	writeProject(projectDir, { recipes: { project: removed } });
+	writeFileSync(join(projectDir, ".pi-recipe"), JSON.stringify({ recipes: { directory: removed } }));
+	const loaded = loadRecipes(projectDir, { projectTrusted: true, directoryTrusted: true });
+	for (const def of Object.values(loaded.recipes)) {
+		for (const key of Object.keys(removed)) {
+			assert.equal(Object.hasOwn(def.config, key), false, `${def.source}: ${key}`);
+		}
+	}
+	assert.equal(Object.keys(loaded.recipes).length, 3);
 });
 
 test("defaultRecipe not offered when the named recipe is missing or invalid", () => {
@@ -170,7 +176,7 @@ test("malformed recipes are skipped; malformed fields default to absent", () => 
 			fine: {
 				description: 7,
 				thinkingLevel: "ultra",
-				tools: ["ok", 3, ""],
+				extensions: ["ok", 3, ""],
 				models: [] as string[],
 				mcpServers: { good: { url: "https://x.example" }, bad: "nope", "": {} },
 			},
@@ -182,7 +188,7 @@ test("malformed recipes are skipped; malformed fields default to absent", () => 
 	assert.ok(fine);
 	assert.equal(fine.config.description, undefined);
 	assert.equal(fine.config.thinkingLevel, undefined);
-	assert.deepEqual(fine.config.tools, ["ok"]);
+	assert.deepEqual(fine.config.extensions, ["ok"]);
 	assert.equal(fine.config.models, undefined);
 	assert.deepEqual(Object.keys(fine.config.mcpServers), ["good"]);
 	const good = fine.config.mcpServers.good as { url?: string };
@@ -219,7 +225,7 @@ test("parseModelSpec splits only a known trailing :thinking level", () => {
 
 test("isRestartScoped: only models and extensions need the bridge", () => {
 	assert.equal(isRestartScoped({ mcpServers: {} }), false);
-	assert.equal(isRestartScoped({ mcpServers: {}, tools: ["bash"] }), false);
+	assert.equal(isRestartScoped({ mcpServers: {}, model: "anthropic/claude-5" }), false);
 	assert.equal(
 		isRestartScoped({ mcpServers: {}, models: ["anthropic/*"] }),
 		true,

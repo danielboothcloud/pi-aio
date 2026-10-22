@@ -109,7 +109,7 @@ export function buildRecipeStatus(
 	const notes = [
 		"Observed sources come from actual tool/command registrations; passive or provider-only extensions may be absent. This is not a complete loaded-extension inventory.",
 		"pi list and package-update banners describe saved packages, not this runtime's extension selection.",
-		"Skills/prompts are discovered separately and may remain shared. No provider request or authentication refresh was performed.",
+		"No provider request or authentication refresh was performed.",
 		"Active tools are declarations to the model; registered deferred/codemode tools may remain callable through other tools. Provider IDs are not an extension inventory.",
 	];
 	const flagName = typeof flag === "string" ? flag.trim() : "";

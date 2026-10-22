@@ -2,8 +2,8 @@
 // recipes — named launch configurations for pi (`--recipe`, `/recipe`).
 //
 // A recipe bundles the pi settings a user swaps between contexts (work vs
-// home subscriptions and models, extension sets, tools, MCP servers, skills,
-// instructions) behind one name in `<agent-dir>/aio-recipes.json`.
+// home subscriptions and models, extension sets, MCP servers) behind one name
+// in `<agent-dir>/aio-recipes.json`.
 //
 // Two engines cooperate:
 //
@@ -13,8 +13,8 @@
 //     session exist. Runs in the factory, holds the parent while the
 //     replacement owns the terminal, and exits with its exit code.
 //
-//   apply.ts — the in-process engine: model, thinking, tools, MCP servers,
-//     per-turn instructions, and the status pill apply at session_start and
+//   apply.ts — the in-process engine: model, thinking, MCP servers,
+//     and the status pill apply at session_start and
 //     on /recipe switches without restarts.
 //
 // Selection precedence at session_start: --recipe flag > AIO_RECIPE_ACTIVE
@@ -25,13 +25,12 @@
 // explicitly (trust.ts: asked on the terminal before launch, remembered by
 // content hash); `/recipe init` scaffolds one; its relaunch marks AIO_RECIPE_ORIGIN=directory
 // so the child still treats it as a default, not an override. Subagent children
-// register nothing but the inherited-instruction filter: their workloads are
-// pinned by the parent.
+// register only legacy instruction cleanup and status rendering: their
+// workloads are pinned by the parent.
 //
 // Registration order: recipes registers FIRST in the AIO composition so its
-// session_start establishes the baseline tool set before permission-modes
-// snapshots passive-mode restrictions. It owns no tool names and gates
-// nothing.
+// session_start establishes the baseline recipe state before other features.
+// It owns no tool names and gates nothing.
 // ---------------------------------------------------------------------------
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
@@ -43,13 +42,11 @@ import type {
 import { parseArgs } from "@earendil-works/pi-coding-agent";
 import { setFrameMetadataContributor } from "../frame/protocol.js";
 import { writeFileSync } from "node:fs";
-import { homedir } from "node:os";
-import { basename, isAbsolute, join, relative } from "node:path";
+import { basename, join } from "node:path";
 import {
 	ACTIVE_RECIPE_ENV,
 	DIRECTORY_RECIPE_FILE_NAMES,
 	RECIPES_FILE_NAME,
-	RECIPE_CONTEXT_TYPE,
 	RECIPE_FLAG,
 	RECIPE_ORIGIN_ENV,
 	RECIPE_STAGE_ENV,
@@ -71,15 +68,12 @@ import {
 	type TrustChoice,
 } from "./trust.js";
 import {
-	activeRecipe,
 	applyRecipe,
-	buildRecipeContext,
 	deactivateRecipe,
 	filterRecipeContext,
 	latestPersistedRecipe,
 	recipeRuntime,
 	RECIPE_FRAME_CONTRIBUTOR,
-	resolveRecipePaths,
 	type ApplyRecipeResult,
 	type RecipeSourceMarker,
 } from "./apply.js";
@@ -297,43 +291,10 @@ export function recipeScaffold(
 			: [];
 	Object.assign(recipe, {
 		models,
-		tools: template?.tools ?? [],
-		instructions: template?.instructions ?? "",
-		skills: template?.skills ?? [],
-		prompts: template?.prompts ?? [],
-		themes: template?.themes ?? [],
 		mcpServers: template?.mcpServers ?? {},
 		extensions: template?.extensions ?? [],
 	});
 	return `${JSON.stringify({ defaultRecipe: name, recipes: { [name]: recipe } }, null, 2)}\n`;
-}
-
-/**
- * Copy a home recipe's settings for a `.pi-recipe` — a snapshot, never a
- * reference. Resource paths in the home file resolve from the agent dir, so
- * relative ones are rewritten to absolute (`~/…` when under home) to keep
- * pointing at the same files once they live in another folder. Extension
- * entries are kept verbatim: bare names resolve in each user's own
- * `<agent-dir>/extensions`, and package sources are already portable.
- */
-export function templateFromRecipe(def: RecipeDefinition): Partial<RecipeConfig> {
-	const home = homedir();
-	const rebase = (entries: string[] | undefined): string[] | undefined =>
-		entries?.map((entry) => {
-			if (entry === "~" || entry.startsWith("~/") || isAbsolute(entry)) return entry;
-			const absolute = join(def.baseDir, entry);
-			const fromHome = relative(home, absolute);
-			return fromHome && !fromHome.startsWith("..") && !isAbsolute(fromHome)
-				? `~/${fromHome}${entry.endsWith("/") ? "/" : ""}`
-				: absolute;
-		});
-	const config = structuredClone(def.config);
-	return {
-		...config,
-		skills: rebase(config.skills),
-		prompts: rebase(config.prompts),
-		themes: rebase(config.themes),
-	};
 }
 
 function validRecipeName(name: string): boolean {
@@ -438,7 +399,7 @@ async function initDirectoryRecipe(
 			model,
 			thinkingLevel: THINKING_LEVELS.includes(level) ? level : undefined,
 		},
-		template ? templateFromRecipe(template) : undefined,
+		template ? structuredClone(template.config) : undefined,
 	);
 	const file = join(ctx.cwd, DIRECTORY_RECIPE_FILE_NAMES[0] ?? ".pi-recipe");
 	try {
@@ -504,7 +465,7 @@ interface ContextFilterEvent {
 function recipeContextHandler(
 	event: ContextFilterEvent,
 ): { messages: AgentMessage[] } | undefined {
-	const messages = filterRecipeContext(event.messages, recipeRuntime().activeName);
+	const messages = filterRecipeContext(event.messages);
 	return messages ? { messages } : undefined;
 }
 
@@ -658,14 +619,12 @@ export async function registerRecipes(
 	const exitOnInvalidScope = options.exitOnInvalidScope ?? ((code: number): never => process.exit(code));
 	pi.registerFlag(RECIPE_FLAG, {
 		description:
-			"Start with a named recipe from aio-recipes.json (extensions, model scope, tools, MCP, skills)",
+			"Start with a named recipe from aio-recipes.json (extensions, model scope, MCP)",
 		type: "string",
 	});
 
-	// The context filter is registered in every process (subagent children
-	// included): a forked child inherits the parent's history, and with no
-	// active recipe of its own this strips the parent's recipe instructions
-	// out of its context — the same contract /style keeps.
+	// Old sessions may contain recipe instruction messages. Strip them in
+	// every process, including forked children, even when a recipe is active.
 	pi.on("context", recipeContextHandler);
 	registerRecipeStatusRenderer(pi);
 
@@ -756,31 +715,6 @@ export async function registerRecipes(
 			// when the apply path fails mid-flight.
 			deactivateRecipe(pi, ctx, { persist: false });
 		}
-	});
-
-	pi.on("resources_discover", async () => {
-		const def = activeRecipe();
-		if (!def) return undefined;
-		const paths = resolveRecipePaths(def);
-		if (
-			paths.skillPaths.length + paths.promptPaths.length + paths.themePaths.length ===
-			0
-		) {
-			return undefined;
-		}
-		return paths;
-	});
-
-	pi.on("before_agent_start", async () => {
-		const def = activeRecipe();
-		if (!def?.config.instructions) return undefined;
-		return {
-			message: {
-				customType: RECIPE_CONTEXT_TYPE,
-				content: buildRecipeContext(def.name, def.config.instructions),
-				display: false,
-			},
-		};
 	});
 
 	pi.registerCommand("recipe", {
@@ -892,7 +826,7 @@ export async function registerRecipes(
 					deactivateRecipe(pi, ctx, { persist: true });
 					notify(
 						ctx,
-						"Recipe: off — instructions and MCP servers cleared; model and tools keep their current state",
+						"Recipe: off — MCP servers cleared; model keeps its current state",
 						"info",
 					);
 					return;
@@ -907,7 +841,7 @@ export async function registerRecipes(
 				deactivateRecipe(pi, ctx, { persist: true });
 				notify(
 					ctx,
-					"Recipe: off — instructions and MCP servers cleared; model and tools keep their current state",
+					"Recipe: off — MCP servers cleared; model keeps its current state",
 					"info",
 				);
 				return;

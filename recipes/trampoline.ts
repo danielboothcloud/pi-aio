@@ -21,7 +21,7 @@
 //
 // The child never relaunches: AIO_RECIPE_STAGE=1 marks it. The child's AIO
 // reads AIO_RECIPE_ACTIVE at session_start and applies everything the bridge
-// could not (model, thinking, tools, MCP, skills, instructions).
+// could not (model, thinking, MCP).
 //
 // The decision engine is pure — decideRelaunch() inspects argv via pi's own
 // parseArgs and never performs side effects — so tests cover every guard and

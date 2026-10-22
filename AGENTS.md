@@ -57,8 +57,8 @@ generated `dist/` tree without changing the package contract.
 - `index.ts` is the sole package entry point and composes feature-level
   registrars. Preserve registration order unless deliberately changing event
   interception: `registerRecipes` runs FIRST (its factory-time relaunch bridge
-  decides before anything else starts, and its session_start recipe tools set
-  the baseline permission-modes snapshots); hypa
+  decides before anything else starts, and session_start applies recipe state
+  before other feature initialization); hypa
   must register after rtk (rtk precedence) but before queue and pretty tools,
   which own the final bash behavior. Blocklist gates run before
   permission-modes (loop blocks preempt mode checks; the hard
@@ -74,11 +74,8 @@ generated `dist/` tree without changing the package contract.
   `/.pi/aio-recipes.json` recipes override same-name globals; the global file
   is also replaced whole by `AIO_RECIPES_FILE` for tests — goal-settings
   contract — and is never written by AIO). Session-scoped keys (model plus
-  `:thinking` spec suffix, tools in the `defaultTools` grammar with `*`
-  globs, MCP servers registered through `registerMcpServer`/`unregisterMcpServer`
-  by this feature only, hidden `recipe-context` instructions with a
-  keep-latest-stray-strip context filter mirroring styles, and
-  skills/prompts/themes contributed via `resources_discover` while active)
+  `:thinking` spec suffix, thinking level, and MCP servers registered through
+  `registerMcpServer`/`unregisterMcpServer` by this feature only)
   apply at `session_start` and on `/recipe` switches — the command refreshes
   the config itself so a mid-session file edit is honored. Restart-scoped
   keys (`extensions`, `models`) are applied by the relaunch bridge in the
@@ -125,13 +122,15 @@ generated `dist/` tree without changing the package contract.
   child so a `/resume`d session entry still wins. `/recipe init [name]`
   writes a `.pi-recipe` (exclusive create; always a full self-contained
   scaffold — blank, seeded with the live model/thinking, or a COPY of a home
-  recipe chosen in a picker or via `--from`, with relative resource paths
-  rebased to `~/`/absolute) and trusts it. The file is
+  recipe chosen in a picker or via `--from`) and trusts it. The file is
   portable: its `defaultRecipe` resolves only against its own `recipes`
   (never global/project ones; otherwise ignored with a warning);
   `/recipe trust` / `/recipe untrust` record or forget the decision.
-  Recipes literally named `init`/`trust`/`untrust` keep switching. Subagent children register only the context filter (forked children
-  strip inherited recipe instructions). Status is dual-channel (frame
+  Recipes support only description/model/thinkingLevel/models/mcpServers/extensions;
+  unknown keys are ignored. Recipes literally named `init`/`trust`/`untrust` keep
+  switching. Every process strips legacy `recipe-context` messages from model
+  context, even while a recipe is active. Subagent children register only that
+  cleanup filter and the status renderer (no recipe activation). Status is dual-channel (frame
   `recipe` pill beside the mode-style cluster, else a `statuses`-segment
   pill). `/recipe status [--json]` (unambiguous alias `/recipe-status`) uses
   `status.ts` to capture actual model/API/thinking/scope, launch extension

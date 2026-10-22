@@ -113,7 +113,7 @@ test("a trusted directory file overrides recipes and the default of every other 
 	writeDirectory(".pi-recipe.json", {
 		defaultRecipe: "repo",
 		recipes: {
-			repo: { model: "openai-codex/gpt-5", skills: ["skills/repo"] },
+			repo: { model: "openai-codex/gpt-5" },
 			work: { description: "repo flavored work" },
 		},
 	});
@@ -121,7 +121,7 @@ test("a trusted directory file overrides recipes and the default of every other 
 	assert.equal(loaded.defaultRecipe, "repo");
 	assert.equal(loaded.defaultSource, "directory");
 	assert.equal(loaded.recipes.repo.source, "directory");
-	assert.equal(loaded.recipes.repo.baseDir, dir, "resource paths resolve from the folder");
+	assert.equal(loaded.recipes.repo.baseDir, dir, "config provenance records the folder");
 	assert.equal(loaded.recipes.work.config.description, "repo flavored work");
 	assert.equal(loaded.recipes.home.source, "project");
 });
@@ -196,6 +196,10 @@ test("trust prompt: summarizes what the file would change", () => {
 				extensions: ["npm:pi-thing"],
 				mcpServers: { linear: { url: "https://x" } },
 				instructions: "Be careful.",
+				tools: ["read"],
+				skills: ["skills/"],
+				prompts: ["prompts/"],
+				themes: ["theme.json"],
 			},
 		},
 	});
@@ -203,7 +207,7 @@ test("trust prompt: summarizes what the file would change", () => {
 	assert.equal(lines[0], "default recipe: repo");
 	assert.equal(
 		lines[1],
-		"repo: model openai-codex/gpt-5 · models openai-codex/* · extensions npm:pi-thing · MCP linear · instructions",
+		"repo: model openai-codex/gpt-5 · models openai-codex/* · extensions npm:pi-thing · MCP linear",
 	);
 	writeDirectory(".pi-recipe", { defaultRecipe: "work" });
 	assert.deepEqual(describeRecipeFile(join(dir, ".pi-recipe")), [

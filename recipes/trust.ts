@@ -166,11 +166,6 @@ export function describeRecipeFile(file: string): string[] {
 		if (extensions.length) bits.push(`extensions ${extensions.join(", ")}`);
 		const mcp = typeof entry.mcpServers === "object" && entry.mcpServers ? Object.keys(entry.mcpServers) : [];
 		if (mcp.length) bits.push(`MCP ${mcp.join(", ")}`);
-		const tools = list(entry.tools);
-		if (tools.length) bits.push(`tools ${tools.join(" ")}`);
-		if (typeof entry.instructions === "string" && entry.instructions.trim()) bits.push("instructions");
-		const resources = [...list(entry.skills), ...list(entry.prompts), ...list(entry.themes)];
-		if (resources.length) bits.push(`${resources.length} resource path(s)`);
 		lines.push(`${name}: ${bits.length ? bits.join(" · ") : "no settings"}`);
 	}
 	return lines;
