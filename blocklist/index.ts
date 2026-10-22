@@ -12,6 +12,7 @@
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { isShellTool } from "../permission-modes/utils.js";
 import {
 	checkBlocklist,
 	loadBlocklist,
@@ -35,20 +36,20 @@ function buildContextContent(rules: BlocklistRule[]): string {
 		return `- ${rule.pattern} (${origin}): ${reason}`;
 	});
 	return `[BLOCKLIST ACTIVE — hard block]
-The following agent-issued shell commands are blocked and fail with an error if attempted via the bash tool. They cannot be approved, even in auto mode. Do not attempt them. Commands explicitly typed by the user with !/!! are outside this agent gate:
+The following agent-issued shell commands are blocked and fail with an error if attempted via the bash or hypa_shell tools. They cannot be approved, even in auto mode. Do not attempt them. Commands explicitly typed by the user with !/!! are outside this agent gate:
 
 ${lines.join("\n")}`;
 }
 
 export function registerBlocklist(pi: ExtensionAPI): void {
-	// ---- tool_call gate: hard-block bash in every permission mode ----
+	// ---- tool_call gate: hard-block shell tools in every permission mode ----
 
 	pi.on("tool_call", async (event, ctx) => {
-		if (event.toolName !== "bash") return undefined;
+		if (!isShellTool(event.toolName)) return undefined;
 		if (event.toolCallId.startsWith(CURSOR_REPLAY_TOOL_CALL_PREFIX)) {
 			return undefined;
 		}
-		const command = event.input.command;
+		const command = "command" in event.input ? event.input.command : undefined;
 		if (typeof command !== "string") return undefined;
 		const hit = checkBlocklist(command, ctx.cwd);
 		if (!hit) return undefined;

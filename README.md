@@ -487,11 +487,12 @@ hours) to extend an individual run beyond its agent default.
 Trusted project definitions override user definitions, which override bundled
 agents. Project agent files are ignored until Pi trusts the checkout.
 
-Subagents inherit AIO's active permission mode. In `ask` and `plan` modes,
-mutations remain blocked. In `default` mode, headless children cannot answer
-permission prompts, so mutation attempts are blocked. Use `auto` only when you
-intend to authorize a writer child. Child sessions never receive the `subagent`
-tool, so nested delegation is unavailable.
+Subagent children run in `auto` mode because they are headless and cannot
+answer permission prompts, even when the parent is in default/ask/plan mode.
+The parent's per-call approvals do not gate child mutations; delegate only
+work you intend to authorize, and explicitly assign read-only tasks when
+needed. Hard blocklists still apply in children. Child sessions never receive
+the `subagent` tool, so nested delegation is unavailable.
 
 AIO launches child sessions through `pi` on `PATH`. Wrappers and custom
 installations can set `AIO_SUBAGENT_PI_BINARY` to an alternate Pi executable.
@@ -543,8 +544,8 @@ While typing a `!` command, aio shows live feedback:
 
 ## Command blocklist
 
-`aio` ships a hard blocklist for agent `bash` tool calls: listed commands
-never run, regardless of permission mode (even `auto`). Explicit user `!`/`!!`
+`aio` ships a hard blocklist for agent `bash` and `hypa_shell` calls: listed
+commands never run, regardless of permission mode (even `auto`). Explicit user `!`/`!!`
 commands bypass this gate. A blocked agent command fails with an error explaining
 which rule matched — it cannot be approved, and the model is told about the
 blocklist at the start of every turn so it does not waste attempts on it.
@@ -588,6 +589,15 @@ Cycle with **Shift+Tab**: default → ask → plan → auto → default
 | ask     | disabled         | blocked             | allow |
 | plan    | disabled         | blocked             | allow |
 | auto    | auto-approve     | auto-approve        | allow |
+
+Both `bash` and `hypa_shell` use these checks, including calls reached through
+other tools. Python/Node scripts and commands outside the simple read-only
+allowlist require per-call approval in default mode (and fail closed without
+UI). Compound commands, pipes, redirections, substitutions, and execution-capable
+wrappers also require approval rather than trusting a safe-looking prefix.
+Git diff/log/show require approval because configured external-diff/textconv
+helpers can execute code implicitly. Even quoted shell metacharacters take this conservative path. Ask/plan block
+these commands; auto permits them. Explicit user `!`/`!!` commands are unchanged.
 
 Ask mode is passive Q&A and exploration: it can inspect the codebase and answer
 questions, but it cannot mutate state and does not start plan extraction or

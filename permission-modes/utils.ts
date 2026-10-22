@@ -38,60 +38,34 @@ export const DESTRUCTIVE_PATTERNS: RegExp[] = [
 	/\b(vim?|nano|emacs|code|subl)\b/i,
 ];
 
+// Deliberately narrow: programs with write/exec options (env, find, awk,
+// sed, curl, package managers, pagers, etc.) require approval, even when a
+// particular invocation might only read. Git diff/log/show can invoke implicit
+// external-diff/textconv helpers, so they also require approval. Match complete command names, not
+// prefixes such as `cat-editor` or `git status-extra`.
 export const SAFE_PATTERNS: RegExp[] = [
-	/^\s*cat\b/,
-	/^\s*head\b/,
-	/^\s*tail\b/,
-	/^\s*less\b/,
-	/^\s*more\b/,
-	/^\s*grep\b/,
-	/^\s*find\b/,
-	/^\s*ls\b/,
-	/^\s*pwd\b/,
-	/^\s*echo\b/,
-	/^\s*printf\b/,
-	/^\s*wc\b/,
-	/^\s*sort\b/,
-	/^\s*uniq\b/,
-	/^\s*diff\b/,
-	/^\s*file\b/,
-	/^\s*stat\b/,
-	/^\s*du\b/,
-	/^\s*df\b/,
-	/^\s*tree\b/,
-	/^\s*which\b/,
-	/^\s*whereis\b/,
-	/^\s*type\b/,
-	/^\s*env\b/,
-	/^\s*printenv\b/,
-	/^\s*uname\b/,
-	/^\s*whoami\b/,
-	/^\s*id\b/,
-	/^\s*date\b/,
-	/^\s*cal\b/,
-	/^\s*uptime\b/,
-	/^\s*ps\b/,
-	/^\s*top\b/,
-	/^\s*htop\b/,
-	/^\s*free\b/,
-	/^\s*git\s+(status|log|diff|show|branch|remote|config\s+--get)/i,
-	/^\s*git\s+ls-/i,
-	/^\s*npm\s+(list|ls|view|info|search|outdated|audit)/i,
-	/^\s*yarn\s+(list|info|why|audit)/i,
-	/^\s*node\s+--version/i,
-	/^\s*python\s+--version/i,
-	/^\s*curl\s/i,
-	/^\s*wget\s+-O\s*-/i,
-	/^\s*jq\b/,
-	/^\s*sed\s+-n/i,
-	/^\s*awk\b/,
-	/^\s*rg\b/,
-	/^\s*fd\b/,
-	/^\s*bat\b/,
-	/^\s*eza\b/,
+	/^\s*(cat|head|tail|grep|ls|pwd|echo|printf|wc|diff|stat|du|df|which|whereis|type|printenv|uname|whoami|id|cal|uptime|ps|free|rg|eza)(?=\s|$)/,
+	/^\s*git\s+(status|ls-files|ls-tree)(?=\s|$)/,
+	/^\s*git\s+branch(?:\s+(?:--show-current|--list|-a|-r|-v|--all|--remotes))*\s*$/,
+	/^\s*git\s+remote(?:\s+(?:-v|--verbose))?\s*$/,
+	/^\s*(node|python(?:\d+(?:\.\d+)?)?)\s+--version\s*$/,
 ];
 
+/** AIO shell execution surfaces must share the same permission/blocklist gates. */
+export function isShellTool(toolName: string): boolean {
+	return toolName === "bash" || toolName === "hypa_shell";
+}
+
 export function isSafeCommand(command: string): boolean {
+	// This is an approval allowlist, not a shell parser. Never infer safety
+	// from the first executable in a script. Quoted metacharacters also take
+	// the conservative path: default asks; ask/plan block; auto permits.
+	if (/[;&|`$<>()\\\r\n{}*?\[\]\x00-\x1f\x7f]/.test(command)) return false;
+	// Strip quotes for option checks so --p''re and --out"put" cannot hide
+	// execution/output flags. Expansions and escapes were rejected above.
+	const unquoted = command.replace(/["']/g, "");
+	if (/--(?:output|pre|hostname-bin|ext-diff|textconv)(?:[=\s]|$)/.test(unquoted)) return false;
+	if (/\s-[^-\s]*o/.test(unquoted)) return false;
 	const isDestructive = DESTRUCTIVE_PATTERNS.some((p) => p.test(command));
 	const isSafe = SAFE_PATTERNS.some((p) => p.test(command));
 	return !isDestructive && isSafe;

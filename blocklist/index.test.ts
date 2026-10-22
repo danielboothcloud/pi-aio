@@ -165,6 +165,18 @@ test("tool_call: blocks a blocklisted bash command in auto mode", async () => {
 	assert.match(String(result.reason), /rm -rf \/tmp\/data/);
 });
 
+for (const mode of ["default", "ask", "plan", "auto"] as const) {
+	test(`tool_call: hypa_shell cannot bypass the hard blocklist in ${mode}`, async () => {
+		writeGlobal({ enabled: true, entries: ["python3"] });
+		const harness = makeHarness({ selections: ["Allow"] });
+		await harness.setMode(mode);
+		const result = await harness.runToolCall("hypa_shell", { command: "python3 edit.py", raw: true });
+		assert.equal(result?.block, true);
+		assert.match(String(result.reason), /Blocked by aio blocklist/);
+		assert.deepEqual(harness.selectPrompts, [], "the hard block must preempt approval");
+	});
+}
+
 test("tool_call: blocklist wins over the permission gate even in ask mode", async () => {
 	// "ls -la" is on the permission gate's read-only allowlist, so in ask mode
 	// only the blocklist can stop it — proves the blocklist runs first.

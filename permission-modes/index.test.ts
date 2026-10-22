@@ -230,6 +230,67 @@ test("ask mode is passive without forcing a plan workflow", async () => {
 	}
 });
 
+for (const toolName of ["bash", "hypa_shell"]) {
+	test(`default mode requires approval for Python edits via ${toolName}`, async () => {
+		const { ctx, handlers, pi, selectPrompts } = makeHarness({ selections: ["Block", "Allow"] });
+		registerPermissionModes(pi);
+		const [handler] = handlers.get("tool_call") ?? [];
+		const event = {
+			toolCallId: "python-edit",
+			toolName,
+			input: { command: "python3 -c 'from pathlib import Path; Path(\"example.ts\").write_text(\"changed\")'" },
+		};
+		assert.equal((await handler(event, ctx))?.block, true);
+		assert.equal(selectPrompts.length, 1);
+		assert.match(selectPrompts[0], /Allow .*python3/);
+		assert.equal(await handler(event, ctx), undefined, "explicit approval permits this call");
+		assert.equal(selectPrompts.length, 2, "each call asks again");
+		assert.equal((await handler(event, { ...ctx, hasUI: false }))?.block, true);
+		assert.equal(selectPrompts.length, 2, "headless default mode fails closed");
+	});
+
+	test(`safe-looking prefixes cannot bypass default approval via ${toolName}`, async () => {
+		const commands = [
+			"echo ready; python3 edit.py",
+			"env python3 edit.py",
+			"find . -exec python3 edit.py {} ;",
+			"awk 'BEGIN {system(\"python3 edit.py\")}'",
+			"curl -o example.ts https://example.invalid/file",
+			"git diff --no-index /dev/null package.json",
+		];
+		const { ctx, handlers, pi, selectPrompts } = makeHarness({ selections: commands.map(() => "Block") });
+		registerPermissionModes(pi);
+		const [handler] = handlers.get("tool_call") ?? [];
+		for (const command of commands) {
+			assert.equal((await handler({ toolCallId: "wrapped-edit", toolName, input: { command } }, ctx))?.block, true, command);
+		}
+		assert.equal(selectPrompts.length, commands.length);
+		assert.equal(await handler({ toolCallId: "read", toolName, input: { command: "ls -la" } }, ctx), undefined);
+		assert.equal(selectPrompts.length, commands.length, "simple reads do not prompt");
+	});
+
+	for (const mode of ["ask", "plan"] as const) {
+		test(`${mode} blocks Python edits via ${toolName} without prompting`, async () => {
+			const { commands, ctx, handlers, pi, selectPrompts } = makeHarness();
+			registerPermissionModes(pi);
+			await commands.get(mode)!.handler("", ctx);
+			const [handler] = handlers.get("tool_call") ?? [];
+			const result = await handler({ toolCallId: "python-edit", toolName, input: { command: "python3 edit.py" } }, ctx);
+			assert.equal(result?.block, true);
+			assert.deepEqual(selectPrompts, []);
+		});
+	}
+
+	test(`auto mode permits Python edits via ${toolName} without prompting`, async () => {
+		const { commands, ctx, handlers, pi, selectPrompts } = makeHarness();
+		registerPermissionModes(pi);
+		await commands.get("auto")!.handler("", ctx);
+		const [handler] = handlers.get("tool_call") ?? [];
+		assert.equal(await handler({ toolCallId: "python-edit", toolName, input: { command: "python3 edit.py" } }, ctx), undefined);
+		assert.deepEqual(selectPrompts, []);
+	});
+}
+
 test("auto mode approves tools without queuing continuation prompts", async () => {
 	const { commands, ctx, handlers, pi, sentUserMessages } = makeHarness();
 
@@ -249,7 +310,7 @@ test("auto mode approves tools without queuing continuation prompts", async () =
 				arguments: { path: "README.md" },
 			},
 		],
-	} as AssistantMessage;
+	} as unknown as AssistantMessage;
 	for (const handler of handlers.get("turn_end") ?? []) {
 		await handler({ message }, ctx);
 	}

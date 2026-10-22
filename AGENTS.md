@@ -145,8 +145,13 @@ generated `dist/` tree without changing the package contract.
   tools, gates nothing, and registers FIRST.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
   `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/`
-  gates agent mutations. `user-bash/` owns editor hints only. Changes can cross
-  feature boundaries.
+  gates agent mutations. `bash` and `hypa_shell` share permission and hard
+  blocklist checks (`isShellTool`); never gate only one shell surface. The shell
+  read-only allowlist is deliberately conservative: scripts, compound commands,
+  execution-capable wrappers, and helper-capable Git diff/log/show require
+  approval in default mode and are blocked in ask/plan. Auto stays permissive
+  except for hard blocklists. `user-bash/` owns editor hints only. Changes can
+  cross feature boundaries.
 - `ui/chrome.ts` is the shared visual vocabulary for AIO-owned surfaces:
   theme-aware accent rails, headers, items, hints, dividers, pluralization, and
   ANSI-aware width fitting. Diff/approval, pretty tools, copy picker, queue,

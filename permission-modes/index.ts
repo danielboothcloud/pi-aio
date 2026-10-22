@@ -29,6 +29,7 @@ import { showMutationApproval } from "./approval-dialog.js";
 import {
 	extractTodoItems,
 	isSafeCommand,
+	isShellTool,
 	markCompletedSteps,
 	type TodoItem,
 } from "./utils.js";
@@ -106,7 +107,7 @@ function getCursorReplayMutation(
 	input: Record<string, unknown>,
 ): string | undefined {
 	if (FILE_MUTATION_TOOLS.has(tool)) return tool;
-	if (tool === "bash") {
+	if (isShellTool(tool)) {
 		const command = String(input.command ?? "");
 		return isSafeCommand(command) ? undefined : "shell command";
 	}
@@ -574,7 +575,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 					reason: `${label} mode: ${tool} disabled. Switch modes to make changes.`,
 				};
 			}
-			if (tool === "bash") {
+			if (isShellTool(tool)) {
 				const cmd = String(input.command ?? "");
 				if (!isSafeCommand(cmd)) {
 					return {
@@ -607,19 +608,19 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			return undefined;
 		}
 
-		if (tool === "bash") {
+		if (isShellTool(tool)) {
 			const cmd = String(input.command ?? "");
 			if (isSafeCommand(cmd)) return undefined; // read-only: allow
 			if (!ctx.hasUI) {
-				return { block: true, reason: "bash blocked: no UI to confirm." };
+				return { block: true, reason: `${tool} blocked: no UI to confirm.` };
 			}
-			const choice = await ctx.ui.select(`Allow bash "${cmd}"?`, [
+			const choice = await ctx.ui.select(`Allow ${tool} "${cmd}"?`, [
 				"Allow",
 				"Block",
 			]);
 			return choice === "Allow"
 				? undefined
-				: { block: true, reason: "bash blocked by user" };
+				: { block: true, reason: `${tool} blocked by user` };
 		}
 
 		// reads and anything else: pass through
@@ -681,7 +682,8 @@ You are in ask mode — a passive, read-only mode for questions, explanations, a
 
 Restrictions:
 - edit, write, and apply_patch tools are disabled
-- bash is restricted to an allowlist of read-only commands
+- bash and hypa_shell are restricted to a conservative allowlist of simple read-only commands
+- scripts, compound commands, and execution-capable wrappers are blocked
 - reads (read/grep/find/ls) pass through
 
 Answer the user's request directly. Ground answers in what you can read — files, logs, git history — and prefer evidence over prediction. Where the answer cannot be determined without running something, say "unknown — would need to run it" instead of reasoning past the evidence.
@@ -694,7 +696,8 @@ You are in plan mode — a read-only exploration mode for safe code analysis.
 
 Restrictions:
 - edit, write, and apply_patch tools are disabled
-- bash is restricted to an allowlist of read-only commands
+- bash and hypa_shell are restricted to a conservative allowlist of simple read-only commands
+- scripts, compound commands, and execution-capable wrappers are blocked
 - reads (read/grep/find/ls) pass through
 
 The plan decides what to do and what to measure; it does not solve the problem. Emitting it is the stopping point — do not resolve unknowns in order to finish.
@@ -711,7 +714,7 @@ For diagnostic tasks, put these sections BEFORE the "Plan:" header:
 Do NOT attempt to make changes — just plan. Observe, don't deduce: prefer a read-only look (file, log, git history) over predicting behavior in prose. Split multi-symptom bugs: plan one symptom at a time. More than ~4 interacting state variables: use a state or hypothesis table, not prose. Never state the same conclusion a third time — repetition is not evidence; add an observation or change the hypothesis.`;
 		} else if (currentMode === "auto") {
 			body = `[AUTO MODE ACTIVE]
-All tool calls (edit, write, bash) are auto-approved — no permission prompts.
+All tool calls (edit, write, apply_patch, bash, hypa_shell) are auto-approved — no permission prompts.
 Proceed without asking for confirmation.
 
 Work rules:
@@ -726,8 +729,9 @@ If a todo list is active, toggle each finished step with the todo tool before co
 		} else {
 			body = `[DEFAULT MODE ACTIVE]
 - edit, write, and apply_patch tools require per-call user approval
-- mutating bash commands require per-call user approval
-- read-only bash and reads (read/grep/find/ls) pass through without prompting
+- bash and hypa_shell commands outside the simple read-only allowlist require per-call user approval
+- Python/Node scripts, compound commands, and execution-capable wrappers require approval too; never use them to bypass edit/write approval
+- simple read-only shell commands and reads (read/grep/find/ls) pass through without prompting
 Prefer running a cheap check (test, command, log line) over reasoning about behavior you could observe.`;
 		}
 
