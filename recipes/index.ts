@@ -88,7 +88,8 @@ import {
 } from "./trampoline.js";
 
 import { registerRecipeStatusRenderer, showRecipeStatus } from "./status.js";
-import { continuedRecipeForLaunch } from "./continue.js";
+import { resumedRecipeForLaunch } from "./continue.js";
+import { relaunchFromSession, selectedSessionRelaunch } from "./resume.js";
 
 function isSubagentChild(): boolean {
 	return process.env[SUBAGENT_CHILD_ENV] === "1";
@@ -487,6 +488,7 @@ async function sessionStart(
 	event: SessionStartEvent,
 	ctx: ExtensionContext,
 	exitOnInvalidScope: (code: number) => never,
+	relaunch: typeof execRelaunch,
 ): Promise<void> {
 	const state = recipeRuntime();
 	refreshRecipes(ctx);
@@ -523,7 +525,8 @@ async function sessionStart(
 	// Selection precedence: flag > bridge env > session entry > startup default.
 	let name: string | undefined;
 	let source: RecipeSourceMarker | undefined;
-	const flag = pi.getFlag(RECIPE_FLAG);
+	// A deliberate /resume follows its target, not the original launch's flag.
+	const flag = event.reason === "resume" ? undefined : pi.getFlag(RECIPE_FLAG);
 	if (typeof flag === "string" && flag.trim()) {
 		name = flag.trim();
 		source = "flag";
@@ -535,7 +538,7 @@ async function sessionStart(
 	const envName = process.env[ACTIVE_RECIPE_ENV]?.trim();
 	const envIsDefault = process.env[RECIPE_ORIGIN_ENV] === "directory";
 	const envIsSession = process.env[RECIPE_ORIGIN_ENV] === "session";
-	if (name === undefined && envName && !envIsDefault && !envIsSession) {
+	if (name === undefined && event.reason !== "resume" && envName && !envIsDefault && !envIsSession) {
 		name = envName;
 		source = "env";
 	}
@@ -556,11 +559,26 @@ async function sessionStart(
 		}
 	}
 
+	const def = name === undefined ? undefined : state.recipes.recipes[name];
+	if (source !== "directory" && source !== "default") {
+		const decision = selectedSessionRelaunch({
+			argv: process.argv, command: process.execPath, env: process.env,
+			reason: event.reason, file: ctx.sessionManager.getSessionFile?.(), def,
+		});
+		if (decision?.action === "relaunch") {
+			if (ctx.mode === "tui" || (ctx.mode === "rpc" && event.reason === "startup")) {
+				process.stderr.write(`${relaunchNotice(decision.spec)}\n`);
+				if (await relaunchFromSession(ctx, decision.spec, relaunch)) return;
+				notify(ctx, `Recipe "${name ?? "off"}" relaunch failed — extension set and model scope stay unchanged`, "warning");
+			} else {
+				notify(ctx, `Recipe "${name ?? "off"}" needs a restart to restore extensions/model scope: pi --session ${JSON.stringify(ctx.sessionManager.getSessionFile())}`, "warning");
+			}
+		}
+	}
 	if (name === undefined) {
 		deactivateRecipe(pi, ctx, { persist: false });
 		return;
 	}
-	const def = state.recipes.recipes[name];
 	if (!def) {
 		deactivateRecipe(pi, ctx, { persist: false });
 		notify(ctx, `Unknown recipe "${name}". Available: ${availableNamesText()}`, "warning");
@@ -616,6 +634,8 @@ export async function registerRecipes(
 		promptTrust?: (file: string) => Promise<TrustChoice>;
 		/** Test seam: whether this launch may ask on the terminal. */
 		interactiveLaunch?: boolean;
+		/** Test seam for both early and post-selection relaunches. */
+		relaunch?: typeof execRelaunch;
 	} = {},
 ): Promise<void> {
 	const exitOnInvalidScope = options.exitOnInvalidScope ?? ((code: number): never => process.exit(code));
@@ -646,7 +666,8 @@ export async function registerRecipes(
 	// TUI starts, so a just-trusted restart-scoped recipe can still relaunch.
 	let launchNotice: string | undefined;
 	try {
-		const launchCwd = process.cwd();
+		const resumed = await resumedRecipeForLaunch({ argv: process.argv, env: process.env, cwd: process.cwd() });
+		const launchCwd = resumed?.cwd ?? process.cwd();
 		const launchFile = directoryRecipesPath(launchCwd);
 		let launchTrust = launchFile
 			? recipeFileTrust(launchFile, { cliArgs: cliArgsFromArgv(process.argv) })
@@ -675,20 +696,22 @@ export async function registerRecipes(
 			projectTrusted: false,
 			directoryTrusted: launchTrust === "trusted",
 		});
-		const decision = decideRelaunch({
+		// The CLI picker has already run, but factories have no selected-session
+		// context. Defer --resume until session_start instead of asking twice.
+		const decision = parseArgs(cliArgsFromArgv(process.argv)).resume
+			? { action: "none" as const, reason: "resume" }
+			: decideRelaunch({
 			argv: process.argv,
 			command: process.execPath,
 			env: { ...process.env },
 			recipes: launch.recipes,
 			directoryRecipe: launch.defaultSource === "directory" ? launch.defaultRecipe : undefined,
-			continuedRecipe: continuedRecipeForLaunch({
-				argv: process.argv, env: process.env, cwd: launchCwd,
-			}),
+			continuedRecipe: resumed,
 			aioExtensionPath: AIO_RECIPE_EXTENSION_PATH,
 		});
 		if (decision.action === "relaunch") {
 			process.stderr.write(`${relaunchNotice(decision.spec)}\n`);
-			const tookOver = await execRelaunch(decision.spec);
+			const tookOver = await (options.relaunch ?? execRelaunch)(decision.spec);
 			if (!tookOver) {
 				launchNotice = `recipe "${decision.spec.recipeName}" relaunch failed — continuing in-session; extension set and model scope stay unchanged`;
 			}
@@ -705,7 +728,7 @@ export async function registerRecipes(
 
 	pi.on("session_start", async (event, ctx) => {
 		try {
-			await sessionStart(pi, event, ctx, exitOnInvalidScope);
+			await sessionStart(pi, event, ctx, exitOnInvalidScope, options.relaunch ?? execRelaunch);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			notify(ctx, `recipes: session activation failed: ${message}`, "warning");

@@ -98,6 +98,15 @@ export default async function(pi) {
 		assert.equal(records.find(record => record.id === "after")?.data?.model?.id, "one", "cycling stays scoped after continue");
 		assert.equal(report().entries.filter(entry => entry.customType === "recipe-state").length, 1, "resume does not re-pin the recipe");
 
+		const id = (initial.header as { id: string }).id;
+		for (const args of [["--session", initial.file], ["--session", id], ["--session", id.slice(0, 8)], ["--session-id", id]]) {
+			const resumed = run(args);
+			assert.equal((resumed.stderr.match(/restarting pi with recipe/g) ?? []).length, 1);
+			assert.equal(report().file, initial.file);
+			assert.deepEqual(report().scope, ["fixture/one"]);
+			assert.equal(report().entries.filter(entry => entry.customType === "recipe-state").length, 1);
+		}
+
 		const overridden = run(["-c", "--models", "fixture/two"]);
 		assert.doesNotMatch(overridden.stderr, /restarting pi/);
 		assert.deepEqual(report().scope, ["fixture/two"]);

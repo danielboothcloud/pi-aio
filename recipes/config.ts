@@ -55,6 +55,8 @@ export const RECIPES_FILE_ENV = "AIO_RECIPES_FILE";
 export const ACTIVE_RECIPE_ENV = "AIO_RECIPE_ACTIVE";
 /** Guard env: set on the relaunched child so it never relaunches again. */
 export const RECIPE_STAGE_ENV = "AIO_RECIPE_STAGE";
+/** Count of recipe-injected argv tokens; removable on a later TUI /resume. */
+export const RECIPE_INJECTED_ARGS_ENV = "AIO_RECIPE_INJECTED_ARGS";
 /** The CLI flag name (`--recipe`). */
 export const RECIPE_FLAG = "recipe";
 /** Session entry that pins the active recipe on the branch. */

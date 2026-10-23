@@ -48,6 +48,8 @@ process.env.PI_CODING_AGENT_DIR = agentDir;
 process.env[RECIPES_FILE_ENV] = join(agentDir, "aio-recipes.json");
 
 const SAVED_ACTIVE_RECIPE = process.env[ACTIVE_RECIPE_ENV];
+const SAVED_ORIGIN = process.env[RECIPE_ORIGIN_ENV];
+const SAVED_STAGE = process.env[RECIPE_STAGE_ENV];
 const SAVED_SUBAGENT_CHILD = process.env.AIO_SUBAGENT_CHILD;
 
 test.after(() => {
@@ -55,6 +57,10 @@ test.after(() => {
 	delete process.env[RECIPES_FILE_ENV];
 	if (SAVED_ACTIVE_RECIPE === undefined) delete process.env[ACTIVE_RECIPE_ENV];
 	else process.env[ACTIVE_RECIPE_ENV] = SAVED_ACTIVE_RECIPE;
+	if (SAVED_ORIGIN === undefined) delete process.env[RECIPE_ORIGIN_ENV];
+	else process.env[RECIPE_ORIGIN_ENV] = SAVED_ORIGIN;
+	if (SAVED_STAGE === undefined) delete process.env[RECIPE_STAGE_ENV];
+	else process.env[RECIPE_STAGE_ENV] = SAVED_STAGE;
 	if (SAVED_SUBAGENT_CHILD === undefined) delete process.env.AIO_SUBAGENT_CHILD;
 	else process.env.AIO_SUBAGENT_CHILD = SAVED_SUBAGENT_CHILD;
 	rmSync(tmp, { recursive: true, force: true });
@@ -196,6 +202,8 @@ test.beforeEach(() => {
 	resetRecipeRuntimeForTests();
 	restoreRecipesFile();
 	delete process.env[ACTIVE_RECIPE_ENV];
+	delete process.env[RECIPE_ORIGIN_ENV];
+	delete process.env[RECIPE_STAGE_ENV];
 	delete process.env.AIO_SUBAGENT_CHILD;
 });
 
@@ -299,14 +307,14 @@ test("session_start precedence: env (relaunched child) beats a session entry; fl
 	// A bridged relaunch (env) outranks the session entry.
 	state.flagValues.clear();
 	process.env[ACTIVE_RECIPE_ENV] = "work";
-	await fire(state, "session_start", { type: "session_start", reason: "resume" }, makeCtx(state));
+	await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
 	assert.equal(recipeRuntime().source, "env");
 	assert.equal(recipeRuntime().activeName, "work");
 	assert.equal(state.entries.length, 1, "env selection pins its own entry");
 
 	// The --recipe flag beats everything.
 	state.flagValues.set(RECIPE_FLAG, "home");
-	await fire(state, "session_start", { type: "session_start", reason: "resume" }, makeCtx(state));
+	await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
 	assert.equal(recipeRuntime().source, "flag");
 	assert.equal(recipeRuntime().activeName, "home");
 });
@@ -694,6 +702,51 @@ test("a continue bridge keeps branch selection authoritative and does not re-pin
 			assert.equal(recipeRuntime().activeName, undefined);
 		},
 	);
+});
+
+test("TUI /resume uses the selected branch recipe, not an old --recipe or bridge marker", async () => {
+	writeRecipesFile({ recipes: { work: { models: ["anthropic/claude-5"], extensions: ["/work.ts"] }, home: {} } });
+	const { pi, state } = makeMocks();
+	let selected: { recipeName: string; args: string[] } | undefined;
+	await registerRecipes(pi as never, { relaunch: async spec => { selected = spec; return true; } });
+	const originalArgv = process.argv;
+	try {
+		process.argv = [...originalArgv.slice(0, 2), "--recipe", "home", "old prompt"];
+		state.flagValues.set(RECIPE_FLAG, "home");
+		state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name: "work" } }];
+		const ctx = makeCtx(state);
+		await fire(state, "session_start", { type: "session_start", reason: "resume" }, {
+			...ctx, sessionManager: { ...ctx.sessionManager, getSessionFile: () => "/selected.jsonl" },
+			ui: { ...ctx.ui, custom: async (factory: Function) => {
+				let result: unknown;
+				await factory({ stop() {}, start() {}, requestRender() {} }, {}, {}, (value: unknown) => { result = value; });
+				return result;
+			} },
+		});
+		assert.equal(selected?.recipeName, "work");
+		assert.ok(selected?.args.includes("/selected.jsonl"));
+		assert.ok(!selected?.args.includes("old prompt"));
+		assert.equal(state.entries.length, 0);
+	} finally {
+		process.argv = originalArgv;
+	}
+});
+
+test("RPC /resume does not spawn a competing protocol reader and reports a restart hint", async () => {
+	writeRecipesFile({ recipes: { work: { model: "anthropic/claude-5", models: ["anthropic/*"], thinkingLevel: "high" } } });
+	const { pi, state } = makeMocks();
+	let relaunches = 0;
+	await registerRecipes(pi as never, { relaunch: async () => { relaunches++; return true; } });
+	state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name: "work" } }];
+	const ctx = makeCtx(state);
+	await fire(state, "session_start", { type: "session_start", reason: "resume" }, {
+		...ctx, mode: "rpc", sessionManager: { ...ctx.sessionManager, getSessionFile: () => "/selected.jsonl" },
+	});
+	assert.equal(relaunches, 0);
+	assert.equal(recipeRuntime().activeName, "work");
+	assert.equal(state.setModelCalls.length, 1);
+	assert.deepEqual(state.thinkingCalls, ["high"]);
+	assert.ok(state.notifications.some(notice => notice.type === "warning" && notice.message.includes("pi --session")));
 });
 
 async function flush(): Promise<void> {

@@ -129,10 +129,19 @@ global config, so the file works the same for every clone:
 - `pi --recipe other` beats the folder default, and `/recipe other` switches
   for the rest of that session. Resumes and forks (`-c`, `-r`, `--session`,
   `--session-id`, `--fork`, `/resume`) keep the session's own recipe.
-  `pi --continue` also reapplies that saved recipe's model scope and extensions
-  through the launch bridge, rather than using the folder's current default.
-  An explicit `--models` or `-e` still wins; `/reload` keeps deliberate
-  in-session scope changes.
+  `--continue`, `--session <path|id>` (including local partial IDs), and
+  `--session-id` reapply its model scope and extensions through the launch
+  bridge. Native `--resume`/`-r` and TUI `/resume` use the exact selected
+  session too: the TUI pauses for a one-time relaunch, without reopening the
+  picker or replaying the old initial prompt. Model, thinking level, and MCP
+  registrations restore with the recipe as well. An explicit `--models` or
+  `-e` still wins; `/reload` keeps deliberate in-session scope changes.
+  Switching to off or an unscoped recipe removes the previous recipe's
+  injected scope/extensions and restores the original user launch policy.
+  In-process RPC session switches cannot safely transfer an active protocol
+  reader; they restore session-scoped keys and show a `pi --session …`
+  restart hint when extensions/model scope need changing. CLI RPC resumes
+  by file or ID are fully supported.
 - Each version of the file must be trusted explicitly — trusting the folder
   in pi is not enough, and `--approve`/`defaultProjectTrust` do not count.
   The first interactive `pi` start with a new or **changed** file asks on the
@@ -182,7 +191,10 @@ normal but never change a launch. If the restart
 cannot run, AIO continues in-session and warns that the extension set and
 model scope stayed unchanged. Compiled Bun binaries are restarted without
 forwarding their virtual `/$bunfs/...` or `B:\\~BUN\\...` entry point; Node
-and uncompiled Bun retain their real CLI script.
+and uncompiled Bun retain their real CLI script. Recipe-injected relative
+extension paths resolve against the declaring recipe file's directory,
+including when opening a session from another working directory; explicit
+user `-e` paths retain Pi's CLI semantics.
 
 ### Checking a recipe's model scope
 
@@ -205,8 +217,12 @@ The compiled-binary startup regression test is opt-in and uses isolated,
 repository-local fixtures, no credentials, and no network or model calls:
 
 ```bash
-AIO_RECIPES_SMOKE_PI="$(command -v pi)" npx tsx --test recipes/compiled-smoke.test.ts recipes/continue-smoke.test.ts
+AIO_RECIPES_SMOKE_PI="$(command -v pi)" npx tsx --test recipes/compiled-smoke.test.ts recipes/continue-smoke.test.ts recipes/resume-smoke.test.ts
 ```
+
+The resume smoke suite also checks real TUI picker and `/resume` handoffs
+through a local PTY (`python3` on macOS/Linux), plus extension loading,
+thinking, disabled/offline MCP registration, and off/unscoped resets.
 
 ### Runtime inspection — `/recipe status`
 

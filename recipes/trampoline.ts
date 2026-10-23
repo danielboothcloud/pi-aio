@@ -33,11 +33,13 @@
 
 import { spawn, type ChildProcess } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { parseArgs } from "@earendil-works/pi-coding-agent";
 import {
 	ACTIVE_RECIPE_ENV,
 	PI_SUBCOMMANDS,
 	RECIPE_FLAG,
+	RECIPE_INJECTED_ARGS_ENV,
 	RECIPE_ORIGIN_ENV,
 	RECIPE_STAGE_ENV,
 	isRestartScoped,
@@ -134,28 +136,73 @@ export function stripRecipeInvocation(args: string[]): string[] | undefined {
 	let found = false;
 	for (let i = 0; i < args.length; i++) {
 		const token = args[i];
-		if (token === "--") {
-			// Nothing before the terminator was a recipe flag — nothing to strip.
-			if (!found) return undefined;
-			kept.push(...args.slice(i));
-			return kept;
-		}
 		const isLongRecipe = token === `--${RECIPE_FLAG}`;
 		const isEqualsForm = token.startsWith(`--${RECIPE_FLAG}=`);
-		if (isLongRecipe) {
+		// A flag-shaped value consumed by another option (or prompt text
+		// after --) never appears in the parser's unknown flag map.
+		const recognized = (isLongRecipe || isEqualsForm) && parseArgs([...kept, token]).unknownFlags.has(RECIPE_FLAG);
+		if (isLongRecipe && recognized) {
 			found = true;
 			const next = args[i + 1];
 			// parseArgs consumes the next non-dash token as the flag value.
 			if (next !== undefined && !next.startsWith("-")) i++;
 			continue;
 		}
-		if (isEqualsForm) {
+		if (isEqualsForm && recognized) {
 			found = true;
 			continue;
 		}
 		kept.push(token);
 	}
 	return found ? kept : undefined;
+}
+
+/** Pin an already-selected session without repeating a picker/ID lookup.
+ * Parse prefixes so flag-shaped option values and text after -- survive.
+ */
+export function pinSessionInvocation(args: string[], file: string): string[] {
+	const kept: string[] = [];
+	for (let i = 0; i < args.length; i++) {
+		const arg = args[i];
+		if ((arg === "-c" || arg === "--continue") && parseArgs([...kept, arg]).continue) continue;
+		if ((arg === "-r" || arg === "--resume") && parseArgs([...kept, arg]).resume) continue;
+		if (arg === "--session" || arg === "--session-id") {
+			const parsed = parseArgs([...kept, arg, ...args.slice(i + 1, i + 2)]);
+			const value = arg === "--session" ? parsed.session : parsed.sessionId;
+			if (value !== undefined) {
+				i++;
+				continue;
+			}
+		}
+		kept.push(arg);
+	}
+	return ["--session", file, ...kept];
+}
+
+/** Remove the previous recipe's launch policy when a TUI switch targets off
+ * or a recipe with no restart-scoped keys. Original user flags are retained.
+ */
+export function baselineSessionRelaunch(options: {
+	argv: string[];
+	command: string;
+	env: Record<string, string | undefined>;
+	file: string;
+	recipeName?: string;
+}): RelaunchSpec {
+	return {
+		command: options.command,
+		args: [...relaunchEntryArgs(options.argv), ...pinSessionInvocation(cliArgsFromArgv(options.argv), options.file)],
+		env: {
+			...options.env,
+			[RECIPE_STAGE_ENV]: "1",
+			[RECIPE_INJECTED_ARGS_ENV]: "0",
+			[ACTIVE_RECIPE_ENV]: options.recipeName,
+			[RECIPE_ORIGIN_ENV]: "session",
+		},
+		recipeName: options.recipeName ?? "off",
+		origin: "session",
+		reasons: ["previous recipe settings cleared"],
+	};
 }
 
 /**
@@ -187,7 +234,7 @@ export function decideRelaunch(options: TrampolineOptions): TrampolineDecision {
 	const flagValue = parsed.unknownFlags.get(RECIPE_FLAG);
 	let name: string;
 	let origin: RecipeLaunchOrigin;
-	if (flagValue === undefined && options.continuedRecipe && parsed.continue) {
+	if (flagValue === undefined && options.continuedRecipe) {
 		name = options.continuedRecipe.name;
 		origin = "session";
 	} else if (flagValue === undefined) {
@@ -215,7 +262,7 @@ export function decideRelaunch(options: TrampolineOptions): TrampolineDecision {
 		origin = "flag";
 	}
 	const label = origin === "flag" ? `--recipe "${name}"` :
-		origin === "session" ? `continued recipe "${name}"` : `.pi-recipe default "${name}"`;
+		origin === "session" ? `resumed recipe "${name}"` : `.pi-recipe default "${name}"`;
 
 	// Launches that print-and-exit: no session starts, so no bridge.
 	if (parsed.help || parsed.version || parsed.export !== undefined) {
@@ -251,7 +298,7 @@ export function decideRelaunch(options: TrampolineOptions): TrampolineDecision {
 		const exists = options.exists ?? ((_path: string) => true);
 		for (const entry of recipe.config.extensions ?? []) {
 			const resolved = resolveExtensionSource(entry, exists);
-			if (resolved) resolvedSources.push(resolved);
+			if (resolved) resolvedSources.push(/^\.\.?[/\\\\]/.test(resolved) ? resolve(recipe.baseDir, resolved) : resolved);
 		}
 		// A recipe whose every source failed to resolve would silently drop all
 		// of the user's extensions — stand down and tell the session instead.
@@ -279,22 +326,14 @@ export function decideRelaunch(options: TrampolineOptions): TrampolineDecision {
 	// the conservative choice (no message text is ever dropped). A directory
 	// default has no token to strip.
 	let bridgeable = origin === "flag" ? (stripRecipeInvocation(cliArgs) ?? cliArgs) : cliArgs;
-	if (origin === "session" && options.continuedRecipe) {
-		// Pin the file we inspected, rather than racing another --continue
-		// lookup. Never interpret prompt text after the option terminator.
-		const kept: string[] = [];
-		for (const arg of bridgeable) {
-			// Ask the parser whether this is a flag, not prompt text or a
-			// value consumed by another option (--append-system-prompt "-c").
-			if ((arg === "-c" || arg === "--continue") && parseArgs([...kept, arg]).continue) continue;
-			kept.push(arg);
-		}
-		bridgeable = ["--session", options.continuedRecipe.file, ...kept];
+	if (options.continuedRecipe) {
+		bridgeable = pinSessionInvocation(bridgeable, options.continuedRecipe.file);
 	}
 	const args = [...relaunchEntryArgs(options.argv), ...injected, ...bridgeable];
 	const childEnv: Record<string, string | undefined> = {
 		...env,
 		[RECIPE_STAGE_ENV]: "1",
+		[RECIPE_INJECTED_ARGS_ENV]: String(injected.length),
 		[ACTIVE_RECIPE_ENV]: name,
 		[RECIPE_ORIGIN_ENV]: origin,
 	};

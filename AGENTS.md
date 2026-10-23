@@ -126,8 +126,25 @@ generated `dist/` tree without changing the package contract.
   continue, marked `AIO_RECIPE_ORIGIN=session`. That marker never overrides
   session entries or re-pins them; explicit off remains off and explicit CLI
   model/extension flags still win. `/reload` never reapplies the launch scope.
-  The opt-in `continue-smoke.test.ts` verifies fresh → continue + cycling,
-  changed defaults, explicit overrides, and empty-scope rejection offline.
+  `continue.ts` also resolves direct `--session` paths/local IDs/prefixes and
+  existing `--session-id`s, using the target cwd for recipe discovery.
+  `resume.ts` handles the native CLI picker and TUI `/resume` after selection:
+  public `ctx.ui.custom` → `tui.stop()` releases the terminal for the same
+  relaunch; spawn failure restores the TUI. A deliberate `/resume` follows
+  its target branch rather than the original launch's recipe flag/env.
+  `AIO_RECIPE_INJECTED_ARGS` stores only the count of injected argv tokens:
+  switches remove those tokens, obsolete fork/no-session/name flags, and old
+  prompt/file args while retaining explicit user scope/extension overrides.
+  Off/unscoped targets relaunch to the original user baseline when needed.
+  Recipe-relative extension sources are absolutized against `def.baseDir`;
+  explicit CLI paths remain untouched. An in-process RPC switch warns with
+  an exact-file restart hint rather than spawning a competing JSONL reader;
+  CLI RPC startup is safe before input attachment. Late print/JSON paths
+  similarly avoid losing already-consumed piped input. Project-config recipes
+  still never supply restart keys. The opt-in continue/resume smoke suites
+  verify scopes/cycling, extension replacement, thinking/MCP registration,
+  native pickers and /resume through a Python PTY, off/unscoped resets,
+  explicit overrides, changed defaults, and empty-scope rejection offline.
   `/recipe init [name]` writes a `.pi-recipe` (exclusive create; always a full self-contained
   scaffold — blank, seeded with the live model/thinking, or a COPY of a home
   recipe chosen in a picker or via `--from`) and trusts it. The file is
