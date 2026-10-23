@@ -473,7 +473,26 @@ works.
 | `tab` / `shift+tab` (`]`/`[`) | Next or previous child, across all runs |
 | `o` | Expand or collapse tool arguments and full output, like ctrl+o |
 | `t` | Show or hide thinking |
+| `r` | Resume the selected failed/stopped child from its saved session (list or detail) |
 | `esc` / `q` | Back to the list / close |
+
+The detail header has a dedicated model row and effort pill, separate from
+errors so a long quota message cannot hide the configuration. Effort is the
+resolved launch setting; an unreported setting is labeled `default`.
+
+After quota recovers, press **`r`** on a failed or stopped child to continue its
+saved session with the original model, effort, agent configuration, working
+directory, timeout, and extension launch policy. It asks the child to continue
+without redoing completed work and does not rerun siblings. The continuation
+appears as a new single-child background run, follows in the overlay, and sends
+its result back to the parent. Closing
+the overlay does not stop it. The original result remains intact; if recovery
+fails again, resume the latest continuation rather than its ancestor.
+
+Resume is available only for runs still recorded in this parent process, after
+the child has fully stopped and while its saved session file exists. It never
+silently starts fresh when that file is missing. It does not bypass quota limits
+or add pause/model-switch controls; wait for usage to become available first.
 
 Transcripts are bounded and held in memory only. They never enter model
 context. Only the 10 most recent finished runs keep theirs. A child's session
@@ -524,8 +543,8 @@ AIO launches child sessions through `pi` on `PATH`. Wrappers and custom
 installations can set `AIO_SUBAGENT_PI_BINARY` to an alternate Pi executable.
 
 This intentionally reduced runtime does not include chains, dynamic fanout,
-structured-output contracts, worktrees, resume/steer, scheduling, acceptance
-gates, persistent agent memory, or automatic model fallbacks. Keep parallel
+structured-output contracts, worktrees, agent-driven resume/steer, scheduling,
+acceptance gates, persistent agent memory, or automatic model fallbacks. Keep parallel
 children read-only in a shared checkout and use one writer for changes.
 
 Do not load standalone `pi-subagents` alongside AIO because both packages

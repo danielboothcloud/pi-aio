@@ -101,6 +101,7 @@ export interface ChildRunResult {
 	error?: string;
 	exitCode: number;
 	model?: string;
+	thinking?: SubagentThinking;
 	sessionFile?: string;
 	startedAt: number;
 	endedAt: number;
@@ -120,6 +121,8 @@ export interface ChildRunStatus {
 	task: string;
 	state: SubagentRunState;
 	model?: string;
+	/** Resolved launch effort, independent of the parent's current setting. */
+	thinking?: SubagentThinking;
 	startedAt?: number;
 	endedAt?: number;
 	output?: string;
@@ -148,6 +151,8 @@ export interface SubagentRun {
 	results: ChildRunResult[];
 	error?: string;
 	stopRequested: boolean;
+	/** Manual continuation; the original run/result stays unchanged. */
+	resumedFrom?: { runId: string; index: number };
 }
 
 export interface ParentLaunchContext {

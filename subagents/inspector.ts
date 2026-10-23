@@ -16,6 +16,7 @@
 import {
 	Key,
 	matchesKey,
+	visibleWidth,
 	wrapTextWithAnsi,
 	type Component,
 } from "@earendil-works/pi-tui";
@@ -27,6 +28,7 @@ import {
 	chromeHint,
 	chromeItem,
 	fitLine,
+	padToWidth,
 	plural,
 	type ChromeTheme,
 	type ChromeTone,
@@ -40,7 +42,7 @@ const COLLAPSED_TOOL_LINES = 6;
 const COLLAPSED_PROMPT_LINES = 4;
 const COLLAPSED_LOG_LINES = 3;
 /** Rows outside the scrolling body in the framed layouts. */
-const DETAIL_FIXED_ROWS = 8;
+const DETAIL_FIXED_ROWS = 9;
 const LIST_FIXED_ROWS = 6;
 
 export interface InspectorTarget {
@@ -349,6 +351,9 @@ export interface SubagentInspectorOptions {
 	getMaxRows: () => number;
 	requestRender: () => void;
 	done: () => void;
+	/** Explicit user action only; the owner handles launch errors/notifications. */
+	resumeChild?: (target: InspectorTarget) => void;
+	resumeUnavailable?: (target: InspectorTarget) => string | undefined;
 	now?: () => number;
 	/** Repaint interval for live updates; 0 disables the ticker (tests). */
 	tickMs?: number;
@@ -365,6 +370,8 @@ export class SubagentInspector implements Component {
 	private readonly requestRender: () => void;
 	private readonly onDone: () => void;
 	private readonly now: () => number;
+	private readonly resumeChild?: SubagentInspectorOptions["resumeChild"];
+	private readonly resumeUnavailable?: SubagentInspectorOptions["resumeUnavailable"];
 	private ticker: NodeJS.Timeout | undefined;
 	private closed = false;
 
@@ -385,6 +392,8 @@ export class SubagentInspector implements Component {
 		this.requestRender = options.requestRender;
 		this.onDone = options.done;
 		this.now = options.now ?? Date.now;
+		this.resumeChild = options.resumeChild;
+		this.resumeUnavailable = options.resumeUnavailable;
 
 		const targets = this.targets();
 		const running = targets.filter((target) => target.child.state === "running");
@@ -443,12 +452,37 @@ export class SubagentInspector implements Component {
 
 	invalidate(): void {}
 
+	/** Follow a newly launched continuation without closing the overlay. */
+	inspectRun(run: SubagentRun): void {
+		if (this.closed || !run.children[0]) return;
+		this.selectedKey = targetKey(run, run.children[0]);
+		this.view = "detail";
+		this.scroll = 0;
+		this.follow = true;
+		this.requestRender();
+	}
+
+	private recoveryHint(target: InspectorTarget | undefined): string {
+		if (
+			!this.resumeChild || !target ||
+			(target.child.state !== "failed" && target.child.state !== "stopped")
+		) return "";
+		const reason = this.resumeUnavailable?.(target);
+		return reason ? `resume unavailable: ${reason}` : "r resume saved session";
+	}
+
 	handleInput(data: string): void {
+		if (this.closed) return;
 		if (data === "q" || matchesKey(data, Key.ctrl("c"))) {
 			this.close();
 			return;
 		}
-		if (this.view === "list") this.handleListInput(data);
+		if (data === "r" && this.resumeChild) {
+			const targets = this.targets();
+			const target = targets[this.selectedIndex(targets)];
+			if (target && (target.child.state === "failed" || target.child.state === "stopped"))
+				this.resumeChild(target);
+		} else if (this.view === "list") this.handleListInput(data);
 		else this.handleDetailInput(data);
 		this.requestRender();
 	}
@@ -538,17 +572,25 @@ export class SubagentInspector implements Component {
 			inner,
 		);
 		const statusParts = [describeChild(child, now)];
-		if (child.model) statusParts.push(child.model);
 		if (child.transcript?.turns) statusParts.push(plural(child.transcript.turns, "turn"));
 		const tone = childTone(child, now);
 		const status = fitLine(
 			`${theme.fg(tone, stateGlyph(child.state))} ${theme.fg(tone, statusParts.join(" · "))}`,
 			inner,
 		);
+		const effort = theme.fg("muted", `[effort ${child.thinking ?? "default"}]`);
+		const modelWidth = Math.max(0, inner - visibleWidth(effort) - 1);
+		const model = chromeHeader(
+			theme,
+			{ title: "model", meta: child.model ?? "default (not reported)" },
+			modelWidth,
+		);
+		const configuration = fitLine(`${padToWidth(model, modelWidth)} ${effort}`, inner);
 		const task = chromeHint(theme, `task: ${firstLine(child.task, 400)}`, inner, 0);
+		const recovery = this.recoveryHint(target);
 		const hint = chromeHint(
 			theme,
-			`j/k scroll · ^u/^d page · g/G top/follow · tab/⇧tab child · o ${this.expandTools ? "collapse" : "expand"} · t thinking · esc list · q close`,
+			`${recovery ? `${recovery} · ` : ""}j/k scroll · ^u/^d page · g/G top/follow · tab/⇧tab child · o ${this.expandTools ? "collapse" : "expand"} · t thinking · esc list · q close`,
 			inner,
 			0,
 		);
@@ -558,7 +600,7 @@ export class SubagentInspector implements Component {
 			showThinking: this.showThinking,
 			now,
 		});
-		const fixed = framed ? DETAIL_FIXED_ROWS : 2;
+		const fixed = framed ? DETAIL_FIXED_ROWS : 3;
 		const height = Math.max(1, maxRows - fixed);
 		this.lastBodyHeight = height;
 		this.lastMaxScroll = Math.max(0, body.length - height);
@@ -568,7 +610,7 @@ export class SubagentInspector implements Component {
 		while (visible.length < height) visible.push("");
 
 		if (!framed) {
-			const lines = [header, ...visible, hint].map((line) => fitLine(line, width));
+			const lines = [header, configuration, ...visible, hint].map((line) => fitLine(line, width));
 			return lines.slice(0, maxRows);
 		}
 		const range = body.length
@@ -577,6 +619,7 @@ export class SubagentInspector implements Component {
 		return [
 			chromeFrameRule(theme, width, "top"),
 			row(header),
+			row(configuration),
 			row(status),
 			row(task),
 			chromeFrameRule(theme, width, "divider"),
@@ -657,7 +700,8 @@ export class SubagentInspector implements Component {
 			},
 			inner,
 		);
-		const hint = chromeHint(theme, "j/k move · enter inspect · g/G ends · esc/q close", inner, 0);
+		const recovery = this.recoveryHint(targets[this.selectedIndex(targets)]);
+		const hint = chromeHint(theme, `${recovery ? `${recovery} · ` : ""}j/k move · enter inspect · g/G ends · esc/q close`, inner, 0);
 
 		const height = Math.max(1, maxRows - (framed ? LIST_FIXED_ROWS : 2));
 		this.lastListHeight = height;

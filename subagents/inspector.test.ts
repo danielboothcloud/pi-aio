@@ -250,3 +250,54 @@ test("an emptied registry renders a placeholder and stays usable", () => {
 	component.handleInput("\r");
 	assert.equal(component.view, "list");
 });
+
+test("model and effort have a dedicated header, independent of long failure errors", () => {
+	const failed = child(0, "failed", { model: "anthropic/claude-example", thinking: "high", error: "429 ".repeat(200) });
+	const { component } = inspector([run("failed-run", "failed", [failed])]);
+	const lines = component.render(90);
+	assert.match(lines[2], /MODEL · anthropic\/claude-example/);
+	assert.match(lines[2], /\[effort high\]/);
+	assert.doesNotMatch(lines[2], /429/);
+	for (const width of [8, 20, 30, 50, 90]) assertFits(component.render(width), width, 30);
+	failed.model = "provider/" + "long-model-".repeat(30);
+	assert.match(component.render(50)[2], /\[effort high\]/);
+});
+
+test("r resumes selected failed/stopped children from either view and follows the continuation", () => {
+	const runs = [run("failed-run", "failed", [child(0, "failed"), child(1, "stopped"), child(2, "completed")])];
+	const requests: string[] = [];
+	const component = new SubagentInspector({
+		theme, getRuns: () => runs, getMaxRows: () => 30, requestRender() {}, done() {}, tickMs: 0,
+		resumeChild: (target) => requests.push(target.key),
+	});
+	assert.match(component.render(90).join("\n"), /r resume saved session/);
+	component.handleInput("r");
+	component.handleInput("j");
+	component.handleInput("\r");
+	component.handleInput("r");
+	component.handleInput("\t");
+	component.handleInput("r");
+	assert.deepEqual(requests, ["failed-run:0", "failed-run:1"]);
+	assert.doesNotMatch(component.render(90).join("\n"), /r resume saved session/);
+	const continuation = run("resumed-run", "running", [child(0, "running")]);
+	runs.push(continuation);
+	component.inspectRun(continuation);
+	assert.equal(component.selectedKey, "resumed-run:0");
+	assert.equal(component.view, "detail");
+	component.handleInput("r");
+	assert.equal(requests.length, 2);
+	component.close();
+	component.handleInput("r");
+	assert.equal(requests.length, 2);
+});
+
+test("unavailable recovery explains why instead of advertising an actionable resume", () => {
+	const component = new SubagentInspector({
+		theme, getRuns: () => [run("failed", "failed", [child(0, "failed")])],
+		getMaxRows: () => 20, requestRender() {}, done() {}, tickMs: 0,
+		resumeChild() {}, resumeUnavailable: () => "No saved child session is available to resume.",
+	});
+	const text = component.render(100).join("\n");
+	assert.match(text, /resume unavailable: No saved child session/);
+	assert.doesNotMatch(text, /r resume saved session/);
+});

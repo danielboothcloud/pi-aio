@@ -21,6 +21,8 @@ import { clearRuns, getRun, listRuns, stopRun } from "./registry.js";
 import {
 	executeSubagentRun,
 	formatRunResult,
+	childResumeUnavailable,
+	resumeSubagentChild,
 	type RunnerDeps,
 } from "./runner.js";
 import type {
@@ -129,12 +131,14 @@ function publicRun(run: SubagentRun): Record<string, unknown> {
 		startedAt: run.startedAt,
 		endedAt: run.endedAt,
 		error: run.error,
+		resumedFrom: run.resumedFrom,
 		children: run.children.map((child) => ({
 			index: child.index,
 			agent: child.agent,
 			task: child.task,
 			state: child.state,
 			model: child.model,
+			thinking: child.thinking,
 			startedAt: child.startedAt,
 			endedAt: child.endedAt,
 			output: child.output,
@@ -295,6 +299,7 @@ export function registerSubagents(
 	deps: SubagentExtensionDeps = {},
 ): void {
 	let shuttingDown = false;
+	let sessionEpoch = 0;
 	let closeInspector: (() => void) | undefined;
 	const openInspector = async (ctx: ExtensionContext): Promise<void> => {
 		if (ctx.mode !== "tui") {
@@ -318,6 +323,37 @@ export function registerSubagents(
 						getMaxRows: () => Math.floor(tui.terminal.rows * 0.9),
 						requestRender: () => tui.requestRender(),
 						done: () => done(undefined),
+						resumeUnavailable: ({ run, child }) => childResumeUnavailable(run, child),
+						resumeChild: ({ run, child }) => {
+							if (shuttingDown) return;
+							const epoch = sessionEpoch;
+							let focused = false;
+							void resumeSubagentChild({
+								run,
+								child,
+								deps: deps.runner,
+								onUpdate: (continuation) => {
+									if (shuttingDown || epoch !== sessionEpoch) return;
+									trackWidget(ctx);
+									if (!focused) {
+										focused = true;
+										inspector.inspectRun(continuation);
+									}
+								},
+							}).then((continuation) => {
+								if (shuttingDown || epoch !== sessionEpoch) return;
+								trackWidget(ctx);
+								pi.sendMessage({
+									customType: "aio-subagent-complete",
+									content: formatRunResult(continuation),
+									display: true,
+									details: publicRun(continuation),
+								}, { deliverAs: "followUp", triggerTurn: true });
+							}).catch((error) => {
+								if (shuttingDown || epoch !== sessionEpoch) return;
+								ctx.ui.notify(`Could not resume subagent: ${error instanceof Error ? error.message : String(error)}`, "warning");
+							});
+						},
 					});
 					closeInspector = () => inspector.close();
 					return inspector;
@@ -533,11 +569,13 @@ export function registerSubagents(
 	});
 
 	pi.on("session_start", () => {
+		sessionEpoch++;
 		shuttingDown = false;
 		clearRuns();
 	});
 
 	pi.on("session_shutdown", (_event, ctx) => {
+		sessionEpoch++;
 		shuttingDown = true;
 		closeInspector?.();
 		stopWidgetTicker();

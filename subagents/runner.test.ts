@@ -7,7 +7,6 @@ import {
 	rmSync,
 	writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, test } from "node:test";
@@ -22,6 +21,8 @@ import {
 	buildSpawnSpec,
 	executeSubagentRun,
 	formatRunResult,
+	childResumeUnavailable,
+	resumeSubagentChild,
 } from "./runner.ts";
 import type { AgentConfig, ParentLaunchContext } from "./types.ts";
 
@@ -32,7 +33,9 @@ const fixture = join(
 const temporaryDirectories: string[] = [];
 
 function temporaryDirectory(): string {
-	const dir = mkdtempSync(join(tmpdir(), "aio-subagents-test-"));
+	const base = join(process.cwd(), ".pi-subagents");
+	mkdirSync(base, { recursive: true });
+	const dir = mkdtempSync(join(base, "runner-test-"));
 	temporaryDirectories.push(dir);
 	return dir;
 }
@@ -721,4 +724,159 @@ test("each parallel child keeps its own live transcript: output, stderr logs, re
 	assert.match(texts.at(-1) ?? "", /^notice:fixture failure/);
 	// The transcript stays in memory: never in the published result text.
 	assert.doesNotMatch(formatRunResult(run), /resuming child session|turn 1/);
+});
+
+test("manual quota recovery keeps the original configuration and history in a new run", async () => {
+	const spawnedArgs: string[][] = [];
+	const deps = {
+		piBinary: process.execPath,
+		piArgsPrefix: [fixture],
+		runsBaseDir: temporaryDirectory(),
+		spawnProcess: recordingSpawn(spawnedArgs),
+		maxAttempts: 1,
+	};
+	const originalAgent = agent({ thinking: "low", model: "anthropic/original", timeoutMs: 5_000 });
+	const originalParent = parent({ extensionLaunch: { noExtensions: true, paths: [AIO_EXTENSION_PATH, "/ext/auth.ts"] } });
+	const run = await executeSubagentRun({
+		request: { agent: "reviewer", task: "quota-once review" },
+		agents: [originalAgent], parent: originalParent, deps,
+	});
+	const source = run.children[0];
+	assert.equal(run.state, "failed");
+	assert.equal(source.thinking, "low");
+	assert.equal(childResumeUnavailable(run, source), undefined);
+	const oldEntries = structuredClone(source.transcript?.entries);
+	const oldResult = structuredClone(run.results[0]);
+	// Changes to parent/agent settings must not affect a resumed child.
+	originalAgent.thinking = "max";
+	originalAgent.model = "other/model";
+	originalAgent.systemPrompt = "Changed prompt";
+	originalParent.cwd = "/missing";
+	originalParent.extensionLaunch!.paths.length = 0;
+	const promise = resumeSubagentChild({ run, child: source, deps });
+	await assert.rejects(resumeSubagentChild({ run, child: source, deps }), /Already resumed/);
+	const resumed = await promise;
+	assert.equal(resumed.state, "completed");
+	assert.notEqual(resumed.id, run.id);
+	assert.deepEqual(resumed.resumedFrom, { runId: run.id, index: 0 });
+	assert.equal(resumed.results[0].sessionFile, source.sessionFile);
+	assert.equal(resumed.results[0].thinking, "low");
+	assert.equal(resumed.results[0].usage.cost, 0.01, "do not count the old attempt twice");
+	assert.match(resumed.results[0].output, /previous run was interrupted/);
+	assert.deepEqual(run.results[0], oldResult);
+	assert.deepEqual(source.transcript?.entries, oldEntries);
+	assert.notEqual(resumed.children[0].transcript, source.transcript);
+	assert.deepEqual(resumed.children[0].transcript?.entries.slice(0, oldEntries!.length), oldEntries);
+	const args = spawnedArgs.at(-1)!;
+	assert.equal(args[args.indexOf("--session") + 1], source.sessionFile);
+	assert.equal(args[args.indexOf("--model") + 1], "anthropic/original");
+	assert.equal(args[args.indexOf("--thinking") + 1], "low");
+	assert.ok(args.includes("/ext/auth.ts"));
+	assert.equal(args.includes("--fork"), false);
+	assert.match(readFileSync(args[args.indexOf("--system-prompt") + 1], "utf8"), /Review the assigned change/);
+	assert.match(formatRunResult(resumed), new RegExp(`Resumed child #1 from run ${run.id}`));
+});
+
+test("manual recovery resumes a forked child's exact session, not the parent", async () => {
+	const spawnedArgs: string[][] = [];
+	const deps = { piBinary: process.execPath, piArgsPrefix: [fixture], runsBaseDir: temporaryDirectory(), maxAttempts: 1, spawnProcess: recordingSpawn(spawnedArgs) };
+	const run = await executeSubagentRun({
+		request: { agent: "reviewer", task: "quota-once review", context: "fork" },
+		agents: [agent()], parent: parent(), deps,
+	});
+	const resumed = await resumeSubagentChild({ run, child: run.children[0], deps });
+	assert.equal(resumed.state, "completed");
+	assert.equal(resumed.results[0].sessionFile, run.results[0].sessionFile);
+	assert.match(resumed.results[0].sessionFile!, /forked-child.jsonl$/);
+	assert.equal(spawnedArgs[1].includes("--fork"), false);
+});
+
+test("fork recovery retains the explicit child assignment when only parent history was saved", async () => {
+	const spawnedArgs: string[][] = [];
+	const deps = { piBinary: process.execPath, piArgsPrefix: [fixture], runsBaseDir: temporaryDirectory(), maxAttempts: 1, spawnProcess: recordingSpawn(spawnedArgs) };
+	const task = "fork-parent-only inspect the security changes, not the parent task";
+	const run = await executeSubagentRun({ request: { agent: "reviewer", task, context: "fork" }, agents: [agent()], parent: parent(), deps });
+	assert.equal(run.state, "failed");
+	assert.doesNotMatch(readFileSync(run.children[0].sessionFile!, "utf8"), /inspect the security/);
+	const resumed = await resumeSubagentChild({ run, child: run.children[0], deps });
+	assert.equal(resumed.state, "completed");
+	const prompt = spawnedArgs.at(-1)!.at(-1)!;
+	assert.match(prompt, /without redoing work already completed/);
+	assert.ok(prompt.includes(task));
+	assert.match(prompt, /Assigned child task \(not the parent's task\)/);
+});
+
+test("large continuation prompts use a private file instead of an oversized argv", () => {
+	const prompt = "continuation ".repeat(1_000);
+	const spec = buildSpawnSpec({
+		runId: "large-resume", index: 0,
+		task: { agent: "reviewer", task: "original task" }, request: {},
+		agent: agent(), parent: parent(), deps: { runsBaseDir: temporaryDirectory() },
+		resumeSessionFile: "/saved/session.jsonl", promptOverride: prompt,
+	});
+	const arg = spec.args.at(-1)!;
+	assert.ok(arg.startsWith("@"));
+	assert.equal(readFileSync(arg.slice(1), "utf8"), prompt);
+});
+
+test("a failed continuation can resume again, but its ancestors cannot", async () => {
+	const deps = { piBinary: process.execPath, piArgsPrefix: [fixture], runsBaseDir: temporaryDirectory(), maxAttempts: 1 };
+	const run = await executeSubagentRun({ request: { agent: "reviewer", task: "quota-always review" }, agents: [agent()], parent: parent(), deps });
+	const next = await resumeSubagentChild({ run, child: run.children[0], deps: { ...deps, maxAttempts: 2, retryBackoffMs: 0 } });
+	assert.equal(next.state, "failed");
+	assert.equal(next.results[0].attempts, 2);
+	assert.equal(next.results[0].sessionFile, run.results[0].sessionFile);
+	assert.equal(childResumeUnavailable(next, next.children[0]), undefined);
+	assert.match(childResumeUnavailable(run, run.children[0])!, /Already resumed/);
+	const third = await resumeSubagentChild({ run: next, child: next.children[0], deps });
+	assert.equal(third.state, "failed");
+	assert.equal(third.results[0].sessionFile, run.results[0].sessionFile);
+});
+
+test("a recovery launch failure retains the saved session for another resume", async () => {
+	const deps = { piBinary: process.execPath, piArgsPrefix: [fixture], runsBaseDir: temporaryDirectory(), maxAttempts: 1 };
+	const run = await executeSubagentRun({ request: { agent: "reviewer", task: "quota-once review" }, agents: [agent()], parent: parent(), deps });
+	const blockedDir = join(deps.runsBaseDir, "not-a-directory");
+	writeFileSync(blockedDir, "blocked");
+	const failed = await resumeSubagentChild({ run, child: run.children[0], deps: { ...deps, runsBaseDir: blockedDir } });
+	assert.equal(failed.state, "failed");
+	assert.equal(failed.results[0].sessionFile, run.results[0].sessionFile);
+	assert.equal(childResumeUnavailable(failed, failed.children[0]), undefined);
+	const recovered = await resumeSubagentChild({ run: failed, child: failed.children[0], deps });
+	assert.equal(recovered.state, "completed");
+});
+
+test("recovery refuses missing sessions and old-session runs without spawning", async () => {
+	const spawnedArgs: string[][] = [];
+	const deps = { piBinary: process.execPath, piArgsPrefix: [fixture], runsBaseDir: temporaryDirectory(), maxAttempts: 1, spawnProcess: recordingSpawn(spawnedArgs) };
+	const run = await executeSubagentRun({ request: { agent: "reviewer", task: "quota-once review" }, agents: [agent()], parent: parent(), deps });
+	rmSync(run.children[0].sessionFile!);
+	await assert.rejects(resumeSubagentChild({ run, child: run.children[0], deps }), /No saved child session/);
+	assert.equal(spawnedArgs.length, 1);
+	clearRuns();
+	await assert.rejects(resumeSubagentChild({ run, child: run.children[0], deps }), /no longer in the current session/);
+});
+
+test("stopped children wait for process cleanup, then can resume without retrying siblings", async () => {
+	const deps = { piBinary: process.execPath, piArgsPrefix: [fixture], runsBaseDir: temporaryDirectory(), maxAttempts: 1 };
+	let stopped = false;
+	const run = await executeSubagentRun({
+		request: { tasks: [{ agent: "reviewer", task: "resume-hang review" }, { agent: "reviewer", task: "other completed task" }], concurrency: 1 },
+		agents: [agent()], parent: parent(), deps,
+		onUpdate: (active) => {
+			if (!stopped && active.children[0].output) {
+				stopped = true;
+				stopRun(active.id);
+				assert.match(childResumeUnavailable(active, active.children[0])!, /still stopping/);
+			}
+		},
+	});
+	assert.equal(run.state, "stopped");
+	assert.equal(childResumeUnavailable(run, run.children[0]), undefined);
+	assert.match(childResumeUnavailable(run, run.children[1])!, /still stopping|No saved/);
+	const resumed = await resumeSubagentChild({ run, child: run.children[0], deps });
+	assert.equal(resumed.state, "completed");
+	assert.equal(resumed.children.length, 1);
+	assert.equal(run.children[1].state, "stopped");
+	await assert.rejects(resumeSubagentChild({ run: resumed, child: resumed.children[0], deps }), /Only failed or stopped/);
 });
