@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
@@ -21,7 +20,7 @@ import { RECIPE_STATUS_ENTRY, type RecipeStatusReport } from "./status.ts";
 
 // Isolated agent dir for loadRecipes (PI_CODING_AGENT_DIR + the
 // AIO_RECIPES_FILE scratch contract the same way the blocklist suite does).
-const tmp = mkdtempSync(join(tmpdir(), "aio-recipes-registration-"));
+const tmp = mkdtempSync(join(process.cwd(), "test/.recipes-registration-"));
 const agentDir = join(tmp, "agent");
 mkdirSync(agentDir, { recursive: true });
 function writeRecipesFile(config: unknown): void {
@@ -394,7 +393,7 @@ test("reload preserves a scope the user intentionally changed to all models", as
 	}
 });
 
-test("session_start auto-activates defaultRecipe on a fresh startup only", async () => {
+test("global defaultRecipe stays startup-only when there is no trusted folder default", async () => {
 	const { pi, state } = makeMocks();
 	await registerRecipes(pi as never);
 
@@ -402,7 +401,7 @@ test("session_start auto-activates defaultRecipe on a fresh startup only", async
 	assert.equal(recipeRuntime().activeName, "home");
 	assert.equal(recipeRuntime().source, "default");
 
-	// A brand-new in-process session (/model new) never re-defaults.
+	// /new without a trusted folder recipe does not reapply the global default.
 	state.branchEntries = [];
 	await fire(state, "session_start", { type: "session_start", reason: "new" }, makeCtx(state));
 	assert.equal(recipeRuntime().activeName, undefined);
@@ -660,6 +659,61 @@ test("a trusted .pi-recipe default activates on a fresh startup with its own mar
 	assert.equal(recipeRuntime().activeName, "work");
 });
 
+test("/new applies and pins the trusted folder recipe, including model, thinking and MCP", async () => {
+	const cwd = makeRepo("repo-new", {
+		defaultRecipe: "repo",
+		recipes: { repo: {
+			model: "anthropic/claude-5", thinkingLevel: "high",
+			mcpServers: { repo: { url: "https://mcp.example.com/repo" } },
+		} },
+	});
+	recordRecipeFileTrust(join(cwd, ".pi-recipe"), true);
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	// The old session's selection/off marker does not belong to a new branch.
+	state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name: null } }];
+	await fire(state, "session_start", { type: "session_start", reason: "resume" }, { ...makeCtx(state), cwd });
+	state.branchEntries = [];
+	await fire(state, "session_start", { type: "session_start", reason: "new" }, { ...makeCtx(state), cwd });
+	assert.equal(recipeRuntime().activeName, "repo");
+	assert.equal(recipeRuntime().source, "directory");
+	assert.deepEqual(state.setModelCalls, [{ provider: "anthropic", id: "claude-5" }]);
+	assert.deepEqual(state.thinkingCalls, ["high"]);
+	assert.ok(state.registeredMcp.has("repo"));
+	assert.deepEqual(state.entries.at(-1), { customType: RECIPE_STATE_ENTRY, data: { name: "repo" } });
+});
+
+test("/new uses the current trusted directory default, never a stale launch marker", async () => {
+	const cwd = makeRepo("repo-new-default", { defaultRecipe: "repo", recipes: { repo: {}, updated: {} } });
+	const file = join(cwd, ".pi-recipe");
+	recordRecipeFileTrust(file, true);
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	await withEnv({ [ACTIVE_RECIPE_ENV]: "repo", [RECIPE_ORIGIN_ENV]: "directory", [RECIPE_STAGE_ENV]: "1" }, async () => {
+		writeFileSync(file, JSON.stringify({ defaultRecipe: "updated", recipes: { repo: {}, updated: {} } }));
+		// Case                       Expected /new recipe
+		// edited, not re-trusted      none (no global fallback)
+		// edited, explicitly trusted updated (not old bridge's repo)
+		await fire(state, "session_start", { type: "session_start", reason: "new" }, { ...makeCtx(state), cwd });
+		assert.equal(recipeRuntime().activeName, undefined);
+		recordRecipeFileTrust(file, true);
+		await fire(state, "session_start", { type: "session_start", reason: "new" }, { ...makeCtx(state), cwd });
+		assert.equal(recipeRuntime().activeName, "updated");
+		assert.equal(recipeRuntime().source, "directory");
+	});
+});
+
+test("an explicit launch --recipe still overrides the folder default on /new", async () => {
+	const cwd = makeRepo("repo-new-override", { defaultRecipe: "repo", recipes: { repo: {} } });
+	recordRecipeFileTrust(join(cwd, ".pi-recipe"), true);
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	state.flagValues.set(RECIPE_FLAG, "home");
+	await fire(state, "session_start", { type: "session_start", reason: "new" }, { ...makeCtx(state), cwd });
+	assert.equal(recipeRuntime().activeName, "home");
+	assert.equal(recipeRuntime().source, "flag");
+});
+
 test("a directory relaunch is a default: a restored session recipe outranks it", async () => {
 	const { pi, state } = makeMocks();
 	await registerRecipes(pi as never);
@@ -677,7 +731,7 @@ test("a directory relaunch is a default: a restored session recipe outranks it",
 			assert.equal(recipeRuntime().activeName, "home");
 			assert.equal(recipeRuntime().source, "session");
 
-			// /new never re-applies a default.
+			// Without a trusted folder default, /new ignores the old bridge's name.
 			state.branchEntries = [];
 			await fire(state, "session_start", { type: "session_start", reason: "new" }, makeCtx(state));
 			assert.equal(recipeRuntime().activeName, undefined);

@@ -18,6 +18,7 @@ output = bytearray()
 phase = "pick" if flow == "picker" else "initial"
 deadline = time.monotonic() + 40
 status = None
+initial_file = None
 try:
     while time.monotonic() < deadline:
         ready, _, _ = select.select([terminal], [], [], 0.05)
@@ -33,11 +34,16 @@ try:
             os.write(terminal, b"\r")
             phase = "done"
         elif phase == "initial" and os.path.exists(report):
+            try:
+                with open(report, encoding="utf-8") as snapshot:
+                    initial_file = json.load(snapshot)["file"]
+            except (OSError, json.JSONDecodeError):
+                continue
             # Wait for Pi to finish session_start and install its editor handler.
             time.sleep(0.3)
-            os.write(terminal, b"/resume\r")
+            os.write(terminal, b"/new\r" if flow == "new" else b"/resume\r")
             output.clear()
-            phase = "switch"
+            phase = "done" if flow == "new" else "switch"
         elif phase == "switch" and b"Resume Session" in output and b"resume-smoke-target" in output:
             os.write(terminal, b"resume-smoke-target\r")
             phase = "done"
@@ -47,7 +53,7 @@ try:
             break
     if status is None:
         raise TimeoutError("Pi resume PTY did not exit; phase=" + phase + "\n" + output[-16000:].decode("utf-8", "replace"))
-    print(json.dumps({"status": status, "phase": phase, "output": output[-16000:].decode("utf-8", "replace")}))
+    print(json.dumps({"status": status, "phase": phase, "initialFile": initial_file, "output": output[-16000:].decode("utf-8", "replace")}))
 finally:
     if status is None:
         os.killpg(pid, signal.SIGKILL)

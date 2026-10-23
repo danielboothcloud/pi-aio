@@ -101,8 +101,13 @@ generated `dist/` tree without changing the package contract.
   select the binary via `AIO_RECIPES_SMOKE_PI`. `pi list` describes saved
   package configuration, not the recipe child's loaded extension set.
   Selection precedence: flag > bridge env > session `recipe-state` entry
-  (branch-pinned; off pins `name: null`) > `defaultRecipe` on fresh startups
-  only. A launch-cwd `.pi-recipe` (or `.pi-recipe.json`; same JSON shape,
+  (branch-pinned; off pins `name: null`) > `defaultRecipe` on fresh startups.
+  `/new` additionally applies and pins the current trusted directory default
+  (not global/project defaults, the previous branch's off entry, or a stale
+  directory bridge name). Its model/thinking/MCP/status reactivate; native Pi
+  recreates the original launch extensions/scope, which are not reconciled to
+  a different directory recipe here. Explicit launch recipes still win.
+  A launch-cwd `.pi-recipe` (or `.pi-recipe.json`; same JSON shape,
   no parent walk, `.pi-recipe` wins) is a third tier above
   `.pi/aio-recipes.json`. Folder trust never covers it: `trust.ts` requires
   explicit per-file trust stored in `<agentDir>/aio-recipe-trust.json`

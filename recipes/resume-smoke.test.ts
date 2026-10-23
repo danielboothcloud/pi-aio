@@ -9,7 +9,7 @@ import { CURRENT_SESSION_VERSION } from "@earendil-works/pi-coding-agent";
 const binary = process.env.AIO_RECIPES_SMOKE_PI;
 const repo = fileURLToPath(new URL("../", import.meta.url));
 
-for (const flow of ["direct", "picker", "switch", "switch-off", "switch-unscoped"]) {
+for (const flow of ["direct", "picker", "switch", "switch-off", "switch-unscoped", "new"]) {
 	test(`compiled Pi restores recipe extensions, model scope, thinking and MCP (${flow})`, {
 		skip: !binary || (flow !== "direct" && process.platform === "win32"), timeout: 90_000,
 	}, () => {
@@ -49,13 +49,15 @@ export default function(pi) {
 		streamSimple: () => { writeFileSync(${JSON.stringify(unexpected)}, "unexpected"); throw new Error("No model calls allowed"); },
 	});
 	pi.registerCommand(${JSON.stringify(probe)}, { handler: async () => {} });
-	pi.on("session_start", (_, ctx) => {
+	pi.on("session_start", (event, ctx) => {
 		writeFileSync(${JSON.stringify(report)}, JSON.stringify({
+			reason: event.reason, entries: ctx.sessionManager.getBranch(),
 			file: ctx.sessionManager.getSessionFile(), scope: ctx.scopedModels.map(s => s.model.provider + "/" + s.model.id),
 			model: ctx.model && ctx.model.provider + "/" + ctx.model.id, thinking: pi.getThinkingLevel(),
 			commands: pi.getCommands().map(c => c.name), mcp: pi.getMcpServers().map(s => s.name),
 		}));
-		if (ctx.mode === "tui" && ctx.sessionManager.getSessionFile() === process.env.AIO_RESUME_SMOKE_STOP) ctx.shutdown();
+		if (ctx.mode === "tui" && (ctx.sessionManager.getSessionFile() === process.env.AIO_RESUME_SMOKE_STOP ||
+			(process.env.AIO_RESUME_SMOKE_STOP === "after-new" && event.reason === "new"))) ctx.shutdown();
 	});
 }
 `);
@@ -88,14 +90,14 @@ export default async pi => {
 	await registerRecipes(pi);
 };
 `);
-			writeFileSync(join(root, ".pi-recipe"), JSON.stringify({ defaultRecipe: "next", recipes: {
+			writeFileSync(join(root, ".pi-recipe"), JSON.stringify({ defaultRecipe: flow === "new" ? "work" : "next", recipes: {
 				work: { model: "fixture/one", models: ["fixture/one"], thinkingLevel: "high", extensions: [work], mcpServers: { offline: { command: "unused-offline-fixture", enabled: false } } },
 				next: flow === "switch-unscoped" ? { model: "fixture/two" } : { model: "fixture/two", models: ["fixture/two"], thinkingLevel: "medium", extensions: [next], mcpServers: { offline: { command: "unused-offline-fixture", enabled: false } } },
 			} }));
 			const env = {
 				PATH: process.env.PATH, HOME: home, TMPDIR: tmp, SystemRoot: process.env.SystemRoot,
 				PI_CODING_AGENT_DIR: agent, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1", TERM: "xterm-256color",
-				AIO_RESUME_SMOKE_STOP: flow.startsWith("switch") ? target : source,
+				AIO_RESUME_SMOKE_STOP: flow === "new" ? "after-new" : flow.startsWith("switch") ? target : source,
 			};
 			const base = ["--offline", "--approve", "--session-dir", sessions];
 			if (flow === "direct") {
@@ -116,7 +118,7 @@ export default async pi => {
 				}
 			} else {
 				const result = spawnSync("python3", [join(repo, "test/recipe-resume-pty.py"), resolve(binary), report,
-					flow, ...base, ...(flow === "picker" ? ["--resume"] : ["--session", source])], {
+					flow, ...base, ...(flow === "picker" ? ["--resume"] : flow === "new" ? [] : ["--session", source])], {
 					cwd: root, env, encoding: "utf8", timeout: 55_000, maxBuffer: 4 * 1024 * 1024,
 				});
 				assert.ifError(result.error);
@@ -125,7 +127,14 @@ export default async pi => {
 				assert.equal(pty.status, 0, pty.output);
 				assert.equal(pty.phase, "done", pty.output);
 				const state = JSON.parse(readFileSync(report, "utf8"));
-				assert.equal(state.file, flow.startsWith("switch") ? target : source);
+				if (flow === "new") {
+					assert.equal(state.reason, "new");
+					assert.notEqual(state.file, pty.initialFile, "/new must remain a separate conversation");
+					assert.ok(state.entries.some((entry: { customType?: string; data?: { name?: string } }) => entry.customType === "recipe-state" && entry.data?.name === "work"));
+					assert.equal(state.model, "fixture/one");
+				} else {
+					assert.equal(state.file, flow.startsWith("switch") ? target : source);
+				}
 				if (flow === "switch-off" || flow === "switch-unscoped") {
 					assert.deepEqual(state.scope, []);
 					assert.ok(state.commands.includes("global_only_probe"));

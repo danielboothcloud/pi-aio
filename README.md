@@ -126,6 +126,12 @@ global config, so the file works the same for every clone:
 - A plain `pi` started in that folder behaves like `pi --recipe <default>`,
   including the relaunch bridge for `extensions` and `models`. Only the launch
   directory is checked (no parent walk); with both files, `.pi-recipe` wins.
+- `/new` starts a separate conversation and activates/pins the folder's
+  currently trusted default again (model, thinking, MCP, and recipe status).
+  It does not inherit the old branch's recipe/off marker. Existing launch
+  extensions and model scope stay in effect; a different restart-scoped
+  recipe still needs a relaunch. Global/project defaults remain startup-only,
+  and an explicit launch `--recipe` keeps precedence.
 - `pi --recipe other` beats the folder default, and `/recipe other` switches
   for the rest of that session. Resumes and forks (`-c`, `-r`, `--session`,
   `--session-id`, `--fork`, `/resume`) keep the session's own recipe.

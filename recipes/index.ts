@@ -21,7 +21,8 @@
 // (set on a bridged relaunch child) > the session's persisted recipe-state
 // entry (resume) > defaultRecipe on a fresh startup. A trusted `.pi-recipe`
 // (or `.pi-recipe.json`) in the cwd supplies the highest-priority default
-// and is bridged like --recipe. Each version of that file must be trusted
+// and is bridged like --recipe. Its trusted default also reactivates on /new
+// without changing the original process launch policy. Each version must be trusted
 // explicitly (trust.ts: asked on the terminal before launch, remembered by
 // content hash); `/recipe init` scaffolds one; its relaunch marks AIO_RECIPE_ORIGIN=directory
 // so the child still treats it as a default, not an override. Subagent children
@@ -549,8 +550,12 @@ async function sessionStart(
 			source = "session";
 		}
 	}
-	if (name === undefined && source === undefined && event.reason === "startup") {
-		if (envName && envIsDefault) {
+	// /new is a fresh conversation in this folder. Re-read its explicitly
+	// trusted default, rather than inheriting the old branch's recipe/off or
+	// a stale directory bridge marker. Global defaults remain startup-only.
+	const newDirectoryDefault = event.reason === "new" && state.recipes.defaultSource === "directory";
+	if (name === undefined && source === undefined && (event.reason === "startup" || newDirectoryDefault)) {
+		if (event.reason === "startup" && envName && envIsDefault) {
 			name = envName;
 			source = "directory";
 		} else if (state.recipes.defaultRecipe) {
