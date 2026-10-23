@@ -677,6 +677,25 @@ test("a directory relaunch is a default: a restored session recipe outranks it",
 	);
 });
 
+test("a continue bridge keeps branch selection authoritative and does not re-pin it", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	await withEnv(
+		{ [ACTIVE_RECIPE_ENV]: "work", [RECIPE_ORIGIN_ENV]: "session", [RECIPE_STAGE_ENV]: "1" },
+		async () => {
+			for (const [reason, name] of [["startup", "work"], ["resume", "home"], ["resume", null], ["startup", null]] as const) {
+				state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name } }];
+				await fire(state, "session_start", { type: "session_start", reason }, makeCtx(state));
+				assert.equal(recipeRuntime().activeName, name ?? undefined);
+				assert.equal(state.entries.length, 0, "restores do not append another recipe-state entry");
+			}
+			state.branchEntries = [];
+			await fire(state, "session_start", { type: "session_start", reason: "new" }, makeCtx(state));
+			assert.equal(recipeRuntime().activeName, undefined);
+		},
+	);
+});
+
 async function flush(): Promise<void> {
 	for (let i = 0; i < 10; i++) await new Promise((resolve) => setImmediate(resolve));
 }

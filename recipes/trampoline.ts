@@ -18,6 +18,8 @@
 // A trusted `.pi-recipe` defaultRecipe in the launch cwd takes the same path
 // on a fresh start with no --recipe flag (resumes/forks keep their own
 // recipe); AIO_RECIPE_ORIGIN=directory tells the child it is a default.
+// --continue can bridge the saved branch's recipe instead (origin=session),
+// pinning its exact file and leaving session entries authoritative.
 //
 // The child never relaunches: AIO_RECIPE_STAGE=1 marks it. The child's AIO
 // reads AIO_RECIPE_ACTIVE at session_start and applies everything the bridge
@@ -59,13 +61,13 @@ export interface RelaunchSpec {
 	/** Child environment: parent env plus the stage guard and active-recipe marker. */
 	env: Record<string, string | undefined>;
 	recipeName: string;
-	/** What selected the recipe: `--recipe` (default) or the cwd's `.pi-recipe` default. */
+	/** What selected the recipe: a flag, directory default, or continued branch. */
 	origin?: RecipeLaunchOrigin;
 	/** Human-facing reasons ("extension set", "model scope"). */
 	reasons: string[];
 }
 
-export type RecipeLaunchOrigin = "flag" | "directory";
+export type RecipeLaunchOrigin = "flag" | "directory" | "session";
 
 export interface TrampolineOptions {
 	/** `process.argv`: [runtime, scriptOrVirtualEntry, ...cliArgs]. */
@@ -82,6 +84,8 @@ export interface TrampolineOptions {
 	recipes: Record<string, RecipeDefinition>;
 	/** The trusted `.pi-recipe` defaultRecipe; used only when no --recipe flag is given. */
 	directoryRecipe?: string;
+	/** Branch-selected recipe and exact session file for --continue. */
+	continuedRecipe?: { name: string; file: string };
 	/** Defaults to this package's own entry point, re-injected via `-e`. */
 	aioExtensionPath?: string;
 	/** fs seam for tests. */
@@ -183,7 +187,10 @@ export function decideRelaunch(options: TrampolineOptions): TrampolineDecision {
 	const flagValue = parsed.unknownFlags.get(RECIPE_FLAG);
 	let name: string;
 	let origin: RecipeLaunchOrigin;
-	if (flagValue === undefined) {
+	if (flagValue === undefined && options.continuedRecipe && parsed.continue) {
+		name = options.continuedRecipe.name;
+		origin = "session";
+	} else if (flagValue === undefined) {
 		const directoryName = options.directoryRecipe?.trim();
 		if (!directoryName) return { action: "none", reason: "no-recipe" };
 		// A directory default is a default, not an override: a resumed or
@@ -207,7 +214,8 @@ export function decideRelaunch(options: TrampolineOptions): TrampolineDecision {
 		name = flagValue.trim();
 		origin = "flag";
 	}
-	const label = origin === "flag" ? `--recipe "${name}"` : `.pi-recipe default "${name}"`;
+	const label = origin === "flag" ? `--recipe "${name}"` :
+		origin === "session" ? `continued recipe "${name}"` : `.pi-recipe default "${name}"`;
 
 	// Launches that print-and-exit: no session starts, so no bridge.
 	if (parsed.help || parsed.version || parsed.export !== undefined) {
@@ -270,7 +278,19 @@ export function decideRelaunch(options: TrampolineOptions): TrampolineDecision {
 	// its tokens too; if they ever disagree, forwarding the unstripped args is
 	// the conservative choice (no message text is ever dropped). A directory
 	// default has no token to strip.
-	const bridgeable = origin === "flag" ? (stripRecipeInvocation(cliArgs) ?? cliArgs) : cliArgs;
+	let bridgeable = origin === "flag" ? (stripRecipeInvocation(cliArgs) ?? cliArgs) : cliArgs;
+	if (origin === "session" && options.continuedRecipe) {
+		// Pin the file we inspected, rather than racing another --continue
+		// lookup. Never interpret prompt text after the option terminator.
+		const kept: string[] = [];
+		for (const arg of bridgeable) {
+			// Ask the parser whether this is a flag, not prompt text or a
+			// value consumed by another option (--append-system-prompt "-c").
+			if ((arg === "-c" || arg === "--continue") && parseArgs([...kept, arg]).continue) continue;
+			kept.push(arg);
+		}
+		bridgeable = ["--session", options.continuedRecipe.file, ...kept];
+	}
 	const args = [...relaunchEntryArgs(options.argv), ...injected, ...bridgeable];
 	const childEnv: Record<string, string | undefined> = {
 		...env,
@@ -335,7 +355,8 @@ export interface RelaunchSpawnOptions {
 
 /** One stderr line the parent prints before handing the terminal to the child. */
 export function relaunchNotice(spec: RelaunchSpec): string {
-	const from = spec.origin === "directory" ? ".pi-recipe default, " : "";
+	const from = spec.origin === "directory" ? ".pi-recipe default, " :
+		spec.origin === "session" ? "continued session, " : "";
 	return `recipes: restarting pi with recipe "${spec.recipeName}" (${from}${spec.reasons.join(" + ")})`;
 }
 

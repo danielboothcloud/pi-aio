@@ -88,6 +88,7 @@ import {
 } from "./trampoline.js";
 
 import { registerRecipeStatusRenderer, showRecipeStatus } from "./status.js";
+import { continuedRecipeForLaunch } from "./continue.js";
 
 function isSubagentChild(): boolean {
 	return process.env[SUBAGENT_CHILD_ENV] === "1";
@@ -529,11 +530,12 @@ async function sessionStart(
 	} else if (flag === true) {
 		notify(ctx, "recipes: --recipe needs a recipe name (see /recipe)", "warning");
 	}
-	// A relaunch for a `.pi-recipe` default carries the name as a DEFAULT:
-	// it must not outrank a session entry restored by an in-process /resume.
+	// Directory defaults and --continue bridges must not outrank the branch
+	// restored by an in-process /resume (including an explicit recipe off).
 	const envName = process.env[ACTIVE_RECIPE_ENV]?.trim();
 	const envIsDefault = process.env[RECIPE_ORIGIN_ENV] === "directory";
-	if (name === undefined && envName && !envIsDefault) {
+	const envIsSession = process.env[RECIPE_ORIGIN_ENV] === "session";
+	if (name === undefined && envName && !envIsDefault && !envIsSession) {
 		name = envName;
 		source = "env";
 	}
@@ -544,7 +546,7 @@ async function sessionStart(
 			source = "session";
 		}
 	}
-	if (name === undefined && event.reason === "startup") {
+	if (name === undefined && source === undefined && event.reason === "startup") {
 		if (envName && envIsDefault) {
 			name = envName;
 			source = "directory";
@@ -679,6 +681,9 @@ export async function registerRecipes(
 			env: { ...process.env },
 			recipes: launch.recipes,
 			directoryRecipe: launch.defaultSource === "directory" ? launch.defaultRecipe : undefined,
+			continuedRecipe: continuedRecipeForLaunch({
+				argv: process.argv, env: process.env, cwd: launchCwd,
+			}),
 			aioExtensionPath: AIO_RECIPE_EXTENSION_PATH,
 		});
 		if (decision.action === "relaunch") {

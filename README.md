@@ -129,6 +129,10 @@ global config, so the file works the same for every clone:
 - `pi --recipe other` beats the folder default, and `/recipe other` switches
   for the rest of that session. Resumes and forks (`-c`, `-r`, `--session`,
   `--session-id`, `--fork`, `/resume`) keep the session's own recipe.
+  `pi --continue` also reapplies that saved recipe's model scope and extensions
+  through the launch bridge, rather than using the folder's current default.
+  An explicit `--models` or `-e` still wins; `/reload` keeps deliberate
+  in-session scope changes.
 - Each version of the file must be trusted explicitly — trusting the folder
   in pi is not enough, and `--approve`/`defaultProjectTrust` do not count.
   The first interactive `pi` start with a new or **changed** file asks on the
@@ -201,7 +205,7 @@ The compiled-binary startup regression test is opt-in and uses isolated,
 repository-local fixtures, no credentials, and no network or model calls:
 
 ```bash
-AIO_RECIPES_SMOKE_PI="$(command -v pi)" npx tsx --test recipes/compiled-smoke.test.ts
+AIO_RECIPES_SMOKE_PI="$(command -v pi)" npx tsx --test recipes/compiled-smoke.test.ts recipes/continue-smoke.test.ts
 ```
 
 ### Runtime inspection — `/recipe status`

@@ -119,8 +119,16 @@ generated `dist/` tree without changing the package contract.
   bridged like `--recipe` on fresh starts (never on
   `-c`/`-r`/`--session`/`--session-id`/`--fork`) with
   `AIO_RECIPE_ORIGIN=directory`, which keeps it at default priority in the
-  child so a `/resume`d session entry still wins. `/recipe init [name]`
-  writes a `.pi-recipe` (exclusive create; always a full self-contained
+  child so a `/resume`d session entry still wins. `continue.ts` resolves
+  `--continue`/`-c` with Pi's own session selection and storage precedence:
+  its branch-pinned recipe (not the directory default) can relaunch with
+  model scope/extensions restored and `--session <exact-file>` in place of
+  continue, marked `AIO_RECIPE_ORIGIN=session`. That marker never overrides
+  session entries or re-pins them; explicit off remains off and explicit CLI
+  model/extension flags still win. `/reload` never reapplies the launch scope.
+  The opt-in `continue-smoke.test.ts` verifies fresh → continue + cycling,
+  changed defaults, explicit overrides, and empty-scope rejection offline.
+  `/recipe init [name]` writes a `.pi-recipe` (exclusive create; always a full self-contained
   scaffold — blank, seeded with the live model/thinking, or a COPY of a home
   recipe chosen in a picker or via `--from`) and trusts it. The file is
   portable: its `defaultRecipe` resolves only against its own `recipes`
