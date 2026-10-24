@@ -485,18 +485,28 @@ saved session with the original model, effort, agent configuration, working
 directory, timeout, and extension launch policy. It asks the child to continue
 without redoing completed work and does not rerun siblings. The continuation
 appears as a new single-child background run, follows in the overlay, and sends
-its result back to the parent. Closing
-the overlay does not stop it. The original result remains intact; if recovery
+its result back to the parent. Closing the overlay does not stop it. The original result remains intact; if recovery
 fails again, resume the latest continuation rather than its ancestor.
 
-Resume is available only for runs still recorded in this parent process, after
-the child has fully stopped and while its saved session file exists. It never
-silently starts fresh when that file is missing. It does not bypass quota limits
-or add pause/model-switch controls; wait for usage to become available first.
+Reopening or reloading a parent session restores its latest 50 recorded runs
+from the selected branch, including older subagent tool results and background
+completion messages. New runs also save versioned, non-context checkpoints with
+their original launch settings, so **`r` still works after reopening**. Older
+runs without those settings remain inspectable but cannot safely resume with
+an invented/current configuration. Nothing restarts automatically.
 
-Transcripts are bounded and held in memory only. They never enter model
-context. Only the 10 most recent finished runs keep theirs. A child's session
-file, shown at the bottom of its transcript, holds the complete record.
+Resume requires an existing child session file and an exited child process;
+if a recorded process is still alive, recovery is refused to avoid competing
+writers. A missing file never silently becomes a fresh run. Resume does not
+bypass quota limits or add pause/model-switch controls; wait for usage first.
+
+Live transcripts are bounded and never enter model context. Only the 10 most
+recent finished runs retain their live transcript in memory. Historical detail
+views lazily read at most 1 MB from the saved child session, reconstructing a
+bounded selected-branch transcript; only the currently inspected saved transcript
+is cached. Missing files fall back to the recorded result/error. Streaming-only
+notices and stderr cannot be recovered if they were not saved by Pi. A child's
+session file, shown at the bottom of its transcript, holds its durable history.
 
 AIO ships neutral `scout`, `planner`, `worker`, `reviewer`, `researcher`, and
 `validator` agents. Override them or add agents with Markdown files in:

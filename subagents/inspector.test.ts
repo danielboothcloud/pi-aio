@@ -291,6 +291,22 @@ test("r resumes selected failed/stopped children from either view and follows th
 	assert.equal(requests.length, 2);
 });
 
+test("historical transcripts load lazily once per selection without expanding registry retention", () => {
+	const historical = child(0, "failed", { sessionFile: "/saved/session.jsonl" });
+	const runs = [run("historical", "failed", [historical])];
+	let loads = 0;
+	const component = new SubagentInspector({
+		theme, getRuns: () => runs, getMaxRows: () => 30, requestRender() {}, done() {}, tickMs: 0,
+		loadTranscript: (path) => { assert.equal(path, historical.sessionFile); loads++; return busyTranscript(); },
+	});
+	assert.equal(loads, 0);
+	assert.match(component.render(90).join("\n"), /Thinking about it|thinking/);
+	assertFits(component.render(30), 30, 30);
+	assert.equal(loads, 1);
+	assert.equal(historical.transcript, undefined);
+	component.close();
+});
+
 test("unavailable recovery explains why instead of advertising an actionable resume", () => {
 	const component = new SubagentInspector({
 		theme, getRuns: () => [run("failed", "failed", [child(0, "failed")])],

@@ -16,13 +16,16 @@ import {
 	resolveChildExtensionLaunch,
 	resolveCursorExtensionPath,
 } from "./extensions.ts";
-import { clearRuns, listRuns, stopRun } from "./registry.ts";
+import { clearRuns, listRuns, reconcileRuns, restoreRun, stopRun } from "./registry.ts";
+import { decodeHistoricalRun, publicRun } from "./history.ts";
 import {
 	buildSpawnSpec,
 	executeSubagentRun,
 	formatRunResult,
 	childResumeUnavailable,
 	resumeSubagentChild,
+	restoreChildLaunches,
+	snapshotChildLaunches,
 } from "./runner.ts";
 import type { AgentConfig, ParentLaunchContext } from "./types.ts";
 
@@ -218,7 +221,7 @@ test("large tasks are passed through a private prompt file", () => {
 		deps: { runsBaseDir: temporaryDirectory() },
 	});
 	const taskArg = spec.args.at(-1);
-	assert.ok(taskArg?.startsWith("@"));
+	assert.ok(taskArg && taskArg.startsWith("@"));
 	assert.equal(readFileSync(taskArg.slice(1), "utf8"), `Task: ${task}`);
 });
 
@@ -855,6 +858,57 @@ test("recovery refuses missing sessions and old-session runs without spawning", 
 	assert.equal(spawnedArgs.length, 1);
 	clearRuns();
 	await assert.rejects(resumeSubagentChild({ run, child: run.children[0], deps }), /no longer in the current session/);
+});
+
+test("an evicted ancestor cannot resume while a detached continuation owns its saved session", async () => {
+	const deps = { piBinary: process.execPath, piArgsPrefix: [fixture], runsBaseDir: temporaryDirectory(), maxAttempts: 1 };
+	const original = await executeSubagentRun({ request: { agent: "reviewer", task: "quota-always review" }, agents: [agent()], parent: parent(), deps });
+	const oldRun = JSON.parse(JSON.stringify(publicRun(original)));
+	const oldLaunches = snapshotChildLaunches(original).map((launch) => launch ?? undefined);
+	const continuation = resumeSubagentChild({ run: original, child: original.children[0], deps });
+	const live = listRuns().find((run) => run.id !== original.id)!;
+	reconcileRuns([]);
+	const ancestor = decodeHistoricalRun(oldRun)!;
+	restoreRun(ancestor);
+	restoreChildLaunches(ancestor, oldLaunches);
+	try {
+		assert.equal(live.children[0].sessionFile, ancestor.children[0].sessionFile);
+		assert.match(childResumeUnavailable(ancestor, ancestor.children[0]) ?? "ALLOWED", /already|Already|owns|running/);
+		await assert.rejects(resumeSubagentChild({ run: ancestor, child: ancestor.children[0], deps }), /already|Already|owns|running/);
+	} finally {
+		stopRun(live.id);
+		await continuation;
+	}
+});
+
+test("restored ownership refuses recovery while the recorded process is still alive", async () => {
+	const deps = { piBinary: process.execPath, piArgsPrefix: [fixture], runsBaseDir: temporaryDirectory(), maxAttempts: 1 };
+	const run = await executeSubagentRun({ request: { agent: "reviewer", task: "quota-once review" }, agents: [agent()], parent: parent(), deps });
+	const launches = snapshotChildLaunches(run);
+	launches[0]!.pid = process.pid;
+	restoreChildLaunches(run, launches.map((launch) => launch ?? undefined));
+	assert.match(childResumeUnavailable(run, run.children[0])!, /previous child process is still running/);
+	await assert.rejects(resumeSubagentChild({ run, child: run.children[0], deps }), /previous child process is still running/);
+});
+
+test("reopened interrupted forks discover their own saved session from launch metadata", async () => {
+	const deps = { piBinary: process.execPath, piArgsPrefix: [fixture], runsBaseDir: temporaryDirectory(), maxAttempts: 1 };
+	const original = await executeSubagentRun({ request: { agent: "reviewer", task: "quota-once review", context: "fork" }, agents: [agent()], parent: parent(), deps });
+	const launches = snapshotChildLaunches(original);
+	const record = JSON.parse(JSON.stringify(publicRun(original)));
+	record.state = "running";
+	record.children[0].state = "running";
+	delete record.children[0].sessionFile;
+	const reopened = decodeHistoricalRun(record)!;
+	clearRuns();
+	restoreRun(reopened);
+	assert.doesNotThrow(() => restoreChildLaunches(reopened, launches.map((launch) => launch ? { ...launch, sessionDir: original.results[0].sessionFile } : undefined)), "an invalid saved directory cannot break hydration");
+	restoreChildLaunches(reopened, launches.map((launch) => launch ?? undefined));
+	assert.equal(reopened.children[0].sessionFile, original.results[0].sessionFile);
+	assert.equal(childResumeUnavailable(reopened, reopened.children[0]), undefined);
+	const continuation = await resumeSubagentChild({ run: reopened, child: reopened.children[0], deps });
+	assert.equal(continuation.state, "completed");
+	assert.equal(continuation.results[0].sessionFile, original.results[0].sessionFile);
 });
 
 test("stopped children wait for process cleanup, then can resume without retrying siblings", async () => {

@@ -169,6 +169,19 @@ export interface ParentLaunchContext {
 	modelProvider?: string;
 }
 
+/** Durable private launch data, stored outside model context for recovery. */
+export interface ChildLaunchSnapshot {
+	task: SubagentTask;
+	request: Pick<SubagentRunRequest, "context" | "timeoutMs">;
+	agent: AgentConfig;
+	parent: ParentLaunchContext;
+	resumed: boolean;
+	/** Runner-owned directory, used to find a fork interrupted before exit. */
+	sessionDir?: string;
+	/** Conservatively refuse competing resumes while this process is alive. */
+	pid?: number;
+}
+
 export interface SpawnSpec {
 	command: string;
 	args: string[];

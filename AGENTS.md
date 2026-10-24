@@ -351,7 +351,22 @@ generated `dist/` tree without changing the package contract.
   first; parallel, queued, failed, stopped, background and foreground) and a
   live follow-tail detail view (`tab`/`shift+tab` cycles all children across
   runs, `o` expands tool output like ctrl+o, `t` hides thinking). It repaints
-  on its own 500ms ticker over the registry and closes on shutdown.
+  on its own 500ms ticker over the registry and closes on shutdown. Its model
+  row/effort pill and `r` resume action use the original child launch settings.
+  `history.ts` restores the selected branch's latest 50 runs from legacy tool
+  details/completion messages and versioned `aio-subagent-state` custom entries.
+  Checkpoints persist launch/lifecycle changes, not streaming deltas; private
+  agent/extension launch snapshots stay outside public details/model context
+  (not encrypted). Reopened active records are interrupted, never auto-spawned;
+  saved live PIDs block competing recovery. Legacy runs without original launch
+  snapshots are inspectable only. `saved-transcript.ts` lazily reads a ≤1 MB
+  tail of the child's selected branch for historical inspection (one overlay
+  cache, still ≤500 entries/250k chars); missing files fall back to saved output.
+  Tree reconciliation refreshes decoded records but preserves locally owned
+  run/process identity. Canonical session-file ownership survives ancestor-row
+  eviction. Detached lifecycle changes (including explicit stops) stay dirty,
+  exempt from every pruning path, until reattachment checkpoints them on their
+  own branch without stale follow-ups; session epochs guard replacements.
 - `you-should-know/` owns the YSK shadow auditor: successful
   `write`/`edit`/`apply_patch` tool results are debounced into one bounded,
   isolated `ctx.modelRegistry.complete()` audit (the sub-agent) whose findings

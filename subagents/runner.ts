@@ -1,6 +1,8 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createInterface } from "node:readline";
 import {
+	accessSync,
+	constants,
 	existsSync,
 	mkdirSync,
 	readFileSync,
@@ -29,11 +31,13 @@ import {
 	enforceChildExtensions,
 	resolveChildExtensionLaunch,
 } from "./extensions.js";
-import { createRun, getRun } from "./registry.js";
+import { childSessionOwner, claimChildSession, createRun, getRun } from "./registry.js";
+import { loadSavedTranscript } from "./saved-transcript.js";
 import type {
 	AgentConfig,
 	ChildRunResult,
 	ChildRunStatus,
+	ChildLaunchSnapshot,
 	ChildUsage,
 	ParentLaunchContext,
 	SpawnSpec,
@@ -102,17 +106,42 @@ interface RunInput {
 	deps?: RunnerDeps;
 }
 
-interface ChildLaunch {
-	task: SubagentTask;
-	request: SubagentRunRequest;
-	agent: AgentConfig;
-	parent: ParentLaunchContext;
-	resumed: boolean;
-}
-
 // Private launch snapshots never enter tool details/model context. Weak keys
 // let registry pruning release prompts/configuration along with old children.
-const childLaunches = new WeakMap<ChildRunStatus, ChildLaunch>();
+const childLaunches = new WeakMap<ChildRunStatus, ChildLaunchSnapshot>();
+
+/** Cheap lifecycle key: avoid cloning prompts on every streaming repaint. */
+export function childLaunchStateKey(run: SubagentRun): string {
+	return JSON.stringify(run.children.map((child) => {
+		const launch = childLaunches.get(child);
+		return [launch?.resumed, launch?.sessionDir, launch?.pid];
+	}));
+}
+
+/** Private checkpoint projection. Never attach this to a tool result. */
+export function snapshotChildLaunches(run: SubagentRun): Array<ChildLaunchSnapshot | null> {
+	return run.children.map((child) => {
+		const launch = childLaunches.get(child);
+		return launch ? structuredClone(launch) : null;
+	});
+}
+
+export function restoreChildLaunches(run: SubagentRun, launches: Array<ChildLaunchSnapshot | undefined>): void {
+	for (const [index, child] of run.children.entries()) {
+		const launch = launches[index];
+		if (!launch) continue;
+		childLaunches.set(child, structuredClone(launch));
+		if (!child.sessionFile && launch.sessionDir) {
+			try {
+				child.sessionFile = findSessionFile(launch.sessionDir);
+			} catch {
+				// Moved/unreadable child directories must not break parent hydration.
+			}
+			const result = run.results.find((result) => result.index === child.index);
+			if (result) result.sessionFile = child.sessionFile;
+		}
+	}
+}
 
 interface SavedChildSession {
 	sessionFile: string;
@@ -529,6 +558,8 @@ async function runChildAttempt(input: {
 		windowsHide: true,
 	}) as unknown as ChildProcessWithoutNullStreams;
 	input.status.process = process;
+	const launch = childLaunches.get(input.status);
+	if (launch) launch.pid = process.pid;
 
 	const now = input.deps?.now ?? Date.now;
 	const activity = (input.status.activity ??= createActivity(now()));
@@ -605,6 +636,7 @@ async function runChildAttempt(input: {
 		else input.signal.addEventListener("abort", abortListener, { once: true });
 	}
 
+	input.onUpdate?.(input.run);
 	const { code, signal } = await new Promise<{
 		code: number;
 		signal: NodeJS.Signals | null;
@@ -624,6 +656,7 @@ async function runChildAttempt(input: {
 		input.signal.removeEventListener("abort", abortListener);
 	stdoutLines.close();
 	input.status.process = undefined;
+	if (launch) launch.pid = undefined;
 
 	const sessionFile = findSessionFile(
 		input.spec.sessionDir,
@@ -733,6 +766,10 @@ async function runChild(input: {
 			break;
 		}
 
+		const launch = childLaunches.get(input.status);
+		if (launch) launch.sessionDir = spec.sessionDir;
+		input.status.sessionFile = spec.requestedSessionFile ?? input.status.sessionFile;
+		input.onUpdate?.(input.run);
 		outcome = await runChildAttempt({
 			run: input.run,
 			status: input.status,
@@ -905,6 +942,18 @@ export function childResumeUnavailable(
 	const launch = childLaunches.get(child);
 	if (!launch) return "The original launch configuration is no longer available.";
 	if (launch.resumed) return "Already resumed; select the latest continuation run.";
+	const owner = child.sessionFile ? childSessionOwner(child.sessionFile) : undefined;
+	if (owner && (owner.runId !== run.id || owner.index !== child.index))
+		return `Already resumed; run ${owner.runId.slice(0, 8)} owns this saved child session.`;
+	if (launch.pid) {
+		try {
+			process.kill(launch.pid, 0);
+			return "The previous child process is still running; it must exit before resuming.";
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code !== "ESRCH")
+				return "Could not confirm that the previous child process has exited.";
+		}
+	}
 	try {
 		if (child.sessionFile && statSync(child.sessionFile).isFile()) return undefined;
 	} catch {
@@ -926,10 +975,10 @@ export async function resumeSubagentChild(input: {
 	const sessionFile = input.child.sessionFile;
 	if (!launch || !sessionFile) throw new Error("The saved child launch is unavailable.");
 	// Read before claiming the session: fail closed on permissions/removal.
-	readFileSync(sessionFile, "utf8");
+	accessSync(sessionFile, constants.R_OK);
 	const transcript = input.child.transcript
 		? structuredClone(input.child.transcript)
-		: undefined;
+		: loadSavedTranscript(sessionFile);
 	// Claim synchronously before spawning: repeated r cannot create competing
 	// writers to the same saved session, even after a continuation finishes.
 	launch.resumed = true;
@@ -938,7 +987,11 @@ export async function resumeSubagentChild(input: {
 			request: { ...launch.request, ...launch.task },
 			agents: [launch.agent],
 			parent: launch.parent,
-			onUpdate: input.onUpdate,
+			onUpdate: (continuation) => {
+				if (getRun(continuation.id) === continuation)
+					claimChildSession(sessionFile, continuation.id, continuation.children[0].index);
+				input.onUpdate?.(continuation);
+			},
 			deps: input.deps,
 		},
 		{

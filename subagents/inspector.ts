@@ -34,7 +34,7 @@ import {
 	type ChromeTone,
 } from "../ui/chrome.js";
 import { formatChildActivity, formatDuration } from "./activity.js";
-import type { TranscriptEntry } from "./transcript.js";
+import type { ChildTranscript, TranscriptEntry } from "./transcript.js";
 import type { ChildRunStatus, SubagentRun } from "./types.js";
 
 const DEFAULT_TICK_MS = 500;
@@ -354,6 +354,7 @@ export interface SubagentInspectorOptions {
 	/** Explicit user action only; the owner handles launch errors/notifications. */
 	resumeChild?: (target: InspectorTarget) => void;
 	resumeUnavailable?: (target: InspectorTarget) => string | undefined;
+	loadTranscript?: (sessionFile: string) => ChildTranscript | undefined;
 	now?: () => number;
 	/** Repaint interval for live updates; 0 disables the ticker (tests). */
 	tickMs?: number;
@@ -372,6 +373,9 @@ export class SubagentInspector implements Component {
 	private readonly now: () => number;
 	private readonly resumeChild?: SubagentInspectorOptions["resumeChild"];
 	private readonly resumeUnavailable?: SubagentInspectorOptions["resumeUnavailable"];
+	private readonly loadTranscript?: SubagentInspectorOptions["loadTranscript"];
+	private loadedChild?: ChildRunStatus;
+	private savedTranscript?: ChildTranscript;
 	private ticker: NodeJS.Timeout | undefined;
 	private closed = false;
 
@@ -394,6 +398,7 @@ export class SubagentInspector implements Component {
 		this.now = options.now ?? Date.now;
 		this.resumeChild = options.resumeChild;
 		this.resumeUnavailable = options.resumeUnavailable;
+		this.loadTranscript = options.loadTranscript;
 
 		const targets = this.targets();
 		const running = targets.filter((target) => target.child.state === "running");
@@ -448,6 +453,8 @@ export class SubagentInspector implements Component {
 	dispose(): void {
 		if (this.ticker) clearInterval(this.ticker);
 		this.ticker = undefined;
+		this.loadedChild = undefined;
+		this.savedTranscript = undefined;
 	}
 
 	invalidate(): void {}
@@ -556,7 +563,17 @@ export class SubagentInspector implements Component {
 	): string[] {
 		const theme = this.theme;
 		const now = this.now();
-		const { run, child } = target;
+		const { run } = target;
+		let { child } = target;
+		if (!child.transcript && child.sessionFile && this.loadTranscript) {
+			if (this.loadedChild !== child) {
+				this.loadedChild = child;
+				this.savedTranscript = this.loadTranscript(child.sessionFile);
+			}
+			// Keep only the selected saved transcript in the overlay; do not
+			// bypass the registry's ten-transcript retention bound.
+			if (this.savedTranscript) child = { ...child, transcript: this.savedTranscript };
+		}
 		const framed = width > 24 && maxRows >= DETAIL_FIXED_ROWS + 2;
 		const inner = framed ? width - 4 : width;
 		const row = (text: string) => (framed ? chromeFrameRow(theme, text, width) : fitLine(text, width));
