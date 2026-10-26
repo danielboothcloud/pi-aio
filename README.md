@@ -73,13 +73,21 @@ extensions may notify.
 Notifications are suppressed while the terminal **app** is frontmost on macOS
 (best effort; unknown/unavailable focus detection allows delivery). This is not
 pane/tab awareness, and focus suppression is unavailable off macOS or over SSH.
+`/notify test` bypasses **AIO's** suppression only: Ghostty can still suppress OSC
+notifications while its surface is focused. Use `/notify test 5`, then switch to
+another app before the test fires. The test reports the backend actually used;
+"dispatched" means the native process/terminal accepted the attempt, not that
+macOS displayed a banner. If nothing appears while unfocused, check System
+Settings → Notifications for the terminal (or terminal-notifier), and Focus /
+Do Not Disturb. Installing AIO does **not** install the optional native executable.
 Bodies are generic by default; opt-in previews can expose model output or prompt
 text on the desktop/lock screen. The subtitle contains the session name or
 working-directory basename even with previews off.
 
 ```text
 /notify                         Show settings and backend selection
-/notify test                    Test delivery, ignoring focus/enabled settings
+/notify test                    Test dispatch, bypassing AIO's suppression
+/notify test 5                  Test in 5 seconds; switch apps before it fires
 /notify on                      Enable notifications
 /notify off                     Disable notifications
 /notify focus off               Notify even while the terminal app is focused

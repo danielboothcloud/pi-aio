@@ -2,14 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { EventEmitter } from "node:events";
 import { createExtensionRuntime, ExtensionRunner, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { registerNotifications } from "./index.ts";
+import { registerNotifications, type NotificationDeps } from "./index.ts";
 import { defaultSettings, type NotificationSettings } from "./settings.ts";
 import { AGENT_PROMPT_EVENT, emitGoalActivity, emitNotification, GOAL_ACTIVITY_EVENT, NOTIFICATION_EVENT, withAgentPrompt } from "./protocol.ts";
 import type { DesktopNotification } from "./backend.ts";
 
 const flush = () => new Promise((done) => setImmediate(done));
 type Handler = (event: any, ctx: ExtensionContext) => unknown;
-function harness(options: { mode?: string; settings?: NotificationSettings } = {}) {
+function harness(options: { mode?: string; settings?: NotificationSettings; wait?: NotificationDeps["wait"]; backendName?: string } = {}) {
 	const handlers = new Map<string, Handler>();
 	const events = new EventEmitter();
 	const sent: DesktopNotification[] = [];
@@ -40,8 +40,9 @@ function harness(options: { mode?: string; settings?: NotificationSettings } = {
 		load: () => structuredClone(settings),
 		save: (next) => { if (failSave) throw new Error("disk full"); settings = structuredClone(next); saved.push(next); },
 		now: () => time,
+		wait: options.wait,
 		backend: {
-			name: () => "mock",
+			name: () => options.backendName ?? "mock",
 			focused: (signal) => focus(signal),
 			send: async (notification, _signal, valid) => { if (failSend) throw new Error("unavailable"); if (valid()) sent.push(notification); },
 		},
@@ -297,6 +298,58 @@ test("agent prompts notify over an already-open user menu without another host p
 		await Promise.all([question, menu]);
 		h.fire("session_shutdown");
 	}
+});
+
+test("delayed tests return immediately and report the selected terminal fallback after dispatch", async () => {
+	let release!: () => void;
+	let delayMs = 0;
+	const h = harness({ backendName: "OSC 777", wait: (ms) => { delayMs = ms; return new Promise((done) => { release = done; }); } });
+	await h.command("test 5");
+	assert.equal(delayMs, 5000);
+	assert.equal(h.sent.length, 0);
+	assert.ok(h.notices.some((notice) => notice.includes("switch to another app")));
+	release(); await flush();
+	assert.equal(h.sent.length, 1);
+	assert.ok(h.notices.some((notice) => notice.includes("OSC 777") && notice.includes("Ghostty") && notice.includes("macOS notification permissions")));
+});
+
+for (const change of ["shutdown", "replacement", "disable"]) {
+	test(`delayed tests are cancelled by ${change}`, async () => {
+		let release!: () => void; let signal!: AbortSignal;
+		const h = harness({ wait: (_ms, value) => { signal = value; return new Promise((done) => { release = done; }); } });
+		await h.command("test 5");
+		if (change === "shutdown") h.fire("session_shutdown");
+		if (change === "replacement") h.fire("session_start");
+		if (change === "disable") await h.command("off");
+		assert.equal(signal.aborted, true);
+		release(); await flush();
+		assert.equal(h.sent.length, 0);
+		assert.ok(h.notices.every((notice) => !notice.includes("dispatched")));
+	});
+}
+
+test("default delayed tests use a non-blocking timer and abort cleanly on shutdown", async () => {
+	const h = harness();
+	await h.command("test 0.01"); assert.equal(h.sent.length, 0);
+	await new Promise((done) => setTimeout(done, 30));
+	assert.equal(h.sent.length, 1);
+	await h.command("test 60");
+	h.fire("session_shutdown"); await flush();
+	assert.equal(h.sent.length, 1);
+});
+
+test("test reports dispatch errors rather than silently swallowing them", async () => {
+	const h = harness(); h.failSend();
+	await h.command("test"); await flush();
+	assert.ok(h.notices.some((notice) => notice.includes("test failed")));
+	assert.equal(h.sent.length, 0);
+});
+
+test("invalid test delays never dispatch or persist settings", async () => {
+	const h = harness();
+	for (const command of ["test nope", "test -1", "test Infinity", "test 61", "test 5 extra"]) await h.command(command);
+	await flush(); assert.equal(h.sent.length, 0); assert.equal(h.saved.length, 0);
+	assert.ok(h.notices.every((notice) => notice.includes("Usage: /notify test")));
 });
 
 test("a specific goal failure replaces generic error as well as success alerts", async () => {

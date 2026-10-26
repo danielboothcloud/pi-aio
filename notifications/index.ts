@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { basename } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { cleanText, createNotificationBackend, type NotificationBackend } from "./backend.js";
 import { AGENT_PROMPT_EVENT, GOAL_ACTIVITY_EVENT, NOTIFICATION_EVENT, type AgentPrompt, type NotificationCategory, type NotificationSignal } from "./protocol.js";
@@ -10,13 +11,17 @@ export interface NotificationDeps {
 	load?: () => NotificationSettings;
 	save?: (settings: NotificationSettings) => void;
 	now?: () => number;
+	wait?: (ms: number, signal: AbortSignal) => Promise<void>;
 }
+
+type DeliveryStatus = "dispatched" | "skipped" | "failed";
 
 /** Desktop-only observer: owns no tools, gates, editor, or model messages. */
 export function registerNotifications(pi: ExtensionAPI, deps: NotificationDeps = {}): void {
 	if (process.env.AIO_SUBAGENT_CHILD === "1") return;
 	const backend = deps.backend ?? createNotificationBackend();
 	const now = deps.now ?? Date.now;
+	const wait = deps.wait ?? ((ms: number, signal: AbortSignal) => delay(ms, undefined, { signal, ref: false }));
 	let settings = (deps.load ?? loadSettings)();
 	let ctx: ExtensionContext | undefined;
 	let sessionId = "";
@@ -43,9 +48,10 @@ export function registerNotifications(pi: ExtensionAPI, deps: NotificationDeps =
 		pending.clear();
 	}
 
-	function deliver(category: NotificationCategory, title: string, body: string, preview?: string, prompt?: number, force = false): void {
-		if (!ctx || ctx.mode !== "tui" || !ctx.hasUI) return;
-		if (!force && (!settings.enabled || !settings.categories[category])) return;
+	function deliver(category: NotificationCategory, title: string, body: string, preview?: string, prompt?: number, options: { force?: boolean; delayMs?: number } = {}): Promise<DeliveryStatus> {
+		const { force = false, delayMs = 0 } = options;
+		if (!ctx || ctx.mode !== "tui" || !ctx.hasUI) return Promise.resolve("skipped");
+		if (!force && (!settings.enabled || !settings.categories[category])) return Promise.resolve("skipped");
 		const current = ctx;
 		const version = epoch;
 		const run = runVersion;
@@ -65,10 +71,14 @@ export function registerNotifications(pi: ExtensionAPI, deps: NotificationDeps =
 			group: `aio.${createHash("sha256").update(sessionId).digest("hex").slice(0, 16)}.${prompt === undefined ? category : "prompt"}`,
 			sound: settings.sound,
 		};
-		void (async () => {
-			if (!force && settings.focusSkip && await backend.focused(controller.signal)) return;
-			if (valid()) await backend.send(notification, controller.signal, valid);
-		})().catch(() => { /* desktop failures never fail an agent turn */ })
+		return (async (): Promise<DeliveryStatus> => {
+			if (delayMs > 0) await wait(delayMs, controller.signal);
+			if (!valid()) return "skipped";
+			if (!force && settings.focusSkip && await backend.focused(controller.signal)) return "skipped";
+			if (!valid()) return "skipped";
+			await backend.send(notification, controller.signal, valid);
+			return valid() ? "dispatched" : "skipped";
+		})().catch((): DeliveryStatus => controller.signal.aborted ? "skipped" : "failed")
 			.finally(() => pending.delete(controller));
 	}
 
@@ -153,7 +163,7 @@ export function registerNotifications(pi: ExtensionAPI, deps: NotificationDeps =
 	});
 
 	pi.registerCommand("notify", {
-		description: "Desktop notifications: on/off, focus, min, sound, preview, events, test, status",
+		description: "Desktop notifications: on/off, focus, min, sound, preview, events, test [seconds], status",
 		handler: async (args, context) => {
 			const [command = "status", value, flag, ...extra] = args.trim().split(/\s+/).filter(Boolean);
 			if (!command || command === "status") {
@@ -162,8 +172,26 @@ export function registerNotifications(pi: ExtensionAPI, deps: NotificationDeps =
 			}
 			if (command === "test") {
 				if (context.mode !== "tui") { context.ui.notify("Desktop notification tests require TUI mode.", "warning"); return; }
-				deliver("core", "Test", "AIO desktop notifications are working.", undefined, undefined, true);
-				context.ui.notify("Notification test requested (bypasses focus and enabled settings).", "info");
+				const seconds = value === undefined ? 0 : Number(value);
+				if (!Number.isFinite(seconds) || seconds < 0 || seconds > 60 || flag !== undefined || extra.length > 0) {
+					context.ui.notify("Usage: /notify test [seconds] (0–60).", "warning");
+					return;
+				}
+				const version = epoch;
+				if (seconds > 0) context.ui.notify(`Notification test scheduled in ${seconds}s — switch to another app now.`, "info");
+				void deliver("core", "Test", "AIO desktop notification test.", undefined, undefined, { force: true, delayMs: seconds * 1000 }).then((result) => {
+					if (version !== epoch || result === "skipped") return;
+					if (result === "failed") {
+						context.ui.notify("Notification test failed before dispatch. Check /notify status and the terminal notification settings.", "warning");
+						return;
+					}
+					const selected = backend.name();
+					if (selected.startsWith("OSC")) {
+						context.ui.notify(`Test dispatched via ${selected} terminal fallback, not confirmed by the OS. Ghostty may suppress it while focused: try /notify test 5 and switch apps. Check macOS notification permissions for your terminal. Native delivery requires terminal-notifier on PATH.`, "warning");
+					} else {
+						context.ui.notify(`Test dispatched via ${selected}; OS display is not confirmed. If nothing appears, check macOS notification permissions and Focus / Do Not Disturb.`, "info");
+					}
+				}).catch(() => { /* a stale/unavailable UI must not affect agent work */ });
 				return;
 			}
 			const next = structuredClone(settings);
@@ -175,7 +203,7 @@ export function registerNotifications(pi: ExtensionAPI, deps: NotificationDeps =
 			else if (command === "events" && Object.hasOwn(next.categories, value) && ["on", "off"].includes(flag)) next.categories[value as NotificationCategory] = flag === "on";
 			else valid = false;
 			if (!valid) {
-				context.ui.notify("Usage: /notify [status|on|off|test|focus on/off|preview on/off|min <seconds>|sound <name/off>|events core/goal/background/critical on/off]", "warning");
+				context.ui.notify("Usage: /notify [status|on|off|test [seconds]|focus on/off|preview on/off|min <seconds>|sound <name/off>|events core/goal/background/critical on/off]", "warning");
 				return;
 			}
 			try {
