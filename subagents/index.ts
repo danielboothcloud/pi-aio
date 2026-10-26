@@ -1,4 +1,5 @@
 import { StringEnum } from "@earendil-works/pi-ai";
+import { emitNotification } from "../notifications/protocol.js";
 import type {
 	ExtensionAPI,
 	ExtensionContext,
@@ -274,6 +275,14 @@ export function registerSubagents(
 	const visibleRuns = () => listRuns().filter((run) => !hiddenRuns.has(run.id));
 	const checkpoints = new Map<string, string>();
 	let checkpointWarning = false;
+	const notifyBackground = (run: SubagentRun, ctx: ExtensionContext) => {
+		if (run.state === "stopped" || run.stopRequested) return;
+		emitNotification(pi, ctx, {
+			category: "background", id: `subagent:${run.id}`, replacesCompletion: true,
+			title: run.state === "failed" ? "Background agents failed" : "Background agents finished",
+			body: "A background subagent run has ended. Its results are available in Pi.",
+		});
+	};
 	const checkpointRun = (run: SubagentRun, force = false) => {
 		// Streaming deltas/tickers must not append one entry per repaint.
 		const fingerprint = JSON.stringify([run.state, run.endedAt, childLaunchStateKey(run), run.children.map((child) => [
@@ -339,6 +348,7 @@ export function registerSubagents(
 							}).then((continuation) => {
 								if (shuttingDown || epoch !== sessionEpoch || hiddenRuns.has(continuation.id)) return;
 								trackWidget(ctx);
+								notifyBackground(continuation, ctx);
 								pi.sendMessage({
 									customType: "aio-subagent-complete",
 									content: formatRunResult(continuation),
@@ -523,6 +533,7 @@ export function registerSubagents(
 					.then((run) => {
 						if (shuttingDown || epoch !== sessionEpoch || hiddenRuns.has(run.id)) return;
 						updateWidget();
+						notifyBackground(run, ctx);
 						pi.sendMessage(
 							{
 								customType: "aio-subagent-complete",
@@ -536,6 +547,7 @@ export function registerSubagents(
 					.catch((error) => {
 						if (shuttingDown || epoch !== sessionEpoch || hiddenRuns.has(backgroundRun.id)) return;
 						updateWidget();
+						emitNotification(pi, ctx, { category: "background", id: `subagent:${backgroundRun.id}`, title: "Background agents failed", body: "A background subagent run could not finish. Review the error in Pi.", replacesCompletion: true });
 						pi.sendMessage(
 							{
 								customType: "aio-subagent-complete",

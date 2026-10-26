@@ -22,6 +22,10 @@ under the MIT license in [`LICENSE`](LICENSE).
   excluded from the published package.
 - `aio` owns the dependency and package-file declarations that were previously
   in the standalone package manifest.
+- The actual TUI questionnaire call is wrapped with AIO's internal
+  `withAgentPrompt` marker so desktop notifications distinguish agent questions
+  from user-opened menus. This does not change the public `rpiv:*` event or its
+  emission timing, and observer failures never affect the questionnaire.
 
 When updating this directory, compare against the recorded upstream version,
 preserve `LICENSE`, reapply the integration changes above, and run `npm test`

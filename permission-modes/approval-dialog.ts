@@ -13,7 +13,8 @@
  * falls back to the original `ctx.ui.select` path there.
  */
 
-import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { withAgentPrompt } from "../notifications/protocol.js";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import {
 	type Component,
 	getKeybindings,
@@ -82,15 +83,16 @@ function roleColor(role: DiffRole): string {
 export async function showMutationApproval(
 	ctx: ExtensionContext,
 	params: { tool: string; input: Record<string, unknown>; path: string },
+	pi?: ExtensionAPI,
 ): Promise<ApprovalDecision> {
 	const useOverlay = ctx.mode === "tui" && typeof ctx.ui.custom === "function";
 
 	if (!useOverlay) {
 		const preview = await formatMutationPreview(params.tool, params.input);
-		const choice = await ctx.ui.select(
+		const choice = await withAgentPrompt(pi, ctx, { kind: "select", title: "Approval needed", body: "The agent is waiting for permission to change files.", preview: params.path }, () => ctx.ui.select(
 			buildMutationApprovalPrompt(params.tool, params.path, preview),
 			[...OPTIONS],
-		);
+		));
 		if (choice === "Allow") return "allow";
 		if (choice === "Allow all (enable auto)") return "allowAll";
 		return "block";
@@ -102,7 +104,7 @@ export async function showMutationApproval(
 	});
 	const header = `Allow ${params.tool} on ${params.path}?`;
 
-	const result = await ctx.ui.custom<ApprovalDecision | undefined>(
+	const result = await withAgentPrompt(pi, ctx, { kind: "custom", title: "Approval needed", body: "The agent is waiting for permission to change files.", preview: header }, () => ctx.ui.custom<ApprovalDecision | undefined>(
 		(tui, theme, _kb, done) =>
 			new ApprovalDialog({
 				tui,
@@ -122,7 +124,7 @@ export async function showMutationApproval(
 				margin: { left: 0, right: 0, bottom: 0 },
 			},
 		},
-	);
+	));
 
 	return result === "allow" || result === "allowAll" ? result : "block";
 }

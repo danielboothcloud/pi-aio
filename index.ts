@@ -39,6 +39,7 @@ import registerYamlHooks from "./yaml-hooks/index.js";
 import { registerYouShouldKnow } from "./you-should-know/index.js";
 import { registerBtw } from "./btw/index.js";
 import { registerSessionNaming } from "./session-naming/index.js";
+import { registerNotifications } from "./notifications/index.js";
 
 export {
 	ASK_USER_PROMPT_EVENT,
@@ -107,6 +108,8 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// after the visual publishers, before yaml-hooks.
 	registerBtw(pi);
 	registerSessionNaming(pi);
+	// Human-only desktop observer; stays inert in child/headless processes.
+	registerNotifications(pi);
 	// Yaml hooks last for agent tool-hook composition. Explicit user !/!!
 	// commands use Pi's native path without any AIO interception.
 	registerYamlHooks(pi);

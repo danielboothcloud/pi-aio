@@ -18,6 +18,7 @@ import type {
 	WorkingIndicatorOptions,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { withAgentPrompt } from "../notifications/protocol.js";
 import {
 	emitAioUiState,
 	probeFrameEditor,
@@ -597,7 +598,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			if (!ctx.hasUI) {
 				return { block: true, reason: `${tool} blocked: no UI to confirm.` };
 			}
-			const decision = await showMutationApproval(ctx, { tool, input, path });
+			const decision = await showMutationApproval(ctx, { tool, input, path }, pi);
 			if (decision === "allowAll") {
 				await setMode("auto", ctx);
 				return undefined;
@@ -614,10 +615,10 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			if (!ctx.hasUI) {
 				return { block: true, reason: `${tool} blocked: no UI to confirm.` };
 			}
-			const choice = await ctx.ui.select(`Allow ${tool} "${cmd}"?`, [
+			const choice = await withAgentPrompt(pi, ctx, { kind: "select", title: "Approval needed", body: "The agent is waiting for permission to run a command.", preview: cmd }, () => ctx.ui.select(`Allow ${tool} "${cmd}"?`, [
 				"Allow",
 				"Block",
-			]);
+			]));
 			return choice === "Allow"
 				? undefined
 				: { block: true, reason: `${tool} blocked by user` };
@@ -814,11 +815,11 @@ Prefer running a cheap check (test, command, log line) over reasoning about beha
 			display: true,
 		};
 
-		const choice = await ctx.ui.select("Plan ready — what next?", [
+		const choice = await withAgentPrompt(pi, ctx, { kind: "select", title: "Plan ready", body: "Review the agent's plan and choose what happens next." }, () => ctx.ui.select("Plan ready — what next?", [
 			"Execute the plan",
 			"Stay in plan mode",
 			"Refine the plan",
-		]);
+		]));
 
 		if (!choice) return;
 
@@ -847,7 +848,7 @@ Prefer running a cheap check (test, command, log line) over reasoning about beha
 				{ triggerTurn: true, deliverAs: "followUp" },
 			);
 		} else if (choice === "Refine the plan") {
-			const refinement = await ctx.ui.editor("Refine the plan:", "");
+			const refinement = await withAgentPrompt(pi, ctx, { kind: "editor", title: "Input needed", body: "The agent is waiting for your plan refinement." }, () => ctx.ui.editor("Refine the plan:", ""));
 			if (refinement && refinement.trim()) {
 				pi.sendMessage(planTodoListMessage, { deliverAs: "followUp" });
 				pi.sendUserMessage(refinement.trim(), { deliverAs: "followUp" });

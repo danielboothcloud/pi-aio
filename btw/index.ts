@@ -27,6 +27,7 @@
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { emitNotification } from "../notifications/protocol.js";
 
 import {
 	probeFrameEditor,
@@ -146,6 +147,7 @@ export function registerBtw(pi: ExtensionAPI, options: RegisterBtwOptions = {}):
 		syncAsking(run.ctx, null);
 
 		if (outcome.error) {
+			emitNotification(pi, run.ctx, { category: "background", id: `btw:${run.seq}`, title: "Side question failed", body: "The background side question could not be answered.", preview: outcome.error });
 			// User-initiated command: always explain why no answer came.
 			clearCardTimer();
 			clearWidget(run.ctx);
@@ -165,6 +167,7 @@ export function registerBtw(pi: ExtensionAPI, options: RegisterBtwOptions = {}):
 			timestamp: Date.now(),
 		};
 		pi.appendEntry(BTW_ENTRY_TYPE, data);
+		emitNotification(pi, run.ctx, { category: "background", id: `btw:${run.seq}`, title: "Side answer ready", body: "Your /btw answer is ready in Pi.", preview: outcome.answer });
 
 		if (run.ctx.hasUI) {
 			run.ctx.ui.notify(btwToastText(data), "info");

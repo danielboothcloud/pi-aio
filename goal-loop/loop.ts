@@ -25,6 +25,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { fitLine } from "../ui/chrome.js";
+import { emitGoalActivity, emitNotification, withAgentPrompt } from "../notifications/protocol.js";
 
 import {
 	type Goal,
@@ -545,6 +546,7 @@ function createGoal(objective: string, ctx: ExtensionContext): Goal {
 function persistState(ctx: ExtensionContext): void {
 	appendLedger(ctx.cwd, "state", { goal: state.goal });
 	refreshUI(ctx);
+	emitGoalActivity(extensionApi, ctx, state.goal?.status ?? "none");
 }
 
 function setGoal(goal: Goal, ctx: ExtensionContext): void {
@@ -561,10 +563,22 @@ function setGoal(goal: Goal, ctx: ExtensionContext): void {
 
 function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): void {
 	if (!state.goal) return;
+	const previousStatus = state.goal.status;
+	const previousReason = state.goal.pauseReason;
 	state.goal = { ...state.goal, ...patch, updatedAt: nowIso() };
 	const file = writeGoalMd(ctx.cwd, state.goal);
 	state.goal.activePath = path.relative(ctx.cwd, file) || file;
 	persistState(ctx);
+	if (patch.status === "paused" && previousStatus !== "paused") emitGoalActivity(extensionApi, ctx, "paused", true);
+	// Manual /goal pause supplies no reason. Quota pauses already auto-retry.
+	if (extensionApi && patch.status === "paused" && patch.pauseReason && !patch.pauseReason.startsWith("auditor quota:")
+		&& (previousStatus !== "paused" || previousReason !== patch.pauseReason)) {
+		emitNotification(extensionApi, ctx, {
+			category: "goal", id: `${state.goal.id}:paused:${state.goal.updatedAt}`,
+			title: "Goal needs attention", body: "The goal is blocked. Return to Pi to review the next action.",
+			preview: patch.pauseReason, replacesCompletion: true,
+		});
+	}
 }
 
 function archiveCurrentGoal(
@@ -595,6 +609,13 @@ function archiveCurrentGoal(
 		stopReason,
 	});
 	persistState(ctx);
+	if (status === "aborted") emitGoalActivity(extensionApi, ctx, status, true);
+	if (status === "complete" && extensionApi) {
+		emitNotification(extensionApi, ctx, {
+			category: "goal", id: `${goal.id}:complete`, title: "Goal complete",
+			body: "The goal has been marked complete.", preview: goal.objective, replacesCompletion: true,
+		});
+	}
 }
 
 function notifyExternal(ctx: ExtensionContext, message: string): void {
@@ -1045,10 +1066,10 @@ function registerAgentTools(pi: ExtensionAPI, ctx: ExtensionContext): void {
 					);
 					let completeAnyway = false;
 					try {
-						completeAnyway = await ctx.ui.confirm(
+						completeAnyway = await withAgentPrompt(pi, ctx, { kind: "confirm", title: "Audit decision needed", body: "The audit was aborted. Choose whether to continue or mark the goal complete." }, () => ctx.ui.confirm(
 							"Audit aborted",
 							"You aborted the auditor (Escape).\n\nYes = mark the goal COMPLETE WITHOUT AUDIT (you take responsibility for verification).\nNo = continue working; the auditor will verify on the next complete_goal.",
-						);
+						));
 					} catch {
 						completeAnyway = false;
 					}
@@ -1594,10 +1615,10 @@ function registerAgentTools(pi: ExtensionAPI, ctx: ExtensionContext): void {
 					});
 				} else {
 					try {
-						confirmed = await liveCtx.ui.confirm(
+						confirmed = await withAgentPrompt(pi, liveCtx, { kind: "confirm", title: "Confirm goal", body: "The agent is waiting for you to confirm the goal.", preview: p.objective }, () => liveCtx.ui.confirm(
 							"Confirm goal",
 							`${p.objective.trim()}${contractBlock}`,
-						);
+						));
 					} catch {
 						confirmed = false;
 					}
@@ -1695,7 +1716,7 @@ function registerAgentTools(pi: ExtensionAPI, ctx: ExtensionContext): void {
 					});
 				} else {
 					try {
-						confirmed = await liveCtx.ui.confirm("Confirm task list", preview);
+						confirmed = await withAgentPrompt(pi, liveCtx, { kind: "confirm", title: "Confirm task list", body: "The agent is waiting for you to confirm the task breakdown.", preview }, () => liveCtx.ui.confirm("Confirm task list", preview));
 					} catch {
 						confirmed = false;
 					}
@@ -2037,6 +2058,7 @@ export default function (pi: ExtensionAPI): void {
 			);
 		}
 		refreshUI(ctx);
+		emitGoalActivity(pi, ctx, state.goal?.status ?? "none");
 	});
 
 	pi.on("agent_end", async (event: any, ctx: ExtensionContext) => {

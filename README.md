@@ -47,6 +47,54 @@ shortcut, add this to `~/.pi/agent/keybindings.json`:
 Then run `/reload` or restart Pi. Use `/effort` when you want to change the
 thinking level.
 
+## Desktop notifications — `/notify`
+
+Enabled by default in parent TUI sessions. AIO notifies when:
+
+- The agent **fully settles** and is ready for input, or stops with an unrecovered
+  error. Recovered tool errors and intentional Escape/abort are silent.
+- A question, file-mutation approval, shell approval (`bash` or `hypa_shell`), or
+  other agent-driven dialog needs input.
+- A goal completes or becomes blocked. Routine goal continuations, manual
+  pause/cancel, and quota pauses with an automatic retry are silent.
+- A background subagent run completes/fails, or a `/btw` answer/error arrives.
+  Subagents notify once per group, not once per child or retry; their completion
+  replaces the next generic idle alert.
+- YSK surfaces a **critical** finding, after its existing filtering/deduplication.
+
+On macOS, optional `terminal-notifier` on `PATH` provides native notifications
+and click-to-activate for a recognized terminal bundle ID. If unavailable or
+failing, AIO uses terminal notifications (OSC 777, or OSC 99 for Kitty), with tmux
+passthrough framing. Terminal support, passthrough settings, and OS notification
+permissions still govern delivery. Over SSH only the terminal fallback is used.
+No executable is installed automatically. Don't also load `pi-notify`, or both
+extensions may notify.
+
+Notifications are suppressed while the terminal **app** is frontmost on macOS
+(best effort; unknown/unavailable focus detection allows delivery). This is not
+pane/tab awareness, and focus suppression is unavailable off macOS or over SSH.
+Bodies are generic by default; opt-in previews can expose model output or prompt
+text on the desktop/lock screen. The subtitle contains the session name or
+working-directory basename even with previews off.
+
+```text
+/notify                         Show settings and backend selection
+/notify test                    Test delivery, ignoring focus/enabled settings
+/notify on                      Enable notifications
+/notify off                     Disable notifications
+/notify focus off               Notify even while the terminal app is focused
+/notify min 5                   Require 5 seconds for normal completion alerts
+/notify sound Glass             Native macOS sound; `off` disables it
+/notify preview on              Include short text previews (off by default)
+/notify events background off   Toggle core, goal, background, or critical
+```
+
+Changes persist in `<agent-dir>/aio-notifications.settings.json` (test override:
+`AIO_NOTIFY_SETTINGS_FILE`). Startup never creates a settings file. Notification
+failures never block agent work; no desktop output is emitted in RPC, print/JSON,
+or subagent children. Existing goal `notifyCmd` hooks remain independent; disable
+`/notify events goal off` if your hook already handles desktop goal alerts.
+
 ## Recipes — `--recipe <name>`, `/recipe`
 
 A recipe is a named launch configuration: starting with
