@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -409,6 +409,7 @@ test("default mode prompts for bridged Cursor edits", async () => {
 		const { ctx, handlers, pi, selectPrompts } = makeHarness({
 			selections: ["Allow"],
 		});
+		Object.assign(ctx, { cwd: tempDir });
 		registerPermissionModes(pi);
 
 		const [handler] = handlers.get("tool_call") ?? [];
@@ -447,6 +448,7 @@ test("default mode prompts once for all apply_patch target files", async () => {
 		const { ctx, handlers, pi, selectPrompts } = makeHarness({
 			selections: ["Allow"],
 		});
+		Object.assign(ctx, { cwd: tempDir });
 		registerPermissionModes(pi);
 
 		const [handler] = handlers.get("tool_call") ?? [];
@@ -513,5 +515,135 @@ test("Cursor replay mutations warn instead of showing a misleading approval prom
 		);
 		assert.match(notification.message, /pi__edit, pi__write, pi__apply_patch/);
 		assert.equal(notification.level, "warning");
+	}
+});
+
+// ---------------------------------------------------------------------------
+// Workspace guard: file mutations outside the working directory
+// ---------------------------------------------------------------------------
+
+function makeWorkspace() {
+	const base = mkdtempSync(join(tmpdir(), "permission-workspace-"));
+	const cwd = join(base, "repo");
+	const outsideDir = join(base, "other");
+	mkdirSync(join(cwd, "src"), { recursive: true });
+	mkdirSync(outsideDir, { recursive: true });
+	// Pi's session cwd and the process cwd (the base AIO's file tools resolve
+	// relative paths against) match in real sessions; mirror that here.
+	const previousCwd = process.cwd();
+	process.chdir(cwd);
+	return {
+		base,
+		cwd,
+		outsideDir,
+		cleanup: () => {
+			process.chdir(previousCwd);
+			rmSync(base, { recursive: true, force: true });
+		},
+	};
+}
+
+async function guardHarness(mode: "default" | "auto", selections: string[], cwd: string) {
+	const harness = makeHarness({ selections });
+	Object.assign(harness.ctx, { cwd });
+	registerPermissionModes(harness.pi);
+	if (mode === "auto") await harness.commands.get("auto")?.handler("", harness.ctx);
+	const call = async (toolName: string, input: Record<string, unknown>) => {
+		for (const handler of harness.handlers.get("tool_call") ?? []) {
+			const result = await handler({ toolName, toolCallId: "c1", input }, harness.ctx);
+			if (result?.block) return result;
+		}
+		return undefined;
+	};
+	return { ...harness, call };
+}
+
+test("auto mode: edits inside the working directory and subdirectories need no approval", async () => {
+	const ws = makeWorkspace();
+	try {
+		const h = await guardHarness("auto", [], ws.cwd);
+		assert.equal(await h.call("write", { path: "src/new/a.ts", content: "x" }), undefined);
+		assert.equal(await h.call("edit", { path: join(ws.cwd, "b.ts") }), undefined);
+		assert.equal(
+			await h.call("apply_patch", { changes: [{ path: "src/c.ts", action: "add", content: "" }] }),
+			undefined,
+		);
+		assert.deepEqual(h.selectPrompts, []);
+	} finally {
+		ws.cleanup();
+	}
+});
+
+test("auto mode: an outside edit asks for manual approval; Block blocks, Allow once allows once", async () => {
+	const ws = makeWorkspace();
+	try {
+		const target = join(ws.outsideDir, "a.ts");
+		const h = await guardHarness("auto", ["Block", "Allow once"], ws.cwd);
+		const blocked = await h.call("write", { path: target, content: "x" });
+		assert.equal(blocked?.block, true);
+		assert.match(blocked.reason, /outside the working directory/);
+		assert.equal(h.selectPrompts.length, 1);
+		assert.match(h.selectPrompts[0], /Outside the working directory/);
+
+		assert.equal(await h.call("edit", { path: "../other/a.ts" }), undefined);
+		assert.equal(h.selectPrompts.length, 2);
+		// "Allow once" does not remember the folder.
+		assert.equal((await h.call("write", { path: target, content: "y" }))?.block, true);
+		assert.equal(h.selectPrompts.length, 3);
+	} finally {
+		ws.cleanup();
+	}
+});
+
+test("auto mode: allowing the folder for the session covers later edits there until a new session", async () => {
+	const ws = makeWorkspace();
+	try {
+		const h = await guardHarness("auto", ["Allow this folder for the session"], ws.cwd);
+		assert.equal(await h.call("write", { path: join(ws.outsideDir, "a.ts"), content: "" }), undefined);
+		assert.equal(await h.call("write", { path: join(ws.outsideDir, "sub", "b.ts"), content: "" }), undefined);
+		assert.equal(h.selectPrompts.length, 1, "later edits under the folder are not prompted");
+		// A different outside folder still asks (no selection left -> blocked).
+		assert.equal((await h.call("write", { path: join(ws.base, "c.ts"), content: "" }))?.block, true);
+		assert.equal(h.selectPrompts.length, 2);
+
+		Object.assign(h.ctx, { sessionManager: { getEntries: () => [] } });
+		Object.assign(h.pi, { getFlag: () => "auto" });
+		for (const handler of h.handlers.get("session_start") ?? []) await handler({}, h.ctx);
+		assert.equal((await h.call("write", { path: join(ws.outsideDir, "a.ts"), content: "" }))?.block, true);
+		assert.equal(h.selectPrompts.length, 3, "a new session asks again");
+	} finally {
+		ws.cleanup();
+	}
+});
+
+test("outside edits are blocked without a UI (print mode, subagent children)", async () => {
+	const ws = makeWorkspace();
+	try {
+		const h = await guardHarness("auto", [], ws.cwd);
+		Object.assign(h.ctx, { hasUI: false });
+		const result = await h.call("apply_patch", {
+			changes: [{ path: "src/a.ts", action: "move", movePath: join(ws.outsideDir, "a.ts") }],
+		});
+		assert.equal(result?.block, true);
+		assert.match(result.reason, /no UI to approve it/);
+		assert.equal(await h.call("edit", { path: "src/a.ts" }), undefined);
+	} finally {
+		ws.cleanup();
+	}
+});
+
+test("default mode: an outside edit shows one outside-directory prompt, not two", async () => {
+	const ws = makeWorkspace();
+	try {
+		const h = await guardHarness("default", ["Allow once", "Allow"], ws.cwd);
+		assert.equal(await h.call("write", { path: join(ws.outsideDir, "a.ts"), content: "" }), undefined);
+		assert.equal(h.selectPrompts.length, 1);
+		assert.match(h.selectPrompts[0], /Outside the working directory/);
+		// Inside edits keep the normal default-mode prompt.
+		assert.equal(await h.call("write", { path: "src/a.ts", content: "" }), undefined);
+		assert.equal(h.selectPrompts.length, 2);
+		assert.doesNotMatch(h.selectPrompts[1], /Outside the working directory/);
+	} finally {
+		ws.cleanup();
 	}
 });

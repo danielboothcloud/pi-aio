@@ -187,7 +187,17 @@ generated `dist/` tree without changing the package contract.
   execution-capable wrappers, and helper-capable Git diff/log/show require
   approval in default mode and are blocked in ask/plan. Auto stays permissive
   except for hard blocklists. `user-bash/` owns editor hints only. Changes can
-  cross feature boundaries.
+  cross feature boundaries. `permission-modes/workspace-guard.ts` makes
+  edit/write/apply_patch targets outside `ctx.cwd` (and its subdirectories)
+  require manual approval in default AND auto, blocked without UI (so
+  subagent children cannot write outside their cwd). Targets come from the same
+  parser the tools use (`resolveApplyPatchChanges`), resolve like Pi's
+  `resolveToCwd`, are canonicalized via the nearest existing realpath
+  (symlinks), and relative paths are checked against both `ctx.cwd` and
+  `process.cwd()` (the tools' real base). "Allow this folder for the session"
+  approvals are in-memory only and cleared on session_start/shutdown. The
+  outside prompt keeps the approval dialog's three-row layout (middle option
+  maps to `allowScope`). Shell tools are not covered by this guard.
 - `blocklist/` is the hard blocklist: `config.ts` loads the global, project, and
   active-recipe tiers (union). Entries default to `match: "text"` (the
   historical whole-text test, which must stay byte-for-byte unchanged); a

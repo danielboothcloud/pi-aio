@@ -7,6 +7,10 @@
  *  - plan:    read-only exploration followed by an optional execution workflow
  *  - auto:    auto-approve edits, writes, and mutating bash; no permission prompts
  *
+ * In every mode, edit/write/apply_patch targets outside the session's working
+ * directory (and its subdirectories) need manual approval — auto included —
+ * and are blocked when there is no UI to ask (see workspace-guard.ts).
+ *
  * See .pi/plan/BUILD.md for the full spec.
  */
 
@@ -27,6 +31,11 @@ import {
 } from "../frame/protocol.js";
 import { setPermissionModeAccess } from "./mode-access.js";
 import { showMutationApproval } from "./approval-dialog.js";
+import {
+	approvalScopes,
+	findOutsideTargets,
+	type OutsideTarget,
+} from "./workspace-guard.js";
 import {
 	extractTodoItems,
 	isSafeCommand,
@@ -548,6 +557,46 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		pi.appendEntry("modes", state);
 	}
 
+	// ---------- workspace guard (outside-cwd file mutations) ----------
+
+	/** Folders the user allowed for this session via the outside prompt. */
+	const sessionAllowedRoots = new Set<string>();
+
+	async function approveOutsideWorkspace(
+		ctx: ExtensionContext,
+		tool: string,
+		input: Record<string, unknown>,
+		cwd: string,
+		outside: OutsideTarget[],
+	): Promise<{ block: true; reason: string } | undefined> {
+		const listed = outside.map((target) => target.resolved);
+		const shown =
+			listed.length <= 3
+				? listed.join(", ")
+				: `${listed.slice(0, 3).join(", ")} (+${listed.length - 3} more)`;
+		if (!ctx.hasUI) {
+			return {
+				block: true,
+				reason: `${tool} blocked: ${shown} is outside the working directory ${cwd}, and there is no UI to approve it. Only change files inside ${cwd}.`,
+			};
+		}
+		const scopes = approvalScopes(outside);
+		const decision = await showMutationApproval(
+			ctx,
+			{ tool, input, path: shown, outside: { cwd, scopes } },
+			pi,
+		);
+		if (decision === "allowScope") {
+			for (const scope of scopes) sessionAllowedRoots.add(scope);
+			return undefined;
+		}
+		if (decision === "allow") return undefined;
+		return {
+			block: true,
+			reason: `${tool} blocked by user: ${shown} is outside the working directory ${cwd}.`,
+		};
+	}
+
 	// ---------- tool_call gate (the single handler) ----------
 
 	pi.on("tool_call", async (event, ctx) => {
@@ -586,6 +635,16 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 				}
 			}
 			return undefined;
+		}
+
+		// Workspace guard: file mutations outside the working directory need a
+		// human in default AND auto mode (ask/plan already blocked them above).
+		if (FILE_MUTATION_TOOLS.has(tool)) {
+			const cwd = ctx.cwd ?? process.cwd();
+			const outside = findOutsideTargets(tool, input, cwd, sessionAllowedRoots);
+			if (outside.length > 0) {
+				return approveOutsideWorkspace(ctx, tool, input, cwd, outside);
+			}
 		}
 
 		if (currentMode === "auto") {
@@ -716,6 +775,7 @@ Do NOT attempt to make changes — just plan. Observe, don't deduce: prefer a re
 		} else if (currentMode === "auto") {
 			body = `[AUTO MODE ACTIVE]
 All tool calls (edit, write, apply_patch, bash, hypa_shell) are auto-approved — no permission prompts.
+Exception: edit, write, and apply_patch on files outside the working directory (and its subdirectories) still require manual user approval; keep changes inside it unless the task needs otherwise.
 Proceed without asking for confirmation.
 
 Work rules:
@@ -729,7 +789,7 @@ After completing each meaningful chunk, briefly summarize progress.
 If a todo list is active, toggle each finished step with the todo tool before continuing.`;
 		} else {
 			body = `[DEFAULT MODE ACTIVE]
-- edit, write, and apply_patch tools require per-call user approval
+- edit, write, and apply_patch tools require per-call user approval (files outside the working directory get a separate outside-directory approval)
 - bash and hypa_shell commands outside the simple read-only allowlist require per-call user approval
 - Python/Node scripts, compound commands, and execution-capable wrappers require approval too; never use them to bypass edit/write approval
 - simple read-only shell commands and reads (read/grep/find/ls) pass through without prompting
@@ -986,6 +1046,8 @@ Prefer running a cheap check (test, command, log line) over reasoning about beha
 	}
 
 	pi.on("session_start", async (_event, ctx) => {
+		// Outside-folder approvals never outlive the session they were given in.
+		sessionAllowedRoots.clear();
 		await restoreSession(ctx);
 	});
 
@@ -994,6 +1056,7 @@ Prefer running a cheap check (test, command, log line) over reasoning about beha
 	});
 
 	pi.on("session_shutdown", async () => {
+		sessionAllowedRoots.clear();
 		if (!enabledCursorBridgeBuiltins) return;
 		delete process.env[CURSOR_BRIDGE_BUILTINS_ENV];
 		enabledCursorBridgeBuiltins = false;

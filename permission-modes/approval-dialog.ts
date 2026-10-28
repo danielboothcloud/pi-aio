@@ -33,11 +33,35 @@ import {
 	formatMutationPreview,
 } from "../diff-tools/core/mutation-preview.js";
 
-/** Result of an approval interaction. `block` also covers cancel/escape. */
-export type ApprovalDecision = "allow" | "allowAll" | "block";
+/**
+ * Result of an approval interaction. `block` also covers cancel/escape.
+ * `allowAll` (enable auto) belongs to the normal prompt; `allowScope` (allow
+ * the target folder for this session) to the outside-workspace prompt.
+ */
+export type ApprovalDecision = "allow" | "allowAll" | "allowScope" | "block";
 
 /** Options shown in the sticky footer, in order. */
 const OPTIONS = ["Allow", "Allow all (enable auto)", "Block"] as const;
+
+/** Outside-workspace prompt: same three-row layout, different middle option. */
+export const OUTSIDE_OPTIONS = [
+	"Allow once",
+	"Allow this folder for the session",
+	"Block",
+] as const;
+
+/** Set when the mutation targets paths outside the session's working directory. */
+export interface OutsideWorkspaceInfo {
+	/** The working directory the targets fall outside of. */
+	cwd: string;
+	/** Folders a session approval would grant. */
+	scopes: readonly string[];
+}
+
+function outsideBody(outside: OutsideWorkspaceInfo): string {
+	const folders = outside.scopes.join(", ");
+	return `⚠ Outside the working directory ${outside.cwd}. "${OUTSIDE_OPTIONS[1]}" allows further changes under: ${folders}`;
+}
 
 /** Caps for the overlay preview — effectively uncapped for realistic diffs. */
 const OVERLAY_MAX_LINES = 10_000;
@@ -82,19 +106,30 @@ function roleColor(role: DiffRole): string {
  */
 export async function showMutationApproval(
 	ctx: ExtensionContext,
-	params: { tool: string; input: Record<string, unknown>; path: string },
+	params: {
+		tool: string;
+		input: Record<string, unknown>;
+		path: string;
+		outside?: OutsideWorkspaceInfo;
+	},
 	pi?: ExtensionAPI,
 ): Promise<ApprovalDecision> {
 	const useOverlay = ctx.mode === "tui" && typeof ctx.ui.custom === "function";
+	const outside = params.outside;
+	const body = outside
+		? "The agent wants to change files outside its working directory."
+		: "The agent is waiting for permission to change files.";
 
 	if (!useOverlay) {
 		const preview = await formatMutationPreview(params.tool, params.input);
-		const choice = await withAgentPrompt(pi, ctx, { kind: "select", title: "Approval needed", body: "The agent is waiting for permission to change files.", preview: params.path }, () => ctx.ui.select(
-			buildMutationApprovalPrompt(params.tool, params.path, preview),
-			[...OPTIONS],
+		const prompt = buildMutationApprovalPrompt(params.tool, params.path, preview);
+		const options: readonly string[] = outside ? OUTSIDE_OPTIONS : OPTIONS;
+		const choice = await withAgentPrompt(pi, ctx, { kind: "select", title: "Approval needed", body, preview: params.path }, () => ctx.ui.select(
+			outside ? `${outsideBody(outside)}\n${prompt}` : prompt,
+			[...options],
 		));
-		if (choice === "Allow") return "allow";
-		if (choice === "Allow all (enable auto)") return "allowAll";
+		if (choice === options[0]) return "allow";
+		if (choice === options[1]) return outside ? "allowScope" : "allowAll";
 		return "block";
 	}
 
@@ -102,9 +137,14 @@ export async function showMutationApproval(
 		maxLines: OVERLAY_MAX_LINES,
 		maxChars: OVERLAY_MAX_CHARS,
 	});
-	const header = `Allow ${params.tool} on ${params.path}?`;
+	const header = outside
+		? `Outside ${outside.cwd}: allow ${params.tool} on ${params.path}?`
+		: `Allow ${params.tool} on ${params.path}?`;
+	const diff = outside
+		? `${outsideBody(outside)}\n${preview ?? ""}`.replace(/\n$/, "")
+		: preview;
 
-	const result = await withAgentPrompt(pi, ctx, { kind: "custom", title: "Approval needed", body: "The agent is waiting for permission to change files.", preview: header }, () => ctx.ui.custom<ApprovalDecision | undefined>(
+	const result = await withAgentPrompt(pi, ctx, { kind: "custom", title: "Approval needed", body, preview: header }, () => ctx.ui.custom<ApprovalDecision | undefined>(
 		(tui, theme, _kb, done) =>
 			new ApprovalDialog({
 				tui,
@@ -112,8 +152,9 @@ export async function showMutationApproval(
 				// Theme; narrowing keeps this component independent of the full type.
 				theme: theme as unknown as ApprovalTheme,
 				header,
-				diff: preview,
+				diff,
 				done,
+				variant: outside ? "outside" : "default",
 			}),
 		{
 			overlay: true,
@@ -126,7 +167,10 @@ export async function showMutationApproval(
 		},
 	));
 
-	return result === "allow" || result === "allowAll" ? result : "block";
+	if (result === "allow") return "allow";
+	if (result === "allowAll" && !outside) return "allowAll";
+	if (result === "allowScope" && outside) return "allowScope";
+	return "block";
 }
 
 interface ApprovalDialogOptions {
@@ -135,6 +179,8 @@ interface ApprovalDialogOptions {
 	header: string;
 	diff: string | undefined;
 	done: (result: ApprovalDecision) => void;
+	/** `outside` swaps "Enable auto" for a session-scoped folder approval. */
+	variant?: "default" | "outside";
 }
 
 /**
@@ -154,6 +200,7 @@ export class ApprovalDialog implements Component {
 	private readonly header: string;
 	private readonly diffLines: string[];
 	private readonly done: (result: ApprovalDecision) => void;
+	private readonly variant: "default" | "outside";
 	private selected = 0;
 	private scrollOffset = 0;
 	// Wrap cache (invalidated on width change).
@@ -165,6 +212,7 @@ export class ApprovalDialog implements Component {
 		this.theme = opts.theme;
 		this.header = opts.header;
 		this.done = opts.done;
+		this.variant = opts.variant ?? "default";
 		const trimmed = opts.diff ? opts.diff.replace(/\n+$/, "") : "";
 		this.diffLines = trimmed ? trimmed.split("\n") : [];
 	}
@@ -309,7 +357,7 @@ export class ApprovalDialog implements Component {
 			case 0:
 				return "allow";
 			case 1:
-				return "allowAll";
+				return this.variant === "outside" ? "allowScope" : "allowAll";
 			default:
 				return "block";
 		}
@@ -376,7 +424,10 @@ export class ApprovalDialog implements Component {
 	}
 
 	private optionLine(index: number, width: number): string {
-		const labels = ["Allow once", "Enable auto", "Block"] as const;
+		const labels =
+			this.variant === "outside"
+				? (["Allow once", "Allow folder this session", "Block"] as const)
+				: (["Allow once", "Enable auto", "Block"] as const);
 		const tones = ["success", "warning", "error"] as const;
 		return this.padLine(
 			chromeItem(

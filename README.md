@@ -783,6 +783,27 @@ Git diff/log/show require approval because configured external-diff/textconv
 helpers can execute code implicitly. Even quoted shell metacharacters take this conservative path. Ask/plan block
 these commands; auto permits them. Explicit user `!`/`!!` commands are unchanged.
 
+### Changes outside the working directory
+
+`edit`, `write`, and `apply_patch` may change anything inside the session's
+working directory and its subdirectories. A target anywhere else (an absolute
+path, `../sibling`, `~/…`, or a symlink inside the project that points out of
+it) needs **manual approval in every mode, including auto**. The approval
+prompt is marked *outside the working directory* and offers:
+
+- **Allow once** — this call only;
+- **Allow this folder for the session** — this call, plus later changes under
+  the target's folder until the session ends (`/new`, resume, or exit);
+- **Block** — the agent gets an error naming the path.
+
+In default mode this replaces the normal prompt, so you are asked once.
+Without a UI to ask (print/JSON runs, subagent children) such changes are
+blocked. Paths are resolved like Pi's file tools (`@` prefix, `~`, relative to
+the cwd) and canonicalized through symlinks. Every `apply_patch` target,
+including move destinations and unified-diff files, is checked. This guard
+covers the file tools only: shell commands (`bash`, `hypa_shell`) follow the
+mode rules above and the [command blocklist](#command-blocklist).
+
 Ask mode is passive Q&A and exploration: it can inspect the codebase and answer
 questions, but it cannot mutate state and does not start plan extraction or
 execution flows. Plan mode has the same read-only boundary but instructs the

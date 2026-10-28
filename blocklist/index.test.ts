@@ -231,8 +231,10 @@ test("tool_call: non-bash tools are never blocklisted", async () => {
 	const harness = makeHarness();
 	await harness.setMode("auto");
 
+	// Inside the project: an outside path would (correctly) hit the
+	// permission-modes workspace guard, which is not what this test checks.
 	const result = await harness.runToolCall("write", {
-		path: "/tmp/notes.txt",
+		path: join(projectDir, "notes.txt"),
 		content: "run: rm -rf /",
 	});
 	assert.equal(result, undefined);
