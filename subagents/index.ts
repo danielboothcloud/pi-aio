@@ -128,8 +128,7 @@ function parentContext(
 }
 
 /** Opens the live subagent inspector overlay (also `/subagents`). */
-// Use a plain Control chord: Option-letter keys can produce text on macOS.
-export const INSPECTOR_SHORTCUT = "ctrl+s";
+export const INSPECTOR_SHORTCUT = "alt+s";
 
 /** Running children shown under a parallel run before collapsing to a hint. */
 const MAX_CHILD_ROWS = 3;

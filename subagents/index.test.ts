@@ -68,7 +68,7 @@ test("subagent widget is branded, bounded, and width-safe", () => {
 	const lines = buildSubagentWidgetLines(runs, 28, theme, 3);
 	assert.match(lines[0] ?? "", /SUBAGENTS · 6 active runs/);
 	assert.match(lines.at(-1) ?? "", /\+3 more runs/);
-	assert.match(buildSubagentWidgetLines(runs, 100, theme)[0] ?? "", /ctrl\+s inspect/);
+	assert.match(buildSubagentWidgetLines(runs, 100, theme)[0] ?? "", /alt\+s inspect/);
 	for (const line of lines) assert.ok(visibleWidth(line) <= 28);
 });
 
@@ -79,8 +79,8 @@ test("registers the reduced subagent tool and lifecycle hooks", () => {
 	assert.equal(harness.handlers.has("session_start"), true);
 	assert.equal(harness.handlers.has("session_shutdown"), true);
 	assert.equal(harness.commands.has("subagents"), true);
-	assert.equal(harness.shortcuts.has("ctrl+s"), true);
-	assert.equal(harness.shortcuts.has("alt+s"), false);
+	assert.equal(harness.shortcuts.has("alt+s"), true);
+	assert.equal(harness.shortcuts.has("ctrl+s"), false);
 });
 
 test("inspector refuses non-TUI modes and empty sessions without opening", async () => {
