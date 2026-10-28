@@ -156,8 +156,14 @@ generated `dist/` tree without changing the package contract.
   portable: its `defaultRecipe` resolves only against its own `recipes`
   (never global/project ones; otherwise ignored with a warning);
   `/recipe trust` / `/recipe untrust` record or forget the decision.
-  Recipes support only description/model/thinkingLevel/models/mcpServers/extensions;
-  unknown keys are ignored. Recipes literally named `init`/`trust`/`untrust` keep
+  Recipes support only description/model/thinkingLevel/models/mcpServers/extensions/blocklist;
+  unknown keys are ignored. `blocklist` (session-scoped, same shape as
+  `aio-blocklist.json` or a bare entries array) is published by
+  `applyRecipe`/`deactivateRecipe` through `setRecipeBlocklist` and unioned
+  into the hard blocklist as source `recipe:<name>`; it can only add rules.
+  It is mirrored into `AIO_RECIPE_BLOCKLIST` so subagent children (which never
+  activate recipes) keep enforcing it; a top-level pi clears a stray copy at
+  registration and reads the env only under `AIO_SUBAGENT_CHILD=1`. Recipes literally named `init`/`trust`/`untrust` keep
   switching. Every process strips legacy `recipe-context` messages from model
   context, even while a recipe is active. Subagent children register only that
   cleanup filter and the status renderer (no recipe activation). Status is dual-channel (frame
@@ -182,6 +188,15 @@ generated `dist/` tree without changing the package contract.
   approval in default mode and are blocked in ask/plan. Auto stays permissive
   except for hard blocklists. `user-bash/` owns editor hints only. Changes can
   cross feature boundaries.
+- `blocklist/` is the hard blocklist: `config.ts` loads the global, project, and
+  active-recipe tiers (union). Entries default to `match: "text"` (the
+  historical whole-text test, which must stay byte-for-byte unchanged); a
+  file-level `match` sets the default for that file's entries, and an entry's
+  own `match` wins. `"command"` rules test each segment's `program`/`full`
+  form from the pure, dependency-free `segments.ts` (wrappers live in the
+  named `COMMAND_WRAPPERS` constant). A `null`/`ok: false` segmentation fails
+  CLOSED: any active command-mode rule blocks the command outright. Never
+  turn a parse failure into an allow.
 - `ui/chrome.ts` is the shared visual vocabulary for AIO-owned surfaces:
   theme-aware accent rails, headers, items, hints, dividers, pluralization, and
   ANSI-aware width fitting. Diff/approval, pretty tools, copy picker, queue,

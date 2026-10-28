@@ -133,7 +133,7 @@ Trusted projects may override or add recipes in `<project>/.pi/aio-recipes.json`
 ```
 
 Recipes support only `description`, `model`, `thinkingLevel`, `models`,
-`mcpServers`, and `extensions`; other keys are ignored.
+`mcpServers`, `extensions`, and `blocklist`; other keys are ignored.
 
 Key semantics:
 
@@ -150,6 +150,29 @@ Key semantics:
   bridge. Bare names resolve against `~/.pi/agent/extensions/` (like
   `otty-integration`); `npm:`, `git:`, `builtin:`, and paths pass through;
   AIO itself always re-loads in the child.
+- **`blocklist`** — extra [command blocklist](#command-blocklist) rules while
+  the recipe is active, in the same shape as `aio-blocklist.json` (or a bare
+  `entries` array). They are added to the global/project blocklist files and
+  can never disable them. Session-scoped: `/recipe` switches replace them,
+  `/recipe off` clears them, and subagent children inherit them. A committed
+  `.pi-recipe` therefore gives a repo its own hard blocklist without anything
+  in the home directory:
+
+  ```json
+  {
+    "defaultRecipe": "repo",
+    "recipes": {
+      "repo": {
+        "blocklist": {
+          "match": "command",
+          "entries": [
+            { "pattern": "^terraform\\s+apply\\b", "regex": true, "reason": "CI only" }
+          ]
+        }
+      }
+    }
+  }
+  ```
 
 ### Per-directory recipes — `.pi-recipe`
 
@@ -169,7 +192,8 @@ global config, so the file works the same for every clone:
       "thinkingLevel": "high",
       "models": [],
       "mcpServers": {},
-      "extensions": []
+      "extensions": [],
+      "blocklist": { "entries": [] }
     }
   }
 }
@@ -227,7 +251,7 @@ global config, so the file works the same for every clone:
   from: a **blank recipe** (current model and thinking level, `models` scoped
   to that one model, every other key present but empty) or **a copy of one of your home recipes**
   (`aio-recipes.json`) — its model, thinking level, scope, MCP servers,
-  and extensions are copied into the file, so it stays self-contained and
+  extensions, and blocklist are copied into the file, so it stays self-contained and
   never depends on your home config. `--from` picks the template without the
   picker. MCP configs are copied verbatim, so remove tokens before committing.
   Without a name it asks for one, suggesting the folder name. It never
@@ -661,10 +685,12 @@ commands bypass this gate. A blocked agent command fails with an error explainin
 which rule matched — it cannot be approved, and the model is told about the
 blocklist at the start of every turn so it does not waste attempts on it.
 
-Config is two-tier JSON with union semantics (both files apply):
+Config is JSON with union semantics (every source applies):
 
 - Global: `~/.pi/agent/aio-blocklist.json`
 - Project: `<project>/.pi/aio-blocklist.json`
+- Recipe: the active recipe's `blocklist` key (see [Recipes](#recipes----recipe-name-recipe));
+  a committed `.pi-recipe` keeps a repo's rules in the repo
 
 ```json
 {
@@ -672,7 +698,8 @@ Config is two-tier JSON with union semantics (both files apply):
   "entries": [
     "rm -rf /",
     { "pattern": "kubectl delete", "reason": "no cluster deletions" },
-    { "pattern": "\\bgit push --force\\b", "regex": true, "reason": "no force push" }
+    { "pattern": "\\bgit push --force\\b", "regex": true, "reason": "no force push" },
+    { "pattern": "^vault\\b", "regex": true, "match": "command", "reason": "no vault" }
   ]
 }
 ```
@@ -685,6 +712,52 @@ Config is two-tier JSON with union semantics (both files apply):
   set it to `false` to disable a tier without deleting it.
 - Matching is case-insensitive: `RM -RF /` hits a `rm -rf /` rule.
 - Malformed JSON, entries, or regexes are skipped rather than fatal.
+
+#### Match modes — `"match": "text" | "command"`
+
+By default (`"text"`) a rule tests the **whole command text**, including
+quoted arguments, `-m` messages, and heredoc bodies, so `rg -n 'vault' src`
+or `jj describe -m 'never run npm run test:stack'` hit a `\bvault\b` or
+`test:stack` rule. Opt into `"command"` to test only the commands the shell
+would actually run. Set it per entry, or at the top level of a file (or
+recipe `blocklist`) as the default for that file's entries; an entry's own
+`match` wins, and any unknown value means `"text"`.
+
+In command mode the command is split into segments on unquoted `;`, `&`,
+`&&`, `||`, `|`, newlines, `( )`, `{ }`, `$( … )`, backticks and `<( … )`;
+substitutions are segmented recursively. Quoted text, redirections, and
+comments never start a segment. Heredoc bodies and here-strings are dropped
+unless they feed a shell (`bash`, `sh`, `zsh`, `dash`, `fish`, `ksh`), and
+`bash -c '…'`/`eval '…'` scripts are segmented too. A rule matches if it
+matches either form of any segment:
+
+- `full` — the segment from its start, with leading `VAR=value`
+  assignments (and `export VAR=…`);
+- `program` — from the real program name on, after stripping assignments
+  and wrappers: `env`, `sudo`, `command`, `exec`, `time`, `nice`, `nohup`,
+  `timeout DURATION`, `xargs`, `npx --yes`/`-y` (keeping `npx`), and the
+  `perl -e 'alarm N; exec @ARGV' <cmd>` timeout idiom.
+
+Write command-mode patterns **anchored at the program**: `^vault\b`,
+`^git\s+(commit|push)(?![\w-])`, `^(npx\s+)?playwright\b`,
+`^(export\s+)?RR_TEST_RUNNER\s*=`. Quotes are removed before matching, so
+`'vault' login` is still `vault login`. Unanchored patterns still work but
+also match arguments within a segment. Expansions (`$VAR`) are not
+evaluated, and other interpreters (`python -c`, `node -e`, `find -exec`)
+are opaque arguments.
+
+**Fail closed.** If the command cannot be segmented reliably, any active
+command-mode rule blocks it outright, because nothing hidden in an unreadable
+command is ever let through. That covers unbalanced quotes, an unterminated
+`$(`/backtick/`${`, a heredoc whose terminator never appears, a shell that
+reads its script from a pipe or redirect (`curl … | sh`, `bash < x.sh`),
+`source`/`.` of a file, and `env -S`. Rewrite such a command so each step
+is visible (for example, run the script's commands directly). A specific
+`text`-rule hit is reported first when one exists.
+
+Block errors for command-mode hits name the matched segment (up to 120
+characters), so a false positive is obvious. The turn-start context lists each
+rule's origin and mode.
 
 The config is re-read on every check, so edits apply immediately — no reload
 needed. Cursor host replay calls (`cursor-replay-*`) are exempt because they

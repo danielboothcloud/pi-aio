@@ -7,6 +7,7 @@
 //
 //   model / thinkingLevel -> pi.setModel + pi.setThinkingLevel
 //   mcpServers           -> pi.registerMcpServer / unregisterMcpServer (ours only)
+//   blocklist            -> blocklist/config.ts setRecipeBlocklist (+ env for children)
 //
 // The module keeps runtime state (active recipe, provenance, launch notice,
 // recipes registered by this feature) with a test reset hook, and exports
@@ -16,6 +17,7 @@
 
 import type { AgentMessage, ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { setRecipeBlocklist } from "../blocklist/config.js";
 import {
 	emitAioUiState,
 	probeFrameEditor,
@@ -91,6 +93,13 @@ export function recipeRuntime(): RecipeRuntimeState {
 
 export function resetRecipeRuntimeForTests(): void {
 	runtimeState = freshRuntime();
+	setRecipeBlocklist(undefined);
+}
+
+/** Publish the recipe's hard-blocklist entries (or clear them). */
+function publishRecipeBlocklist(def: RecipeDefinition | undefined): void {
+	const entries = def?.config.blocklist ?? [];
+	setRecipeBlocklist(def && entries.length > 0 ? { recipe: def.name, entries } : undefined);
 }
 
 export function activeRecipe(): RecipeDefinition | undefined {
@@ -237,7 +246,7 @@ export function updateRecipeStatus(pi: ExtensionAPI, ctx: ExtensionContext): voi
 // ---------------------------------------------------------------------------
 
 export interface ApplyRecipeResult {
-	/** Key names applied (subset of model | thinking | mcp). */
+	/** Key names applied (subset of model | thinking | mcp | blocklist). */
 	applied: string[];
 	/** Warnings raised; never fatal. */
 	warnings: string[];
@@ -286,6 +295,8 @@ export async function applyRecipe(
 	runtimeState.activeName = def.name;
 	runtimeState.active = def;
 	runtimeState.source = options.source;
+	// First, before any await: the gate must never see a stale recipe's rules.
+	publishRecipeBlocklist(def);
 
 	const applied: string[] = [];
 	const warnings: string[] = [];
@@ -331,6 +342,7 @@ export async function applyRecipe(
 		warnings.push(...syncRecipeMcpServers(pi, def));
 		applied.push("mcp");
 	}
+	if ((config.blocklist?.length ?? 0) > 0) applied.push("blocklist");
 
 	updateRecipeStatus(pi, ctx);
 	if (options.persist) {
@@ -348,6 +360,7 @@ export function deactivateRecipe(
 	runtimeState.activeName = undefined;
 	runtimeState.active = undefined;
 	runtimeState.source = undefined;
+	publishRecipeBlocklist(undefined);
 	for (const name of runtimeState.registeredMcp) {
 		try {
 			pi.unregisterMcpServer(name);

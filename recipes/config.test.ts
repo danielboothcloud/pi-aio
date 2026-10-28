@@ -195,6 +195,23 @@ test("malformed recipes are skipped; malformed fields default to absent", () => 
 	assert.equal(good.url, "https://x.example");
 });
 
+test("recipe blocklist: object or array form, file-level match folded in, junk/disabled absent", () => {
+	const parse = (blocklist: unknown) =>
+		parseRecipeConfig("x", "directory", "/repo", { blocklist })?.config.blocklist;
+	assert.deepEqual(
+		parse({ match: "command", entries: ["^vault\\b", { pattern: "rm", match: "text" }] }),
+		[{ pattern: "^vault\\b", match: "command" }, { pattern: "rm" }],
+	);
+	assert.deepEqual(parse(["kubectl delete", { pattern: "^brew\\b", regex: true, match: "command" }]), [
+		"kubectl delete",
+		{ pattern: "^brew\\b", regex: true, match: "command" },
+	]);
+	assert.equal(parse({ enabled: false, entries: ["rm"] }), undefined);
+	assert.equal(parse({ entries: [] }), undefined);
+	assert.equal(parse("nope"), undefined);
+	assert.equal(parseRecipeConfig("x", "global", "/b", {})?.config.blocklist, undefined);
+});
+
 test("parseRecipeConfig drops entries that are not objects", () => {
 	assert.equal(parseRecipeConfig("x", "global", "/base", "nope"), undefined);
 	assert.equal(parseRecipeConfig("x", "global", "/base", null), undefined);

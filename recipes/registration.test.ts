@@ -956,9 +956,10 @@ test("/recipe init always scaffolds a full, self-contained, trusted .pi-recipe a
 	// Seeded from the live session (startup applied home's `:high`).
 	assert.equal(written.recipes["my-repo"].thinkingLevel, "high");
 	assert.deepEqual(Object.keys(written.recipes["my-repo"]), [
-		"description", "model", "thinkingLevel", "models", "mcpServers", "extensions",
+		"description", "model", "thinkingLevel", "models", "mcpServers", "extensions", "blocklist",
 	]);
 	assert.deepEqual(written.recipes["my-repo"].extensions, []);
+	assert.deepEqual(written.recipes["my-repo"].blocklist, { entries: [] });
 	// Scoped to its own model: an empty `models` would leave every
 	// settings.json enabledModels entry selectable.
 	assert.deepEqual(written.recipes["my-repo"].models, ["anthropic/claude-5"]);
@@ -1008,6 +1009,7 @@ test("/recipe init copies a home recipe as a self-contained template (picker or 
 				tools: ["read"],
 				mcpServers: { linear: { url: "https://mcp.example.com/linear" } },
 				extensions: ["otty-integration", "npm:pi-web-access"],
+				blocklist: { match: "command", entries: ["^vault\\b"] },
 			},
 		},
 	});
@@ -1033,10 +1035,13 @@ test("/recipe init copies a home recipe as a self-contained template (picker or 
 	assert.deepEqual(team.models, ["openai-codex/*"]);
 	assert.deepEqual(team.extensions, ["otty-integration", "npm:pi-web-access"]);
 	assert.deepEqual(team.mcpServers, { linear: { url: "https://mcp.example.com/linear" } });
+	// The copied blocklist keeps its resolved match mode without the file default.
+	assert.deepEqual(team.blocklist, { entries: [{ pattern: "^vault\\b", match: "command" }] });
 	for (const key of ["tools", "instructions", "skills", "prompts", "themes"]) {
 		assert.equal(Object.hasOwn(team, key), false, key);
 	}
 
+	assert.deepEqual(JSON.parse(recipeScaffold("x")).recipes.x.blocklist, { entries: [] });
 	// A template without its own scope gets scoped to its model (suffix stripped).
 	assert.deepEqual(
 		JSON.parse(recipeScaffold("x", {}, { model: "openai-codex/gpt-5:medium" })).recipes.x.models,

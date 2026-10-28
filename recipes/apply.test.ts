@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { parseRecipeConfig, RECIPE_STATE_ENTRY } from "./config.ts";
+import { RECIPE_BLOCKLIST_ENV, recipeBlocklist } from "../blocklist/config.ts";
 import {
 	applyRecipe,
 	deactivateRecipe,
@@ -338,6 +339,33 @@ test("deactivateRecipe clears state, unregisters this feature's MCP servers, and
 	});
 	// The status pill and frame contribution are gone.
 	assert.equal(h.state.statuses.get("recipe"), undefined);
+});
+
+test("applyRecipe publishes the recipe blocklist; switching and deactivating replace or clear it", async () => {
+	const h = makeHarness();
+	const blocked = recipe({
+		blocklist: { match: "command", entries: [{ pattern: "^vault\\b", regex: true }] },
+	});
+	const result = await applyRecipe(h.pi as never, h.ctx as never, blocked, {
+		source: "command",
+		persist: false,
+	});
+	assert.equal(result.applied.includes("blocklist"), true);
+	assert.deepEqual(recipeBlocklist(), {
+		recipe: "work",
+		entries: [{ pattern: "^vault\\b", regex: true, match: "command" }],
+	});
+	assert.ok(process.env[RECIPE_BLOCKLIST_ENV], "mirrored for subagent children");
+
+	// A recipe without a blocklist drops the previous recipe's entries.
+	await applyRecipe(h.pi as never, h.ctx as never, recipe({}), { source: "command", persist: false });
+	assert.equal(recipeBlocklist(), undefined);
+	assert.equal(process.env[RECIPE_BLOCKLIST_ENV], undefined);
+
+	await applyRecipe(h.pi as never, h.ctx as never, blocked, { source: "command", persist: false });
+	deactivateRecipe(h.pi as never, h.ctx as never, { persist: false });
+	assert.equal(recipeBlocklist(), undefined);
+	assert.equal(process.env[RECIPE_BLOCKLIST_ENV], undefined);
 });
 
 // ---------------------------------------------------------------------------

@@ -28,7 +28,10 @@
 //       "thinkingLevel": "high",              // off|minimal|low|medium|high|xhigh|max
 //       "models": ["anthropic/*", "openai-codex/*"], // --models scope (restart-scoped)
 //       "mcpServers": { "linear": { "url": "https://mcp.example.com/linear" } },
-//       "extensions": ["otty-integration", "npm:pi-web-access"] // restart-scoped
+//       "extensions": ["otty-integration", "npm:pi-web-access"], // restart-scoped
+//       "blocklist": { "match": "command", "entries": ["^vault\\b"] } // session-scoped;
+//                                            // same shape as aio-blocklist.json
+//                                            // (or a bare entries array)
 //     }
 //   }
 // }
@@ -47,6 +50,7 @@ import {
 	getAgentDir,
 	type McpServerConfig,
 } from "@earendil-works/pi-coding-agent";
+import { parseBlocklistConfig, type BlocklistEntry } from "../blocklist/config.js";
 
 export const RECIPES_FILE_NAME = "aio-recipes.json";
 /** Replaces the global recipes file (tests + sandboxes). */
@@ -107,6 +111,12 @@ export interface RecipeConfig {
 	mcpServers: Record<string, McpServerConfig>;
 	/** Extension sources for the relaunch bridge (restart-scoped). */
 	extensions?: string[];
+	/**
+	 * Extra hard-blocklist entries while this recipe is active (session-scoped;
+	 * unioned with the global/project aio-blocklist.json files, never
+	 * replacing them). Already parsed: the `match` default is folded in.
+	 */
+	blocklist?: BlocklistEntry[];
 }
 
 /** A recipe merged across the two config tiers, with provenance. */
@@ -245,6 +255,12 @@ export function parseRecipeConfig(
 	config.models = parseStringList(entry.models);
 	config.mcpServers = parseMcpServers(entry.mcpServers);
 	config.extensions = parseStringList(entry.extensions);
+	if (entry.blocklist !== undefined) {
+		const blocklist = parseBlocklistConfig(entry.blocklist);
+		if (blocklist.enabled && blocklist.entries.length > 0) {
+			config.blocklist = blocklist.entries;
+		}
+	}
 
 	return { name, source, baseDir, config };
 }

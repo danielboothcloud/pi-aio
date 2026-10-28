@@ -296,6 +296,8 @@ export function recipeScaffold(
 		models,
 		mcpServers: template?.mcpServers ?? {},
 		extensions: template?.extensions ?? [],
+		// Copied entries carry their resolved `match`; an empty list is a no-op.
+		blocklist: { entries: template?.blocklist ?? [] },
 	});
 	return `${JSON.stringify({ defaultRecipe: name, recipes: { [name]: recipe } }, null, 2)}\n`;
 }
