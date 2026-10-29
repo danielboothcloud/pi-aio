@@ -303,7 +303,7 @@ generated `dist/` tree without changing the package contract.
   the agent cannot open panes on its own. No gating, no tool-name overlap;
   degrades silently when nvim or every launcher is missing (the command
   reports the exact command to run).
-- `styles/` owns `/style` (`none | collaborate | tutor | concise | humanised`):
+- `styles/` owns `/style` (`none | collaborate | tutor | concise | ste`):
   opt-in interaction styles layered on top of permission modes. A style only injects a hidden
   per-turn `styles-context` instruction (mode-aware, e.g. no `TODO(human)`
   markers in ask/plan); it never gates tools, and it is NOT a permission mode
@@ -316,10 +316,14 @@ generated `dist/` tree without changing the package contract.
   canonical `tutor` (not advertised as a separate style). Concise minimizes
   commentary without hiding warnings, skipping checks/approvals, or dropping
   the required plan format; user requests for detail override its brevity.
-  Humanised covers all user-facing communication: build shared understanding
-  before granular requirements/options, keep technical detail when useful, and
-  avoid forced formality or slang without bypassing required questions,
-  approvals, verification, or the plan contract.
+  STE applies ASD-STE100 Simplified Technical English writing principles to
+  user-facing text and documentation: short sentences (20 words in instructions,
+  25 in descriptions), one instruction per sentence, active voice, simple verbs,
+  and consistent terms. Preserve exact code/commands/identifiers and technical
+  detail, warnings, questions, approvals, verification, and the plan contract.
+  This is guidance, not dictionary enforcement or certified compliance. The former
+  `humanised` command and saved name map to canonical `ste`; menus, completions,
+  and new entries use `ste`, with display label Simplified Technical English.
   Its `context` handler
   keeps only the latest instruction and strips all of them once the style is
   `none`. In subagent children

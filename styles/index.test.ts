@@ -210,49 +210,57 @@ test("concise respects every permission mode and retains the plan contract", () 
 	}
 });
 
-test("/style humanised communicates naturally without premature requirements gathering", async () => {
+test("/style ste persists its canonical name and injects ASD-STE100 writing guidance", async () => {
 	const harness = makeHarness();
 	await harness.emit("session_start");
-	await harness.runStyle(" Humanised ");
+	await harness.runStyle(" STE ");
 
 	assert.deepEqual(harness.entries, [
-		{ customType: "styles", data: { style: "humanised" } },
+		{ customType: "styles", data: { style: "ste" } },
 	]);
-	assert.equal(harness.statuses.get("style"), "◇ Humanised");
-	assert.match(harness.notifications.at(-1)?.message ?? "", /^Style: Humanised/);
+	assert.equal(harness.statuses.get("style"), "◇ Simplified Technical English");
+	assert.match(harness.notifications.at(-1)?.message ?? "", /^Style: Simplified Technical English/);
 	const result = await harness.emit("before_agent_start");
 	assert.equal(result.message.customType, STYLE_CONTEXT_TYPE);
 	assert.equal(result.message.display, false);
 	for (const cue of [
-		/\[HUMANISED STYLE ACTIVE\]/,
-		/questions, progress updates, explanations, and final answers/,
-		/Technical language is welcome/,
-		/build shared understanding before narrowing/,
-		/If the request is already clear, act on it/,
-		/Do not jump from an early idea to granular feature bundles/,
-		/tentative suggestion, not as settled scope/,
-		/Ask the next useful question/,
-		/Do not force a menu of precise options/,
-		/Use required question and approval tools/,
-		/keep its choices at the conversation's current level/,
-		/Is finding suitable jobs the main thing/,
-		/Keep technical terms, exact identifiers/,
-		/without assuming the user is a beginner/,
-		/without forced slang/,
-		/not as a template for every reply/,
+		/\[STE STYLE ACTIVE\]/,
+		/Simplified Technical English principles from ASD-STE100/,
+		/questions, progress updates, explanations, final answers, and documentation/,
+		/20 words per sentence in instructions and 25 words in descriptions/,
+		/Do not omit the subject, verb, or articles/,
+		/one instruction per sentence/,
+		/imperative verb/,
+		/condition before the instruction/,
+		/numbered steps for procedures and vertical lists/,
+		/Use the active voice/,
+		/passive voice only when the agent is unknown/,
+		/simple present, simple past, and simple future/,
+		/past participle as an adjective/,
+		/-ing form only as a technical noun/,
+		/same term for the same thing/,
+		/Avoid idioms, slang, figurative language, and contractions/,
+		/no more than three words/,
+		/one topic per paragraph and no more than six sentences/,
+		/warning before the action/,
+		/Keep code, commands, paths, API names, identifiers, literal values, and quoted source text exact/,
+		/sentence limits apply to prose, not these literals/,
+		/not a compliance checker/,
+		/controlled dictionary, approved meanings and parts of speech/,
+		/Do not claim that text is fully ASD-STE100 compliant without verification/,
 		/never which tools you may use/,
 	]) {
 		assert.match(result.message.content, cue);
 	}
-	assert.doesNotMatch(result.message.content, /\[(TUTOR|COLLABORATE|CONCISE) STYLE ACTIVE\]/);
+	assert.doesNotMatch(result.message.content, /\[(HUMANISED|TUTOR|COLLABORATE|CONCISE) STYLE ACTIVE\]/);
 });
 
-test("humanised respects every permission mode and keeps required plans and checks", () => {
+test("ste respects every permission mode and keeps required plans and checks", () => {
 	for (const mode of ["ask", "plan", "default", "auto"] as const) {
-		const context = buildStyleContext("humanised", mode);
+		const context = buildStyleContext("ste", mode);
 		assert.match(context, /active permission mode still decides/);
-		assert.match(context, /must not hide warnings, risks, failures, or technical precision/);
-		assert.match(context, /must not skip verification, required clarifications, or approvals/);
+		assert.match(context, /Preserve technical detail, warnings, risks, uncertainty, failures, and verification results/);
+		assert.match(context, /Do not skip required questions, approval tools, checks, or response formats/);
 		if (mode === "plan") {
 			assert.match(context, /required numbered implementation plan/);
 			assert.match(context, /actionable steps and verification/);
@@ -263,21 +271,22 @@ test("humanised respects every permission mode and keeps required plans and chec
 	}
 });
 
-test("switching to and from humanised keeps only current guidance; off clears it", async () => {
+test("switching to and from ste keeps only current guidance; off clears it", async () => {
 	const harness = makeHarness();
 	await harness.emit("session_start");
 	await harness.runStyle("collaborate");
 	const collaborate = await harness.emit("before_agent_start");
-	await harness.runStyle("humanised");
-	const humanised = await harness.emit("before_agent_start");
+	await harness.runStyle("ste");
+	const ste = await harness.emit("before_agent_start");
 	const messages = [
+		styleMessage("[HUMANISED STYLE ACTIVE] old guidance"),
 		styleMessage(collaborate.message.content),
 		userMessage,
-		styleMessage(humanised.message.content),
+		styleMessage(ste.message.content),
 	];
 	assert.deepEqual((await harness.emit("context", { messages })).messages, [
 		userMessage,
-		messages[2],
+		messages[3],
 	]);
 
 	await harness.runStyle("concise");
@@ -285,10 +294,10 @@ test("switching to and from humanised keeps only current guidance; off clears it
 	messages.push(styleMessage(concise.message.content));
 	assert.deepEqual((await harness.emit("context", { messages })).messages, [
 		userMessage,
-		messages[3],
+		messages[4],
 	]);
 
-	await harness.runStyle("humanised");
+	await harness.runStyle("ste");
 	await harness.runStyle("off");
 	assert.equal(await harness.emit("before_agent_start"), undefined);
 	assert.equal(harness.statuses.get("style"), undefined);
@@ -296,41 +305,57 @@ test("switching to and from humanised keeps only current guidance; off clears it
 	assert.deepEqual((await harness.emit("context", { messages })).messages, [userMessage]);
 });
 
-test("humanised works without UI dialogs", async () => {
+test("ste works without UI dialogs and humanised reports its canonical name", async () => {
 	const harness = makeHarness({ hasUI: false });
 	await harness.emit("session_start");
 	await harness.runStyle("humanised");
 	await harness.runStyle("");
-	assert.equal(harness.notifications.at(-1)?.message, "Style: humanised");
+	assert.equal(harness.notifications.at(-1)?.message, "Style: ste");
 	assert.deepEqual(harness.selectOptions, []);
 	assert.equal(harness.statuses.size, 0);
 	const result = await harness.emit("before_agent_start");
-	assert.match(result.message.content, /\[HUMANISED STYLE ACTIVE\]/);
+	assert.match(result.message.content, /\[STE STYLE ACTIVE\]/);
 });
 
-test("humanised restores on resume and tree navigation without rewriting history", async () => {
-	for (const event of ["session_start", "session_tree"]) {
-		const harness = makeHarness({
-			branch: [
-				{ type: "custom", customType: "styles", data: { style: "tutor" } },
-				{ type: "custom", customType: "styles", data: { style: "humanised" } },
-			],
-		});
-		await harness.emit(event);
-		assert.equal(harness.statuses.get("style"), "◇ Humanised");
-		assert.deepEqual(harness.entries, []);
-		const result = await harness.emit("before_agent_start");
-		assert.match(result.message.content, /\[HUMANISED STYLE ACTIVE\]/);
+test("ste and legacy humanised entries restore without rewriting history", async () => {
+	for (const style of ["ste", "humanised"]) {
+		for (const event of ["session_start", "session_tree"]) {
+			const harness = makeHarness({
+				branch: [
+					{ type: "custom", customType: "styles", data: { style: "tutor" } },
+					{ type: "custom", customType: "styles", data: { style } },
+				],
+			});
+			await harness.emit(event);
+			assert.equal(harness.statuses.get("style"), "◇ Simplified Technical English");
+			assert.deepEqual(harness.entries, []);
+			const result = await harness.emit("before_agent_start");
+			assert.match(result.message.content, /\[STE STYLE ACTIVE\]/);
+			assert.doesNotMatch(result.message.content, /\[HUMANISED STYLE ACTIVE\]/);
+		}
 	}
 });
 
-test("humanised contributes its own frame label and cleans up on shutdown", async () => {
+test("the former humanised command persists only the canonical ste name", async () => {
+	const harness = makeHarness();
+	await harness.emit("session_start");
+	await harness.runStyle(" Humanised ");
+	assert.deepEqual(harness.entries, [
+		{ customType: "styles", data: { style: "ste" } },
+	]);
+	assert.equal(harness.statuses.get("style"), "◇ Simplified Technical English");
+	const result = await harness.emit("before_agent_start");
+	assert.match(result.message.content, /\[STE STYLE ACTIVE\]/);
+	assert.doesNotMatch(result.message.content, /\[HUMANISED STYLE ACTIVE\]/);
+});
+
+test("ste contributes its own frame label and cleans up on shutdown", async () => {
 	const harness = makeHarness({ frameSupported: true });
 	await harness.emit("session_start");
-	await harness.runStyle("humanised");
+	await harness.runStyle("ste");
 	assert.deepEqual(contributedFrameMetadata().style, {
 		icon: "◇",
-		label: "Humanised",
+		label: "Simplified Technical English",
 		role: "accent",
 	});
 	assert.equal(harness.statuses.get("style"), undefined);
@@ -393,7 +418,7 @@ test("/style with no argument offers a selector; off and none clear it", async (
 	await harness.runStyle("");
 	assert.deepEqual(
 		harness.selectOptions[0]?.map((option) => option.split(" ")[0]),
-		["none", "collaborate", "tutor", "concise", "humanised"],
+		["none", "collaborate", "tutor", "concise", "ste"],
 	);
 	assert.equal(harness.statuses.get("style"), "⇄ Collaborate");
 	const active = await harness.emit("before_agent_start");
@@ -409,11 +434,11 @@ test("/style with no argument offers a selector; off and none clear it", async (
 	});
 });
 
-test("tutor, concise, and humanised can be selected from the menu", async () => {
+test("tutor, concise, and ste can be selected from the menu", async () => {
 	for (const [style, status] of [
 		["tutor", "✎ Tutor"],
 		["concise", "≡ Concise"],
-		["humanised", "◇ Humanised"],
+		["ste", "◇ Simplified Technical English"],
 	] as const) {
 		const harness = makeHarness({ selections: [style] });
 		await harness.emit("session_start");
@@ -447,7 +472,7 @@ test("unknown styles are rejected without changing the active style", async () =
 	assert.equal(harness.notifications.at(-1)?.level, "error");
 	assert.match(
 		harness.notifications.at(-1)?.message ?? "",
-		/Use: none \| collaborate \| tutor \| concise \| humanised/,
+		/Use: none \| collaborate \| tutor \| concise \| ste/,
 	);
 	const result = await harness.emit("before_agent_start");
 	assert.match(result.message.content, /\[TUTOR STYLE ACTIVE\]/);
@@ -457,14 +482,14 @@ test("/style completes canonical style names", () => {
 	const harness = makeHarness();
 	const command = harness.commands.get("style");
 	const complete = command.getArgumentCompletions;
-	assert.match(command.description, /none \| collaborate \| tutor \| concise \| humanised/);
+	assert.match(command.description, /none \| collaborate \| tutor \| concise \| ste/);
 	assert.deepEqual(
 		complete(" T ").map((item: { value: string }) => item.value),
 		["tutor"],
 	);
 	assert.deepEqual(
 		complete("").map((item: { value: string }) => item.value),
-		["none", "collaborate", "tutor", "concise", "humanised"],
+		["none", "collaborate", "tutor", "concise", "ste"],
 	);
 	assert.deepEqual(
 		complete("co").map((item: { value: string }) => item.value),
@@ -474,14 +499,15 @@ test("/style completes canonical style names", () => {
 		complete("con").map((item: { value: string }) => item.value),
 		["concise"],
 	);
-	assert.deepEqual(complete(" H "), [
+	assert.deepEqual(complete(" S "), [
 		{
-			label: "humanised",
-			value: "humanised",
-			description: "natural conversation: understand the idea before getting granular",
+			label: "ste",
+			value: "ste",
+			description: "Simplified Technical English: clear, direct wording based on ASD-STE100",
 		},
 	]);
-	assert.equal(complete("m"), null, "legacy alias is not advertised");
+	assert.equal(complete("h"), null, "legacy humanised alias is not advertised");
+	assert.equal(complete("m"), null, "legacy mentor alias is not advertised");
 	assert.equal(complete("zz"), null);
 });
 
@@ -637,16 +663,18 @@ test("concise contributes its own frame label and cleans up on shutdown", async 
 	assert.equal(contributedFrameMetadata().style, undefined);
 });
 
-test("a later off or invalid entry overrides a legacy mentor choice", async () => {
-	for (const style of ["none", 42]) {
-		const harness = makeHarness({
-			branch: [
-				{ type: "custom", customType: "styles", data: { style: "mentor" } },
-				{ type: "custom", customType: "styles", data: { style } },
-			],
-		});
-		await harness.emit("session_tree");
-		assert.equal(await harness.emit("before_agent_start"), undefined);
+test("a later off or invalid entry overrides a legacy style choice", async () => {
+	for (const legacy of ["mentor", "humanised"]) {
+		for (const style of ["none", 42]) {
+			const harness = makeHarness({
+				branch: [
+					{ type: "custom", customType: "styles", data: { style: legacy } },
+					{ type: "custom", customType: "styles", data: { style } },
+				],
+			});
+			await harness.emit("session_tree");
+			assert.equal(await harness.emit("before_agent_start"), undefined);
+		}
 	}
 });
 
@@ -673,6 +701,7 @@ test("subagent children never get a style and strip inherited instructions", asy
 		const harness = makeHarness({
 			branch: [
 				{ type: "custom", customType: "styles", data: { style: "humanised" } },
+				{ type: "custom", customType: "styles", data: { style: "ste" } },
 			],
 		});
 		await harness.emit("session_start");
@@ -684,6 +713,7 @@ test("subagent children never get a style and strip inherited instructions", asy
 				styleMessage("[TUTOR STYLE ACTIVE] inherited"),
 				styleMessage("[CONCISE STYLE ACTIVE] inherited"),
 				styleMessage("[HUMANISED STYLE ACTIVE] inherited"),
+				styleMessage("[STE STYLE ACTIVE] inherited"),
 				userMessage,
 			],
 		});
