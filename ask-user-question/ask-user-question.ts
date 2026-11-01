@@ -1,5 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { matchesKey } from "@earendil-works/pi-tui";
+import { withAgentPrompt } from "../notifications/protocol.js";
 import {
 	loadConfig,
 	resolveCollapseKey,
@@ -169,6 +170,8 @@ Preview content is rendered as markdown in a monospace box. Multi-line text with
 		executionMode: "sequential",
 
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+			// SAFETY: Pi validates params against QuestionParamsSchema above;
+			// the vendored interface expresses the same JSON questionnaire shape.
 			const typed = params as unknown as QuestionParams;
 			if (!ctx.hasUI)
 				return buildToolResult(ERROR_NO_UI, {
@@ -269,7 +272,7 @@ Preview content is rendered as markdown in a monospace box. Multi-line text with
 			}
 
 			try {
-				const result = await ctx.ui.custom<QuestionnaireResult>(
+				const result = await withAgentPrompt(pi, ctx, { kind: "custom", title: "Question waiting", body: "The agent needs your answer to continue.", preview: typed.questions[0]?.question }, () => ctx.ui.custom<QuestionnaireResult>(
 					(tui, theme, _kb, done) => {
 						const session = new QuestionnaireSession({
 							tui,
@@ -295,7 +298,7 @@ Preview content is rendered as markdown in a monospace box. Multi-line text with
 							sessionRef.current?.setOverlayHandle(handle);
 						},
 					},
-				);
+				));
 
 				// A TUI questionnaire ALWAYS resolves a QuestionnaireResult (cancel
 				// included — state-reducer emits `{ answers, cancelled }`), so

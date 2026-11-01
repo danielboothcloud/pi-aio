@@ -9,7 +9,7 @@ export interface PermissionModeAccess {
 
 let access: PermissionModeAccess | undefined;
 
-export function setPermissionModeAccess(next: PermissionModeAccess): void {
+export function setPermissionModeAccess(next: PermissionModeAccess | undefined): void {
 	access = next;
 }
 

@@ -2,6 +2,7 @@
 // notifications/confirmations, status updates, and session-lineage lookup.
 // Ported from pi-yaml-hooks (MIT), Pi-only.
 
+import { withAgentPrompt } from "../notifications/protocol.js";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { HostAdapter, HostDeliveryResult, HookNotifyLevel } from "./types.js";
 import type { BashExecutionRequest, BashHookResult } from "./bash-types.js";
@@ -112,7 +113,7 @@ export function createHostAdapter(pi: ExtensionAPI, options: HostAdapterOptions)
 			}
 			try {
 				const title = request.title ?? "Confirm";
-				const approved = await ctx.ui.confirm(title, request.message);
+				const approved = await withAgentPrompt(pi, ctx, { kind: "confirm", title: "Hook confirmation needed", body: "An automation hook is waiting for your confirmation.", preview: request.message }, () => ctx.ui.confirm(title, request.message));
 				return approved;
 			} catch {
 				// UI errors (dismissed, aborted) fall through as "not approved"

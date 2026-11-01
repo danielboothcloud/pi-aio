@@ -7,6 +7,10 @@
  *  - plan:    read-only exploration followed by an optional execution workflow
  *  - auto:    auto-approve edits, writes, and mutating bash; no permission prompts
  *
+ * In every mode, edit/write/apply_patch targets outside the session's working
+ * directory (and its subdirectories) need manual approval — auto included —
+ * and are blocked when there is no UI to ask (see workspace-guard.ts).
+ *
  * See .pi/plan/BUILD.md for the full spec.
  */
 
@@ -18,6 +22,7 @@ import type {
 	WorkingIndicatorOptions,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { withAgentPrompt } from "../notifications/protocol.js";
 import {
 	emitAioUiState,
 	probeFrameEditor,
@@ -27,8 +32,14 @@ import {
 import { setPermissionModeAccess } from "./mode-access.js";
 import { showMutationApproval } from "./approval-dialog.js";
 import {
+	approvalScopes,
+	findOutsideTargets,
+	type OutsideTarget,
+} from "./workspace-guard.js";
+import {
 	extractTodoItems,
 	isSafeCommand,
+	isShellTool,
 	markCompletedSteps,
 	type TodoItem,
 } from "./utils.js";
@@ -106,7 +117,7 @@ function getCursorReplayMutation(
 	input: Record<string, unknown>,
 ): string | undefined {
 	if (FILE_MUTATION_TOOLS.has(tool)) return tool;
-	if (tool === "bash") {
+	if (isShellTool(tool)) {
 		const command = String(input.command ?? "");
 		return isSafeCommand(command) ? undefined : "shell command";
 	}
@@ -546,6 +557,46 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 		pi.appendEntry("modes", state);
 	}
 
+	// ---------- workspace guard (outside-cwd file mutations) ----------
+
+	/** Folders the user allowed for this session via the outside prompt. */
+	const sessionAllowedRoots = new Set<string>();
+
+	async function approveOutsideWorkspace(
+		ctx: ExtensionContext,
+		tool: string,
+		input: Record<string, unknown>,
+		cwd: string,
+		outside: OutsideTarget[],
+	): Promise<{ block: true; reason: string } | undefined> {
+		const listed = outside.map((target) => target.resolved);
+		const shown =
+			listed.length <= 3
+				? listed.join(", ")
+				: `${listed.slice(0, 3).join(", ")} (+${listed.length - 3} more)`;
+		if (!ctx.hasUI) {
+			return {
+				block: true,
+				reason: `${tool} blocked: ${shown} is outside the working directory ${cwd}, and there is no UI to approve it. Only change files inside ${cwd}.`,
+			};
+		}
+		const scopes = approvalScopes(outside);
+		const decision = await showMutationApproval(
+			ctx,
+			{ tool, input, path: shown, outside: { cwd, scopes } },
+			pi,
+		);
+		if (decision === "allowScope") {
+			for (const scope of scopes) sessionAllowedRoots.add(scope);
+			return undefined;
+		}
+		if (decision === "allow") return undefined;
+		return {
+			block: true,
+			reason: `${tool} blocked by user: ${shown} is outside the working directory ${cwd}.`,
+		};
+	}
+
 	// ---------- tool_call gate (the single handler) ----------
 
 	pi.on("tool_call", async (event, ctx) => {
@@ -574,7 +625,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 					reason: `${label} mode: ${tool} disabled. Switch modes to make changes.`,
 				};
 			}
-			if (tool === "bash") {
+			if (isShellTool(tool)) {
 				const cmd = String(input.command ?? "");
 				if (!isSafeCommand(cmd)) {
 					return {
@@ -584,6 +635,16 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 				}
 			}
 			return undefined;
+		}
+
+		// Workspace guard: file mutations outside the working directory need a
+		// human in default AND auto mode (ask/plan already blocked them above).
+		if (FILE_MUTATION_TOOLS.has(tool)) {
+			const cwd = ctx.cwd ?? process.cwd();
+			const outside = findOutsideTargets(tool, input, cwd, sessionAllowedRoots);
+			if (outside.length > 0) {
+				return approveOutsideWorkspace(ctx, tool, input, cwd, outside);
+			}
 		}
 
 		if (currentMode === "auto") {
@@ -596,7 +657,7 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			if (!ctx.hasUI) {
 				return { block: true, reason: `${tool} blocked: no UI to confirm.` };
 			}
-			const decision = await showMutationApproval(ctx, { tool, input, path });
+			const decision = await showMutationApproval(ctx, { tool, input, path }, pi);
 			if (decision === "allowAll") {
 				await setMode("auto", ctx);
 				return undefined;
@@ -607,19 +668,19 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			return undefined;
 		}
 
-		if (tool === "bash") {
+		if (isShellTool(tool)) {
 			const cmd = String(input.command ?? "");
 			if (isSafeCommand(cmd)) return undefined; // read-only: allow
 			if (!ctx.hasUI) {
-				return { block: true, reason: "bash blocked: no UI to confirm." };
+				return { block: true, reason: `${tool} blocked: no UI to confirm.` };
 			}
-			const choice = await ctx.ui.select(`Allow bash "${cmd}"?`, [
+			const choice = await withAgentPrompt(pi, ctx, { kind: "select", title: "Approval needed", body: "The agent is waiting for permission to run a command.", preview: cmd }, () => ctx.ui.select(`Allow ${tool} "${cmd}"?`, [
 				"Allow",
 				"Block",
-			]);
+			]));
 			return choice === "Allow"
 				? undefined
-				: { block: true, reason: "bash blocked by user" };
+				: { block: true, reason: `${tool} blocked by user` };
 		}
 
 		// reads and anything else: pass through
@@ -681,7 +742,8 @@ You are in ask mode — a passive, read-only mode for questions, explanations, a
 
 Restrictions:
 - edit, write, and apply_patch tools are disabled
-- bash is restricted to an allowlist of read-only commands
+- bash and hypa_shell are restricted to a conservative allowlist of simple read-only commands
+- scripts, compound commands, and execution-capable wrappers are blocked
 - reads (read/grep/find/ls) pass through
 
 Answer the user's request directly. Ground answers in what you can read — files, logs, git history — and prefer evidence over prediction. Where the answer cannot be determined without running something, say "unknown — would need to run it" instead of reasoning past the evidence.
@@ -694,7 +756,8 @@ You are in plan mode — a read-only exploration mode for safe code analysis.
 
 Restrictions:
 - edit, write, and apply_patch tools are disabled
-- bash is restricted to an allowlist of read-only commands
+- bash and hypa_shell are restricted to a conservative allowlist of simple read-only commands
+- scripts, compound commands, and execution-capable wrappers are blocked
 - reads (read/grep/find/ls) pass through
 
 The plan decides what to do and what to measure; it does not solve the problem. Emitting it is the stopping point — do not resolve unknowns in order to finish.
@@ -711,7 +774,8 @@ For diagnostic tasks, put these sections BEFORE the "Plan:" header:
 Do NOT attempt to make changes — just plan. Observe, don't deduce: prefer a read-only look (file, log, git history) over predicting behavior in prose. Split multi-symptom bugs: plan one symptom at a time. More than ~4 interacting state variables: use a state or hypothesis table, not prose. Never state the same conclusion a third time — repetition is not evidence; add an observation or change the hypothesis.`;
 		} else if (currentMode === "auto") {
 			body = `[AUTO MODE ACTIVE]
-All tool calls (edit, write, bash) are auto-approved — no permission prompts.
+All tool calls (edit, write, apply_patch, bash, hypa_shell) are auto-approved — no permission prompts.
+Exception: edit, write, and apply_patch on files outside the working directory (and its subdirectories) still require manual user approval; keep changes inside it unless the task needs otherwise.
 Proceed without asking for confirmation.
 
 Work rules:
@@ -725,9 +789,10 @@ After completing each meaningful chunk, briefly summarize progress.
 If a todo list is active, toggle each finished step with the todo tool before continuing.`;
 		} else {
 			body = `[DEFAULT MODE ACTIVE]
-- edit, write, and apply_patch tools require per-call user approval
-- mutating bash commands require per-call user approval
-- read-only bash and reads (read/grep/find/ls) pass through without prompting
+- edit, write, and apply_patch tools require per-call user approval (files outside the working directory get a separate outside-directory approval)
+- bash and hypa_shell commands outside the simple read-only allowlist require per-call user approval
+- Python/Node scripts, compound commands, and execution-capable wrappers require approval too; never use them to bypass edit/write approval
+- simple read-only shell commands and reads (read/grep/find/ls) pass through without prompting
 Prefer running a cheap check (test, command, log line) over reasoning about behavior you could observe.`;
 		}
 
@@ -810,11 +875,11 @@ Prefer running a cheap check (test, command, log line) over reasoning about beha
 			display: true,
 		};
 
-		const choice = await ctx.ui.select("Plan ready — what next?", [
+		const choice = await withAgentPrompt(pi, ctx, { kind: "select", title: "Plan ready", body: "Review the agent's plan and choose what happens next." }, () => ctx.ui.select("Plan ready — what next?", [
 			"Execute the plan",
 			"Stay in plan mode",
 			"Refine the plan",
-		]);
+		]));
 
 		if (!choice) return;
 
@@ -843,7 +908,7 @@ Prefer running a cheap check (test, command, log line) over reasoning about beha
 				{ triggerTurn: true, deliverAs: "followUp" },
 			);
 		} else if (choice === "Refine the plan") {
-			const refinement = await ctx.ui.editor("Refine the plan:", "");
+			const refinement = await withAgentPrompt(pi, ctx, { kind: "editor", title: "Input needed", body: "The agent is waiting for your plan refinement." }, () => ctx.ui.editor("Refine the plan:", ""));
 			if (refinement && refinement.trim()) {
 				pi.sendMessage(planTodoListMessage, { deliverAs: "followUp" });
 				pi.sendUserMessage(refinement.trim(), { deliverAs: "followUp" });
@@ -981,6 +1046,8 @@ Prefer running a cheap check (test, command, log line) over reasoning about beha
 	}
 
 	pi.on("session_start", async (_event, ctx) => {
+		// Outside-folder approvals never outlive the session they were given in.
+		sessionAllowedRoots.clear();
 		await restoreSession(ctx);
 	});
 
@@ -989,6 +1056,7 @@ Prefer running a cheap check (test, command, log line) over reasoning about beha
 	});
 
 	pi.on("session_shutdown", async () => {
+		sessionAllowedRoots.clear();
 		if (!enabledCursorBridgeBuiltins) return;
 		delete process.env[CURSOR_BRIDGE_BUILTINS_ENV];
 		enabledCursorBridgeBuiltins = false;

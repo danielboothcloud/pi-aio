@@ -7,7 +7,6 @@ import type { BeforeAgentStartEvent, BeforeAgentStartEventResult, ExtensionAPI, 
 import { ENV, isEnvDisabled } from "./env.js";
 import { resolveHookConfigPaths } from "./paths.js";
 import { summarizeHookSources, loadDiscoveredHooks, type HookLoadSnapshot } from "./discovery.js";
-import type { HooksRuntime } from "./runtime.js";
 import type { RuntimeRegistry } from "./registry.js";
 import { safeGetSessionId } from "./host-adapter.js";
 
@@ -26,6 +25,8 @@ async function handleBeforeAgentStart(
 	ctx: ExtensionContext,
 	runtimeRegistry: RuntimeRegistry | undefined,
 ): Promise<BeforeAgentStartEventResult | undefined> {
+	// Extension-triggered custom runs have no user prompt to submit to hooks.
+	if (event.messageType !== "user") return undefined;
 	const blocks = await buildPromptBlocks(event.prompt, ctx, runtimeRegistry);
 	if (blocks === undefined) {
 		// Fail-open: a prompt-hook dispatch failure never blocks the turn.

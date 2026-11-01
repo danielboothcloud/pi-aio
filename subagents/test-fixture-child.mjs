@@ -49,7 +49,7 @@ const writeSessionStub = (file) => {
 	);
 };
 
-const emitCompletion = (text) => {
+const emitCompletion = (text, errorMessage) => {
 	process.stdout.write(
 		`${JSON.stringify({
 			type: "message_end",
@@ -57,7 +57,8 @@ const emitCompletion = (text) => {
 				role: "assistant",
 				content: [{ type: "text", text }],
 				model,
-				stopReason: "stop",
+				stopReason: errorMessage ? "error" : "stop",
+				errorMessage,
 				usage: {
 					input: 10,
 					output: 2,
@@ -125,6 +126,23 @@ if (effectiveTask.includes("always-hang")) {
 
 if (!lingering)
 	setTimeout(() => {
+		if (sessionDir && task.includes("fork-parent-only")) {
+			// Startup failed after copying parent history but before persisting the
+			// child assignment: a user turn is NOT proof the task was saved.
+			const file = join(sessionDir, "forked-child.jsonl");
+			mkdirSync(sessionDir, { recursive: true });
+			writeFileSync(file, `${JSON.stringify({ message: { role: "user", content: "Unrelated parent assignment" } })}\n`);
+			emitCompletion("", "429 quota exhausted during startup");
+			emit({ type: "agent_settled", aborted: false });
+			return;
+		}
+		if (effectiveTask.includes("quota-") && (!resumed || effectiveTask.includes("quota-always"))) {
+			const file = sessionFile ?? (sessionDir && join(sessionDir, "forked-child.jsonl"));
+			if (file && !existsSync(file)) writeSessionStub(file);
+			emitCompletion("partial work saved", "429 quota exhausted");
+			emit({ type: "agent_settled", aborted: false });
+			return;
+		}
 		if (task.includes("fail")) {
 			process.stderr.write("fixture failure\n");
 			process.exit(2);

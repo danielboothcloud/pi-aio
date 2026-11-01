@@ -36,6 +36,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 
 import type { FrameMetadata } from "../frame/render.js";
+import { emitNotification } from "../notifications/protocol.js";
 import {
 	probeFrameEditor,
 	requestFrameRepaint,
@@ -287,6 +288,10 @@ export function registerYouShouldKnow(pi: ExtensionAPI, options: RegisterYskOpti
 		pi.appendEntry(YSK_ENTRY_TYPE, entryData);
 
 		const toast = criticalToastText(entryData);
+		if (toast) emitNotification(pi, ctx, {
+			category: "critical", id: `ysk:${entryData.timestamp}:${entryData.findings.map((finding) => finding.title).join("|")}`,
+			title: "Critical audit finding", body: "You Should Know found a critical issue. Review it in Pi.", preview: toast,
+		});
 		if (toast && ctx.hasUI) ctx.ui.notify(toast, "error");
 
 		if (cardMs <= 0 || ctx.mode !== "tui" || !ctx.hasUI) return;

@@ -38,6 +38,8 @@ import { registerFrameEditor } from "./frame/index.js";
 import registerYamlHooks from "./yaml-hooks/index.js";
 import { registerYouShouldKnow } from "./you-should-know/index.js";
 import { registerBtw } from "./btw/index.js";
+import { registerSessionNaming } from "./session-naming/index.js";
+import { registerNotifications } from "./notifications/index.js";
 
 export {
 	ASK_USER_PROMPT_EVENT,
@@ -62,8 +64,8 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	registerEffort(pi);
 	registerInit(pi);
 	await registerDiffTools(pi);
-	// Blocklist gates must run before the permission-modes tool_call gate and
-	// the user-bash gate: the runner honors the first blocking handler, so a
+	// Blocklist gates must run before the permission-modes tool_call gate:
+	// the runner honors the first blocking handler, so a
 	// blocked command short-circuits mode checks (including auto approval).
 	registerBlocklist(pi);
 	// Nvim owns the /nvim command (no agent tool); registers after the
@@ -105,7 +107,10 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// no editor ownership, so like YSK its place is not load-bearing. Runs
 	// after the visual publishers, before yaml-hooks.
 	registerBtw(pi);
-	// Yaml hooks last: it owns no tool surface, but its user-bash interception
-	// (opt-in via env) must wrap the user-bash gate above.
+	registerSessionNaming(pi);
+	// Human-only desktop observer; stays inert in child/headless processes.
+	registerNotifications(pi);
+	// Yaml hooks last for agent tool-hook composition. Explicit user !/!!
+	// commands use Pi's native path without any AIO interception.
 	registerYamlHooks(pi);
 }

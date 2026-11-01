@@ -8,7 +8,7 @@
  *  - collaborate: check in at decision points and use the user as a guide
  *  - tutor:       teach step by step through explanation, practice, and feedback
  *  - concise:     minimal commentary; retain decisions, blockers, and results
- *  - humanised:   natural conversation; get specific as understanding develops
+ *  - ste:         clear technical communication based on ASD-STE100 principles
  */
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
@@ -31,7 +31,7 @@ export const STYLES = [
 	"collaborate",
 	"tutor",
 	"concise",
-	"humanised",
+	"ste",
 ] as const;
 export type Style = (typeof STYLES)[number];
 export type ActiveStyle = Exclude<Style, "none">;
@@ -50,7 +50,7 @@ const STYLE_SUMMARIES: Record<Style, string> = {
 	collaborate: "check in at decision points and build it together",
 	tutor: "learn step by step: explanations, active practice, and feedback",
 	concise: "minimal commentary: key decisions, blockers, and results",
-	humanised: "natural conversation: understand the idea before getting granular",
+	ste: "Simplified Technical English: clear, direct wording based on ASD-STE100",
 };
 
 export function isStyle(value: unknown): value is Style {
@@ -59,11 +59,12 @@ export function isStyle(value: unknown): value is Style {
 	);
 }
 
-/** Accepts `off` for `none` and the former `mentor` name for `tutor`. */
+/** Accepts `off` and the former `mentor` and `humanised` style names. */
 function parseStyle(value: string): Style | undefined {
 	const normalized = value.trim().toLowerCase();
 	if (normalized === "off") return "none";
 	if (normalized === "mentor") return "tutor";
+	if (normalized === "humanised") return "ste";
 	return isStyle(normalized) ? normalized : undefined;
 }
 
@@ -75,8 +76,8 @@ export function styleMetadata(style: ActiveStyle): {
 	if (style === "concise") {
 		return { icon: "≡", label: "Concise", role: "accent" };
 	}
-	if (style === "humanised") {
-		return { icon: "◇", label: "Humanised", role: "accent" };
+	if (style === "ste") {
+		return { icon: "◇", label: "Simplified Technical English", role: "accent" };
 	}
 	return style === "collaborate"
 		? { icon: "⇄", label: "Collaborate", role: "success" }
@@ -119,19 +120,23 @@ export function buildStyleContext(
 	style: ActiveStyle,
 	mode: PermissionMode,
 ): string {
-	if (style === "humanised") {
-		return `[HUMANISED STYLE ACTIVE]
-The user wants you to communicate like a thoughtful person in a normal conversation, not like a requirements form or a polished AI report. This applies to questions, progress updates, explanations, and final answers. Technical language is welcome when it fits; the goal is natural communication, not dumbing things down.
+	if (style === "ste") {
+		return `[STE STYLE ACTIVE]
+Use Simplified Technical English principles from ASD-STE100 for user-facing text. This applies to questions, progress updates, explanations, final answers, and documentation you write.
 ${SCOPE_NOTE}
 
-How to communicate:
-- Meet the user where the conversation is. Respond to what they actually said and build shared understanding before narrowing the problem. When they have just introduced an idea, explore what they want it to do or ask for a real example before proposing detailed requirements. If the request is already clear, act on it rather than starting an interview.
-- Let specificity develop naturally. Do not jump from an early idea to granular feature bundles, release boundaries, architecture choices, or an exhaustive questionnaire. Distinguish what the user has said from your assumptions; offer a possible direction as a tentative suggestion, not as settled scope.
-- Ask the next useful question, not every question you can think of. Start with the purpose or problem before drilling into implementation. Prefer one focused, conversational question; batch related questions when required. Do not force a menu of precise options when the user is still thinking aloud. Use required question and approval tools; when a structured question is appropriate or required, keep its choices at the conversation's current level, phrased as things the user wants to do rather than a dense feature inventory.
-- For example, early in a job-search idea, ask "Is finding suitable jobs the main thing you want help with, or are applications part of it too?" rather than asking the user to choose between discovery-and-ranking, CV-tailoring, and full-workflow release packages. This illustrates the level of conversation, not a script to repeat.
-- Use natural, direct sentences and contractions where they fit. Keep technical terms, exact identifiers, and useful detail when they help; explain an unfamiliar term in context without assuming the user is a beginner. Be warm without forced slang, exaggerated enthusiasm, stock praise, or pretending to have human experiences.
-- Prefer connected prose for conversation. Use headings, bullets, tables, and summaries when they genuinely make the answer easier to follow or a required format calls for them, not as a template for every reply. Give meaningful updates without narrating every routine tool call or repeatedly recapping the conversation.
-- Be clear about what you found, what you recommend, and what remains uncertain. Natural wording must not hide warnings, risks, failures, or technical precision, and must not skip verification, required clarifications, or approvals. Match the depth to the user's needs and expand when asked.
+How to write:
+- Use short, complete sentences. Use no more than 20 words per sentence in instructions and 25 words in descriptions. Do not omit the subject, verb, or articles just to shorten a sentence.
+- Give one instruction per sentence. Start instructions with an imperative verb. Put a necessary condition before the instruction. Use numbered steps for procedures and vertical lists for complex information.
+- Use the active voice. In descriptions, use the passive voice only when the agent is unknown. Address the reader as "you" when useful.
+- Use simple verb forms: the infinitive, imperative, simple present, simple past, and simple future. Avoid complex verb constructions. Use a past participle as an adjective, not to make a complex tense. Use an -ing form only as a technical noun or a modifier in a technical noun.
+- Use familiar, concrete words with one clear meaning. Use the same term for the same thing. Avoid idioms, slang, figurative language, and contractions. Explain necessary technical terms and abbreviations at first use.
+- Keep noun groups to no more than three words where possible. Rewrite longer groups with prepositions or explain the technical name. Keep one topic per paragraph and no more than six sentences per paragraph.
+- Make each instruction specific: identify the action, object, conditions, and expected result when needed. Start safety instructions with a clear command or condition. Put a warning before the action that can cause harm or data loss.
+- Keep code, commands, paths, API names, identifiers, literal values, and quoted source text exact. The sentence limits apply to prose, not these literals. Do not rename a technical term or change behavior just to simplify the English.
+- Preserve technical detail, warnings, risks, uncertainty, failures, and verification results. Do not skip required questions, approval tools, checks, or response formats. Simplify the language, not the task or its evidence.
+
+This is writing guidance based on ASD-STE100, not a compliance checker. Full compliance also requires the standard's controlled dictionary, approved meanings and parts of speech, and technical-term rules. Do not claim that text is fully ASD-STE100 compliant without verification against the applicable standard.
 ${mode === "plan" ? "\nIn plan mode, still produce the required numbered implementation plan with actionable steps and verification. The final plan is still the stopping point." : ""}`;
 	}
 
@@ -222,8 +227,9 @@ function latestPersistedStyle(ctx: ExtensionContext): Style {
 		if (entry.type !== "custom" || entry.customType !== STYLE_ENTRY_TYPE) {
 			continue;
 		}
-		// Old branches retain their teaching style without rewriting history.
+		// Old branches restore former names without rewriting history.
 		if (entry.data?.style === "mentor") return "tutor";
+		if (entry.data?.style === "humanised") return "ste";
 		return isStyle(entry.data?.style) ? entry.data.style : "none";
 	}
 	return "none";

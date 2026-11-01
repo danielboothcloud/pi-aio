@@ -46,13 +46,10 @@ const WORK = recipe("work", {
 	model: "anthropic/claude-5",
 	models: ["openai-codex/*"],
 	extensions: ["/opt/extensions/work-int.ts"],
-	tools: ["+codemode"],
-	instructions: "Work guardrails.",
 });
 const HOME = recipe("home", {
 	model: "anthropic/claude-haiku-5",
 	mcpServers: { linear: { url: "https://mcp.example.com/linear" } },
-	tools: ["-hypa_*"],
 });
 const WORK_LITE = recipe("work-lite", { extensions: ["/opt/e.ts"] });
 const SCOPE_ONLY = recipe("scope", { models: ["anthropic/*"] });

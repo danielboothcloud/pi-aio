@@ -1,4 +1,5 @@
 import { StringEnum } from "@earendil-works/pi-ai";
+import { emitNotification } from "../notifications/protocol.js";
 import type {
 	ExtensionAPI,
 	ExtensionContext,
@@ -16,10 +17,18 @@ import {
 import { formatChildActivity, formatRunProgress } from "./activity.js";
 import { discoverAgents } from "./agents.js";
 import { resolveChildExtensionLaunch } from "./extensions.js";
-import { clearRuns, getRun, listRuns, stopRun } from "./registry.js";
+import { SubagentInspector } from "./inspector.js";
+import { publicRun, runsFromBranch, SUBAGENT_STATE_ENTRY } from "./history.js";
+import { clearRuns, getRun, isOwnedRun, listRuns, reconcileRuns, restoreRun, stopRun } from "./registry.js";
+import { loadSavedTranscript } from "./saved-transcript.js";
 import {
 	executeSubagentRun,
 	formatRunResult,
+	childResumeUnavailable,
+	childLaunchStateKey,
+	resumeSubagentChild,
+	restoreChildLaunches,
+	snapshotChildLaunches,
 	type RunnerDeps,
 } from "./runner.js";
 import type {
@@ -118,40 +127,8 @@ function parentContext(
 	};
 }
 
-function publicRun(run: SubagentRun): Record<string, unknown> {
-	return {
-		id: run.id,
-		state: run.state,
-		mode: run.mode,
-		context: run.context,
-		cwd: run.cwd,
-		startedAt: run.startedAt,
-		endedAt: run.endedAt,
-		error: run.error,
-		children: run.children.map((child) => ({
-			index: child.index,
-			agent: child.agent,
-			task: child.task,
-			state: child.state,
-			model: child.model,
-			startedAt: child.startedAt,
-			endedAt: child.endedAt,
-			output: child.output,
-			error: child.error,
-			sessionFile: child.sessionFile,
-			attempts: child.attempts ?? 1,
-			activity: child.activity
-				? {
-						...child.activity,
-						runningTools: child.activity.runningTools.map((tool) => ({
-							...tool,
-						})),
-					}
-				: undefined,
-			reapedAfterSettle: child.reapedAfterSettle,
-		})),
-	};
-}
+/** Opens the live subagent inspector overlay (also `/subagents`). */
+export const INSPECTOR_SHORTCUT = "alt+s";
 
 /** Running children shown under a parallel run before collapsing to a hint. */
 const MAX_CHILD_ROWS = 3;
@@ -167,7 +144,10 @@ export function buildSubagentWidgetLines(
 	const lines = [
 		chromeHeader(
 			theme,
-			{ title: "subagents", meta: plural(active.length, "active run") },
+			{
+				title: "subagents",
+				meta: `${plural(active.length, "active run")} · ${INSPECTOR_SHORTCUT} inspect`,
+			},
 			width,
 		),
 	];
@@ -248,8 +228,8 @@ function activeRuns(): SubagentRun[] {
 	);
 }
 
-function activeWidgetContent() {
-	const active = activeRuns();
+function activeWidgetContent(hidden: ReadonlySet<string>) {
+	const active = activeRuns().filter((run) => !hidden.has(run.id));
 	if (!active.length) return undefined;
 	return (_tui: TUI, theme: Theme) => ({
 		invalidate() {},
@@ -287,6 +267,126 @@ export function registerSubagents(
 	deps: SubagentExtensionDeps = {},
 ): void {
 	let shuttingDown = false;
+	let sessionEpoch = 0;
+	let closeInspector: (() => void) | undefined;
+	const hiddenRuns = new Set<string>();
+	const dirtyRuns = new Set<string>();
+	const visibleRuns = () => listRuns().filter((run) => !hiddenRuns.has(run.id));
+	const checkpoints = new Map<string, string>();
+	let checkpointWarning = false;
+	const notifyBackground = (run: SubagentRun, ctx: ExtensionContext) => {
+		if (run.state === "stopped" || run.stopRequested) return;
+		emitNotification(pi, ctx, {
+			category: "background", id: `subagent:${run.id}`, replacesCompletion: true,
+			title: run.state === "failed" ? "Background agents failed" : "Background agents finished",
+			body: "A background subagent run has ended. Its results are available in Pi.",
+		});
+	};
+	const checkpointRun = (run: SubagentRun, force = false) => {
+		// Streaming deltas/tickers must not append one entry per repaint.
+		const fingerprint = JSON.stringify([run.state, run.endedAt, childLaunchStateKey(run), run.children.map((child) => [
+			child.state, child.endedAt, child.sessionFile, child.attempts,
+		])]);
+		if (!force && checkpoints.get(run.id) === fingerprint) return true;
+		try {
+			pi.appendEntry(SUBAGENT_STATE_ENTRY, { version: 1, run: publicRun(run), launches: snapshotChildLaunches(run) });
+			checkpoints.set(run.id, fingerprint);
+			return true;
+		} catch {
+			if (!checkpointWarning) console.error("[aio subagents] Could not persist run history; historical tool results remain available.");
+			checkpointWarning = true;
+			return false;
+		}
+	};
+	const openInspector = async (ctx: ExtensionContext): Promise<void> => {
+		if (ctx.mode !== "tui") {
+			ctx.ui.notify(
+				"The subagent inspector is only available in the interactive TUI; use subagent action=status instead.",
+				"warning",
+			);
+			return;
+		}
+		if (closeInspector) return;
+		if (visibleRuns().length === 0) {
+			ctx.ui.notify("No subagent runs in this session yet.", "info");
+			return;
+		}
+		try {
+			await ctx.ui.custom<void>(
+				(tui, theme, _keybindings, done) => {
+					const inspector = new SubagentInspector({
+						theme,
+						getRuns: visibleRuns,
+						loadTranscript: loadSavedTranscript,
+						getMaxRows: () => Math.floor(tui.terminal.rows * 0.9),
+						requestRender: () => tui.requestRender(),
+						done: () => done(undefined),
+						resumeUnavailable: ({ run, child }) => childResumeUnavailable(run, child),
+						resumeChild: ({ run, child }) => {
+							if (shuttingDown) return;
+							const epoch = sessionEpoch;
+							let focused = false;
+							void resumeSubagentChild({
+								run,
+								child,
+								deps: deps.runner,
+								onUpdate: (continuation) => {
+									if (shuttingDown || epoch !== sessionEpoch) return;
+									if (hiddenRuns.has(continuation.id)) {
+										dirtyRuns.add(continuation.id);
+										return;
+									}
+									checkpointRun(run);
+									checkpointRun(continuation);
+									trackWidget(ctx);
+									if (!focused) {
+										focused = true;
+										inspector.inspectRun(continuation);
+									}
+								},
+							}).then((continuation) => {
+								if (shuttingDown || epoch !== sessionEpoch || hiddenRuns.has(continuation.id)) return;
+								trackWidget(ctx);
+								notifyBackground(continuation, ctx);
+								pi.sendMessage({
+									customType: "aio-subagent-complete",
+									content: formatRunResult(continuation),
+									display: true,
+									details: publicRun(continuation),
+								}, { deliverAs: "followUp", triggerTurn: true });
+							}).catch((error) => {
+								if (shuttingDown || epoch !== sessionEpoch) return;
+								ctx.ui.notify(`Could not resume subagent: ${error instanceof Error ? error.message : String(error)}`, "warning");
+							});
+						},
+					});
+					closeInspector = () => inspector.close();
+					return inspector;
+				},
+				{
+					overlay: true,
+					overlayOptions: {
+						anchor: "center",
+						margin: 1,
+						maxHeight: "90%",
+						minWidth: 50,
+						width: "90%",
+					},
+				},
+			);
+		} finally {
+			closeInspector = undefined;
+		}
+	};
+	pi.registerCommand("subagents", {
+		description:
+			"Inspect subagent runs live: thinking, responses, tool calls and results, logs",
+		handler: async (_args, ctx) => openInspector(ctx),
+	});
+	pi.registerShortcut(INSPECTOR_SHORTCUT, {
+		description: "Open the live subagent inspector",
+		handler: openInspector,
+	});
 	let widgetCtx: ExtensionContext | undefined;
 	let widgetTicker: NodeJS.Timeout | undefined;
 	const stopWidgetTicker = () => {
@@ -296,7 +396,7 @@ export function registerSubagents(
 	const refreshWidget = () => {
 		if (shuttingDown || !widgetCtx) return;
 		try {
-			widgetCtx.ui.setWidget("aio-subagents", activeWidgetContent());
+			widgetCtx.ui.setWidget("aio-subagents", activeWidgetContent(hiddenRuns));
 		} catch {
 			// A replaced session invalidates the captured context.
 			stopWidgetTicker();
@@ -351,7 +451,7 @@ export function registerSubagents(
 						{ run: publicRun(run) },
 					);
 				}
-				const runs = listRuns();
+				const runs = visibleRuns();
 				const text = runs.length
 					? runs
 							.map(
@@ -365,6 +465,8 @@ export function registerSubagents(
 			if (params.action === "stop") {
 				if (!params.id) throw new Error("Subagent stop requires an id.");
 				const run = stopRun(params.id);
+				if (hiddenRuns.has(run.id)) dirtyRuns.add(run.id);
+				else checkpointRun(run);
 				trackWidget(ctx);
 				return toolResult(`Subagent run ${run.id} is ${run.state}.`, {
 					run: publicRun(run),
@@ -386,12 +488,21 @@ export function registerSubagents(
 			};
 			const agents = discoverAgents(ctx.cwd, { includeProject });
 			const parent = parentContext(ctx, pi);
-			const updateWidget = () => trackWidget(ctx);
+			const epoch = sessionEpoch;
+			const updateWidget = (run?: SubagentRun) => {
+				if (shuttingDown || epoch !== sessionEpoch) return;
+				if (run && hiddenRuns.has(run.id)) {
+					dirtyRuns.add(run.id);
+					return;
+				}
+				if (run) checkpointRun(run);
+				trackWidget(ctx);
+			};
 			let foregroundRun: SubagentRun | undefined;
 			const updateForeground = (run: SubagentRun) => {
 				foregroundRun = run;
-				updateWidget();
-				if (shuttingDown) return;
+				updateWidget(run);
+				if (shuttingDown || epoch !== sessionEpoch || hiddenRuns.has(run.id)) return;
 				onUpdate?.(
 					toolResult(formatRunProgress(run, Date.now()), {
 						run: publicRun(run),
@@ -400,27 +511,28 @@ export function registerSubagents(
 			};
 
 			if (params.async) {
-				const existingRunIds = new Set(listRuns().map((run) => run.id));
+				let launchedRun: SubagentRun | undefined;
 				const promise = executeSubagentRun({
 					request,
 					agents,
 					parent,
-					onUpdate: updateWidget,
+					onUpdate: (run) => {
+						launchedRun ??= run;
+						updateWidget(run);
+					},
 					deps: deps.runner,
 				});
 				void promise.catch(() => undefined);
-				await new Promise<void>((resolve) => setTimeout(resolve, 0));
-				const launchedRun = listRuns().find(
-					(run) => !existingRunIds.has(run.id),
-				);
 				if (!launchedRun) {
 					await promise;
 					throw new Error("Subagent background launch did not create a run.");
 				}
+				const backgroundRun = launchedRun;
 				void promise
 					.then((run) => {
-						if (shuttingDown) return;
+						if (shuttingDown || epoch !== sessionEpoch || hiddenRuns.has(run.id)) return;
 						updateWidget();
+						notifyBackground(run, ctx);
 						pi.sendMessage(
 							{
 								customType: "aio-subagent-complete",
@@ -432,8 +544,9 @@ export function registerSubagents(
 						);
 					})
 					.catch((error) => {
-						if (shuttingDown) return;
+						if (shuttingDown || epoch !== sessionEpoch || hiddenRuns.has(backgroundRun.id)) return;
 						updateWidget();
+						emitNotification(pi, ctx, { category: "background", id: `subagent:${backgroundRun.id}`, title: "Background agents failed", body: "A background subagent run could not finish. Review the error in Pi.", replacesCompletion: true });
 						pi.sendMessage(
 							{
 								customType: "aio-subagent-complete",
@@ -473,17 +586,55 @@ export function registerSubagents(
 		},
 	});
 
-	pi.on("session_start", () => {
+	// Lifecycle        Registry                  Processes         Old callbacks
+	// reopen/reload    replace from branch       old ones cleared  epoch-invalid
+	// tree selection   reconcile branch history  preserve handles  defer detached writes
+	// reattach         flush owned dirty states  preserve handles  no stale follow-up
+	// shutdown         checkpoint visible runs   stop all owned    epoch-invalid
+	const restore = (ctx: ExtensionContext) => {
+		sessionEpoch++;
 		shuttingDown = false;
+		closeInspector?.();
+		stopWidgetTicker();
+		widgetCtx = undefined;
 		clearRuns();
+		checkpoints.clear();
+		hiddenRuns.clear();
+		dirtyRuns.clear();
+		checkpointWarning = false;
+		for (const { run, launches } of runsFromBranch(ctx.sessionManager.getBranch?.() ?? [])) {
+			restoreRun(run);
+			if (launches) restoreChildLaunches(run, launches);
+		}
+	};
+	pi.on("session_start", (_event, ctx) => restore(ctx));
+	pi.on("session_tree", (_event, ctx) => {
+		closeInspector?.();
+		const history = runsFromBranch(ctx.sessionManager.getBranch());
+		const selected = new Set(history.map(({ run }) => run.id));
+		reconcileRuns(history.map(({ run }) => run), dirtyRuns);
+		hiddenRuns.clear();
+		for (const run of listRuns()) if (!selected.has(run.id)) hiddenRuns.add(run.id);
+		for (const { run, launches } of history) {
+			const current = getRun(run.id);
+			if (current === run && launches) restoreChildLaunches(run, launches);
+			if (current && isOwnedRun(current) && dirtyRuns.has(current.id) && checkpointRun(current, true))
+				dirtyRuns.delete(current.id);
+		}
+		for (const id of dirtyRuns) if (!getRun(id)) dirtyRuns.delete(id);
+		trackWidget(ctx);
 	});
 
 	pi.on("session_shutdown", (_event, ctx) => {
+		sessionEpoch++;
 		shuttingDown = true;
+		closeInspector?.();
 		stopWidgetTicker();
 		widgetCtx = undefined;
 		for (const run of listRuns()) {
-			if (run.state === "queued" || run.state === "running") stopRun(run.id);
+			const active = run.state === "queued" || run.state === "running";
+			if (active) stopRun(run.id);
+			if (!hiddenRuns.has(run.id) && (active || dirtyRuns.has(run.id))) checkpointRun(run);
 		}
 		if (ctx.hasUI) ctx.ui.setWidget("aio-subagents", undefined);
 	});

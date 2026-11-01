@@ -1,10 +1,13 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createInterface } from "node:readline";
 import {
+	accessSync,
+	constants,
 	existsSync,
 	mkdirSync,
 	readFileSync,
 	readdirSync,
+	statSync,
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
@@ -16,16 +19,25 @@ import {
 } from "./activity.js";
 import { findAgent } from "./agents.js";
 import {
+	appendTranscriptLog,
+	applyTranscriptEvent,
+	createTranscript,
+	pushTranscriptNotice,
+	type ChildTranscript,
+} from "./transcript.js";
+import {
 	type ChildExtensionLaunch,
 	childSupportsModel,
 	enforceChildExtensions,
 	resolveChildExtensionLaunch,
 } from "./extensions.js";
-import { createRun } from "./registry.js";
+import { childSessionOwner, claimChildSession, createRun, getRun } from "./registry.js";
+import { loadSavedTranscript } from "./saved-transcript.js";
 import type {
 	AgentConfig,
 	ChildRunResult,
 	ChildRunStatus,
+	ChildLaunchSnapshot,
 	ChildUsage,
 	ParentLaunchContext,
 	SpawnSpec,
@@ -51,7 +63,13 @@ const DEFAULT_RETRY_BACKOFF_MS = 1_000;
 // it replaces the original task argument, which already lives in the resumed
 // child session history.
 const CONTINUATION_PROMPT =
-	"Your previous run was interrupted before you could finish (provider request stall or hard timeout). Continue the original task from this session's history without redoing work already completed, then return the final result.";
+	"Your previous run was interrupted before you could finish (provider limit, request stall, timeout, or stop). Continue the original task from this session's history without redoing work already completed, then return the final result.";
+function continuationPrompt(task: string): string {
+	// A fork may contain only parent history if startup failed before the
+	// child's first prompt was saved. Never infer its assignment from that.
+	return `${CONTINUATION_PROMPT}\n\nAssigned child task (not the parent's task):\n${task}`;
+}
+
 const MAX_TASKS = 12;
 const TASK_ARG_LIMIT = 8_000;
 const MAX_OUTPUT_CHARS = 50_000;
@@ -86,6 +104,49 @@ interface RunInput {
 	signal?: AbortSignal;
 	onUpdate?: (run: SubagentRun) => void;
 	deps?: RunnerDeps;
+}
+
+// Private launch snapshots never enter tool details/model context. Weak keys
+// let registry pruning release prompts/configuration along with old children.
+const childLaunches = new WeakMap<ChildRunStatus, ChildLaunchSnapshot>();
+
+/** Cheap lifecycle key: avoid cloning prompts on every streaming repaint. */
+export function childLaunchStateKey(run: SubagentRun): string {
+	return JSON.stringify(run.children.map((child) => {
+		const launch = childLaunches.get(child);
+		return [launch?.resumed, launch?.sessionDir, launch?.pid];
+	}));
+}
+
+/** Private checkpoint projection. Never attach this to a tool result. */
+export function snapshotChildLaunches(run: SubagentRun): Array<ChildLaunchSnapshot | null> {
+	return run.children.map((child) => {
+		const launch = childLaunches.get(child);
+		return launch ? structuredClone(launch) : null;
+	});
+}
+
+export function restoreChildLaunches(run: SubagentRun, launches: Array<ChildLaunchSnapshot | undefined>): void {
+	for (const [index, child] of run.children.entries()) {
+		const launch = launches[index];
+		if (!launch) continue;
+		childLaunches.set(child, structuredClone(launch));
+		if (!child.sessionFile && launch.sessionDir) {
+			try {
+				child.sessionFile = findSessionFile(launch.sessionDir);
+			} catch {
+				// Moved/unreadable child directories must not break parent hydration.
+			}
+			const result = run.results.find((result) => result.index === child.index);
+			if (result) result.sessionFile = child.sessionFile;
+		}
+	}
+}
+
+interface SavedChildSession {
+	sessionFile: string;
+	transcript?: ChildTranscript;
+	from: { runId: string; index: number };
 }
 
 interface ParsedChildOutput {
@@ -262,6 +323,7 @@ export function buildSpawnSpec(input: {
 	if (input.resumeSessionFile) {
 		// --fork cannot be combined with --session; resuming the forked child's
 		// own session preserves its progress without re-forking from the parent.
+		requestedSessionFile = input.resumeSessionFile;
 		args.push("--session", input.resumeSessionFile);
 	} else if (context === "fork") {
 		if (!input.parent.parentSessionFile) {
@@ -308,19 +370,16 @@ export function buildSpawnSpec(input: {
 	const tools = input.agent.tools?.filter((tool) => tool !== "subagent");
 	if (tools?.length) args.push("--tools", tools.join(","));
 	args.push("--exclude-tools", "subagent");
-	if (input.promptOverride !== undefined) {
-		// Retry prompt for the child process (positional argument); the parent
-		// never sees this text.
-		args.push(input.promptOverride);
-	} else if (input.task.task.length > TASK_ARG_LIMIT) {
+	const prompt = input.promptOverride ?? `Task: ${input.task.task}`;
+	if (prompt.length > TASK_ARG_LIMIT) {
 		const taskPath = join(childDir, "task.md");
-		writeFileSync(taskPath, `Task: ${input.task.task}`, {
+		writeFileSync(taskPath, prompt, {
 			encoding: "utf8",
 			mode: 0o600,
 		});
 		args.push(`@${taskPath}`);
 	} else {
-		args.push(`Task: ${input.task.task}`);
+		args.push(prompt);
 	}
 
 	return {
@@ -451,7 +510,7 @@ function composedChildState(input: {
 	return { state: "completed" };
 }
 
-function nextRetryInputs(outcome: AttemptOutcome): {
+function nextRetryInputs(outcome: AttemptOutcome, task: string): {
 	resumeSessionFile?: string;
 	promptOverride?: string;
 } {
@@ -460,7 +519,7 @@ function nextRetryInputs(outcome: AttemptOutcome): {
 	return {
 		resumeSessionFile,
 		promptOverride: sessionHasUserTurn(resumeSessionFile)
-			? CONTINUATION_PROMPT
+			? continuationPrompt(task)
 			: undefined,
 	};
 }
@@ -499,6 +558,8 @@ async function runChildAttempt(input: {
 		windowsHide: true,
 	}) as unknown as ChildProcessWithoutNullStreams;
 	input.status.process = process;
+	const launch = childLaunches.get(input.status);
+	if (launch) launch.pid = process.pid;
 
 	const now = input.deps?.now ?? Date.now;
 	const activity = (input.status.activity ??= createActivity(now()));
@@ -542,6 +603,8 @@ async function runChildAttempt(input: {
 		applyOutputEvent(event, parsed);
 		if (parsed.finalOutput) input.status.output = parsed.finalOutput;
 		const significant = applyActivityEvent(activity, event, now());
+		if (input.status.transcript)
+			applyTranscriptEvent(input.status.transcript, event, now());
 		if (parsed.settled) onSettled();
 		const at = now();
 		if (
@@ -554,7 +617,10 @@ async function runChildAttempt(input: {
 		input.onUpdate?.(input.run);
 	});
 	process.stderr.on("data", (chunk: Buffer | string) => {
-		stderr = `${stderr}${chunk.toString()}`.slice(-MAX_STDERR_CHARS);
+		const text = chunk.toString();
+		stderr = `${stderr}${text}`.slice(-MAX_STDERR_CHARS);
+		if (input.status.transcript)
+			appendTranscriptLog(input.status.transcript, text, now());
 	});
 
 	if (input.signal) {
@@ -570,6 +636,7 @@ async function runChildAttempt(input: {
 		else input.signal.addEventListener("abort", abortListener, { once: true });
 	}
 
+	input.onUpdate?.(input.run);
 	const { code, signal } = await new Promise<{
 		code: number;
 		signal: NodeJS.Signals | null;
@@ -589,6 +656,7 @@ async function runChildAttempt(input: {
 		input.signal.removeEventListener("abort", abortListener);
 	stdoutLines.close();
 	input.status.process = undefined;
+	if (launch) launch.pid = undefined;
 
 	const sessionFile = findSessionFile(
 		input.spec.sessionDir,
@@ -615,11 +683,18 @@ async function runChild(input: {
 	signal?: AbortSignal;
 	onUpdate?: (run: SubagentRun) => void;
 	deps?: RunnerDeps;
+	resume?: SavedChildSession;
 }): Promise<ChildRunResult> {
 	const startedAt = Date.now();
 	input.status.state = "running";
 	input.status.startedAt = startedAt;
 	input.status.model = resolvedModel(
+		input.task,
+		input.request,
+		input.agent,
+		input.parent,
+	);
+	input.status.thinking = resolvedThinking(
 		input.task,
 		input.request,
 		input.agent,
@@ -644,9 +719,17 @@ async function runChild(input: {
 	const settleExitGraceMs =
 		input.deps?.settleExitGraceMs ?? DEFAULT_SETTLE_EXIT_GRACE_MS;
 	input.status.activity = createActivity((input.deps?.now ?? Date.now)());
+	const transcript = input.resume?.transcript ?? createTranscript();
+	input.status.transcript = transcript;
+	if (input.resume)
+		pushTranscriptNotice(
+			transcript,
+			`Manual resume from run ${input.resume.from.runId.slice(0, 8)} · saved child session`,
+			"muted",
+		);
 
-	let resumeSessionFile: string | undefined;
-	let promptOverride: string | undefined;
+	let resumeSessionFile = input.resume?.sessionFile;
+	let promptOverride = input.resume ? continuationPrompt(input.task.task) : undefined;
 	let outcome: AttemptOutcome | undefined;
 	let specError: string | undefined;
 	let attempts = 0;
@@ -657,6 +740,12 @@ async function runChild(input: {
 	while (attempts < maxAttempts) {
 		attempts++;
 		input.status.attempts = attempts;
+		if (attempts > 1)
+			pushTranscriptNotice(
+				transcript,
+				`attempt ${attempts}/${maxAttempts}${resumeSessionFile ? " · resuming child session" : ""}`,
+				"warning",
+			);
 		input.onUpdate?.(input.run);
 
 		let spec: SpawnSpec;
@@ -677,6 +766,10 @@ async function runChild(input: {
 			break;
 		}
 
+		const launch = childLaunches.get(input.status);
+		if (launch) launch.sessionDir = spec.sessionDir;
+		input.status.sessionFile = spec.requestedSessionFile ?? input.status.sessionFile;
+		input.onUpdate?.(input.run);
 		outcome = await runChildAttempt({
 			run: input.run,
 			status: input.status,
@@ -696,10 +789,15 @@ async function runChild(input: {
 			input.run.stopRequested || input.signal?.aborted === true;
 		if (wasStopped || !attemptFailed(outcome) || attempts >= maxAttempts)
 			break;
+		pushTranscriptNotice(
+			transcript,
+			describedFailure({ outcome, timeoutMs, attempts, maxAttempts }),
+			"warning",
+		);
 
 		// Resume the child's preserved session so completed turns survive the
 		// failed attempt instead of being discarded.
-		({ resumeSessionFile, promptOverride } = nextRetryInputs(outcome));
+		({ resumeSessionFile, promptOverride } = nextRetryInputs(outcome, input.task.task));
 		if (retryBackoffMs > 0)
 			await new Promise((resolve) => setTimeout(resolve, retryBackoffMs));
 		if (input.run.stopRequested || input.signal?.aborted) break;
@@ -716,7 +814,9 @@ async function runChild(input: {
 		maxAttempts,
 	});
 
-	const sessionFile = outcome?.sessionFile;
+	if (state === "failed") pushTranscriptNotice(transcript, error ?? "failed", "error");
+	else pushTranscriptNotice(transcript, state, state === "completed" ? "success" : "warning");
+	const sessionFile = outcome?.sessionFile ?? input.resume?.sessionFile;
 	const reapedAfterSettle =
 		state === "completed" && outcome?.reapedAfterSettle === true;
 	let output = lastOutput;
@@ -742,6 +842,7 @@ async function runChild(input: {
 		error,
 		exitCode: state === "completed" ? 0 : outcome?.code || 1,
 		model: lastModel ?? input.status.model,
+		thinking: input.status.thinking,
 		sessionFile,
 		startedAt,
 		endedAt,
@@ -753,6 +854,7 @@ async function runChild(input: {
 
 export async function executeSubagentRun(
 	input: RunInput,
+	resume?: SavedChildSession,
 ): Promise<SubagentRun> {
 	const tasks = normalizeTasks(input.request);
 	const resolvedAgents = tasks.map((task) =>
@@ -764,10 +866,25 @@ export async function executeSubagentRun(
 		agent: task.agent,
 		task: task.task,
 		state: "queued",
+		model: resolvedModel(task, input.request, resolvedAgents[index], input.parent),
+		thinking: resolvedThinking(task, input.request, resolvedAgents[index], input.parent),
 	}));
 	const mode = tasks.length === 1 ? "single" : "parallel";
 	const run = createRun({ mode, context, cwd: input.parent.cwd, children });
 	run.state = "running";
+	run.resumedFrom = resume?.from;
+	for (const [index, child] of children.entries()) {
+		childLaunches.set(child, {
+			task: { ...tasks[index], model: child.model, thinking: child.thinking },
+			request: { context, timeoutMs: input.request.timeoutMs },
+			agent: structuredClone(resolvedAgents[index]),
+			parent: {
+				...input.parent,
+				extensionLaunch: structuredClone(childExtensionLaunch(input.parent)),
+			},
+			resumed: false,
+		});
+	}
 	input.onUpdate?.(run);
 
 	const concurrency = Math.max(
@@ -790,6 +907,7 @@ export async function executeSubagentRun(
 				signal: input.signal,
 				onUpdate: input.onUpdate,
 				deps: input.deps,
+				resume,
 			});
 			run.results[index] = result;
 		}
@@ -810,8 +928,85 @@ export async function executeSubagentRun(
 	return run;
 }
 
+/** Explain why recovery is unavailable; undefined means it can resume now. */
+export function childResumeUnavailable(
+	run: SubagentRun,
+	child: ChildRunStatus,
+): string | undefined {
+	if (getRun(run.id) !== run || !run.children.includes(child))
+		return "This run is no longer in the current session.";
+	if (child.state !== "failed" && child.state !== "stopped")
+		return "Only failed or stopped children can resume.";
+	if (child.process || !run.results.some((result) => result.index === child.index))
+		return "The child is still stopping; try again shortly.";
+	const launch = childLaunches.get(child);
+	if (!launch) return "The original launch configuration is no longer available.";
+	if (launch.resumed) return "Already resumed; select the latest continuation run.";
+	const owner = child.sessionFile ? childSessionOwner(child.sessionFile) : undefined;
+	if (owner && (owner.runId !== run.id || owner.index !== child.index))
+		return `Already resumed; run ${owner.runId.slice(0, 8)} owns this saved child session.`;
+	if (launch.pid) {
+		try {
+			process.kill(launch.pid, 0);
+			return "The previous child process is still running; it must exit before resuming.";
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code !== "ESRCH")
+				return "Could not confirm that the previous child process has exited.";
+		}
+	}
+	try {
+		if (child.sessionFile && statSync(child.sessionFile).isFile()) return undefined;
+	} catch {
+		// Missing/unreadable sessions must never silently become fresh runs.
+	}
+	return "No saved child session is available to resume.";
+}
+
+/** Resume as a new single-child run, without mutating the original tool result. */
+export async function resumeSubagentChild(input: {
+	run: SubagentRun;
+	child: ChildRunStatus;
+	onUpdate?: (run: SubagentRun) => void;
+	deps?: RunnerDeps;
+}): Promise<SubagentRun> {
+	const reason = childResumeUnavailable(input.run, input.child);
+	if (reason) throw new Error(reason);
+	const launch = childLaunches.get(input.child);
+	const sessionFile = input.child.sessionFile;
+	if (!launch || !sessionFile) throw new Error("The saved child launch is unavailable.");
+	// Read before claiming the session: fail closed on permissions/removal.
+	accessSync(sessionFile, constants.R_OK);
+	const transcript = input.child.transcript
+		? structuredClone(input.child.transcript)
+		: loadSavedTranscript(sessionFile);
+	// Claim synchronously before spawning: repeated r cannot create competing
+	// writers to the same saved session, even after a continuation finishes.
+	launch.resumed = true;
+	return executeSubagentRun(
+		{
+			request: { ...launch.request, ...launch.task },
+			agents: [launch.agent],
+			parent: launch.parent,
+			onUpdate: (continuation) => {
+				if (getRun(continuation.id) === continuation)
+					claimChildSession(sessionFile, continuation.id, continuation.children[0].index);
+				input.onUpdate?.(continuation);
+			},
+			deps: input.deps,
+		},
+		{
+			sessionFile,
+			transcript,
+			from: { runId: input.run.id, index: input.child.index },
+		},
+	);
+}
+
 export function formatRunResult(run: SubagentRun): string {
-	const header = `Subagent run ${run.id} ${run.state} (${run.mode}, ${run.context} context).`;
+	const continuation = run.resumedFrom
+		? ` Resumed child #${run.resumedFrom.index + 1} from run ${run.resumedFrom.runId}.`
+		: "";
+	const header = `Subagent run ${run.id} ${run.state} (${run.mode}, ${run.context} context).${continuation}`;
 	const results = run.results.map((result) => {
 		const attemptsNote = result.attempts > 1 ? ` (${result.attempts} attempts)` : "";
 		const title = `=== ${result.agent} [${result.state}]${attemptsNote} ===`;

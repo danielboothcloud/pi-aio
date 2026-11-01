@@ -355,3 +355,56 @@ test("showMutationApproval uses the scrollable overlay in TUI mode and maps resu
 	assert.equal(customCalls.length, 1);
 	assert.equal(customCalls[0].overlay, true);
 });
+
+test("outside variant: folder option maps to allowScope and keeps the three-row layout", () => {
+	const doneCalls: string[] = [];
+	const dialog = new ApprovalDialog({
+		tui: { terminal: { rows: 20, columns: 60 } } as unknown as TUI,
+		theme: passthroughTheme,
+		header: "Outside /repo: allow write on /other/a.ts?",
+		diff: "⚠ Outside the working directory /repo.\n+ a",
+		done: (result) => doneCalls.push(result),
+		variant: "outside",
+	} as unknown as ConstructorParameters<typeof ApprovalDialog>[0]);
+	const lines = trim(dialog.render(60));
+	assert.ok(lines.some((line) => line.includes("2 Allow folder this session")));
+	assert.ok(!lines.some((line) => line.includes("Enable auto")));
+	for (const width of [8, 24, 60]) {
+		for (const line of dialog.render(width)) assert.ok(visibleWidth(line) <= width);
+	}
+	dialog.handleInput("2");
+	assert.deepEqual(doneCalls, ["allowScope"]);
+});
+
+test("outside variant: select fallback offers the outside options and never enables auto", async () => {
+	const selectArgs: { prompt: string; options: string[] }[] = [];
+	const selections: (string | undefined)[] = [
+		"Allow this folder for the session",
+		"Allow all (enable auto)",
+	];
+	const ctx = {
+		mode: "rpc",
+		ui: {
+			select: async (prompt: string, options: string[]) => {
+				selectArgs.push({ prompt, options });
+				return selections.shift();
+			},
+		},
+	} as unknown as ExtensionContext;
+	const params = {
+		tool: "write",
+		input: {},
+		path: "/other/a.ts",
+		outside: { cwd: "/repo", scopes: ["/other"] },
+	};
+	assert.equal(await showMutationApproval(ctx, params), "allowScope");
+	assert.deepEqual(selectArgs[0].options, [
+		"Allow once",
+		"Allow this folder for the session",
+		"Block",
+	]);
+	assert.match(selectArgs[0].prompt, /Outside the working directory \/repo/);
+	assert.match(selectArgs[0].prompt, /under: \/other/);
+	// A label from the normal prompt is not a valid outside decision.
+	assert.equal(await showMutationApproval(ctx, params), "block");
+});

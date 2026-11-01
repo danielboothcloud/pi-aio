@@ -3,21 +3,16 @@
  * usage. Integrated natively into aio, mirroring the @sherif-fanous/pi-rtk
  * extension's behavior.
  *
- * Registration order matters: {@link registerRtk} must be called *after*
- * {@link registerUserBash} so the permission-mode gate runs first on the
- * `user_bash` event. Pi dispatches `user_bash` handlers in registration order and
- * short-circuits on the first non-undefined result, so a blocked command never
- * reaches rtk, and an allowed command falls through to rtk for rewriting.
+ * Registers after permission modes so only approved agent commands are
+ * rewritten. Explicit user !/!! commands retain Pi's native execution path.
  */
 
 import {
-	createLocalBashOperations,
 	type ExtensionAPI,
 	type ExtensionContext,
 	isToolCallEventType,
 } from "@earendil-works/pi-coding-agent";
 import {
-	buildRtkUserBashResult,
 	cacheNotify,
 	probeRtkAvailability,
 	rewriteAgentBashCommand,
@@ -37,8 +32,6 @@ export {
 } from "./rewrite.js";
 
 export function registerRtk(pi: ExtensionAPI): void {
-	const localBashOperations = createLocalBashOperations();
-
 	registerRtkCommand(pi);
 
 	pi.on("session_start", (_event, ctx: ExtensionContext) => {
@@ -62,9 +55,4 @@ export function registerRtk(pi: ExtensionAPI): void {
 		if (rewritten) event.input.command = rewritten;
 	});
 
-	pi.on("user_bash", (event, ctx: ExtensionContext) => {
-		cacheNotify((message, level) => ctx.ui.notify(message, level));
-		// !! still controls model-context inclusion; it no longer bypasses RTK.
-		return buildRtkUserBashResult(event.command, localBashOperations);
-	});
 }

@@ -47,11 +47,67 @@ shortcut, add this to `~/.pi/agent/keybindings.json`:
 Then run `/reload` or restart Pi. Use `/effort` when you want to change the
 thinking level.
 
+## Desktop notifications — `/notify`
+
+Enabled by default in parent TUI sessions. AIO notifies when:
+
+- The agent **fully settles** and is ready for input, or stops with an unrecovered
+  error. Recovered tool errors and intentional Escape/abort are silent.
+- A question, file-mutation approval, shell approval (`bash` or `hypa_shell`), or
+  other agent-driven dialog needs input.
+- A goal completes or becomes blocked. Routine goal continuations, manual
+  pause/cancel, and quota pauses with an automatic retry are silent.
+- A background subagent run completes/fails, or a `/btw` answer/error arrives.
+  Subagents notify once per group, not once per child or retry; their completion
+  replaces the next generic idle alert.
+- YSK surfaces a **critical** finding, after its existing filtering/deduplication.
+
+On macOS, optional `terminal-notifier` on `PATH` provides native notifications
+and click-to-activate for a recognized terminal bundle ID. If unavailable or
+failing, AIO uses terminal notifications (OSC 777, or OSC 99 for Kitty), with tmux
+passthrough framing. Terminal support, passthrough settings, and OS notification
+permissions still govern delivery. Over SSH only the terminal fallback is used.
+No executable is installed automatically. Don't also load `pi-notify`, or both
+extensions may notify.
+
+Notifications are suppressed while the terminal **app** is frontmost on macOS
+(best effort; unknown/unavailable focus detection allows delivery). This is not
+pane/tab awareness, and focus suppression is unavailable off macOS or over SSH.
+`/notify test` bypasses **AIO's** suppression only: Ghostty can still suppress OSC
+notifications while its surface is focused. Use `/notify test 5`, then switch to
+another app before the test fires. The test reports the backend actually used;
+"dispatched" means the native process/terminal accepted the attempt, not that
+macOS displayed a banner. If nothing appears while unfocused, check System
+Settings → Notifications for the terminal (or terminal-notifier), and Focus /
+Do Not Disturb. Installing AIO does **not** install the optional native executable.
+Bodies are generic by default; opt-in previews can expose model output or prompt
+text on the desktop/lock screen. The subtitle contains the session name or
+working-directory basename even with previews off.
+
+```text
+/notify                         Show settings and backend selection
+/notify test                    Test dispatch, bypassing AIO's suppression
+/notify test 5                  Test in 5 seconds; switch apps before it fires
+/notify on                      Enable notifications
+/notify off                     Disable notifications
+/notify focus off               Notify even while the terminal app is focused
+/notify min 5                   Require 5 seconds for normal completion alerts
+/notify sound Glass             Native macOS sound; `off` disables it
+/notify preview on              Include short text previews (off by default)
+/notify events background off   Toggle core, goal, background, or critical
+```
+
+Changes persist in `<agent-dir>/aio-notifications.settings.json` (test override:
+`AIO_NOTIFY_SETTINGS_FILE`). Startup never creates a settings file. Notification
+failures never block agent work; no desktop output is emitted in RPC, print/JSON,
+or subagent children. Existing goal `notifyCmd` hooks remain independent; disable
+`/notify events goal off` if your hook already handles desktop goal alerts.
+
 ## Recipes — `--recipe <name>`, `/recipe`
 
 A recipe is a named launch configuration: starting with
-`pi --recipe work` applies a saved selection of model, thinking level, tools,
-MCP servers, skills, and per-turn instructions in one shot. Recipes live with
+`pi --recipe work` applies a saved selection of model, thinking level, model
+scope, MCP servers, and extensions in one shot. Recipes live with
 the user, not the repo — the agent dir's `aio-recipes.json`.
 Pi defaults to `~/.pi/agent`; `PI_CODING_AGENT_DIR` overrides it (for example,
 `PI_CODING_AGENT_DIR=~/.config/pi` means `~/.config/pi/aio-recipes.json`).
@@ -65,20 +121,19 @@ Trusted projects may override or add recipes in `<project>/.pi/aio-recipes.json`
       "description": "Personal Claude/Codex subscriptions",
       "model": "anthropic/claude-5:high",
       "models": ["anthropic/*", "openai-codex/*"],
-      "tools": ["+codemode", "-hypa_*"],
-      "instructions": "Ship carefully; prefer the smallest correct change.",
-      "skills": ["skills/home/"],
       "mcpServers": { "linear": { "url": "https://mcp.example.com/linear" } },
       "extensions": ["otty-integration", "npm:pi-web-access"]
     },
     "work": {
       "description": "Work subscriptions",
-      "model": "openai-codex/gpt-5.2-codex:medium",
-      "tools": ["read", "bash", "edit", "write", "grep"]
+      "model": "openai-codex/gpt-5.2-codex:medium"
     }
   }
 }
 ```
+
+Recipes support only `description`, `model`, `thinkingLevel`, `models`,
+`mcpServers`, `extensions`, and `blocklist`; other keys are ignored.
 
 Key semantics:
 
@@ -88,13 +143,6 @@ Key semantics:
   is also given.
 - **`models`** — `--models` patterns scoping startup selection and Ctrl+P
   cycling (restart-scoped: applied by the relaunch bridge below).
-- **`tools`** — the `defaultTools` grammar: plain names replace the active
-  set, `+name`/`-name` entries adjust it, and `*` globs match by pattern.
-- **`instructions`** — a hidden per-turn `[RECIPE … ACTIVE]` block sent to
-  the model while the recipe is active; `/recipe off` stops it.
-- **`skills` / `prompts` / `themes`** — resource paths (files or directories)
-  resolved from the file that declared them (`~` expands) and contributed
-  through resource discovery while the recipe is active.
 - **`mcpServers`** — `registerMcpServer` configs, registered while the recipe
   is active. A server of the same name in `mcp.json` takes precedence, as
   always; switching recipes unregisters only servers this feature added.
@@ -102,6 +150,113 @@ Key semantics:
   bridge. Bare names resolve against `~/.pi/agent/extensions/` (like
   `otty-integration`); `npm:`, `git:`, `builtin:`, and paths pass through;
   AIO itself always re-loads in the child.
+- **`blocklist`** — extra [command blocklist](#command-blocklist) rules while
+  the recipe is active, in the same shape as `aio-blocklist.json` (or a bare
+  `entries` array). They are added to the global/project blocklist files and
+  can never disable them. Session-scoped: `/recipe` switches replace them,
+  `/recipe off` clears them, and subagent children inherit them. A committed
+  `.pi-recipe` therefore gives a repo its own hard blocklist without anything
+  in the home directory:
+
+  ```json
+  {
+    "defaultRecipe": "repo",
+    "recipes": {
+      "repo": {
+        "blocklist": {
+          "match": "command",
+          "entries": [
+            { "pattern": "^terraform\\s+apply\\b", "regex": true, "reason": "CI only" }
+          ]
+        }
+      }
+    }
+  }
+  ```
+
+### Per-directory recipes — `.pi-recipe`
+
+Commit a `.pi-recipe` (or `.pi-recipe.json`) to a repo to give everyone who
+works in it the same recipe — or run `/recipe init` to create one. It uses the
+same JSON shape as `aio-recipes.json` and is **self-contained**: its
+`defaultRecipe` must be defined in its own `recipes`, never in anyone's
+global config, so the file works the same for every clone:
+
+```json
+{
+  "defaultRecipe": "repo",
+  "recipes": {
+    "repo": {
+      "description": "Team defaults for this repo",
+      "model": "anthropic/claude-5",
+      "thinkingLevel": "high",
+      "models": [],
+      "mcpServers": {},
+      "extensions": [],
+      "blocklist": { "entries": [] }
+    }
+  }
+}
+```
+
+- Its recipes override same-name global/project recipes in that folder, and
+  its `defaultRecipe` wins over theirs. A `defaultRecipe` the file does not
+  define is ignored with a warning (your own default, if any, applies).
+
+- A plain `pi` started in that folder behaves like `pi --recipe <default>`,
+  including the relaunch bridge for `extensions` and `models`. Only the launch
+  directory is checked (no parent walk); with both files, `.pi-recipe` wins.
+- `/new` starts a separate conversation and activates/pins the folder's
+  currently trusted default again (model, thinking, MCP, and recipe status).
+  It does not inherit the old branch's recipe/off marker. Existing launch
+  extensions and model scope stay in effect; a different restart-scoped
+  recipe still needs a relaunch. Global/project defaults remain startup-only,
+  and an explicit launch `--recipe` keeps precedence.
+- `pi --recipe other` beats the folder default, and `/recipe other` switches
+  for the rest of that session. Resumes and forks (`-c`, `-r`, `--session`,
+  `--session-id`, `--fork`, `/resume`) keep the session's own recipe.
+  `--continue`, `--session <path|id>` (including local partial IDs), and
+  `--session-id` reapply its model scope and extensions through the launch
+  bridge. Native `--resume`/`-r` and TUI `/resume` use the exact selected
+  session too: the TUI pauses for a one-time relaunch, without reopening the
+  picker or replaying the old initial prompt. Model, thinking level, and MCP
+  registrations restore with the recipe as well. An explicit `--models` or
+  `-e` still wins; `/reload` keeps deliberate in-session scope changes.
+  Switching to off or an unscoped recipe removes the previous recipe's
+  injected scope/extensions and restores the original user launch policy.
+  In-process RPC session switches cannot safely transfer an active protocol
+  reader; they restore session-scoped keys and show a `pi --session …`
+  restart hint when extensions/model scope need changing. CLI RPC resumes
+  by file or ID are fully supported.
+- Each version of the file must be trusted explicitly — trusting the folder
+  in pi is not enough, and `--approve`/`defaultProjectTrust` do not count.
+  The first interactive `pi` start with a new or **changed** file asks on the
+  terminal before launch, showing what it would set (default, model, model
+  scope, extensions, MCP servers):
+  `[y] trust  [N] not now  [d] never (until it changes)`. Trusting it before
+  launch means a restart-scoped default still relaunches straight away.
+- Decisions are remembered in `<agent-dir>/aio-recipe-trust.json`, keyed by
+  the file's path and pinned to a SHA-256 of its contents
+  (`AIO_RECIPE_TRUST_FILE` overrides the path). "Not now" is not remembered;
+  "never" is, until the file changes. `--no-approve` skips the file for one
+  run without asking.
+- RPC sessions ask through the session UI instead (startup is not blocked;
+  a trusted default activates in-session). Print/JSON runs never ask: an
+  untrusted file is skipped with a `stderr` line.
+- `/recipe trust` trusts the current contents (overriding a "never") and
+  starts the default if no recipe is active; `/recipe untrust` forgets the
+  decision so the next start asks again.
+- `/recipe init [name] [--from <recipe>]` creates `.pi-recipe` in the
+  session folder and trusts it (you wrote it). It first asks what to start
+  from: a **blank recipe** (current model and thinking level, `models` scoped
+  to that one model, every other key present but empty) or **a copy of one of your home recipes**
+  (`aio-recipes.json`) — its model, thinking level, scope, MCP servers,
+  extensions, and blocklist are copied into the file, so it stays self-contained and
+  never depends on your home config. `--from` picks the template without the
+  picker. MCP configs are copied verbatim, so remove tokens before committing.
+  Without a name it asks for one, suggesting the folder name. It never
+  overwrites an existing file;
+  edits you make afterwards are asked about once on the next start.
 
 ### The relaunch bridge
 
@@ -116,12 +271,16 @@ one-line notice; the child never relaunches (`AIO_RECIPE_STAGE=1`). Guards,
 in order: subagent children, staged relaunches, `pi` subcommands, and the
 print-and-exit flags (`--help`, `--version`, `--export`, `--list-models`);
 explicitly typed `-e`/`--models` flags win over recipe keys, and the bridge
-sees the **global** recipes file only — project recipes activate their
-session-scoped parts like normal but never change a launch. If the restart
+sees the **global** recipes file plus a trusted `.pi-recipe` only —
+`.pi/aio-recipes.json` recipes activate their session-scoped parts like
+normal but never change a launch. If the restart
 cannot run, AIO continues in-session and warns that the extension set and
 model scope stayed unchanged. Compiled Bun binaries are restarted without
 forwarding their virtual `/$bunfs/...` or `B:\\~BUN\\...` entry point; Node
-and uncompiled Bun retain their real CLI script.
+and uncompiled Bun retain their real CLI script. Recipe-injected relative
+extension paths resolve against the declaring recipe file's directory,
+including when opening a session from another working directory; explicit
+user `-e` paths retain Pi's CLI semantics.
 
 ### Checking a recipe's model scope
 
@@ -144,8 +303,12 @@ The compiled-binary startup regression test is opt-in and uses isolated,
 repository-local fixtures, no credentials, and no network or model calls:
 
 ```bash
-AIO_RECIPES_SMOKE_PI="$(command -v pi)" npx tsx --test recipes/compiled-smoke.test.ts
+AIO_RECIPES_SMOKE_PI="$(command -v pi)" npx tsx --test recipes/compiled-smoke.test.ts recipes/continue-smoke.test.ts recipes/resume-smoke.test.ts
 ```
+
+The resume smoke suite also checks real TUI picker and `/resume` handoffs
+through a local PTY (`python3` on macOS/Linux), plus extension loading,
+thinking, disabled/offline MCP registration, and off/unscoped resets.
 
 ### Runtime inspection — `/recipe status`
 
@@ -185,16 +348,22 @@ selection and registrations, **not whether a remote model can answer**.
 ### `/recipe` and selection rules
 
 - `/recipe` opens a selector (names with descriptions, plus `off`);
-  `/recipe work` switches mid-session (model, thinking, tools, MCP,
-  instructions; restart-scoped keys carry a “restart to fully apply”
-  advisory); `/recipe off` clears the recipe — instructions and this
-  feature's MCP servers stop, while model and tools keep their current state.
+  `/recipe work` switches mid-session (model, thinking, MCP;
+  restart-scoped keys carry a “restart to fully apply” advisory);
+  `/recipe off` clears the recipe and this feature's MCP servers,
+  while the model keeps its current state.
 - Selection precedence at session start: `--recipe` flag > bridged relaunch
   (`AIO_RECIPE_ACTIVE`) > the session's most recent saved recipe (resumes) >
-  `defaultRecipe`, which auto-activates only on a fresh `pi` start.
+  `defaultRecipe` (`.pi-recipe` > `.pi/aio-recipes.json` > global), which
+  auto-activates only on a fresh `pi` start. A relaunch for a `.pi-recipe`
+  default is marked `AIO_RECIPE_ORIGIN=directory` and keeps default priority.
+- `/recipe init`, `/recipe trust`, and `/recipe untrust` manage the folder's
+  `.pi-recipe`; a recipe literally named `init`, `trust`, or `untrust` keeps
+  switching, like `status`.
 - The active recipe is pinned on the session branch, so forking and tree
   navigation follow the branch's own timeline; subagent children never
-  inherit a recipe beyond stripping its instructions from forked context.
+  activate a recipe. Legacy recipe instruction messages are stripped from
+  resumed and forked context.
 - Config errors fail open: unreadable files warn once on `stderr` and the
   session runs without a recipe. `AIO_RECIPES_FILE` replaces the global recipes
   file for tests and sandboxes (the same contract YSK and goal settings use).
@@ -367,6 +536,58 @@ originating session when complete:
 { action: "stop", id: "<run-id>" }
 ```
 
+### Inspecting running subagents
+
+Run `/subagents` (or press **Alt+S**, Option+S on Mac) to open the live inspector overlay. The list
+shows every child of every run in the session, including foreground and
+background runs, parallel groups, and queued, running, failed, stopped, and
+finished children. Press **Enter** on a child to open its live transcript:
+thinking, responses, each tool call with its result, stderr logs, and
+retry, compaction, and attempt notices. The view follows the tail as the child
+works.
+
+| Key | Action |
+| --- | --- |
+| `j`/`k`, `^u`/`^d`, PgUp/PgDn | Scroll (scrolling up stops following) |
+| `g` / `G` | Jump to the top / jump to the bottom and follow |
+| `tab` / `shift+tab` (`]`/`[`) | Next or previous child, across all runs |
+| `o` | Expand or collapse tool arguments and full output, like ctrl+o |
+| `t` | Show or hide thinking |
+| `r` | Resume the selected failed/stopped child from its saved session (list or detail) |
+| `esc` / `q` | Back to the list / close |
+
+The detail header has a dedicated model row and effort pill, separate from
+errors so a long quota message cannot hide the configuration. Effort is the
+resolved launch setting; an unreported setting is labeled `default`.
+
+After quota recovers, press **`r`** on a failed or stopped child to continue its
+saved session with the original model, effort, agent configuration, working
+directory, timeout, and extension launch policy. It asks the child to continue
+without redoing completed work and does not rerun siblings. The continuation
+appears as a new single-child background run, follows in the overlay, and sends
+its result back to the parent. Closing the overlay does not stop it. The original result remains intact; if recovery
+fails again, resume the latest continuation rather than its ancestor.
+
+Reopening or reloading a parent session restores its latest 50 recorded runs
+from the selected branch, including older subagent tool results and background
+completion messages. New runs also save versioned, non-context checkpoints with
+their original launch settings, so **`r` still works after reopening**. Older
+runs without those settings remain inspectable but cannot safely resume with
+an invented/current configuration. Nothing restarts automatically.
+
+Resume requires an existing child session file and an exited child process;
+if a recorded process is still alive, recovery is refused to avoid competing
+writers. A missing file never silently becomes a fresh run. Resume does not
+bypass quota limits or add pause/model-switch controls; wait for usage first.
+
+Live transcripts are bounded and never enter model context. Only the 10 most
+recent finished runs retain their live transcript in memory. Historical detail
+views lazily read at most 1 MB from the saved child session, reconstructing a
+bounded selected-branch transcript; only the currently inspected saved transcript
+is cached. Missing files fall back to the recorded result/error. Streaming-only
+notices and stderr cannot be recovered if they were not saved by Pi. A child's
+session file, shown at the bottom of its transcript, holds its durable history.
+
 AIO ships neutral `scout`, `planner`, `worker`, `reviewer`, `researcher`, and
 `validator` agents. Override them or add agents with Markdown files in:
 
@@ -401,22 +622,34 @@ hours) to extend an individual run beyond its agent default.
 Trusted project definitions override user definitions, which override bundled
 agents. Project agent files are ignored until Pi trusts the checkout.
 
-Subagents inherit AIO's active permission mode. In `ask` and `plan` modes,
-mutations remain blocked. In `default` mode, headless children cannot answer
-permission prompts, so mutation attempts are blocked. Use `auto` only when you
-intend to authorize a writer child. Child sessions never receive the `subagent`
-tool, so nested delegation is unavailable.
+Subagent children run in `auto` mode because they are headless and cannot
+answer permission prompts, even when the parent is in default/ask/plan mode.
+The parent's per-call approvals do not gate child mutations; delegate only
+work you intend to authorize, and explicitly assign read-only tasks when
+needed. Hard blocklists still apply in children. Child sessions never receive
+the `subagent` tool, so nested delegation is unavailable.
 
 AIO launches child sessions through `pi` on `PATH`. Wrappers and custom
 installations can set `AIO_SUBAGENT_PI_BINARY` to an alternate Pi executable.
 
 This intentionally reduced runtime does not include chains, dynamic fanout,
-structured-output contracts, worktrees, resume/steer, scheduling, acceptance
-gates, persistent agent memory, or automatic model fallbacks. Keep parallel
+structured-output contracts, worktrees, agent-driven resume/steer, scheduling,
+acceptance gates, persistent agent memory, or automatic model fallbacks. Keep parallel
 children read-only in a shared checkout and use one writer for changes.
 
 Do not load standalone `pi-subagents` alongside AIO because both packages
 register a tool named `subagent`.
+
+## Automatic session names
+
+New sessions receive a short AI-generated title after their first successful
+response, making them easier to identify in `pi --resume` and `/resume`.
+One small, bounded background request uses the session's model and a text-only
+snapshot of the first request and response. Naming never changes model context.
+Existing sessions, forked/subagent sessions, and manually assigned names are
+left alone; there is no bulk backfill. Use Pi's `/name` to choose your own title.
+Naming is best-effort: failures, timeouts, or closing the session before the
+request finishes leave it unnamed rather than interrupting your work.
 
 ## `!` bash shortcuts
 
@@ -431,18 +664,11 @@ Pi runs shell commands when your prompt starts with `!`:
 - `!command` — runs the command, shows output in the transcript, and sends it to the model
 - `!!command` — runs the command and shows output, but excludes it from model context
 
-The `aio` extension applies the same permission-mode rules to your `!` commands as it
-does to agent `bash` tool calls:
-
-| Mode    | `!` read-only commands | `!` mutating commands |
-| ------- | ---------------------- | --------------------- |
-| default | allow                  | prompt                |
-| ask     | allow                  | blocked               |
-| plan    | allow                  | blocked               |
-| auto    | allow                  | allow                 |
-
-Read-only commands include things like `ls`, `cat`, `git status`, and `grep`. Mutating
-commands include `rm`, redirects, package installs, and most `git write` operations.
+Commands you explicitly type with `!` or `!!` are user-authorized and run via
+Pi's native shell path in every permission mode. AIO does not evaluate them
+against permission rules, the blocklist, or YAML hooks, and does not rewrite
+them through RTK/Hypa. Agent-issued tool calls retain all their existing gates.
+Other separately loaded extensions and Pi's own shell settings still apply.
 
 While typing a `!` command, aio shows live feedback:
 
@@ -453,16 +679,18 @@ While typing a `!` command, aio shows live feedback:
 
 ## Command blocklist
 
-`aio` ships a hard blocklist: shell commands you list in it NEVER run, no
-matter the permission mode (even `auto`), and for both agent `bash` tool calls
-and your `!`/`!!` commands. A blocked command fails with an error explaining
+`aio` ships a hard blocklist for agent `bash` and `hypa_shell` calls: listed
+commands never run, regardless of permission mode (even `auto`). Explicit user `!`/`!!`
+commands bypass this gate. A blocked agent command fails with an error explaining
 which rule matched — it cannot be approved, and the model is told about the
 blocklist at the start of every turn so it does not waste attempts on it.
 
-Config is two-tier JSON with union semantics (both files apply):
+Config is JSON with union semantics (every source applies):
 
 - Global: `~/.pi/agent/aio-blocklist.json`
 - Project: `<project>/.pi/aio-blocklist.json`
+- Recipe: the active recipe's `blocklist` key (see [Recipes](#recipes----recipe-name-recipe));
+  a committed `.pi-recipe` keeps a repo's rules in the repo
 
 ```json
 {
@@ -470,7 +698,8 @@ Config is two-tier JSON with union semantics (both files apply):
   "entries": [
     "rm -rf /",
     { "pattern": "kubectl delete", "reason": "no cluster deletions" },
-    { "pattern": "\\bgit push --force\\b", "regex": true, "reason": "no force push" }
+    { "pattern": "\\bgit push --force\\b", "regex": true, "reason": "no force push" },
+    { "pattern": "^vault\\b", "regex": true, "match": "command", "reason": "no vault" }
   ]
 }
 ```
@@ -484,6 +713,52 @@ Config is two-tier JSON with union semantics (both files apply):
 - Matching is case-insensitive: `RM -RF /` hits a `rm -rf /` rule.
 - Malformed JSON, entries, or regexes are skipped rather than fatal.
 
+#### Match modes — `"match": "text" | "command"`
+
+By default (`"text"`) a rule tests the **whole command text**, including
+quoted arguments, `-m` messages, and heredoc bodies, so `rg -n 'vault' src`
+or `jj describe -m 'never run npm run test:stack'` hit a `\bvault\b` or
+`test:stack` rule. Opt into `"command"` to test only the commands the shell
+would actually run. Set it per entry, or at the top level of a file (or
+recipe `blocklist`) as the default for that file's entries; an entry's own
+`match` wins, and any unknown value means `"text"`.
+
+In command mode the command is split into segments on unquoted `;`, `&`,
+`&&`, `||`, `|`, newlines, `( )`, `{ }`, `$( … )`, backticks and `<( … )`;
+substitutions are segmented recursively. Quoted text, redirections, and
+comments never start a segment. Heredoc bodies and here-strings are dropped
+unless they feed a shell (`bash`, `sh`, `zsh`, `dash`, `fish`, `ksh`), and
+`bash -c '…'`/`eval '…'` scripts are segmented too. A rule matches if it
+matches either form of any segment:
+
+- `full` — the segment from its start, with leading `VAR=value`
+  assignments (and `export VAR=…`);
+- `program` — from the real program name on, after stripping assignments
+  and wrappers: `env`, `sudo`, `command`, `exec`, `time`, `nice`, `nohup`,
+  `timeout DURATION`, `xargs`, `npx --yes`/`-y` (keeping `npx`), and the
+  `perl -e 'alarm N; exec @ARGV' <cmd>` timeout idiom.
+
+Write command-mode patterns **anchored at the program**: `^vault\b`,
+`^git\s+(commit|push)(?![\w-])`, `^(npx\s+)?playwright\b`,
+`^(export\s+)?RR_TEST_RUNNER\s*=`. Quotes are removed before matching, so
+`'vault' login` is still `vault login`. Unanchored patterns still work but
+also match arguments within a segment. Expansions (`$VAR`) are not
+evaluated, and other interpreters (`python -c`, `node -e`, `find -exec`)
+are opaque arguments.
+
+**Fail closed.** If the command cannot be segmented reliably, any active
+command-mode rule blocks it outright, because nothing hidden in an unreadable
+command is ever let through. That covers unbalanced quotes, an unterminated
+`$(`/backtick/`${`, a heredoc whose terminator never appears, a shell that
+reads its script from a pipe or redirect (`curl … | sh`, `bash < x.sh`),
+`source`/`.` of a file, and `env -S`. Rewrite such a command so each step
+is visible (for example, run the script's commands directly). A specific
+`text`-rule hit is reported first when one exists.
+
+Block errors for command-mode hits name the matched segment (up to 120
+characters), so a false positive is obvious. The turn-start context lists each
+rule's origin and mode.
+
 The config is re-read on every check, so edits apply immediately — no reload
 needed. Cursor host replay calls (`cursor-replay-*`) are exempt because they
 only display work that already ran outside Pi's gate.
@@ -492,12 +767,42 @@ only display work that already ran outside Pi's gate.
 
 Cycle with **Shift+Tab**: default → ask → plan → auto → default
 
-| Mode    | Edit/Write/Patch | Mutating bash / `!` | Reads |
+| Mode    | Edit/Write/Patch | Agent mutating bash | Reads |
 | ------- | ---------------- | ------------------- | ----- |
 | default | prompt           | prompt              | allow |
 | ask     | disabled         | blocked             | allow |
 | plan    | disabled         | blocked             | allow |
 | auto    | auto-approve     | auto-approve        | allow |
+
+Both `bash` and `hypa_shell` use these checks, including calls reached through
+other tools. Python/Node scripts and commands outside the simple read-only
+allowlist require per-call approval in default mode (and fail closed without
+UI). Compound commands, pipes, redirections, substitutions, and execution-capable
+wrappers also require approval rather than trusting a safe-looking prefix.
+Git diff/log/show require approval because configured external-diff/textconv
+helpers can execute code implicitly. Even quoted shell metacharacters take this conservative path. Ask/plan block
+these commands; auto permits them. Explicit user `!`/`!!` commands are unchanged.
+
+### Changes outside the working directory
+
+`edit`, `write`, and `apply_patch` may change anything inside the session's
+working directory and its subdirectories. A target anywhere else (an absolute
+path, `../sibling`, `~/…`, or a symlink inside the project that points out of
+it) needs **manual approval in every mode, including auto**. The approval
+prompt is marked *outside the working directory* and offers:
+
+- **Allow once** — this call only;
+- **Allow this folder for the session** — this call, plus later changes under
+  the target's folder until the session ends (`/new`, resume, or exit);
+- **Block** — the agent gets an error naming the path.
+
+In default mode this replaces the normal prompt, so you are asked once.
+Without a UI to ask (print/JSON runs, subagent children) such changes are
+blocked. Paths are resolved like Pi's file tools (`@` prefix, `~`, relative to
+the cwd) and canonicalized through symlinks. Every `apply_patch` target,
+including move destinations and unified-diff files, is checked. This guard
+covers the file tools only: shell commands (`bash`, `hypa_shell`) follow the
+mode rules above and the [command blocklist](#command-blocklist).
 
 Ask mode is passive Q&A and exploration: it can inspect the codebase and answer
 questions, but it cannot mutate state and does not start plan extraction or
@@ -556,7 +861,7 @@ restores the style chosen on that branch. Subagents never inherit a style.
 | collaborate | Surfaces decisions with 2-3 options and a recommendation, asks via `ask_user_question`, uses your domain knowledge, and confirms direction between small increments |
 | tutor       | Teaches the current task in small steps, explains the reasoning with concrete examples, invites you to predict, explain, or try something, then pauses and gives feedback before continuing |
 | concise     | Gives direct answers with minimal commentary: key decisions, blockers, results, and verification; expands when you ask for detail |
-| humanised   | Talks things through naturally, understands the idea before getting granular, and keeps technical detail where it helps |
+| ste         | Uses Simplified Technical English principles from ASD-STE100: short sentences, clear instructions, active voice, and consistent terms |
 
 Tutor adapts to your familiarity and learning goals: explain a step → invite
 your participation → wait for your attempt → discuss it and build on it. It
@@ -575,25 +880,33 @@ Concise skips routine tool narration, filler, and repeated summaries—not requi
 clarifications, approvals, warnings, or checks. Plan mode still produces an
 actionable numbered plan. Ask for more detail whenever you want it.
 
-Humanised makes the whole conversation feel more natural—not just explanations.
-It follows where you are in the discussion: understand the idea first, ask the
-next useful question, and get specific as the direction becomes clearer. It
-avoids turning a newly introduced topic into a menu of precise feature bundles
-or release decisions. Technical language is fine; it does not assume you are a
-beginner, force slang, or replace useful detail with vague simplifications.
-Required questions, approvals, checks, and plan formats still apply.
+STE uses [ASD-STE100 Simplified Technical English](https://www.asd-ste100.org/)
+writing principles for questions, updates, explanations, answers, and documentation.
+It uses up to 20 words per instruction sentence and 25 per descriptive sentence,
+one instruction per sentence, active voice, simple verbs, and consistent terms.
+It avoids idioms and contractions. Code, commands, paths, identifiers, and quoted
+text stay exact. Technical detail, warnings, approvals, checks, and required plan
+formats remain intact.
+
+This is writing guidance, not a compliance checker. Full ASD-STE100 compliance
+also requires its controlled dictionary, approved meanings and parts of speech,
+and technical-term rules. The style does not certify compliance.
 
 The active style appears beside the mode: in the frame's top border
 (`▶ Auto · ✎ Tutor`), in the legacy status line, or as a `style` footer status
 when the status line is disabled.
 
 - `/style` — selector
-- `/style collaborate`, `/style tutor`, `/style concise`, `/style humanised` — switch directly
+- `/style collaborate`, `/style tutor`, `/style concise`, `/style ste` — switch directly
 - `/style none` (or `/style off`) — turn the style off
 
 `mentor` is the former name: `/style mentor` remains an alias for `tutor`, and
 saved mentor selections restore as tutor. Menus, completions, and new session
 entries use `tutor`.
+
+`humanised` is replaced by `ste`: `/style humanised` remains a compatibility
+alias, and saved humanised selections restore as STE. Menus, completions, and
+new session entries use `ste`; the display label is Simplified Technical English.
 
 ## Minimalist frame interface
 
@@ -976,23 +1289,22 @@ own the same built-in tool names and would register duplicate FFF commands.
 ## rtk shell rewriting
 
 `aio` enforces [rtk](https://github.com/rtk-ai/rtk) routing wherever RTK has a
-representation. Agent `bash`, `!command`, and `!!command` inputs are offered to
-`rtk rewrite`; `read`, `ls`, `find`, and `grep` invoke their RTK subcommands
+representation. Agent `bash` inputs are offered to `rtk rewrite`; `read`, `ls`, `find`, and `grep` invoke their RTK subcommands
 directly. Commands for which RTK has no equivalent run unchanged because routing
 them is impossible.
 
 - **Agent `bash` tool** — an asynchronous `tool_call` hook rewrites the command
   after permission checks and before execution. This works independently of the
   pretty bash renderer.
-- **`!command` and `!!command`** — both execute rewritten commands; Pi still keeps
-  `!!` output out of model context.
+- **`!command` and `!!command`** — run unchanged through Pi's native shell path;
+  Pi still keeps `!!` output out of model context.
 - **Read-only built-ins** — text `read`, `ls`, `find`, and `grep` calls execute
   through RTK even if their names appear in `PRETTY_DISABLE_TOOLS`.
 - **Impossible RTK cases** — images retain Pi's native image path, file mutation
   tools remain native, and unsupported or unavailable RTK commands fail open to
   the existing implementation.
 
-There is no disable toggle or `RTK_DISABLED=1` bypass. Bypass assignments at
+For agent calls there is no disable toggle or `RTK_DISABLED=1` bypass. Bypass assignments at
 shell-command boundaries are stripped before rewriting. If RTK is missing, not
 executable, times out, or has no equivalent, aio falls back to normal behavior and
 warns once when the binary is unavailable. Permission modes remain responsible
@@ -1108,7 +1420,7 @@ confirmations, and status entries from one `hooks.yaml` file. The
 implementation is ported from
 [pi-yaml-hooks](https://github.com/KristjanPikhof/pi-yaml-hooks) (MIT — see
 [`yaml-hooks/UPSTREAM.md`](yaml-hooks/UPSTREAM.md)); the YAML contract and all
-`PI_YAML_HOOKS_*` environment variables are unchanged.
+`PI_YAML_HOOKS_*` names are retained, with the retired user-bash setting ignored.
 
 Config is two-tier with global-first merge and project overrides by hook `id`:
 
@@ -1174,10 +1486,9 @@ Important limitations (matching upstream):
 - `action: stop` only takes effect on `tool.before.*`.
 - Prompt hooks receive the expanded text prompt only; they cannot rewrite or
   block the submitted prompt.
-- Human `!`/`!!` commands are intercepted only when
-  `PI_YAML_HOOKS_ENABLE_USER_BASH=1` is set; every trusted-project hook can
-  then read and block typed commands, so enable it only when you trust every
-  loaded hook. The startup warning lists which projects will have access.
+- Human `!`/`!!` commands are never intercepted. The legacy
+  `PI_YAML_HOOKS_ENABLE_USER_BASH` variable is accepted but ignored; tool hooks
+  apply to agent-issued calls only.
 
 ## tuicr review loop
 
@@ -1319,7 +1630,8 @@ threshold, or recent duplicates (a dedupe window suppresses repeats).
 ├── pretty-tools/            # pretty built-ins + FFF search
 ├── rtk/                     # rtk shell rewriting (/rtk + bash spawn hook)
 ├── subagents/               # child-agent discovery, execution, and lifecycle
-├── user-bash/               # !/!! command permission gating
+├── session-naming/          # background AI titles for new sessions
+├── user-bash/               # !/!! editor hints; native shell execution
 ├── you-should-know/        # YSK dual-agent shadow auditor
 └── yaml-hooks/              # hooks.yaml automation (ported from pi-yaml-hooks)
 ```

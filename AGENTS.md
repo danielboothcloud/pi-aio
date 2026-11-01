@@ -57,9 +57,8 @@ generated `dist/` tree without changing the package contract.
 - `index.ts` is the sole package entry point and composes feature-level
   registrars. Preserve registration order unless deliberately changing event
   interception: `registerRecipes` runs FIRST (its factory-time relaunch bridge
-  decides before anything else starts, and its session_start recipe tools set
-  the baseline permission-modes snapshots); `registerUserBash` must run before
-  `registerRtk`, and hypa
+  decides before anything else starts, and session_start applies recipe state
+  before other feature initialization); hypa
   must register after rtk (rtk precedence) but before queue and pretty tools,
   which own the final bash behavior. Blocklist gates run before
   permission-modes (loop blocks preempt mode checks; the hard
@@ -67,18 +66,16 @@ generated `dist/` tree without changing the package contract.
   pretty-tools, and status-line so it can wrap the final editor and own
   the visual surfaces. Preloaded standalone Zentui editors are preserved by the
   user-bash and queue registrars rather than overwritten. `registerYamlHooks`
-  runs LAST so its opt-in `user_bash`
-  interception wraps the earlier gates.
+  runs LAST for agent tool-hook composition. AIO registers no `user_bash`
+  interceptor: explicit !/!! commands use Pi's native shell path without AIO
+  permission checks, blocklists, rewrites, or YAML evaluation.
 - `recipes/` owns `--recipe` and `/recipe`: named launch configurations from
   `<agentDir>/aio-recipes.json` (two-tier: trusted project
   `/.pi/aio-recipes.json` recipes override same-name globals; the global file
   is also replaced whole by `AIO_RECIPES_FILE` for tests — goal-settings
   contract — and is never written by AIO). Session-scoped keys (model plus
-  `:thinking` spec suffix, tools in the `defaultTools` grammar with `*`
-  globs, MCP servers registered through `registerMcpServer`/`unregisterMcpServer`
-  by this feature only, hidden `recipe-context` instructions with a
-  keep-latest-stray-strip context filter mirroring styles, and
-  skills/prompts/themes contributed via `resources_discover` while active)
+  `:thinking` spec suffix, thinking level, and MCP servers registered through
+  `registerMcpServer`/`unregisterMcpServer` by this feature only)
   apply at `session_start` and on `/recipe` switches — the command refreshes
   the config itself so a mid-session file edit is honored. Restart-scoped
   keys (`extensions`, `models`) are applied by the relaunch bridge in the
@@ -104,9 +101,72 @@ generated `dist/` tree without changing the package contract.
   select the binary via `AIO_RECIPES_SMOKE_PI`. `pi list` describes saved
   package configuration, not the recipe child's loaded extension set.
   Selection precedence: flag > bridge env > session `recipe-state` entry
-  (branch-pinned; off pins `name: null`) > `defaultRecipe` on fresh startups
-  only. Subagent children register only the context filter (forked children
-  strip inherited recipe instructions). Status is dual-channel (frame
+  (branch-pinned; off pins `name: null`) > `defaultRecipe` on fresh startups.
+  `/new` additionally applies and pins the current trusted directory default
+  (not global/project defaults, the previous branch's off entry, or a stale
+  directory bridge name). Its model/thinking/MCP/status reactivate; native Pi
+  recreates the original launch extensions/scope, which are not reconciled to
+  a different directory recipe here. Explicit launch recipes still win.
+  A launch-cwd `.pi-recipe` (or `.pi-recipe.json`; same JSON shape,
+  no parent walk, `.pi-recipe` wins) is a third tier above
+  `.pi/aio-recipes.json`. Folder trust never covers it: `trust.ts` requires
+  explicit per-file trust stored in `<agentDir>/aio-recipe-trust.json`
+  (`AIO_RECIPE_TRUST_FILE` for tests), keyed by realpath and pinned to a
+  SHA-256 of the contents, so a new or edited file asks again; "never" is
+  remembered per version, "not now" is not, `--no-approve` skips one run.
+  The factory asks on the terminal (`promptRecipeTrust`, readline
+  `terminal: false`, closed before pi's TUI starts) only when
+  `canPromptAtLaunch` holds (interactive mode, both TTYs, no stage/child/
+  subcommand/print-and-exit/--no-approve), so a just-trusted restart-scoped
+  default still relaunches; otherwise session_start asks via a
+  non-blocking `ctx.ui.select` (RPC) or writes a stderr hint (print/JSON),
+  once per process (`directoryAsked`). A trusted directory default is
+  bridged like `--recipe` on fresh starts (never on
+  `-c`/`-r`/`--session`/`--session-id`/`--fork`) with
+  `AIO_RECIPE_ORIGIN=directory`, which keeps it at default priority in the
+  child so a `/resume`d session entry still wins. `continue.ts` resolves
+  `--continue`/`-c` with Pi's own session selection and storage precedence:
+  its branch-pinned recipe (not the directory default) can relaunch with
+  model scope/extensions restored and `--session <exact-file>` in place of
+  continue, marked `AIO_RECIPE_ORIGIN=session`. That marker never overrides
+  session entries or re-pins them; explicit off remains off and explicit CLI
+  model/extension flags still win. `/reload` never reapplies the launch scope.
+  `continue.ts` also resolves direct `--session` paths/local IDs/prefixes and
+  existing `--session-id`s, using the target cwd for recipe discovery.
+  `resume.ts` handles the native CLI picker and TUI `/resume` after selection:
+  public `ctx.ui.custom` → `tui.stop()` releases the terminal for the same
+  relaunch; spawn failure restores the TUI. A deliberate `/resume` follows
+  its target branch rather than the original launch's recipe flag/env.
+  `AIO_RECIPE_INJECTED_ARGS` stores only the count of injected argv tokens:
+  switches remove those tokens, obsolete fork/no-session/name flags, and old
+  prompt/file args while retaining explicit user scope/extension overrides.
+  Off/unscoped targets relaunch to the original user baseline when needed.
+  Recipe-relative extension sources are absolutized against `def.baseDir`;
+  explicit CLI paths remain untouched. An in-process RPC switch warns with
+  an exact-file restart hint rather than spawning a competing JSONL reader;
+  CLI RPC startup is safe before input attachment. Late print/JSON paths
+  similarly avoid losing already-consumed piped input. Project-config recipes
+  still never supply restart keys. The opt-in continue/resume smoke suites
+  verify scopes/cycling, extension replacement, thinking/MCP registration,
+  native pickers and /resume through a Python PTY, off/unscoped resets,
+  explicit overrides, changed defaults, and empty-scope rejection offline.
+  `/recipe init [name]` writes a `.pi-recipe` (exclusive create; always a full self-contained
+  scaffold — blank, seeded with the live model/thinking, or a COPY of a home
+  recipe chosen in a picker or via `--from`) and trusts it. The file is
+  portable: its `defaultRecipe` resolves only against its own `recipes`
+  (never global/project ones; otherwise ignored with a warning);
+  `/recipe trust` / `/recipe untrust` record or forget the decision.
+  Recipes support only description/model/thinkingLevel/models/mcpServers/extensions/blocklist;
+  unknown keys are ignored. `blocklist` (session-scoped, same shape as
+  `aio-blocklist.json` or a bare entries array) is published by
+  `applyRecipe`/`deactivateRecipe` through `setRecipeBlocklist` and unioned
+  into the hard blocklist as source `recipe:<name>`; it can only add rules.
+  It is mirrored into `AIO_RECIPE_BLOCKLIST` so subagent children (which never
+  activate recipes) keep enforcing it; a top-level pi clears a stray copy at
+  registration and reads the env only under `AIO_SUBAGENT_CHILD=1`. Recipes literally named `init`/`trust`/`untrust` keep
+  switching. Every process strips legacy `recipe-context` messages from model
+  context, even while a recipe is active. Subagent children register only that
+  cleanup filter and the status renderer (no recipe activation). Status is dual-channel (frame
   `recipe` pill beside the mode-style cluster, else a `statuses`-segment
   pill). `/recipe status [--json]` (unambiguous alias `/recipe-status`) uses
   `status.ts` to capture actual model/API/thinking/scope, launch extension
@@ -120,8 +180,33 @@ generated `dist/` tree without changing the package contract.
   actually named `status` keeps its old switching semantics. It owns no
   tools, gates nothing, and registers FIRST.
 - `pretty-tools/` overrides `read`, `bash`, `ls`, `find`, and `grep`;
-  `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/` and
-  `user-bash/` gate those mutations. Changes can cross feature boundaries.
+  `diff-tools/` owns `write`, `edit`, and `apply_patch`; `permission-modes/`
+  gates agent mutations. `bash` and `hypa_shell` share permission and hard
+  blocklist checks (`isShellTool`); never gate only one shell surface. The shell
+  read-only allowlist is deliberately conservative: scripts, compound commands,
+  execution-capable wrappers, and helper-capable Git diff/log/show require
+  approval in default mode and are blocked in ask/plan. Auto stays permissive
+  except for hard blocklists. `user-bash/` owns editor hints only. Changes can
+  cross feature boundaries. `permission-modes/workspace-guard.ts` makes
+  edit/write/apply_patch targets outside `ctx.cwd` (and its subdirectories)
+  require manual approval in default AND auto, blocked without UI (so
+  subagent children cannot write outside their cwd). Targets come from the same
+  parser the tools use (`resolveApplyPatchChanges`), resolve like Pi's
+  `resolveToCwd`, are canonicalized via the nearest existing realpath
+  (symlinks), and relative paths are checked against both `ctx.cwd` and
+  `process.cwd()` (the tools' real base). "Allow this folder for the session"
+  approvals are in-memory only and cleared on session_start/shutdown. The
+  outside prompt keeps the approval dialog's three-row layout (middle option
+  maps to `allowScope`). Shell tools are not covered by this guard.
+- `blocklist/` is the hard blocklist: `config.ts` loads the global, project, and
+  active-recipe tiers (union). Entries default to `match: "text"` (the
+  historical whole-text test, which must stay byte-for-byte unchanged); a
+  file-level `match` sets the default for that file's entries, and an entry's
+  own `match` wins. `"command"` rules test each segment's `program`/`full`
+  form from the pure, dependency-free `segments.ts` (wrappers live in the
+  named `COMMAND_WRAPPERS` constant). A `null`/`ok: false` segmentation fails
+  CLOSED: any active command-mode rule blocks the command outright. Never
+  turn a parse failure into an allow.
 - `ui/chrome.ts` is the shared visual vocabulary for AIO-owned surfaces:
   theme-aware accent rails, headers, items, hints, dividers, pluralization, and
   ANSI-aware width fitting. Diff/approval, pretty tools, copy picker, queue,
@@ -154,14 +239,12 @@ generated `dist/` tree without changing the package contract.
 - `yaml-hooks/` is ported from pi-yaml-hooks (MIT, KristjanPikhof — see
   `yaml-hooks/LICENSE` and `yaml-hooks/UPSTREAM.md`). It owns the
   `hooks.yaml` automation surface: discovery + trust, bash/tool/notify/
-  confirm/setStatus actions, `/hooks-*` commands, prompt context injection,
-  and the opt-in `PI_YAML_HOOKS_ENABLE_USER_BASH=1` interception. It
-  registers LAST so its `user_bash` interception wraps the blocklist,
-  permission-modes, and user-bash gates (the runner honors the first
-  non-undefined `user_bash` result; the earlier gates win). It owns no tool
-  names. Failure semantics: prompt hooks fail-open, post-tool hooks
-  fail-open, user-bash interception fails closed, cleanup hooks are
-  best-effort. All `PI_YAML_HOOKS_*` env names and YAML validation error
+  confirm/setStatus actions, `/hooks-*` commands, and prompt context injection.
+  It registers LAST for agent tool-hook composition and owns no tool names.
+  Explicit user !/!! commands are never intercepted; the legacy
+  `PI_YAML_HOOKS_ENABLE_USER_BASH` name is retained but ignored. Failure
+  semantics: prompt hooks fail-open, post-tool hooks fail-open, cleanup hooks
+  are best-effort. All `PI_YAML_HOOKS_*` env names and YAML validation error
   codes are append-only contracts.
 - `tuicr/` is ported from @joelazar/pi-tuicr v1.1.0 (MIT, joelazar — see
   `tuicr/UPSTREAM.md` and `tuicr/LICENSE`). It owns the `/tuicr` command and
@@ -220,7 +303,7 @@ generated `dist/` tree without changing the package contract.
   the agent cannot open panes on its own. No gating, no tool-name overlap;
   degrades silently when nvim or every launcher is missing (the command
   reports the exact command to run).
-- `styles/` owns `/style` (`none | collaborate | tutor | concise | humanised`):
+- `styles/` owns `/style` (`none | collaborate | tutor | concise | ste`):
   opt-in interaction styles layered on top of permission modes. A style only injects a hidden
   per-turn `styles-context` instruction (mode-aware, e.g. no `TODO(human)`
   markers in ask/plan); it never gates tools, and it is NOT a permission mode
@@ -233,10 +316,14 @@ generated `dist/` tree without changing the package contract.
   canonical `tutor` (not advertised as a separate style). Concise minimizes
   commentary without hiding warnings, skipping checks/approvals, or dropping
   the required plan format; user requests for detail override its brevity.
-  Humanised covers all user-facing communication: build shared understanding
-  before granular requirements/options, keep technical detail when useful, and
-  avoid forced formality or slang without bypassing required questions,
-  approvals, verification, or the plan contract.
+  STE applies ASD-STE100 Simplified Technical English writing principles to
+  user-facing text and documentation: short sentences (20 words in instructions,
+  25 in descriptions), one instruction per sentence, active voice, simple verbs,
+  and consistent terms. Preserve exact code/commands/identifiers and technical
+  detail, warnings, questions, approvals, verification, and the plan contract.
+  This is guidance, not dictionary enforcement or certified compliance. The former
+  `humanised` command and saved name map to canonical `ste`; menus, completions,
+  and new entries use `ste`, with display label Simplified Technical English.
   Its `context` handler
   keeps only the latest instruction and strips all of them once the style is
   `none`. In subagent children
@@ -282,7 +369,33 @@ generated `dist/` tree without changing the package contract.
   the foreground tool card (repainted every 1s), the above-editor widget
   (1s ticker that stops when no run is active; stall warning tone after
   120s without events outside a tool), and `subagent status`. Streaming
-  deltas are throttled to one repaint per 250ms.
+  deltas are throttled to one repaint per 250ms. The same events (plus
+  child stderr) also fold into a bounded per-child `ChildRunStatus.transcript`
+  (`transcript.ts`: thinking, responses, tool calls with args/results,
+  logs, retry/compaction/attempt notices; ≤500 entries / 250k chars per
+  child, blocks clipped head+tail; only the 10 most recent finished runs
+  keep theirs). It is in-memory only — never in tool details, `publicRun`,
+  or model context. `/subagents` and `alt+s` (TUI-only) open the
+  `inspector.ts` overlay: a list of every child of every run (active runs
+  first; parallel, queued, failed, stopped, background and foreground) and a
+  live follow-tail detail view (`tab`/`shift+tab` cycles all children across
+  runs, `o` expands tool output like ctrl+o, `t` hides thinking). It repaints
+  on its own 500ms ticker over the registry and closes on shutdown. Its model
+  row/effort pill and `r` resume action use the original child launch settings.
+  `history.ts` restores the selected branch's latest 50 runs from legacy tool
+  details/completion messages and versioned `aio-subagent-state` custom entries.
+  Checkpoints persist launch/lifecycle changes, not streaming deltas; private
+  agent/extension launch snapshots stay outside public details/model context
+  (not encrypted). Reopened active records are interrupted, never auto-spawned;
+  saved live PIDs block competing recovery. Legacy runs without original launch
+  snapshots are inspectable only. `saved-transcript.ts` lazily reads a ≤1 MB
+  tail of the child's selected branch for historical inspection (one overlay
+  cache, still ≤500 entries/250k chars); missing files fall back to saved output.
+  Tree reconciliation refreshes decoded records but preserves locally owned
+  run/process identity. Canonical session-file ownership survives ancestor-row
+  eviction. Detached lifecycle changes (including explicit stops) stay dirty,
+  exempt from every pruning path, until reattachment checkpoints them on their
+  own branch without stale follow-ups; session epochs guard replacements.
 - `you-should-know/` owns the YSK shadow auditor: successful
   `write`/`edit`/`apply_patch` tool results are debounced into one bounded,
   isolated `ctx.modelRegistry.complete()` audit (the sub-agent) whose findings
@@ -325,6 +438,12 @@ generated `dist/` tree without changing the package contract.
   else footer status. No settings file, no tool names, no gating; registration
   order is not load-bearing (late, beside YSK, before yaml-hooks). Subagent
   children register no command but keep the entry renderer.
+- `session-naming/` gives fresh unnamed parent sessions a native Pi title after
+  their first successful `agent_end`, using one isolated, bounded background
+  request on the session model. No model-context injection, tools, settings,
+  or backfill. Existing/resumed/reloaded/forked sessions and manual names are
+  preserved. Shutdown aborts work; session identity and name are rechecked
+  before applying a late result. Subagent children register nothing.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

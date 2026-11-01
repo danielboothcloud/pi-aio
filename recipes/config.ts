@@ -6,8 +6,13 @@
 // every other global recipe stays. Project recipes are only read for trusted
 // projects (same gate as browser-search's aio.browserSearch).
 //
-//   Global:  <agentDir>/aio-recipes.json      (getAgentDir(), ~/.pi/agent)
-//   Project: <cwd>/.pi/aio-recipes.json       (CONFIG_DIR_NAME)
+//   Global:    <agentDir>/aio-recipes.json      (getAgentDir(), ~/.pi/agent)
+//   Project:   <cwd>/.pi/aio-recipes.json       (CONFIG_DIR_NAME)
+//   Directory: <cwd>/.pi-recipe or <cwd>/.pi-recipe.json (same JSON shape;
+//              launch cwd only, no parent walk). Gated by explicit,
+//              content-pinned per-file trust (trust.ts) — folder trust never
+//              covers it. Its defaultRecipe wins over the other tiers
+//              and starts like `pi --recipe <name>` (see trampoline.ts).
 //
 // AIO_RECIPES_FILE replaces the global file path (tests + sandboxes), the
 // same contract goal-settings and YSK use for their settings files.
@@ -22,13 +27,11 @@
 //                                            // `:thinking` suffix honored
 //       "thinkingLevel": "high",              // off|minimal|low|medium|high|xhigh|max
 //       "models": ["anthropic/*", "openai-codex/*"], // --models scope (restart-scoped)
-//       "tools": ["+codemode", "-hypa_*"],     // defaultTools grammar (see resolveToolSet)
-//       "instructions": "Always wire the coffee machine integration first.",
-//       "skills": ["skills/home/"],            // resource paths, resolved from
-//       "prompts": ["prompts/home-review.md"], // the file that declared them
-//       "themes": [],
 //       "mcpServers": { "linear": { "url": "https://mcp.example.com/linear" } },
-//       "extensions": ["otty-integration", "npm:pi-web-access"] // restart-scoped
+//       "extensions": ["otty-integration", "npm:pi-web-access"], // restart-scoped
+//       "blocklist": { "match": "command", "entries": ["^vault\\b"] } // session-scoped;
+//                                            // same shape as aio-blocklist.json
+//                                            // (or a bare entries array)
 //     }
 //   }
 // }
@@ -38,7 +41,7 @@
 // warning per unreadable file so the user can fix it).
 // ---------------------------------------------------------------------------
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
@@ -47,6 +50,7 @@ import {
 	getAgentDir,
 	type McpServerConfig,
 } from "@earendil-works/pi-coding-agent";
+import { parseBlocklistConfig, type BlocklistEntry } from "../blocklist/config.js";
 
 export const RECIPES_FILE_NAME = "aio-recipes.json";
 /** Replaces the global recipes file (tests + sandboxes). */
@@ -55,11 +59,13 @@ export const RECIPES_FILE_ENV = "AIO_RECIPES_FILE";
 export const ACTIVE_RECIPE_ENV = "AIO_RECIPE_ACTIVE";
 /** Guard env: set on the relaunched child so it never relaunches again. */
 export const RECIPE_STAGE_ENV = "AIO_RECIPE_STAGE";
+/** Count of recipe-injected argv tokens; removable on a later TUI /resume. */
+export const RECIPE_INJECTED_ARGS_ENV = "AIO_RECIPE_INJECTED_ARGS";
 /** The CLI flag name (`--recipe`). */
 export const RECIPE_FLAG = "recipe";
 /** Session entry that pins the active recipe on the branch. */
 export const RECIPE_STATE_ENTRY = "recipe-state";
-/** Hidden per-turn message customType; only the latest one reaches the model. */
+/** Legacy recipe instruction messages, stripped from resumed/forked context. */
 export const RECIPE_CONTEXT_TYPE = "recipe-context";
 /** Footer status key (status-line's `statuses` segment renders it). */
 export const RECIPE_STATUS_KEY = "recipe";
@@ -86,7 +92,12 @@ export const PI_SUBCOMMANDS: readonly string[] = [
 	"mcp",
 ];
 
-export type RecipeSource = "global" | "project";
+export type RecipeSource = "global" | "project" | "directory";
+
+/** Per-directory recipe files, checked in this order in the launch cwd only. */
+export const DIRECTORY_RECIPE_FILE_NAMES: readonly string[] = [".pi-recipe", ".pi-recipe.json"];
+/** Set beside ACTIVE_RECIPE_ENV when the relaunch came from a directory default. */
+export const RECIPE_ORIGIN_ENV = "AIO_RECIPE_ORIGIN";
 
 /** One recipe, strictly JSON-native so it round-trips through load/merge. */
 export interface RecipeConfig {
@@ -96,25 +107,23 @@ export interface RecipeConfig {
 	thinkingLevel?: ThinkingLevel;
 	/** `--models` patterns (restart-scoped: applied only by the relaunch bridge). */
 	models?: string[];
-	/** defaultTools grammar: plain names replace, `+name`/`-name` entries delta. */
-	tools?: string[];
-	/** Sent to the model as a hidden per-turn `[RECIPE ACTIVE]` block. */
-	instructions?: string;
-	/** Skill paths (files or directories), resolved from the declaring file. */
-	skills?: string[];
-	prompts?: string[];
-	themes?: string[];
 	/** registerMcpServer configs, validated at registration time. */
 	mcpServers: Record<string, McpServerConfig>;
 	/** Extension sources for the relaunch bridge (restart-scoped). */
 	extensions?: string[];
+	/**
+	 * Extra hard-blocklist entries while this recipe is active (session-scoped;
+	 * unioned with the global/project aio-blocklist.json files, never
+	 * replacing them). Already parsed: the `match` default is folded in.
+	 */
+	blocklist?: BlocklistEntry[];
 }
 
 /** A recipe merged across the two config tiers, with provenance. */
 export interface RecipeDefinition {
 	name: string;
 	source: RecipeSource;
-	/** Resource paths declared by this recipe resolve from here. */
+	/** Directory of the declaring config, retained for status provenance. */
 	baseDir: string;
 	config: RecipeConfig;
 }
@@ -124,6 +133,10 @@ export interface RecipesConfig {
 	recipes: Record<string, RecipeDefinition>;
 	/** Optional recipe that auto-activates on fresh `pi` starts. */
 	defaultRecipe?: string;
+	/** Which tier supplied defaultRecipe. */
+	defaultSource?: RecipeSource;
+	/** The cwd's `.pi-recipe`/`.pi-recipe.json`, present whether or not it was trusted. */
+	directoryFile?: string;
 	/** True when no recipes are configured anywhere. */
 	empty: boolean;
 }
@@ -146,6 +159,29 @@ export function globalRecipesPath(): string | undefined {
 
 export function projectRecipesPath(cwd: string): string {
 	return join(cwd, CONFIG_DIR_NAME, RECIPES_FILE_NAME);
+}
+
+function isFile(path: string): boolean {
+	try {
+		return statSync(path).isFile();
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * The cwd's directory recipe file: `.pi-recipe` first, then
+ * `.pi-recipe.json`. When both exist the first wins and the other is
+ * reported once, so a stale copy never silently shadows edits.
+ */
+export function directoryRecipesPath(cwd: string): string | undefined {
+	const found = DIRECTORY_RECIPE_FILE_NAMES.map((name) => join(cwd, name)).filter(isFile);
+	const ignored = found[1];
+	if (ignored && !warnedFiles.has(ignored)) {
+		warnedFiles.add(ignored);
+		warnOnce(`both ${found[0]} and ${ignored} exist; using the first and ignoring ${ignored}`);
+	}
+	return found[0];
 }
 
 function agentDirFor(extensionName: string): string {
@@ -217,15 +253,14 @@ export function parseRecipeConfig(
 	const thinkingLevel = parseThinkingLevel(entry.thinkingLevel);
 	if (thinkingLevel) config.thinkingLevel = thinkingLevel;
 	config.models = parseStringList(entry.models);
-	config.tools = parseStringList(entry.tools);
-	if (typeof entry.instructions === "string" && entry.instructions.trim()) {
-		config.instructions = entry.instructions;
-	}
-	config.skills = parseStringList(entry.skills);
-	config.prompts = parseStringList(entry.prompts);
-	config.themes = parseStringList(entry.themes);
 	config.mcpServers = parseMcpServers(entry.mcpServers);
 	config.extensions = parseStringList(entry.extensions);
+	if (entry.blocklist !== undefined) {
+		const blocklist = parseBlocklistConfig(entry.blocklist);
+		if (blocklist.enabled && blocklist.entries.length > 0) {
+			config.blocklist = blocklist.entries;
+		}
+	}
 
 	return { name, source, baseDir, config };
 }
@@ -326,18 +361,20 @@ function collectRecipes(
  * global ones; other global recipes survive (an override, not a union — a
  * work recipe can neutralize a home MCP server by redefining the recipe).
  * `loadRecipes` itself reads the project file only when `projectTrusted` is
- * true, mirroring browser-search's config gate.
+ * true, mirroring browser-search's config gate, and the directory file
+ * (`.pi-recipe`) only when `directoryTrusted` is true (see trust.ts).
+ * Override order: global < project < directory, for recipes and default.
  */
 export function loadRecipes(
 	cwd?: string,
-	options: { projectTrusted?: boolean } = {},
+	options: { projectTrusted?: boolean; directoryTrusted?: boolean } = {},
 ): RecipesConfig {
 	const globalPath = globalRecipesPath();
 	const recipes: Record<string, RecipeDefinition> = {};
 	let globalDir = homedir();
 	if (globalPath) {
-		// Resource paths in the global file resolve from the agent dir (or the
-		// sandbox root AIO_RECIPES_FILE points into).
+		// Record the declaring agent dir (or the sandbox root AIO_RECIPES_FILE
+		// points into) for status provenance.
 		globalDir = globalRecipesBaseDir(globalPath);
 		Object.assign(recipes, collectRecipes(globalPath, "global", globalDir));
 	}
@@ -349,19 +386,51 @@ export function loadRecipes(
 		);
 	}
 
+	const directoryFile = cwd ? directoryRecipesPath(cwd) : undefined;
+	let directoryRecipes: Record<string, RecipeDefinition> = {};
+	if (cwd && directoryFile && options.directoryTrusted) {
+		// Directory recipes retain the folder itself as their config source.
+		directoryRecipes = collectRecipes(directoryFile, "directory", cwd);
+		Object.assign(recipes, directoryRecipes);
+	}
+
 	let defaultRecipe: string | undefined;
+	let defaultSource: RecipeSource | undefined;
 	if (globalPath) {
 		defaultRecipe = readDefaultRecipe(globalPath, "global");
+		if (defaultRecipe) defaultSource = "global";
 	}
 	if (cwd && options.projectTrusted) {
 		const projectDefault = readDefaultRecipe(projectRecipesPath(cwd), "project");
-		if (projectDefault) defaultRecipe = projectDefault;
+		if (projectDefault) {
+			defaultRecipe = projectDefault;
+			defaultSource = "project";
+		}
 	}
-	if (defaultRecipe && !recipes[defaultRecipe]) defaultRecipe = undefined;
+	if (directoryFile && options.directoryTrusted) {
+		// A `.pi-recipe` is portable: its default must be defined in the file
+		// itself, never resolved against this user's global/project recipes.
+		const directoryDefault = readDefaultRecipe(directoryFile, "directory");
+		if (directoryDefault && directoryRecipes[directoryDefault]) {
+			defaultRecipe = directoryDefault;
+			defaultSource = "directory";
+		} else if (directoryDefault && !warnedFiles.has(`${directoryFile}#default`)) {
+			warnedFiles.add(`${directoryFile}#default`);
+			warnOnce(
+				`${directoryFile}: defaultRecipe "${directoryDefault}" must be defined in that file's "recipes"; ignoring it`,
+			);
+		}
+	}
+	if (defaultRecipe && !recipes[defaultRecipe]) {
+		defaultRecipe = undefined;
+		defaultSource = undefined;
+	}
 
 	return {
 		recipes,
 		defaultRecipe,
+		defaultSource,
+		directoryFile,
 		empty: Object.keys(recipes).length === 0,
 	};
 }

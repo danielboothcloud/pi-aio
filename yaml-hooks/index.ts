@@ -2,7 +2,7 @@
 //
 // Registers the YAML-driven hooks adapter: hooks.yaml discovery + trust,
 // bash/tool/notify/confirm/setStatus actions, /hooks-* commands, prompt
-// context injection, and opt-in human-bash interception. Ported from
+// context injection. Explicit user !/!! commands are never intercepted. Ported from
 // pi-yaml-hooks (MIT) — see UPSTREAM.md.
 
 import type { ExtensionAPI, ExtensionContext, ToolCallEvent, ToolResultEvent } from "@earendil-works/pi-coding-agent";
@@ -66,7 +66,7 @@ export default function registerYamlHooks(
 	// The adapter owns host-adapter creation and the SDK event wiring.
 	registerAdapter(pi, runtimeRegistry);
 
-	// Opt-in human-bash interception (PI_YAML_HOOKS_ENABLE_USER_BASH=1).
+	// Compatibility no-op: PI_YAML_HOOKS_ENABLE_USER_BASH is retired.
 	registerUserBashInterception(pi, { runtimeRegistry });
 }
 

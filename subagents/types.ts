@@ -1,5 +1,6 @@
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import type { ChildExtensionLaunch } from "./extensions.js";
+import type { ChildTranscript } from "./transcript.js";
 
 export type SubagentContext = "fresh" | "fork";
 export type SubagentThinking =
@@ -100,6 +101,7 @@ export interface ChildRunResult {
 	error?: string;
 	exitCode: number;
 	model?: string;
+	thinking?: SubagentThinking;
 	sessionFile?: string;
 	startedAt: number;
 	endedAt: number;
@@ -119,6 +121,8 @@ export interface ChildRunStatus {
 	task: string;
 	state: SubagentRunState;
 	model?: string;
+	/** Resolved launch effort, independent of the parent's current setting. */
+	thinking?: SubagentThinking;
 	startedAt?: number;
 	endedAt?: number;
 	output?: string;
@@ -126,6 +130,11 @@ export interface ChildRunStatus {
 	sessionFile?: string;
 	attempts?: number;
 	activity?: ChildActivity;
+	/**
+	 * Bounded live transcript for the inspector overlay. In-memory only: never
+	 * published in tool details or model context; discarded for older runs.
+	 */
+	transcript?: ChildTranscript;
 	reapedAfterSettle?: boolean;
 	process?: ChildProcessWithoutNullStreams;
 }
@@ -142,6 +151,8 @@ export interface SubagentRun {
 	results: ChildRunResult[];
 	error?: string;
 	stopRequested: boolean;
+	/** Manual continuation; the original run/result stays unchanged. */
+	resumedFrom?: { runId: string; index: number };
 }
 
 export interface ParentLaunchContext {
@@ -156,6 +167,19 @@ export interface ParentLaunchContext {
 	 */
 	extensionLaunch?: ChildExtensionLaunch;
 	modelProvider?: string;
+}
+
+/** Durable private launch data, stored outside model context for recovery. */
+export interface ChildLaunchSnapshot {
+	task: SubagentTask;
+	request: Pick<SubagentRunRequest, "context" | "timeoutMs">;
+	agent: AgentConfig;
+	parent: ParentLaunchContext;
+	resumed: boolean;
+	/** Runner-owned directory, used to find a fork interrupted before exit. */
+	sessionDir?: string;
+	/** Conservatively refuse competing resumes while this process is alive. */
+	pid?: number;
 }
 
 export interface SpawnSpec {

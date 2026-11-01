@@ -1,29 +1,28 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import { registerRecipes } from "./index.ts";
+import { recipeScaffold, registerRecipes } from "./index.ts";
+import { ProjectTrustStore } from "@earendil-works/pi-coding-agent";
 import {
 	ACTIVE_RECIPE_ENV,
 	RECIPE_CONTEXT_TYPE,
 	RECIPE_FLAG,
+	RECIPE_ORIGIN_ENV,
+	RECIPE_STAGE_ENV,
 	RECIPE_STATE_ENTRY,
 	RECIPES_FILE_ENV,
 } from "./config.ts";
 import { recipeRuntime, resetRecipeRuntimeForTests } from "./apply.ts";
+import { TRUST_CHOICE_LABELS, recipeFileTrust, recordRecipeFileTrust } from "./trust.ts";
 import { RECIPE_STATUS_ENTRY, type RecipeStatusReport } from "./status.ts";
 
 // Isolated agent dir for loadRecipes (PI_CODING_AGENT_DIR + the
 // AIO_RECIPES_FILE scratch contract the same way the blocklist suite does).
-const tmp = mkdtempSync(join(tmpdir(), "aio-recipes-registration-"));
+const tmp = mkdtempSync(join(process.cwd(), "test/.recipes-registration-"));
 const agentDir = join(tmp, "agent");
-mkdirSync(join(agentDir, "skills"), { recursive: true });
-writeFileSync(
-	join(agentDir, "skills", "work.md"),
-	"# work skill",
-);
+mkdirSync(agentDir, { recursive: true });
 function writeRecipesFile(config: unknown): void {
 	writeFileSync(join(agentDir, "aio-recipes.json"), JSON.stringify(config));
 }
@@ -34,12 +33,9 @@ function restoreRecipesFile(): void {
 			home: {
 				description: "Personal stack",
 				model: "anthropic/claude-5:high",
-				tools: ["+codemode"],
 			},
 			work: {
 				description: "Work subscriptions",
-				instructions: "Ship carefully.",
-				skills: ["skills/work.md"],
 				mcpServers: { linear: { url: "https://mcp.example.com/linear" } },
 			},
 		},
@@ -51,6 +47,8 @@ process.env.PI_CODING_AGENT_DIR = agentDir;
 process.env[RECIPES_FILE_ENV] = join(agentDir, "aio-recipes.json");
 
 const SAVED_ACTIVE_RECIPE = process.env[ACTIVE_RECIPE_ENV];
+const SAVED_ORIGIN = process.env[RECIPE_ORIGIN_ENV];
+const SAVED_STAGE = process.env[RECIPE_STAGE_ENV];
 const SAVED_SUBAGENT_CHILD = process.env.AIO_SUBAGENT_CHILD;
 
 test.after(() => {
@@ -58,6 +56,10 @@ test.after(() => {
 	delete process.env[RECIPES_FILE_ENV];
 	if (SAVED_ACTIVE_RECIPE === undefined) delete process.env[ACTIVE_RECIPE_ENV];
 	else process.env[ACTIVE_RECIPE_ENV] = SAVED_ACTIVE_RECIPE;
+	if (SAVED_ORIGIN === undefined) delete process.env[RECIPE_ORIGIN_ENV];
+	else process.env[RECIPE_ORIGIN_ENV] = SAVED_ORIGIN;
+	if (SAVED_STAGE === undefined) delete process.env[RECIPE_STAGE_ENV];
+	else process.env[RECIPE_STAGE_ENV] = SAVED_STAGE;
 	if (SAVED_SUBAGENT_CHILD === undefined) delete process.env.AIO_SUBAGENT_CHILD;
 	else process.env.AIO_SUBAGENT_CHILD = SAVED_SUBAGENT_CHILD;
 	rmSync(tmp, { recursive: true, force: true });
@@ -199,6 +201,8 @@ test.beforeEach(() => {
 	resetRecipeRuntimeForTests();
 	restoreRecipesFile();
 	delete process.env[ACTIVE_RECIPE_ENV];
+	delete process.env[RECIPE_ORIGIN_ENV];
+	delete process.env[RECIPE_STAGE_ENV];
 	delete process.env.AIO_SUBAGENT_CHILD;
 });
 
@@ -218,8 +222,6 @@ test("registration wires the flag, command, and lifecycle events", async () => {
 		"context",
 		"session_start",
 		"session_tree",
-		"resources_discover",
-		"before_agent_start",
 		"session_shutdown",
 	]) {
 		assert.ok(state.events.has(event), `${event} handler registered`);
@@ -275,18 +277,16 @@ test("session_start applies a --recipe flag selection end to end", async () => {
 	assert.equal(runtime.activeName, "home");
 	assert.equal(runtime.source, "flag");
 	assert.match(state.statuses.get("recipe")!, /recipe:home/);
-	// Model + `:high` suffix thinking + tools delta applied, and the state
+	// Model + `:high` suffix thinking applied, and the state
 	// entry pins the selection on the branch.
 	assert.deepEqual(state.setModelCalls, [{ provider: "anthropic", id: "claude-5" }]);
 	assert.deepEqual(state.thinkingCalls, ["high"]);
-	assert.deepEqual(state.setActiveCalls, [
-		["read", "bash", "edit", "write", "codemode"],
-	]);
+	assert.deepEqual(state.setActiveCalls, []);
 	assert.deepEqual(state.entries, [{ customType: RECIPE_STATE_ENTRY, data: { name: "home" } }]);
 	assert.match(
 		state.notifications.find((n) =>
 			n.message.includes('Recipe "home" active'))!.message,
-		/applied: model, thinking, tools/,
+		/applied: model, thinking/,
 	);
 });
 
@@ -306,14 +306,14 @@ test("session_start precedence: env (relaunched child) beats a session entry; fl
 	// A bridged relaunch (env) outranks the session entry.
 	state.flagValues.clear();
 	process.env[ACTIVE_RECIPE_ENV] = "work";
-	await fire(state, "session_start", { type: "session_start", reason: "resume" }, makeCtx(state));
+	await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
 	assert.equal(recipeRuntime().source, "env");
 	assert.equal(recipeRuntime().activeName, "work");
 	assert.equal(state.entries.length, 1, "env selection pins its own entry");
 
 	// The --recipe flag beats everything.
 	state.flagValues.set(RECIPE_FLAG, "home");
-	await fire(state, "session_start", { type: "session_start", reason: "resume" }, makeCtx(state));
+	await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
 	assert.equal(recipeRuntime().source, "flag");
 	assert.equal(recipeRuntime().activeName, "home");
 });
@@ -393,7 +393,7 @@ test("reload preserves a scope the user intentionally changed to all models", as
 	}
 });
 
-test("session_start auto-activates defaultRecipe on a fresh startup only", async () => {
+test("global defaultRecipe stays startup-only when there is no trusted folder default", async () => {
 	const { pi, state } = makeMocks();
 	await registerRecipes(pi as never);
 
@@ -401,7 +401,7 @@ test("session_start auto-activates defaultRecipe on a fresh startup only", async
 	assert.equal(recipeRuntime().activeName, "home");
 	assert.equal(recipeRuntime().source, "default");
 
-	// A brand-new in-process session (/model new) never re-defaults.
+	// /new without a trusted folder recipe does not reapply the global default.
 	state.branchEntries = [];
 	await fire(state, "session_start", { type: "session_start", reason: "new" }, makeCtx(state));
 	assert.equal(recipeRuntime().activeName, undefined);
@@ -456,33 +456,28 @@ test("the bridge's opening notice is stored and fired once", async () => {
 	);
 });
 
-test("before_agent_start injects instructions and resources_discover exposes active paths", async () => {
+test("legacy recipe options neither inject context nor discover resources nor change tools", async () => {
+	writeRecipesFile({ recipes: { work: {
+		tools: ["read"], instructions: "Old rules", skills: ["skills/work.md"],
+		prompts: ["prompts/work.md"], themes: ["theme.json"],
+	} } });
 	const { pi, state } = makeMocks();
 	await registerRecipes(pi as never);
 	state.flagValues.set(RECIPE_FLAG, "work");
 	await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
-
-	const message = (await fire(state, "before_agent_start", {}, makeCtx(state))) as {
-		message: { customType: string; content: string; display: boolean };
-	};
-	assert.equal(message.message.customType, RECIPE_CONTEXT_TYPE);
-	assert.equal(message.message.display, false);
-	assert.match(message.message.content, /\[RECIPE "work" ACTIVE\]/);
-
-	const discovered = (await fire(
-		state,
-		"resources_discover",
-		{ type: "resources_discover", cwd: "/tmp/project", reason: "startup" },
-		makeCtx(state),
-	)) as { skillPaths: string[]; promptPaths: string[]; themePaths: string[] };
-	assert.deepEqual(discovered.skillPaths, [join(agentDir, "skills", "work.md")]);
-	assert.deepEqual(discovered.promptPaths, []);
-	assert.deepEqual(discovered.themePaths, []);
-
-	// No active recipe: resources_discover contributes nothing.
-	state.flagValues.clear();
-	await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
-	assert.equal(await fire(state, "resources_discover", { reason: "reload" }, makeCtx(state)), undefined);
+	assert.equal(recipeRuntime().activeName, "work");
+	assert.equal(state.events.has("before_agent_start"), false);
+	assert.equal(state.events.has("resources_discover"), false);
+	assert.deepEqual(state.activeTools, ["read", "bash", "edit", "write"]);
+	assert.deepEqual(state.setActiveCalls, []);
+	const plain = { role: "user", content: "Hello" };
+	const result = await fire(state, "context", { messages: [
+		{ role: "custom", customType: RECIPE_CONTEXT_TYPE, content: "Old rules" }, plain,
+	] }, makeCtx(state)) as { messages: unknown[] };
+	assert.deepEqual(result.messages, [plain], "active recipes also strip legacy instructions");
+	await state.commands.get("recipe")!.handler("off", makeCtx(state));
+	await state.commands.get("recipe")!.handler("work", makeCtx(state));
+	assert.deepEqual(state.setActiveCalls, [], "switching never changes tools");
 });
 
 test("/recipe switches mid-session and /recipe off clears", async () => {
@@ -605,7 +600,7 @@ test("/recipe completions cover names, descriptions, and off", async () => {
 	}>;
 	assert.deepEqual(
 		completions.map((c) => c.value),
-		["home", "work", "off", "status"],
+		["home", "work", "off", "init", "status"],
 	);
 	// Each named recipe carries its configured description.
 	assert.equal(
@@ -614,4 +609,483 @@ test("/recipe completions cover names, descriptions, and off", async () => {
 	);
 	const none = await command.getArgumentCompletions?.("zzz");
 	assert.equal(none, null, "empty completions yield null");
+});
+
+// ---------------------------------------------------------------------------
+// .pi-recipe directory defaults
+// ---------------------------------------------------------------------------
+
+function makeRepo(name: string, config: unknown): string {
+	const dir = join(tmp, name);
+	rmSync(dir, { recursive: true, force: true });
+	mkdirSync(dir, { recursive: true });
+	writeFileSync(join(dir, ".pi-recipe"), JSON.stringify(config));
+	return dir;
+}
+
+async function withEnv(values: Record<string, string>, body: () => Promise<void>): Promise<void> {
+	const saved = Object.fromEntries(Object.keys(values).map((key) => [key, process.env[key]]));
+	Object.assign(process.env, values);
+	try {
+		await body();
+	} finally {
+		for (const [key, value] of Object.entries(saved)) {
+			if (value === undefined) delete process.env[key];
+			else process.env[key] = value;
+		}
+	}
+}
+
+test("a trusted .pi-recipe default activates on a fresh startup with its own marker", async () => {
+	const cwd = makeRepo("repo-trusted", {
+		defaultRecipe: "repo",
+		recipes: { repo: { description: "Repo stack" } },
+	});
+	recordRecipeFileTrust(join(cwd, ".pi-recipe"), true);
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+
+	await fire(state, "session_start", { type: "session_start", reason: "startup" }, { ...makeCtx(state), cwd });
+	assert.equal(state.selectReturns.length, 0);
+	assert.equal(recipeRuntime().activeName, "repo");
+	assert.equal(recipeRuntime().source, "directory");
+	assert.equal(recipeRuntime().active?.source, "directory");
+	assert.deepEqual(state.entries.at(-1), { customType: RECIPE_STATE_ENTRY, data: { name: "repo" } });
+
+	// A recipe picked mid-session is pinned and restored on resume.
+	await state.commands.get("recipe")!.handler("work", { ...makeCtx(state), cwd });
+	state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name: "work" } }];
+	await fire(state, "session_start", { type: "session_start", reason: "resume" }, { ...makeCtx(state), cwd });
+	assert.equal(recipeRuntime().activeName, "work");
+});
+
+test("/new applies and pins the trusted folder recipe, including model, thinking and MCP", async () => {
+	const cwd = makeRepo("repo-new", {
+		defaultRecipe: "repo",
+		recipes: { repo: {
+			model: "anthropic/claude-5", thinkingLevel: "high",
+			mcpServers: { repo: { url: "https://mcp.example.com/repo" } },
+		} },
+	});
+	recordRecipeFileTrust(join(cwd, ".pi-recipe"), true);
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	// The old session's selection/off marker does not belong to a new branch.
+	state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name: null } }];
+	await fire(state, "session_start", { type: "session_start", reason: "resume" }, { ...makeCtx(state), cwd });
+	state.branchEntries = [];
+	await fire(state, "session_start", { type: "session_start", reason: "new" }, { ...makeCtx(state), cwd });
+	assert.equal(recipeRuntime().activeName, "repo");
+	assert.equal(recipeRuntime().source, "directory");
+	assert.deepEqual(state.setModelCalls, [{ provider: "anthropic", id: "claude-5" }]);
+	assert.deepEqual(state.thinkingCalls, ["high"]);
+	assert.ok(state.registeredMcp.has("repo"));
+	assert.deepEqual(state.entries.at(-1), { customType: RECIPE_STATE_ENTRY, data: { name: "repo" } });
+});
+
+test("/new uses the current trusted directory default, never a stale launch marker", async () => {
+	const cwd = makeRepo("repo-new-default", { defaultRecipe: "repo", recipes: { repo: {}, updated: {} } });
+	const file = join(cwd, ".pi-recipe");
+	recordRecipeFileTrust(file, true);
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	await withEnv({ [ACTIVE_RECIPE_ENV]: "repo", [RECIPE_ORIGIN_ENV]: "directory", [RECIPE_STAGE_ENV]: "1" }, async () => {
+		writeFileSync(file, JSON.stringify({ defaultRecipe: "updated", recipes: { repo: {}, updated: {} } }));
+		// Case                       Expected /new recipe
+		// edited, not re-trusted      none (no global fallback)
+		// edited, explicitly trusted updated (not old bridge's repo)
+		await fire(state, "session_start", { type: "session_start", reason: "new" }, { ...makeCtx(state), cwd });
+		assert.equal(recipeRuntime().activeName, undefined);
+		recordRecipeFileTrust(file, true);
+		await fire(state, "session_start", { type: "session_start", reason: "new" }, { ...makeCtx(state), cwd });
+		assert.equal(recipeRuntime().activeName, "updated");
+		assert.equal(recipeRuntime().source, "directory");
+	});
+});
+
+test("an explicit launch --recipe still overrides the folder default on /new", async () => {
+	const cwd = makeRepo("repo-new-override", { defaultRecipe: "repo", recipes: { repo: {} } });
+	recordRecipeFileTrust(join(cwd, ".pi-recipe"), true);
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	state.flagValues.set(RECIPE_FLAG, "home");
+	await fire(state, "session_start", { type: "session_start", reason: "new" }, { ...makeCtx(state), cwd });
+	assert.equal(recipeRuntime().activeName, "home");
+	assert.equal(recipeRuntime().source, "flag");
+});
+
+test("a directory relaunch is a default: a restored session recipe outranks it", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	await withEnv(
+		{ [ACTIVE_RECIPE_ENV]: "work", [RECIPE_ORIGIN_ENV]: "directory", [RECIPE_STAGE_ENV]: "1" },
+		async () => {
+			// Fresh relaunched child: the bridged default applies.
+			await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
+			assert.equal(recipeRuntime().activeName, "work");
+			assert.equal(recipeRuntime().source, "directory");
+
+			// /resume inside that child: the resumed session's recipe wins.
+			state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name: "home" } }];
+			await fire(state, "session_start", { type: "session_start", reason: "resume" }, makeCtx(state));
+			assert.equal(recipeRuntime().activeName, "home");
+			assert.equal(recipeRuntime().source, "session");
+
+			// Without a trusted folder default, /new ignores the old bridge's name.
+			state.branchEntries = [];
+			await fire(state, "session_start", { type: "session_start", reason: "new" }, makeCtx(state));
+			assert.equal(recipeRuntime().activeName, undefined);
+		},
+	);
+});
+
+test("a continue bridge keeps branch selection authoritative and does not re-pin it", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	await withEnv(
+		{ [ACTIVE_RECIPE_ENV]: "work", [RECIPE_ORIGIN_ENV]: "session", [RECIPE_STAGE_ENV]: "1" },
+		async () => {
+			for (const [reason, name] of [["startup", "work"], ["resume", "home"], ["resume", null], ["startup", null]] as const) {
+				state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name } }];
+				await fire(state, "session_start", { type: "session_start", reason }, makeCtx(state));
+				assert.equal(recipeRuntime().activeName, name ?? undefined);
+				assert.equal(state.entries.length, 0, "restores do not append another recipe-state entry");
+			}
+			state.branchEntries = [];
+			await fire(state, "session_start", { type: "session_start", reason: "new" }, makeCtx(state));
+			assert.equal(recipeRuntime().activeName, undefined);
+		},
+	);
+});
+
+test("TUI /resume uses the selected branch recipe, not an old --recipe or bridge marker", async () => {
+	writeRecipesFile({ recipes: { work: { models: ["anthropic/claude-5"], extensions: ["/work.ts"] }, home: {} } });
+	const { pi, state } = makeMocks();
+	let selected: { recipeName: string; args: string[] } | undefined;
+	await registerRecipes(pi as never, { relaunch: async spec => { selected = spec; return true; } });
+	const originalArgv = process.argv;
+	try {
+		process.argv = [...originalArgv.slice(0, 2), "--recipe", "home", "old prompt"];
+		state.flagValues.set(RECIPE_FLAG, "home");
+		state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name: "work" } }];
+		const ctx = makeCtx(state);
+		await fire(state, "session_start", { type: "session_start", reason: "resume" }, {
+			...ctx, sessionManager: { ...ctx.sessionManager, getSessionFile: () => "/selected.jsonl" },
+			ui: { ...ctx.ui, custom: async (factory: Function) => {
+				let result: unknown;
+				await factory({ stop() {}, start() {}, requestRender() {} }, {}, {}, (value: unknown) => { result = value; });
+				return result;
+			} },
+		});
+		assert.equal(selected?.recipeName, "work");
+		assert.ok(selected?.args.includes("/selected.jsonl"));
+		assert.ok(!selected?.args.includes("old prompt"));
+		assert.equal(state.entries.length, 0);
+	} finally {
+		process.argv = originalArgv;
+	}
+});
+
+test("RPC /resume does not spawn a competing protocol reader and reports a restart hint", async () => {
+	writeRecipesFile({ recipes: { work: { model: "anthropic/claude-5", models: ["anthropic/*"], thinkingLevel: "high" } } });
+	const { pi, state } = makeMocks();
+	let relaunches = 0;
+	await registerRecipes(pi as never, { relaunch: async () => { relaunches++; return true; } });
+	state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name: "work" } }];
+	const ctx = makeCtx(state);
+	await fire(state, "session_start", { type: "session_start", reason: "resume" }, {
+		...ctx, mode: "rpc", sessionManager: { ...ctx.sessionManager, getSessionFile: () => "/selected.jsonl" },
+	});
+	assert.equal(relaunches, 0);
+	assert.equal(recipeRuntime().activeName, "work");
+	assert.equal(state.setModelCalls.length, 1);
+	assert.deepEqual(state.thinkingCalls, ["high"]);
+	assert.ok(state.notifications.some(notice => notice.type === "warning" && notice.message.includes("pi --session")));
+});
+
+async function flush(): Promise<void> {
+	for (let i = 0; i < 10; i++) await new Promise((resolve) => setImmediate(resolve));
+}
+
+test("a new .pi-recipe is asked about before launch, even when pi trusts the folder", async () => {
+	const cwd = makeRepo("repo-launch", {
+		defaultRecipe: "repo",
+		recipes: { repo: { description: "Repo stack" } },
+	});
+	const file = join(cwd, ".pi-recipe");
+	new ProjectTrustStore(agentDir).set(cwd, true);
+	const asked: string[] = [];
+	const original = process.cwd();
+	process.chdir(cwd);
+	try {
+		const { pi, state } = makeMocks();
+		await registerRecipes(pi as never, {
+			interactiveLaunch: true,
+			promptTrust: async (path) => {
+				asked.push(path);
+				return "trust";
+			},
+		});
+		assert.equal(asked.length, 1);
+		assert.equal(recipeFileTrust(file), "trusted", "the answer is remembered");
+
+		await fire(state, "session_start", { type: "session_start", reason: "startup" }, { ...makeCtx(state), cwd });
+		assert.equal(recipeRuntime().activeName, "repo");
+		assert.equal(state.selectReturns.length, 0);
+
+		// Remembered: the next launch does not ask.
+		resetRecipeRuntimeForTests();
+		await registerRecipes(makeMocks().pi as never, {
+			interactiveLaunch: true,
+			promptTrust: async () => assert.fail("must not ask again"),
+		});
+	} finally {
+		process.chdir(original);
+	}
+});
+
+test("\"not now\" at launch skips the file without a second question in the session", async () => {
+	const cwd = makeRepo("repo-skip", { defaultRecipe: "repo", recipes: { repo: {} } });
+	writeRecipesFile({ recipes: { home: {} } });
+	const original = process.cwd();
+	process.chdir(cwd);
+	try {
+		const { pi, state } = makeMocks();
+		await registerRecipes(pi as never, { interactiveLaunch: true, promptTrust: async () => "skip" });
+		state.selectReturns = ["must not be consumed"];
+		await fire(state, "session_start", { type: "session_start", reason: "startup" }, { ...makeCtx(state), cwd });
+		await flush();
+		assert.equal(recipeRuntime().activeName, undefined);
+		assert.equal(state.selectReturns.length, 1);
+		assert.equal(recipeFileTrust(join(cwd, ".pi-recipe")), "unknown", "skip is not remembered");
+	} finally {
+		process.chdir(original);
+	}
+});
+
+test("without a launch prompt the session UI asks; trust activates, never is remembered", async () => {
+	const cwd = makeRepo("repo-session", {
+		defaultRecipe: "repo",
+		recipes: { repo: { description: "Repo stack" } },
+	});
+	const file = join(cwd, ".pi-recipe");
+	writeRecipesFile({ recipes: { home: {} } }); // no global default
+
+	const first = makeMocks();
+	await registerRecipes(first.pi as never);
+	let title = "";
+	const ctx = {
+		...makeCtx(first.state),
+		cwd,
+		mode: "rpc",
+		ui: {
+			...makeCtx(first.state).ui,
+			select: async (t: string) => {
+				title = t;
+				return TRUST_CHOICE_LABELS.trust;
+			},
+		},
+	};
+	await fire(first.state, "session_start", { type: "session_start", reason: "startup" }, ctx);
+	await flush();
+	assert.match(title, /Trust this recipe file\?/);
+	assert.match(title, /default recipe: repo/);
+	assert.equal(recipeFileTrust(file), "trusted");
+	assert.equal(recipeRuntime().activeName, "repo");
+	assert.equal(recipeRuntime().source, "directory");
+
+	// Editing the file asks again; "never" is remembered for that version.
+	writeFileSync(file, JSON.stringify({ defaultRecipe: "repo", recipes: { repo: { model: "x/y" } } }));
+	resetRecipeRuntimeForTests();
+	const second = makeMocks();
+	await registerRecipes(second.pi as never);
+	second.state.selectReturns = [TRUST_CHOICE_LABELS.deny];
+	await fire(second.state, "session_start", { type: "session_start", reason: "startup" }, { ...makeCtx(second.state), cwd });
+	await flush();
+	assert.equal(recipeFileTrust(file), "denied");
+	assert.equal(recipeRuntime().activeName, undefined);
+
+	// /recipe trust overrides a remembered "never"; /recipe untrust forgets.
+	const completions = (await second.state.commands.get("recipe")!.getArgumentCompletions?.("")) as Array<{ value: string }>;
+	assert.ok(completions.some((c) => c.value === "trust"));
+	assert.ok(completions.some((c) => c.value === "untrust"));
+	assert.ok(!completions.some((c) => c.value === "init"), "no init while a file exists");
+	await second.state.commands.get("recipe")!.handler("trust", { ...makeCtx(second.state), cwd });
+	assert.equal(recipeFileTrust(file), "trusted");
+	assert.equal(recipeRuntime().activeName, "repo");
+	await second.state.commands.get("recipe")!.handler("untrust", { ...makeCtx(second.state), cwd });
+	assert.equal(recipeFileTrust(file), "unknown");
+	assert.match(second.state.notifications.at(-1)!.message, /next start asks again/);
+});
+
+test("/recipe init always scaffolds a full, self-contained, trusted .pi-recipe and refuses to overwrite", async () => {
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	const fresh = join(tmp, "My Repo");
+	rmSync(fresh, { recursive: true, force: true });
+	mkdirSync(fresh, { recursive: true });
+	const ctx = { ...makeCtx(state), cwd: fresh };
+	await fire(state, "session_start", { type: "session_start", reason: "startup" }, ctx);
+	const completions = (await state.commands.get("recipe")!.getArgumentCompletions?.("in")) as Array<{ value: string }>;
+	assert.deepEqual(completions.map((c) => c.value), ["init"]);
+
+	// UI path: blank template, name suggested from the folder.
+	let pickerOptions: string[] = [];
+	let placeholder: string | undefined;
+	await state.commands.get("recipe")!.handler("init", {
+		...ctx,
+		ui: {
+			...ctx.ui,
+			select: async (_t: string, options: string[]) => {
+				pickerOptions = options;
+				return options[0];
+			},
+			input: async (_t: string, p?: string) => { placeholder = p; return ""; },
+		},
+	});
+	assert.deepEqual(pickerOptions, [
+		"Blank recipe (current model)",
+		"Copy home — Personal stack",
+		"Copy work — Work subscriptions",
+	]);
+	assert.equal(placeholder, "my-repo");
+	const file = join(fresh, ".pi-recipe");
+	const written = JSON.parse(readFileSync(file, "utf-8"));
+	assert.equal(written.defaultRecipe, "my-repo");
+	assert.equal(written.recipes["my-repo"].model, "anthropic/claude-5");
+	// Seeded from the live session (startup applied home's `:high`).
+	assert.equal(written.recipes["my-repo"].thinkingLevel, "high");
+	assert.deepEqual(Object.keys(written.recipes["my-repo"]), [
+		"description", "model", "thinkingLevel", "models", "mcpServers", "extensions", "blocklist",
+	]);
+	assert.deepEqual(written.recipes["my-repo"].extensions, []);
+	assert.deepEqual(written.recipes["my-repo"].blocklist, { entries: [] });
+	// Scoped to its own model: an empty `models` would leave every
+	// settings.json enabledModels entry selectable.
+	assert.deepEqual(written.recipes["my-repo"].models, ["anthropic/claude-5"]);
+	assert.equal(recipeFileTrust(file), "trusted", "a file you created is trusted");
+	assert.equal(recipeRuntime().recipes.recipes["my-repo"]?.source, "directory");
+
+	await state.commands.get("recipe")!.handler("init", ctx);
+	assert.match(state.notifications.at(-1)!.message, /already exists/);
+
+	// A name matching a global recipe still gets its own full definition
+	// (it overrides the global one in this folder) — never a reference.
+	rmSync(file);
+	state.selectReturns = ["Blank recipe (current model)"];
+	await state.commands.get("recipe")!.handler("init work", ctx);
+	const named = JSON.parse(readFileSync(file, "utf-8"));
+	assert.equal(named.defaultRecipe, "work");
+	assert.equal(named.recipes.work.model, "anthropic/claude-5");
+	assert.equal(recipeRuntime().recipes.recipes.work?.source, "directory");
+	assert.equal(recipeFileTrust(file), "trusted");
+
+	// Reserved or malformed names are refused.
+	rmSync(file);
+	await state.commands.get("recipe")!.handler("init off", ctx);
+	assert.match(state.notifications.at(-1)!.message, /Invalid recipe name "off"/);
+	await state.commands.get("recipe")!.handler("init a b", ctx);
+	assert.match(state.notifications.at(-1)!.message, /Invalid recipe name/);
+	assert.equal(existsSync(file), false);
+	assert.equal(state.selectReturns.length, 0, "bad names fail before the template picker");
+
+	// Cancelling the picker writes nothing.
+	state.selectReturns = [undefined];
+	await state.commands.get("recipe")!.handler("init", ctx);
+	assert.equal(existsSync(file), false);
+});
+
+test("/recipe init copies a home recipe as a self-contained template (picker or --from)", async () => {
+	writeRecipesFile({
+		recipes: {
+			work: {
+				description: "Work subscriptions",
+				model: "openai-codex/gpt-5:medium",
+				models: ["openai-codex/*"],
+				instructions: "Ship carefully.",
+				skills: ["skills/work.md", "/abs/skill.md"],
+				prompts: ["prompts/work.md"],
+				themes: ["theme.json"],
+				tools: ["read"],
+				mcpServers: { linear: { url: "https://mcp.example.com/linear" } },
+				extensions: ["otty-integration", "npm:pi-web-access"],
+				blocklist: { match: "command", entries: ["^vault\\b"] },
+			},
+		},
+	});
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	const repo = join(tmp, "template-repo");
+	rmSync(repo, { recursive: true, force: true });
+	mkdirSync(repo, { recursive: true });
+	const ctx = { ...makeCtx(state), cwd: repo };
+	const file = join(repo, ".pi-recipe");
+
+	// Picker path.
+	state.selectReturns = ["Copy work — Work subscriptions"];
+	await state.commands.get("recipe")!.handler("init", {
+		...ctx,
+		ui: { ...ctx.ui, input: async () => "team" },
+	});
+	const written = JSON.parse(readFileSync(file, "utf-8"));
+	assert.equal(written.defaultRecipe, "team");
+	const team = written.recipes.team;
+	assert.equal(team.description, "Work subscriptions");
+	assert.equal(team.model, "openai-codex/gpt-5:medium");
+	assert.deepEqual(team.models, ["openai-codex/*"]);
+	assert.deepEqual(team.extensions, ["otty-integration", "npm:pi-web-access"]);
+	assert.deepEqual(team.mcpServers, { linear: { url: "https://mcp.example.com/linear" } });
+	// The copied blocklist keeps its resolved match mode without the file default.
+	assert.deepEqual(team.blocklist, { entries: [{ pattern: "^vault\\b", match: "command" }] });
+	for (const key of ["tools", "instructions", "skills", "prompts", "themes"]) {
+		assert.equal(Object.hasOwn(team, key), false, key);
+	}
+
+	assert.deepEqual(JSON.parse(recipeScaffold("x")).recipes.x.blocklist, { entries: [] });
+	// A template without its own scope gets scoped to its model (suffix stripped).
+	assert.deepEqual(
+		JSON.parse(recipeScaffold("x", {}, { model: "openai-codex/gpt-5:medium" })).recipes.x.models,
+		["openai-codex/gpt-5"],
+	);
+	assert.equal(Object.hasOwn(written, "extends"), false);
+	assert.equal(recipeRuntime().recipes.recipes.team?.source, "directory");
+	assert.equal(recipeRuntime().recipes.defaultSource, "directory", "self-contained default");
+	assert.match(state.notifications.at(-2)!.message, /copied from your "work" recipe/);
+	assert.match(state.notifications.at(-1)!.message, /MCP server configs copied verbatim/);
+
+	// Argument path, no prompts at all.
+	rmSync(file);
+	state.selectReturns = ["must not be consumed"];
+	await state.commands.get("recipe")!.handler("init repo --from work", ctx);
+	assert.equal(state.selectReturns.length, 1);
+	assert.deepEqual(JSON.parse(readFileSync(file, "utf-8")).recipes.repo.extensions, [
+		"otty-integration",
+		"npm:pi-web-access",
+	]);
+
+	rmSync(file);
+	await state.commands.get("recipe")!.handler("init --from ghost", ctx);
+	assert.match(state.notifications.at(-1)!.message, /Unknown home recipe "ghost". Available: work/);
+	assert.equal(existsSync(file), false);
+
+	const completions = (await state.commands.get("recipe")!.getArgumentCompletions?.("init x --from w")) as Array<{ value: string }>;
+	assert.deepEqual(completions.map((c) => c.value), ["init x --from work"]);
+});
+
+test("/recipe trust leaves an active recipe alone and explains when there is no file", async () => {
+	const cwd = makeRepo("repo-busy", { defaultRecipe: "repo", recipes: { repo: {} } });
+	recordRecipeFileTrust(join(cwd, ".pi-recipe"), false); // no session prompt
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	state.flagValues.set(RECIPE_FLAG, "home");
+	const ctx = { ...makeCtx(state), cwd };
+	await fire(state, "session_start", { type: "session_start", reason: "startup" }, ctx);
+	await state.commands.get("recipe")!.handler("trust", ctx);
+	assert.equal(recipeRuntime().activeName, "home");
+	assert.match(state.notifications.at(-1)!.message, /starts automatically on the next fresh `pi`/);
+
+	const empty = join(tmp, "repo-empty");
+	mkdirSync(empty, { recursive: true });
+	await state.commands.get("recipe")!.handler("trust", { ...makeCtx(state), cwd: empty });
+	assert.match(state.notifications.at(-1)!.message, /No \.pi-recipe or \.pi-recipe\.json .*\/recipe init/);
 });
