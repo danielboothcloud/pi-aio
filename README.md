@@ -265,7 +265,10 @@ model scope before `session_start`; its extension API cannot replace either
 in-session. When `pi --recipe work` selects a
 restart-scoped recipe, AIO restarts pi once during extension loading — before
 the TUI or session exist — with the recipe translated onto pi's own CLI flags
-(`--models …`, `-ne -e <aio> -e <ext> …`), hands the recipe over via
+(`--models …`, `-ne -e <aio> -e <ext> …`; Pi's built-in `builtin:mcp`,
+`builtin:codemode`, and `builtin:tool-search` are re-added because `-ne`
+would drop them, unless your settings disable one with `-builtin:<name>`),
+hands the recipe over via
 `AIO_RECIPE_ACTIVE`, and exits with the child's exit code. You see at most a
 one-line notice; the child never relaunches (`AIO_RECIPE_STAGE=1`). Guards,
 in order: subagent children, staged relaunches, `pi` subcommands, and the

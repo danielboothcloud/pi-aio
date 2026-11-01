@@ -10,7 +10,8 @@
 //
 //   pi --recipe work
 //     └─ factory: decideRelaunch() -> relaunch spec
-//          ├─ spawn pi -e <aio> -e <recipe extensions> --models <recipe scope>
+//          ├─ spawn pi -ne -e <aio> -e builtin:{mcp,codemode,tool-search}
+//          │          -e <recipe extensions> --models <recipe scope>
 //          ├─ forward stdio, inherit the same agent dir + cwd
 //          ├─ strip --recipe from the child argv (it travels as AIO_RECIPE_ACTIVE)
 //          └─ exit with the child's exit code
@@ -33,8 +34,9 @@
 
 import { spawn, type ChildProcess } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { resolve } from "node:path";
-import { parseArgs } from "@earendil-works/pi-coding-agent";
+import { readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { getAgentDir, parseArgs } from "@earendil-works/pi-coding-agent";
 import {
 	ACTIVE_RECIPE_ENV,
 	PI_SUBCOMMANDS,
@@ -51,6 +53,38 @@ import {
 export const AIO_RECIPE_EXTENSION_PATH = fileURLToPath(
 	new URL("../index.ts", import.meta.url),
 );
+
+/**
+ * Pi's built-in extensions that `-ne` would drop along with everything else.
+ * The relaunch passes `-ne` only to replace the *user* extension set, so it
+ * re-adds these explicitly (`pi -ne -e builtin:mcp` keeps MCP) — otherwise a
+ * recipe silently loses MCP servers, `codemode`, and `tool_search`.
+ */
+export const RELAUNCH_BUILTIN_EXTENSIONS = ["mcp", "codemode", "tool-search"] as const;
+
+/**
+ * Built-in extensions the user switched off in settings (`"-builtin:<name>"`
+ * in `extensions`); the relaunch must not re-enable those. Malformed or
+ * missing settings disable nothing.
+ */
+export function disabledBuiltinExtensions(settings: unknown): string[] {
+	const entries = (settings as { extensions?: unknown } | null)?.extensions;
+	if (!Array.isArray(entries)) return [];
+	return entries
+		.filter((entry): entry is string => typeof entry === "string")
+		.map((entry) => /^-builtin:(.+)$/.exec(entry.trim())?.[1])
+		.filter((name): name is string => !!name);
+}
+
+/** {@link disabledBuiltinExtensions} of `<agentDir>/settings.json` (global tier only: project trust is unresolved at factory time). */
+export function settingsDisabledBuiltins(agentDir?: string): string[] {
+	try {
+		const dir = agentDir ?? getAgentDir();
+		return disabledBuiltinExtensions(JSON.parse(readFileSync(join(dir, "settings.json"), "utf8")));
+	} catch {
+		return [];
+	}
+}
 
 /** Guard: subagent children are pinned workloads, never bridge. */
 export const SUBAGENT_CHILD_ENV = "AIO_SUBAGENT_CHILD";
@@ -90,6 +124,8 @@ export interface TrampolineOptions {
 	continuedRecipe?: { name: string; file: string };
 	/** Defaults to this package's own entry point, re-injected via `-e`. */
 	aioExtensionPath?: string;
+	/** Built-ins disabled in settings (`-builtin:<name>`); not re-added under `-ne`. */
+	disabledBuiltins?: string[];
 	/** fs seam for tests. */
 	exists?: (path: string) => boolean;
 }
@@ -311,6 +347,10 @@ export function decideRelaunch(options: TrampolineOptions): TrampolineDecision {
 		}
 		const aioPath = options.aioExtensionPath ?? AIO_RECIPE_EXTENSION_PATH;
 		injected.push("-ne", "-e", aioPath);
+		const disabled = new Set(options.disabledBuiltins ?? []);
+		for (const builtin of RELAUNCH_BUILTIN_EXTENSIONS) {
+			if (!disabled.has(builtin)) injected.push("-e", `builtin:${builtin}`);
+		}
 		for (const source of resolvedSources) {
 			injected.push("-e", source);
 		}

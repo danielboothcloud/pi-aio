@@ -1,13 +1,16 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import test from "node:test";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "@earendil-works/pi-coding-agent";
 import {
 	AIO_RECIPE_EXTENSION_PATH,
+	RELAUNCH_BUILTIN_EXTENSIONS,
 	decideRelaunch,
+	disabledBuiltinExtensions,
+	settingsDisabledBuiltins,
 	cliArgsFromArgv,
 	execRelaunch,
 	relaunchNotice,
@@ -18,6 +21,7 @@ import {
 } from "./trampoline.ts";
 import {
 	ACTIVE_RECIPE_ENV,
+	RECIPE_INJECTED_ARGS_ENV,
 	RECIPE_STAGE_ENV,
 	RECIPES_FILE_ENV,
 	parseRecipeConfig,
@@ -103,6 +107,9 @@ test("compiled Bun relaunch never forwards its virtual entry point as a prompt",
 	assert.deepEqual(parseArgs(spec.args).messages, []);
 	assert.deepEqual(parseArgs(spec.args).extensions, [
 		"/aio/index.ts",
+		"builtin:mcp",
+		"builtin:codemode",
+		"builtin:tool-search",
 		"/opt/extensions/work-int.ts",
 	]);
 	assert.deepEqual(parseArgs(spec.args).models, ["openai-codex/*"]);
@@ -227,6 +234,12 @@ test("restart-scoped recipe gets a relaunch spec with guarded child env", () => 
 		"-e",
 		"/aio/index.ts",
 		"-e",
+		"builtin:mcp",
+		"-e",
+		"builtin:codemode",
+		"-e",
+		"builtin:tool-search",
+		"-e",
 		"/opt/extensions/work-int.ts",
 		"--models",
 		"openai-codex/*",
@@ -236,6 +249,48 @@ test("restart-scoped recipe gets a relaunch spec with guarded child env", () => 
 	assert.equal(spec.env[RECIPE_STAGE_ENV], "1");
 	assert.equal(spec.env[ACTIVE_RECIPE_ENV], "work");
 	assert.equal(spec.env.PATH, "/usr/bin");
+});
+
+test("-ne relaunch re-adds Pi's built-in MCP, codemode, and tool_search", () => {
+	const spec = relaunchSpec(decide(["--recipe", "work"]));
+	assert.ok(spec);
+	const extensions = parseArgs(spec.args).extensions ?? [];
+	for (const name of RELAUNCH_BUILTIN_EXTENSIONS) {
+		assert.ok(extensions.includes(`builtin:${name}`), `builtin:${name} survives -ne`);
+	}
+	// Counted as injected so recipe switches strip them with the rest.
+	assert.equal(spec.env[RECIPE_INJECTED_ARGS_ENV], String(spec.args.length - 1));
+});
+
+test("built-ins disabled in settings are not re-enabled by the relaunch", () => {
+	const spec = relaunchSpec(decide(["--recipe", "work"], { disabledBuiltins: ["mcp"] }));
+	assert.ok(spec);
+	const extensions = parseArgs(spec.args).extensions ?? [];
+	assert.equal(extensions.includes("builtin:mcp"), false);
+	assert.ok(extensions.includes("builtin:codemode"));
+	assert.ok(extensions.includes("builtin:tool-search"));
+});
+
+test("disabledBuiltinExtensions reads only -builtin: entries", () => {
+	assert.deepEqual(
+		disabledBuiltinExtensions({ extensions: ["-builtin:mcp", "+builtin:codemode", "npm:x", 3, " -builtin:tool-search "] }),
+		["mcp", "tool-search"],
+	);
+	assert.deepEqual(disabledBuiltinExtensions(null), []);
+	assert.deepEqual(disabledBuiltinExtensions({ extensions: "nope" }), []);
+});
+
+test("settingsDisabledBuiltins reads <agentDir>/settings.json and fails open", () => {
+	const dir = mkdtempSync(join(tmpdir(), "aio-builtins-"));
+	try {
+		assert.deepEqual(settingsDisabledBuiltins(dir), []);
+		writeFileSync(join(dir, "settings.json"), JSON.stringify({ extensions: ["-builtin:codemode"] }));
+		assert.deepEqual(settingsDisabledBuiltins(dir), ["codemode"]);
+		writeFileSync(join(dir, "settings.json"), "{not json");
+		assert.deepEqual(settingsDisabledBuiltins(dir), []);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
 });
 
 test("extensions-only recipe relaunches without --models", () => {

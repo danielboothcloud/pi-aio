@@ -84,7 +84,10 @@ generated `dist/` tree without changing the package contract.
   `--export`/`--list-models`, explicit user `-e`/`--models` flags, and it
   reads only the global recipes file since project trust is unresolved during
   factories), then `execRelaunch()` re-spawns pi once via pi's own argv
-  (`-ne -e <aio> -e <ext> --models …`), stripping the `--recipe` token and
+  (`-ne -e <aio> -e builtin:{mcp,codemode,tool-search} -e <ext> --models …`;
+  `-ne` drops Pi's built-in extensions too, so those three are re-added
+  unless global settings disable one with `-builtin:<name>` — subagents
+  forward them from the parent argv), stripping the `--recipe` token and
   handing the name over as `AIO_RECIPE_ACTIVE`; `AIO_RECIPE_STAGE=1` makes a
   loop impossible and a failed spawn falls back in-session with a warning
   (a later `close` after a spawn `error` must not kill that fallback). Compiled

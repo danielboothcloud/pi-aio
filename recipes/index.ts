@@ -86,6 +86,7 @@ import {
 	decideRelaunch,
 	execRelaunch,
 	relaunchNotice,
+	settingsDisabledBuiltins,
 } from "./trampoline.js";
 
 import { registerRecipeStatusRenderer, showRecipeStatus } from "./status.js";
@@ -715,6 +716,7 @@ export async function registerRecipes(
 			directoryRecipe: launch.defaultSource === "directory" ? launch.defaultRecipe : undefined,
 			continuedRecipe: resumed,
 			aioExtensionPath: AIO_RECIPE_EXTENSION_PATH,
+			disabledBuiltins: settingsDisabledBuiltins(),
 		});
 		if (decision.action === "relaunch") {
 			process.stderr.write(`${relaunchNotice(decision.spec)}\n`);
