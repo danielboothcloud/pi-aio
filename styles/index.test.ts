@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { getStyleAccess, setRecipeStyle } from "./style-access.ts";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type {
 	ExtensionAPI,
@@ -722,4 +723,33 @@ test("subagent children never get a style and strip inherited instructions", asy
 		if (previous === undefined) delete process.env.AIO_SUBAGENT_CHILD;
 		else process.env.AIO_SUBAGENT_CHILD = previous;
 	}
+});
+
+test("a recipe's style applies when the branch has no /style choice; a saved choice wins", async () => {
+	setRecipeStyle("concise");
+	try {
+		const fresh = makeHarness();
+		await fresh.emit("session_start");
+		assert.match(String((await fresh.emit("before_agent_start"))?.message?.content), /concise/i);
+
+		const saved = makeHarness({ branch: [{ type: "custom", customType: "styles", data: { style: "none" } }] });
+		await saved.emit("session_start");
+		assert.equal(await saved.emit("before_agent_start"), undefined);
+	} finally {
+		setRecipeStyle(undefined);
+	}
+	const off = makeHarness();
+	await off.emit("session_start");
+	assert.equal(await off.emit("before_agent_start"), undefined);
+});
+
+test("style access sets the style quietly for a recipe switch", async () => {
+	const harness = makeHarness();
+	await harness.emit("session_start");
+	const access = getStyleAccess();
+	assert.ok(access);
+	await access.setStyle("ste", {} as never, { quiet: true });
+	assert.equal(access.getStyle(), "ste");
+	assert.deepEqual(harness.notifications, []);
+	assert.deepEqual(harness.entries.at(-1), { customType: "styles", data: { style: "ste" } });
 });

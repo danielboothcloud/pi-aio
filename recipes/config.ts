@@ -29,9 +29,11 @@
 //       "models": ["anthropic/*", "openai-codex/*"], // --models scope (restart-scoped)
 //       "mcpServers": { "linear": { "url": "https://mcp.example.com/linear" } },
 //       "extensions": ["otty-integration", "npm:pi-web-access"], // restart-scoped
-//       "blocklist": { "match": "command", "entries": ["^vault\\b"] } // session-scoped;
+//       "blocklist": { "match": "command", "entries": ["^vault\\b"] }, // session-scoped;
 //                                            // same shape as aio-blocklist.json
 //                                            // (or a bare entries array)
+//       "permissionMode": "plan",            // default|ask|plan|auto; starting mode
+//       "style": "concise"                   // none|collaborate|tutor|concise|ste
 //     }
 //   }
 // }
@@ -51,6 +53,8 @@ import {
 	type McpServerConfig,
 } from "@earendil-works/pi-coding-agent";
 import { parseBlocklistConfig, type BlocklistEntry } from "../blocklist/config.js";
+import { type PermissionMode, parsePermissionMode } from "../permission-modes/mode-access.js";
+import { parseStyle, type Style } from "../styles/style-access.js";
 
 export const RECIPES_FILE_NAME = "aio-recipes.json";
 /** Replaces the global recipes file (tests + sandboxes). */
@@ -117,6 +121,14 @@ export interface RecipeConfig {
 	 * replacing them). Already parsed: the `match` default is folded in.
 	 */
 	blocklist?: BlocklistEntry[];
+	/**
+	 * Starting permission mode (session-scoped). Used when a session starts
+	 * with no explicit --permission-mode and no mode saved on the session; a
+	 * /recipe switch sets it immediately. `mode` is accepted as an alias.
+	 */
+	permissionMode?: PermissionMode;
+	/** Starting interaction style (session-scoped), same rules as permissionMode. */
+	style?: Style;
 }
 
 /** A recipe merged across the two config tiers, with provenance. */
@@ -261,6 +273,10 @@ export function parseRecipeConfig(
 			config.blocklist = blocklist.entries;
 		}
 	}
+	const permissionMode = parsePermissionMode(entry.permissionMode ?? entry.mode);
+	if (permissionMode) config.permissionMode = permissionMode;
+	const style = parseStyle(entry.style);
+	if (style) config.style = style;
 
 	return { name, source, baseDir, config };
 }

@@ -159,8 +159,20 @@ generated `dist/` tree without changing the package contract.
   portable: its `defaultRecipe` resolves only against its own `recipes`
   (never global/project ones; otherwise ignored with a warning);
   `/recipe trust` / `/recipe untrust` record or forget the decision.
-  Recipes support only description/model/thinkingLevel/models/mcpServers/extensions/blocklist;
-  unknown keys are ignored. `blocklist` (session-scoped, same shape as
+  Recipes support only description/model/thinkingLevel/models/mcpServers/extensions/blocklist/
+  permissionMode/style; unknown keys are ignored. `permissionMode`
+  (`default|ask|plan|auto`, alias `mode`) and `style` (the `/style` names,
+  legacy aliases accepted) are session-scoped starting values: `applyRecipe`
+  publishes them through `permission-modes/mode-access.ts` and
+  `styles/style-access.ts`, and those features read them at their own
+  session_start only when nothing more specific exists (an explicit
+  `--permission-mode` flag or a saved `modes` entry; a `/style` entry on the
+  branch). A live `/recipe` switch or just-trusted directory default
+  (`live: true`) sets them immediately via the access handles (style switch is
+  quiet). Deactivating clears only the starting values; the session keeps its
+  current mode and style, like the model. `/recipe init` copies them only from
+  a template, never into a blank scaffold. Subagent children never activate
+  recipes, so they stay pinned to `auto`. `blocklist` (session-scoped, same shape as
   `aio-blocklist.json` or a bare entries array) is published by
   `applyRecipe`/`deactivateRecipe` through `setRecipeBlocklist` and unioned
   into the hard blocklist as source `recipe:<name>`; it can only add rules.
@@ -311,9 +323,10 @@ generated `dist/` tree without changing the package contract.
   per-turn `styles-context` instruction (mode-aware, e.g. no `TODO(human)`
   markers in ask/plan); it never gates tools, and it is NOT a permission mode
   (keep it out of `mode-access.ts`, Shift+Tab, and `--permission-mode`).
-  Off by default: no flag or setting enables it; only `/style` does, and the
-  choice persists as a `styles` session entry restored from the current
-  branch. Tutor teaches in small explain → practice → feedback steps, waits
+  Off by default: no flag or setting enables it; `/style` or an active
+  recipe's `style` key does. A `/style` choice persists as a `styles`
+  session entry restored from the current branch and beats the recipe's
+  starting style. Tutor teaches in small explain → practice → feedback steps, waits
   for participation, and uses hands-on edits only with agreement; passive modes
   keep exercises in chat. The former `mentor` command and persisted name map to
   canonical `tutor` (not advertised as a separate style). Concise minimizes
@@ -356,9 +369,15 @@ generated `dist/` tree without changing the package contract.
   survive the failed attempt; fork retries resume the forked session with
   `--session` (dropping `--fork`, which cannot combine with it). Final
   failures report the preserved session file so the parent can inspect or
-  resume manually. Tool description and promptGuidelines steer the parent
-  toward generous `timeoutMs` budgets (pi's own HTTP idle timeout is 300s by
-  default, so budgets below that kill children mid-recovery). Completion is
+  resume manually. The guidelines deliberately do not push larger
+  `timeoutMs` budgets (agent defaults plus automatic retry cover slow
+  children; pi's own HTTP idle timeout is 300s, so budgets below that kill
+  children mid-recovery). Background (`async`) results and inspector-resumed
+  continuations are delivered as `steer` messages, so they reach the parent
+  at its next turn boundary while it is still working (a `followUp` would
+  wait until the parent finished, by which point it no longer uses them);
+  a guideline tells the model to use `async` only when it has independent
+  work to do meanwhile. Completion is
   the child's `agent_settled` JSON event, NOT process exit: `pi -p` only exits
   once its event loop drains, so any inherited extension that leaves a live
   handle in the headless child would otherwise hang the parent tool until the

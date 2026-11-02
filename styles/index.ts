@@ -26,14 +26,16 @@ import {
 	type PermissionMode,
 } from "../permission-modes/mode-access.js";
 
-export const STYLES = [
-	"none",
-	"collaborate",
-	"tutor",
-	"concise",
-	"ste",
-] as const;
-export type Style = (typeof STYLES)[number];
+import {
+	getRecipeStyle,
+	isStyle,
+	parseStyle,
+	setStyleAccess,
+	STYLES,
+	type Style,
+} from "./style-access.js";
+
+export { isStyle, STYLES, type Style };
 export type ActiveStyle = Exclude<Style, "none">;
 
 /** Session entry holding the latest `/style` choice. */
@@ -52,21 +54,6 @@ const STYLE_SUMMARIES: Record<Style, string> = {
 	concise: "minimal commentary: key decisions, blockers, and results",
 	ste: "Simplified Technical English: clear, direct wording based on ASD-STE100",
 };
-
-export function isStyle(value: unknown): value is Style {
-	return (
-		typeof value === "string" && (STYLES as readonly string[]).includes(value)
-	);
-}
-
-/** Accepts `off` and the former `mentor` and `humanised` style names. */
-function parseStyle(value: string): Style | undefined {
-	const normalized = value.trim().toLowerCase();
-	if (normalized === "off") return "none";
-	if (normalized === "mentor") return "tutor";
-	if (normalized === "humanised") return "ste";
-	return isStyle(normalized) ? normalized : undefined;
-}
 
 export function styleMetadata(style: ActiveStyle): {
 	icon: string;
@@ -216,7 +203,8 @@ export function filterStyleContext(
 	);
 }
 
-function latestPersistedStyle(ctx: ExtensionContext): Style {
+/** The latest /style choice on this branch, or undefined when there is none. */
+function latestPersistedStyle(ctx: ExtensionContext): Style | undefined {
 	const entries = ctx.sessionManager.getBranch();
 	for (let i = entries.length - 1; i >= 0; i--) {
 		const entry = entries[i] as {
@@ -232,7 +220,7 @@ function latestPersistedStyle(ctx: ExtensionContext): Style {
 		if (entry.data?.style === "humanised") return "ste";
 		return isStyle(entry.data?.style) ? entry.data.style : "none";
 	}
-	return "none";
+	return undefined;
 }
 
 export function registerStyles(pi: ExtensionAPI): void {
@@ -269,10 +257,15 @@ export function registerStyles(pi: ExtensionAPI): void {
 		);
 	}
 
-	async function setStyle(style: Style, ctx: ExtensionContext): Promise<void> {
+	async function setStyle(
+		style: Style,
+		ctx: ExtensionContext,
+		options: { quiet?: boolean } = {},
+	): Promise<void> {
 		currentStyle = style;
 		syncDisplay(ctx);
 		pi.appendEntry(STYLE_ENTRY_TYPE, { style });
+		if (options.quiet) return;
 		ctx.ui.notify(
 			style === "none"
 				? "Style: none — interaction style off"
@@ -280,6 +273,8 @@ export function registerStyles(pi: ExtensionAPI): void {
 			"info",
 		);
 	}
+
+	setStyleAccess({ getStyle: () => currentStyle, setStyle });
 
 	pi.registerCommand("style", {
 		description: `Set an interaction style (${STYLES.join(" | ")}); off by default`,
@@ -336,10 +331,11 @@ export function registerStyles(pi: ExtensionAPI): void {
 	});
 
 	// Restore the style chosen earlier in this session (resume or tree
-	// navigation); a session with no /style entry on its branch has none.
+	// navigation). A branch with no /style entry starts with the active
+	// recipe's style, or none.
 	function restore(ctx: ExtensionContext): void {
 		try {
-			currentStyle = latestPersistedStyle(ctx);
+			currentStyle = latestPersistedStyle(ctx) ?? getRecipeStyle() ?? "none";
 		} catch {
 			currentStyle = "none";
 		}

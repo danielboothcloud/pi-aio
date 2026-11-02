@@ -303,7 +303,7 @@ for (const shutdown of [false, true]) {
 			const delivered = harness.messages[0];
 			assert.equal(delivered.message.customType, "aio-subagent-complete");
 			assert.match(String(delivered.message.content), /Resumed child #1/);
-			assert.deepEqual(delivered.options, { deliverAs: "followUp", triggerTurn: true });
+			assert.deepEqual(delivered.options, { deliverAs: "steer", triggerTurn: true });
 			assert.doesNotMatch(JSON.stringify(delivered.message.details), /transcript|systemPrompt|childLaunches/);
 		}
 	});

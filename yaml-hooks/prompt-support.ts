@@ -102,6 +102,8 @@ export function buildHookAwarenessSystemPrompt(ctx: Pick<ExtensionContext, "cwd"
 
 	const loaded: HookLoadSnapshot = loadDiscoveredHooks({ projectDir: ctx.cwd });
 	const summary = summarizeHookSources(loaded.sources);
+	// Nothing to be aware of: no hooks run and no hook file needs fixing.
+	if (summary.total === 0 && loaded.errors.length === 0) return undefined;
 	const paths = resolveHookConfigPaths();
 	const globalPath = paths.global ?? "none";
 

@@ -8,6 +8,9 @@
 //   model / thinkingLevel -> pi.setModel + pi.setThinkingLevel
 //   mcpServers           -> pi.registerMcpServer / unregisterMcpServer (ours only)
 //   blocklist            -> blocklist/config.ts setRecipeBlocklist (+ env for children)
+//   permissionMode/style -> published as the starting mode/style (read by
+//                           permission-modes and styles at their session_start);
+//                           a live /recipe switch sets them immediately
 //
 // The module keeps runtime state (active recipe, provenance, launch notice,
 // recipes registered by this feature) with a test reset hook, and exports
@@ -18,6 +21,8 @@
 import type { AgentMessage, ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { setRecipeBlocklist } from "../blocklist/config.js";
+import { getPermissionModeAccess, setRecipePermissionMode } from "../permission-modes/mode-access.js";
+import { getStyleAccess, setRecipeStyle } from "../styles/style-access.js";
 import {
 	emitAioUiState,
 	probeFrameEditor,
@@ -94,6 +99,13 @@ export function recipeRuntime(): RecipeRuntimeState {
 export function resetRecipeRuntimeForTests(): void {
 	runtimeState = freshRuntime();
 	setRecipeBlocklist(undefined);
+	publishRecipePreferences(undefined);
+}
+
+/** Publish the recipe's starting permission mode and style (or clear them). */
+function publishRecipePreferences(def: RecipeDefinition | undefined): void {
+	setRecipePermissionMode(def?.config.permissionMode);
+	setRecipeStyle(def?.config.style);
 }
 
 /** Publish the recipe's hard-blocklist entries (or clear them). */
@@ -246,7 +258,7 @@ export function updateRecipeStatus(pi: ExtensionAPI, ctx: ExtensionContext): voi
 // ---------------------------------------------------------------------------
 
 export interface ApplyRecipeResult {
-	/** Key names applied (subset of model | thinking | mcp | blocklist). */
+	/** Key names applied (subset of model | thinking | mcp | blocklist | mode | style). */
 	applied: string[];
 	/** Warnings raised; never fatal. */
 	warnings: string[];
@@ -290,13 +302,24 @@ export async function applyRecipe(
 	pi: ExtensionAPI,
 	ctx: ExtensionContext,
 	def: RecipeDefinition,
-	options: { source: RecipeSourceMarker; persist: boolean },
+	options: {
+		source: RecipeSourceMarker;
+		persist: boolean;
+		/**
+		 * The session is already running (a /recipe switch or a just-trusted
+		 * directory default), so permission-modes and styles have restored
+		 * their state: set the recipe's mode and style now instead of only
+		 * publishing them as the starting values.
+		 */
+		live?: boolean;
+	},
 ): Promise<ApplyRecipeResult> {
 	runtimeState.activeName = def.name;
 	runtimeState.active = def;
 	runtimeState.source = options.source;
 	// First, before any await: the gate must never see a stale recipe's rules.
 	publishRecipeBlocklist(def);
+	publishRecipePreferences(def);
 
 	const applied: string[] = [];
 	const warnings: string[] = [];
@@ -343,6 +366,34 @@ export async function applyRecipe(
 		applied.push("mcp");
 	}
 	if ((config.blocklist?.length ?? 0) > 0) applied.push("blocklist");
+	if (config.permissionMode) {
+		const access = getPermissionModeAccess();
+		if (!options.live) applied.push("mode");
+		else if (!access) warnings.push(`permission mode "${config.permissionMode}" not applied: permission modes are not loaded`);
+		else {
+			try {
+				if (access.getMode() !== config.permissionMode) await access.setMode(config.permissionMode, ctx);
+				applied.push("mode");
+			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error);
+				warnings.push(`permission mode "${config.permissionMode}" not applied: ${message}`);
+			}
+		}
+	}
+	if (config.style) {
+		const access = getStyleAccess();
+		if (!options.live) applied.push("style");
+		else if (!access) warnings.push(`style "${config.style}" not applied: styles are not loaded`);
+		else {
+			try {
+				if (access.getStyle() !== config.style) await access.setStyle(config.style, ctx, { quiet: true });
+				applied.push("style");
+			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error);
+				warnings.push(`style "${config.style}" not applied: ${message}`);
+			}
+		}
+	}
 
 	updateRecipeStatus(pi, ctx);
 	if (options.persist) {
@@ -361,6 +412,9 @@ export function deactivateRecipe(
 	runtimeState.active = undefined;
 	runtimeState.source = undefined;
 	publishRecipeBlocklist(undefined);
+	// Clearing only the starting values: the session keeps its current mode
+	// and style, just as it keeps the recipe's model.
+	publishRecipePreferences(undefined);
 	for (const name of runtimeState.registeredMcp) {
 		try {
 			pi.unregisterMcpServer(name);
