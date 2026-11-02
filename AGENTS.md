@@ -447,6 +447,31 @@ generated `dist/` tree without changing the package contract.
   or backfill. Existing/resumed/reloaded/forked sessions and manual names are
   preserved. Shutdown aborts work; session identity and name are rechecked
   before applying a late result. Subagent children register nothing.
+- `session-nav/` owns `/rewind`, `/sessions`, and the `--sessions` flag:
+  friendlier replacements for pi's checkpoint and resume menus. Double-Esc
+  on an idle, empty editor opens `/rewind`: only the user's prompts are
+  listed (tool calls and injected context fold into each turn), newest
+  first, with relative age, edit/tool counts, "you are here" and
+  "⑂ alternate" markers, type-to-filter, and a preview. Enter opens one
+  plain-English action step mapped to public command-context APIs: edit
+  and resend (`navigateTree(prompt)`), go back to right after the answer
+  (`navigateTree(turn end)`, hidden at the leaf), rewind with a summary
+  (`summarize: true`), and start a new session (`fork(..., before)`). It
+  states that files on disk are not changed. `/resume` (exact text) and a
+  bound `app.session.resume` key open `/sessions`: day-grouped sessions
+  with clean titles (skill XML → `skill: name`), labeled age/message
+  counts, a this-folder/all tab, search, and a lazy preview that reads at
+  most a 256 KB tail of the file. Selection uses `ctx.switchSession`, so
+  the recipe resume relaunch still applies. Pi's `pi --resume` picker runs
+  before extensions load and cannot be replaced; `pi --sessions` starts pi
+  and opens `/sessions` once. Interception goes through
+  `ui/editor-intercepts.ts`, which the `QueueEditor` consults (Esc, wrapped
+  `onSubmit`, app actions). Without the AIO editor (standalone Zentui),
+  pi's native behavior is untouched. Editor-originated commands dispatch
+  through `pi.sendUserMessage("/cmd", { expandPromptTemplates: true })` to
+  get a command context. `doubleEscapeAction: "none"` (global, or trusted
+  project settings) keeps double-Esc inert. Native `/tree`, `/fork` and
+  `pi --resume` remain available. TUI-only; intercepts clear on shutdown.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

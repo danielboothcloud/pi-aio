@@ -39,6 +39,7 @@ import registerYamlHooks from "./yaml-hooks/index.js";
 import { registerYouShouldKnow } from "./you-should-know/index.js";
 import { registerBtw } from "./btw/index.js";
 import { registerSessionNaming } from "./session-naming/index.js";
+import { registerSessionNav } from "./session-nav/index.js";
 import { registerNotifications } from "./notifications/index.js";
 
 export {
@@ -94,6 +95,11 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// surface; registration is unconditional and a missing tuicr binary only
 	// fails the run (optional integration).
 	registerTuicr(pi);
+	// Session navigation owns /rewind (double-Esc), /sessions (replaces the
+	// /resume picker) and the --sessions startup flag. It registers no tools
+	// and claims Esc/submit only through the shared editor intercepts that the
+	// QueueEditor consults, so its place in the chain is not load-bearing.
+	registerSessionNav(pi);
 	// The frame registers after every editor/status publisher so it can wrap
 	// AIO's QueueEditor and become the single final visual owner (minimalist
 	// editor frame, proprietary — see frame/UPSTREAM.md).
