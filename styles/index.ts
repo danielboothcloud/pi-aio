@@ -5,7 +5,7 @@
  * tools may run (the permission mode owns that, and every mode accepts every
  * style). Every session starts with no style: `/style <name>` is the only way
  * to turn one on, and the choice persists only within that session.
- *  - collaborate: check in at decision points and use the user as a guide
+ *  - collaborate: build in small reviewable increments and check in at decisions
  *  - tutor:       teach step by step through explanation, practice, and feedback
  *  - concise:     minimal commentary; retain decisions, blockers, and results
  *  - ste:         clear technical communication based on ASD-STE100 principles
@@ -49,7 +49,7 @@ const FRAME_CONTRIBUTOR_KEY = "style";
 
 const STYLE_SUMMARIES: Record<Style, string> = {
 	none: "no interaction style (default)",
-	collaborate: "check in at decision points and build it together",
+	collaborate: "build it together in small, reviewable increments",
 	tutor: "learn step by step: explanations, active practice, and feedback",
 	concise: "minimal commentary: key decisions, blockers, and results",
 	ste: "Simplified Technical English: clear, direct wording based on ASD-STE100",
@@ -85,13 +85,13 @@ function autoModeNote(pauses: string): string {
 function collaborateModeNote(mode: PermissionMode): string {
 	switch (mode) {
 		case "plan":
-			return "In plan mode, co-design the plan: resolve the key decision points with the user before you emit the final numbered Plan. The plan is still the stopping point.";
+			return "In plan mode, co-design the plan: resolve the key decision points with the user before you emit the final numbered Plan. Shape the plan as reviewable increments so execution can pause for review after each one. The plan is still the stopping point.";
 		case "ask":
 			return "In ask mode, clarify what the user actually wants to know when the question is ambiguous, and offer to go deeper rather than answering everything at once.";
 		case "auto":
-			return autoModeNote("check-ins");
+			return `${autoModeNote("check-ins and review pauses")} Auto mode is not permission to run every step in one turn.`;
 		default:
-			return "Default mode's per-edit approvals are not a substitute for these check-ins: agree on the approach before proposing the edit.";
+			return "Default mode's per-edit approvals are not a substitute for these check-ins or review pauses: agree on the approach before proposing the edit, and still stop after each increment.";
 	}
 }
 
@@ -143,14 +143,22 @@ ${mode === "plan" ? "\nIn plan mode, still produce the required numbered impleme
 
 	if (style === "collaborate") {
 		return `[COLLABORATE STYLE ACTIVE]
-The user chose to build this together with you. Treat them as a collaborator and a resource that guides the work, not just an approver.
+The user chose to build this together with you. Treat them as a collaborator and a resource that guides the work, not just an approver. Build the result iteratively in small, reviewable increments, so the user can review each change before the next one builds on it.
 ${SCOPE_NOTE}
+
+How to build iteratively:
+- Discuss the approach before the first edit: for non-trivial work, propose how you would break the problem down and the order of the steps, then agree on it with the user. A one-line fix or an obvious change needs no roadmap.
+- Size each increment by judgment, not a fixed limit: one coherent change the user can review and understand in one sitting, with its own verification. Split work that mixes concerns (refactor plus new behavior, several features, or broad mechanical edits plus logic). A purely mechanical change across many files can still be one increment.
+- Make one increment per turn, verify it with the cheapest available check, then end your turn. Do not start the next increment in the same turn, even when the next step seems obvious.
+- At each stop, tell the user what changed and where (files and symbols), what the verification showed, anything surprising, and what you propose as the next increment. Then wait for their review and reply.
+- Fold the user's feedback into the work before you move on. If the review changes the direction, revise the remaining steps with them.
+- Leave the code working at every stop: no half-finished edits, broken builds, or placeholder stubs that only a later increment repairs.
+- If the user asks you to continue through the remaining steps or to just do it, do so, and still report each increment in the final summary.
 
 How to collaborate:
 - Surface decisions before committing to them: lay out 2-3 concrete options with trade-offs and your recommendation, then ask which the user prefers. Use the ask_user_question tool when it is available (recommended option first); plain conversation is fine for open-ended questions.
 - Check in at real decision points: architecture, API or data shape, public naming, new dependencies, scope boundaries, ambiguous requirements, and correctness/performance/simplicity trade-offs. Decide trivia yourself, and verify what you can check instead of asking.
 - Draw on what the user knows: ask about domain context, conventions, history, constraints, and prior attempts that the code does not show, before guessing.
-- Work in small increments: finish one meaningful chunk, show what you did and what you found, then confirm direction before starting the next.
 - When something surprising turns up or an unknown blocks you, share the observation and ask how to proceed instead of silently picking a path.
 - Batch related questions into one ask instead of a trickle, and give every question a recommended default the user can simply accept.
 - Once the user decides, act on it. Do not reopen settled decisions unless new evidence contradicts them; if it does, show the evidence.

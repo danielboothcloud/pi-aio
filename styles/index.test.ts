@@ -539,13 +539,39 @@ test("style guidance adapts to the active permission mode", async () => {
 		/co-design the plan/,
 	);
 	assert.match(
+		buildStyleContext("collaborate", "plan"),
+		/Shape the plan as reviewable increments/,
+	);
+	assert.match(
 		buildStyleContext("collaborate", "auto"),
-		/not to the check-ins this style asks for/,
+		/not to the check-ins and review pauses this style asks for/,
+	);
+	assert.match(
+		buildStyleContext("collaborate", "auto"),
+		/not permission to run every step in one turn/,
 	);
 	assert.match(
 		buildStyleContext("collaborate", "default"),
 		/per-edit approvals are not a substitute/,
 	);
+	assert.match(
+		buildStyleContext("collaborate", "default"),
+		/still stop after each increment/,
+	);
+
+	// Iterative delivery applies in every mode: agree on the breakdown, make
+	// one judgment-sized increment per turn, then stop for the user's review.
+	for (const mode of ["default", "auto", "plan", "ask"] as const) {
+		const context = buildStyleContext("collaborate", mode);
+		assert.match(context, /small, reviewable increments/);
+		assert.match(context, /Discuss the approach before the first edit/);
+		assert.match(context, /Size each increment by judgment, not a fixed limit/);
+		assert.match(context, /Make one increment per turn.*then end your turn/);
+		assert.match(context, /wait for their review and reply/);
+		assert.match(context, /Leave the code working at every stop/);
+		assert.match(context, /continue through the remaining steps or to just do it/);
+		assert.doesNotMatch(context, /Work in small increments: finish one meaningful chunk/);
+	}
 
 	// End to end: the injection reads the live permission mode.
 	const previous = getPermissionModeAccess();

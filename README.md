@@ -860,7 +860,7 @@ restores the style chosen on that branch. Subagents never inherit a style.
 | Style       | What the agent does                                                                                       |
 | ----------- | --------------------------------------------------------------------------------------------------------- |
 | none        | Default behavior: no extra interaction guidance                                                           |
-| collaborate | Surfaces decisions with 2-3 options and a recommendation, asks via `ask_user_question`, uses your domain knowledge, and confirms direction between small increments |
+| collaborate | Builds the work with you in small, reviewable increments: agrees on the approach first, makes one change per turn, then stops for your review. Surfaces decisions with 2-3 options and a recommendation via `ask_user_question` and uses your domain knowledge |
 | tutor       | Teaches the current task in small steps, explains the reasoning with concrete examples, invites you to predict, explain, or try something, then pauses and gives feedback before continuing |
 | concise     | Gives direct answers with minimal commentary: key decisions, blockers, results, and verification; expands when you ask for detail |
 | ste         | Uses Simplified Technical English principles from ASD-STE100: short sentences, clear instructions, active voice, and consistent terms |
@@ -876,7 +876,17 @@ it" or "just answer" to skip participation for the current task.
 
 In ask and plan mode, tutor keeps exercises in chat and never edits files or
 plants markers. In plan mode, the final plan remains the stopping point.
-Collaborate in plan mode co-designs the plan with you before emitting it.
+Collaborate in plan mode co-designs the plan with you before emitting it, and
+shapes it as reviewable increments.
+
+Collaborate works iteratively. For non-trivial work, the agent first discusses
+how to break down the problem and the order of the steps. Then it makes one
+increment per turn, verifies it, and ends the turn. It reports what changed,
+where, the verification result, and the proposed next increment. You review the
+change and reply before it continues. The agent sizes each increment by context,
+not a fixed line or file limit. Auto mode and default-mode edit approvals do not
+remove these review stops. Say "continue through the rest" or "just do it" to
+let it finish the remaining steps in one run.
 
 Concise skips routine tool narration, filler, and repeated summaries—not required
 clarifications, approvals, warnings, or checks. Plan mode still produces an
