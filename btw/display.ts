@@ -2,8 +2,7 @@
  * btw — display surfaces.
  *
  * One visual vocabulary for every /btw output, composed from ui/chrome.ts
- * primitives so the side channel matches the AIO chrome (the
- * you-should-know display pattern):
+ * primitives so the side channel matches the AIO chrome:
  *
  *  - the framed transcript box (a custom session entry rendered via
  *    registerEntryRenderer — custom entries never enter LLM context),

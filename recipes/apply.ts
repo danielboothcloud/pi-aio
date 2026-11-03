@@ -39,7 +39,7 @@ import {
 } from "./config.js";
 import type { RecipeFileTrust } from "./trust.js";
 
-/** Session model type narrowed the way YSK narrows it. */
+/** Session model type (non-null `ctx.model`). */
 export type SessionModel = NonNullable<ExtensionContext["model"]>;
 
 /** The registry slice the engine needs (kept narrow for test harnesses). */
@@ -166,15 +166,15 @@ export function latestPersistedRecipe(
 
 /**
  * Resolve a model spec ("provider/id" or bare id; ids may themselves contain
- * colons) against the registry, the session's scoped models, and the catalog
- * — the lookup order YSK's auditor pin uses.
+ * colons) against the registry, the session's scoped models, and the catalog,
+ * in that order.
  */
 export function findRecipeModel(
 	ctx: Pick<ExtensionContext, "modelRegistry" | "scopedModels">,
 	spec: string,
 ): SessionModel | undefined {
 	// SAFETY: mapped slice of the ModelRegistry surface, intentionally erased to
-	// the session-model type (same narrowing YSK's auditor pin uses) so test
+	// the session-model type so test
 	// harnesses can supply a minimal object here.
 	const registry = ctx.modelRegistry as unknown as ModelRegistryLike | undefined;
 	const slash = spec.indexOf("/");
@@ -205,8 +205,7 @@ export function findRecipeModel(
 	try {
 		// A colon-bearing id (
 		// "hf:zai-org/GLM-5.3") also splits on its first slash, so both the
-		// split form and the whole spec are tried as catalog ids, matching
-		// YSK's auditor-pin lookup.
+		// split form and the whole spec are tried as catalog ids.
 		return registry.getModelsOfType("chat").find((model) =>
 			split
 				? (model.provider === split.provider && model.id === split.id) ||

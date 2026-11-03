@@ -6,7 +6,7 @@ diff rendering, shell rewriting, and structural search.
 
 > **Runtime user configuration lives in the agent directory.** Features read
 > their user-facing config from `<agent-dir>` at runtime (`aio-recipes.json`,
-> `aio-blocklist.json`, the goal/YSK settings files) — that is the shipped
+> `aio-blocklist.json`, the goal settings files) — that is the shipped
 > contract. The rule below is about *development work*: never let the agent
 > place feature code, scratch state, or out-of-tree settings there during
 > edits or tests.
@@ -418,37 +418,11 @@ generated `dist/` tree without changing the package contract.
   eviction. Detached lifecycle changes (including explicit stops) stay dirty,
   exempt from every pruning path, until reattachment checkpoints them on their
   own branch without stale follow-ups; session epochs guard replacements.
-- `you-should-know/` owns the YSK shadow auditor: successful
-  `write`/`edit`/`apply_patch` tool results are debounced into one bounded,
-  isolated `ctx.modelRegistry.complete()` audit (the sub-agent) whose findings
-  surface through one shared path: a chrome-composed custom entry in the btw
-  box idiom (`YOU SHOULD KNOW` label, severity-glyph head rows, wrapped
-  details, one dim provenance line) — custom entries never enter LLM context
-  — plus an above-editor findings card in the btw answer-card idiom (max 9
-  rows, auto-hides after 30s, TUI-only, replaced by newer findings,
-  test-overridable via `registerYouShouldKnow`'s `cardMs`); the critical-only
-  toast contract is unchanged, and a clean audit renders nothing. Infra
-  failures toast once then latch silent (reset by enable/model changes), but
-  the latest failure is always recorded and reported by `/ysk status` (age
-  + message); otherwise silence means clean audits, below-threshold
-  findings, or deduped repeats. Off by default — `/ysk
-  enable|disable|model|severity|tools|audit` persists to
-  `~/.pi/agent/aio-you-should-know.settings.json` (goal-settings contract;
-  `AIO_YSK_SETTINGS_FILE` overrides for tests). Subagent children resolve the
-  same file mid-run, so a disabled parent audits nothing in its children
-  either; children audit their own writes and mirror findings into a
-  `you-should-know.jsonl` sidecar beside their runner-managed session file,
-  which the parent consumes (and deletes) when the `subagent` tool result
-  arrives. The state indicator is dual-channel: the minimalist frame's border
-  via the frame metadata protocol (muted armed, accent while auditing) while
-  a frame owns the surface, else the status row's `statuses` segment. It owns
-  no tool and gates nothing; registration order is not load-bearing
-  (registered late, before yaml-hooks).
 - `btw/` owns the `/btw` command — "by the way" side questions: pi executes
   extension commands immediately even while streaming, so a mid-flow question
   runs its handler without interrupting, queuing, or steering the run, and
   nothing enters LLM context. One bounded, isolated `ctx.modelRegistry.complete()`
-  call on the session model (the YSK engine seam) with its own AbortController
+  call on the session model with its own AbortController
   — the main run's abort signal never touches it; a newer `/btw` replaces
   (last wins) and shutdown aborts. Context is bounded: a 40-message / 12k-char
   flow digest, a capped snapshot walk (excluded dirs, 2,500 files), and a 28k
@@ -458,7 +432,7 @@ generated `dist/` tree without changing the package contract.
   arrival toast (warning toast on failure; no entry), and the transient
   `btw asking` pill — frame metadata protocol when a frame owns the surface,
   else footer status. No settings file, no tool names, no gating; registration
-  order is not load-bearing (late, beside YSK, before yaml-hooks). Subagent
+  order is not load-bearing (late, before yaml-hooks). Subagent
   children register no command but keep the entry renderer.
 - `session-naming/` gives fresh unnamed parent sessions a native Pi title after
   their first successful `agent_end`, using one isolated, bounded background

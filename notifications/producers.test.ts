@@ -7,7 +7,6 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { registerBtw } from "../btw/index.ts";
 import { registerPermissionModes } from "../permission-modes/index.ts";
 import registerGoalLoop from "../goal-loop/index.ts";
-import { registerYouShouldKnow } from "../you-should-know/index.ts";
 import { AGENT_PROMPT_EVENT, GOAL_ACTIVITY_EVENT, NOTIFICATION_EVENT, type NotificationSignal } from "./protocol.ts";
 
 type Handler = (event: any, ctx: ExtensionContext) => unknown;
@@ -79,25 +78,6 @@ test("real /btw completion publishes a session-bound background signal", async (
 		assert.equal(h.signals[0].sessionId, "producer-session");
 		assert.equal(h.signals[0].title, "Side answer ready");
 	} finally { await h.cleanup(); }
-});
-
-test("critical YSK signals use the shared filtered surfacing path, not every audit", async () => {
-	const h = harness(); const previous = process.env.AIO_YSK_SETTINGS_FILE;
-	try {
-		process.env.AIO_YSK_SETTINGS_FILE = join(h.directory, "ysk.json");
-		writeFileSync(process.env.AIO_YSK_SETTINGS_FILE, JSON.stringify({ enabled: true, batchWindowMs: 1 }));
-		writeFileSync(join(h.directory, "app.ts"), "export const x = 1;");
-		h.ctx.modelRegistry.complete = (async () => ({ stopReason: "stop", content: [{ type: "text", text: JSON.stringify({ findings: [{ severity: "critical", title: "Lost error", detail: "The failure is discarded.", file: "app.ts" }] }) }] })) as any;
-		registerYouShouldKnow(h.pi, { cardMs: 0 }); await h.fire("session_start");
-		await h.fire("tool_result", { toolName: "write", toolCallId: "write", input: { path: "app.ts", content: "export const x = 2;" }, isError: false, content: [] });
-		await until(() => h.signals.length > 0);
-		assert.equal(h.signals[0].category, "critical");
-		assert.equal(h.signals[0].title, "Critical audit finding");
-	} finally {
-		await h.cleanup();
-		if (previous === undefined) delete process.env.AIO_YSK_SETTINGS_FILE;
-		else process.env.AIO_YSK_SETTINGS_FILE = previous;
-	}
 });
 
 test("actual goal pause transitions notify once, while manual pause/cancel are quiet stops", async () => {

@@ -1,8 +1,7 @@
 /**
  * btw — isolated side-question engine.
  *
- * One bounded model call through an injected registry-complete seam (the same
- * CompleteFn contract you-should-know's shadow auditor uses). Never throws:
+ * One bounded model call through an injected registry-complete seam. Never throws:
  * infrastructure failures come back as `error` on the outcome so the /btw
  * command can surface a warning toast instead of breaking the prompt cycle it
  * runs inside. No Pi host imports — tests inject the complete seam directly.

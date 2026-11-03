@@ -15,7 +15,7 @@
 //              and starts like `pi --recipe <name>` (see trampoline.ts).
 //
 // AIO_RECIPES_FILE replaces the global file path (tests + sandboxes), the
-// same contract goal-settings and YSK use for their settings files.
+// same contract goal-settings uses for its settings file.
 //
 // File format:
 // {

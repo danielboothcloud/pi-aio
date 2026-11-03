@@ -9,7 +9,7 @@
  *
  * The module has no Pi host imports: the session branch enters as a loose
  * `readonly unknown[]` (the SDK's heterogeneous SessionEntry union, viewed
- * through a record lens — the YSK task-digest pattern), so tests exercise
+ * through a record lens), so tests exercise
  * everything with plain fixtures.
  */
 

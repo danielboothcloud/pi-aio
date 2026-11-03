@@ -60,7 +60,6 @@ Enabled by default in parent TUI sessions. AIO notifies when:
 - A background subagent run completes/fails, or a `/btw` answer/error arrives.
   Subagents notify once per group, not once per child or retry; their completion
   replaces the next generic idle alert.
-- YSK surfaces a **critical** finding, after its existing filtering/deduplication.
 
 On macOS, optional `terminal-notifier` on `PATH` provides native notifications
 and click-to-activate for a recognized terminal bundle ID. If unavailable or
@@ -369,7 +368,7 @@ selection and registrations, **not whether a remote model can answer**.
   resumed and forked context.
 - Config errors fail open: unreadable files warn once on `stderr` and the
   session runs without a recipe. `AIO_RECIPES_FILE` replaces the global recipes
-  file for tests and sandboxes (the same contract YSK and goal settings use).
+  file for tests and sandboxes (the same contract goal settings use).
 
 ## `ask_user_question` tool
 
@@ -1564,54 +1563,6 @@ the agent has no tool to open editor panes, so files are opened when
 you ask for them (`/nvim src/index.ts:42`, or `-r` for a read-only
 view). `path:line` and `path:line:col` shorthand work.
 
-## You Should Know (YSK) shadow auditor
-
-A dual-agent shadow auditor against tunnel vision. After every successful
-`write`, `edit`, or `apply_patch` (the diff-tools surface), YSK runs one
-bounded, isolated model call — the sub-agent — that re-examines the change
-with snapshots of the changed files, the nearest manifest, sibling listings,
-and your current task. It looks strictly for forgotten edge cases, broken
-in-project dependencies, unhandled errors, architectural mismatches, and
-operational footguns the implementing agent would not surface.
-
-- **The token guard is structural**: the audit runs outside the conversation
-  through `modelRegistry.complete()`, and findings are custom session entries,
-  which never enter LLM context. A clean audit renders nothing at all — no
-  entry, no toast, no noise.
-- **One cohesive surface**, in the same visual idiom as `/btw`: findings render
-  as a chrome-composed transcript box labeled `YOU SHOULD KNOW` (severity-glyph
-  head rows like the `✦` question row, wrapped details, one dim provenance
-  line: counts · threshold · sub-agent · tokens · latency), plus a transient
-  **above-editor card** that auto-hides after 30 seconds and points at the full
-  findings in the transcript — so a mid-flow surfacing is actually seen. The
-  box lands in the transcript right after the edits that raised it; context
-  stays attached to context. Critical findings also toast (critical-only,
-  unchanged). While enabled, YSK shows its state the way the rest of AIO does:
-  embedded in the minimalist frame's border (`mode · style · effort · context ·
-  time · ysk · btw` — muted while armed, accent while auditing) through the
-  frame metadata protocol, and as a `◉ YSK` pill in the status row's
-  `statuses` segment in unframed sessions.
-- **Subagents included**: children spawned by the `subagent` tool audit their
-  own writes, mirror findings into a sidecar beside their runner-managed
-  session file, and the parent surfaces (and consumes) them through the same
-  box and toast when the child run completes.
-- **Settings persist** (goal-settings contract) in
-  `~/.pi/agent/aio-you-should-know.settings.json`; `AIO_YSK_SETTINGS_FILE`
-  overrides it for tests and sandboxes. YSK is **off by default** — enabling it
-  once keeps it on across sessions *and* in subagent children, and disabling
-  it stops both immediately.
-
-Commands: `/ysk` shows status — including the **last audit failure** (age and
-message), so "why is it surfacing nothing" is answerable: once an
-infrastructure failure toasts (once), later failures stay silent until
-settings change, and `/ysk status` is the way to see them. Silence can also
-mean genuinely-clean audits (nothing found), findings below the `severity`
-threshold, or recent duplicates (a dedupe window suppresses repeats).
-`/ysk enable`, `/ysk disable`,
-`/ysk model <provider/id> | off` (default: the session model),
-`/ysk severity info|warning|critical`, `/ysk tools <list>`, and
-`/ysk audit <path>` for a manual one-shot audit.
-
 ## Layout
 
 ```text
@@ -1635,7 +1586,6 @@ threshold, or recent duplicates (a dedupe window suppresses repeats).
 ├── subagents/               # child-agent discovery, execution, and lifecycle
 ├── session-naming/          # background AI titles for new sessions
 ├── user-bash/               # !/!! editor hints; native shell execution
-├── you-should-know/        # YSK dual-agent shadow auditor
 └── yaml-hooks/              # hooks.yaml automation (ported from pi-yaml-hooks)
 ```
 
