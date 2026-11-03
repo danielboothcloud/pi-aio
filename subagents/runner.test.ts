@@ -424,6 +424,31 @@ test("child mirrors a -ne parent's explicit extensions (recipe relaunch)", () =>
 	});
 });
 
+test("child keeps a -ne parent's builtin:<name> extensions (MCP/codemode survive)", () => {
+	const launch = withoutExtraExtensions(() =>
+		resolveChildExtensionLaunch({
+			cwd: "/work",
+			argv: [
+				"node",
+				"pi",
+				"-ne",
+				"-e",
+				AIO_EXTENSION_PATH,
+				"-e",
+				"builtin:mcp",
+				"-e",
+				"builtin:codemode",
+				"-e",
+				"builtin:tool-search",
+			],
+		}),
+	);
+	assert.deepEqual(launch, {
+		noExtensions: true,
+		paths: [AIO_EXTENSION_PATH, "builtin:mcp", "builtin:codemode", "builtin:tool-search"],
+	});
+});
+
 test("child inherits configured packages when the parent did not pass -ne", () => {
 	const launch = withoutExtraExtensions(() =>
 		resolveChildExtensionLaunch({

@@ -60,7 +60,6 @@ Enabled by default in parent TUI sessions. AIO notifies when:
 - A background subagent run completes/fails, or a `/btw` answer/error arrives.
   Subagents notify once per group, not once per child or retry; their completion
   replaces the next generic idle alert.
-- YSK surfaces a **critical** finding, after its existing filtering/deduplication.
 
 On macOS, optional `terminal-notifier` on `PATH` provides native notifications
 and click-to-activate for a recognized terminal bundle ID. If unavailable or
@@ -265,7 +264,10 @@ model scope before `session_start`; its extension API cannot replace either
 in-session. When `pi --recipe work` selects a
 restart-scoped recipe, AIO restarts pi once during extension loading — before
 the TUI or session exist — with the recipe translated onto pi's own CLI flags
-(`--models …`, `-ne -e <aio> -e <ext> …`), hands the recipe over via
+(`--models …`, `-ne -e <aio> -e <ext> …`; Pi's built-in `builtin:mcp`,
+`builtin:codemode`, and `builtin:tool-search` are re-added because `-ne`
+would drop them, unless your settings disable one with `-builtin:<name>`),
+hands the recipe over via
 `AIO_RECIPE_ACTIVE`, and exits with the child's exit code. You see at most a
 one-line notice; the child never relaunches (`AIO_RECIPE_STAGE=1`). Guards,
 in order: subagent children, staged relaunches, `pi` subcommands, and the
@@ -366,7 +368,7 @@ selection and registrations, **not whether a remote model can answer**.
   resumed and forked context.
 - Config errors fail open: unreadable files warn once on `stderr` and the
   session runs without a recipe. `AIO_RECIPES_FILE` replaces the global recipes
-  file for tests and sandboxes (the same contract YSK and goal settings use).
+  file for tests and sandboxes (the same contract goal settings use).
 
 ## `ask_user_question` tool
 
@@ -858,7 +860,7 @@ restores the style chosen on that branch. Subagents never inherit a style.
 | Style       | What the agent does                                                                                       |
 | ----------- | --------------------------------------------------------------------------------------------------------- |
 | none        | Default behavior: no extra interaction guidance                                                           |
-| collaborate | Surfaces decisions with 2-3 options and a recommendation, asks via `ask_user_question`, uses your domain knowledge, and confirms direction between small increments |
+| collaborate | Builds the work with you in small, reviewable increments: agrees on the approach first, makes one change per turn, then stops for your review. Surfaces decisions with 2-3 options and a recommendation via `ask_user_question` and uses your domain knowledge |
 | tutor       | Teaches the current task in small steps, explains the reasoning with concrete examples, invites you to predict, explain, or try something, then pauses and gives feedback before continuing |
 | concise     | Gives direct answers with minimal commentary: key decisions, blockers, results, and verification; expands when you ask for detail |
 | ste         | Uses Simplified Technical English principles from ASD-STE100: short sentences, clear instructions, active voice, and consistent terms |
@@ -874,7 +876,17 @@ it" or "just answer" to skip participation for the current task.
 
 In ask and plan mode, tutor keeps exercises in chat and never edits files or
 plants markers. In plan mode, the final plan remains the stopping point.
-Collaborate in plan mode co-designs the plan with you before emitting it.
+Collaborate in plan mode co-designs the plan with you before emitting it, and
+shapes it as reviewable increments.
+
+Collaborate works iteratively. For non-trivial work, the agent first discusses
+how to break down the problem and the order of the steps. Then it makes one
+increment per turn, verifies it, and ends the turn. It reports what changed,
+where, the verification result, and the proposed next increment. You review the
+change and reply before it continues. The agent sizes each increment by context,
+not a fixed line or file limit. Auto mode and default-mode edit approvals do not
+remove these review stops. Say "continue through the rest" or "just do it" to
+let it finish the remaining steps in one run.
 
 Concise skips routine tool narration, filler, and repeated summaries—not required
 clarifications, approvals, warnings, or checks. Plan mode still produces an
@@ -1561,54 +1573,6 @@ the agent has no tool to open editor panes, so files are opened when
 you ask for them (`/nvim src/index.ts:42`, or `-r` for a read-only
 view). `path:line` and `path:line:col` shorthand work.
 
-## You Should Know (YSK) shadow auditor
-
-A dual-agent shadow auditor against tunnel vision. After every successful
-`write`, `edit`, or `apply_patch` (the diff-tools surface), YSK runs one
-bounded, isolated model call — the sub-agent — that re-examines the change
-with snapshots of the changed files, the nearest manifest, sibling listings,
-and your current task. It looks strictly for forgotten edge cases, broken
-in-project dependencies, unhandled errors, architectural mismatches, and
-operational footguns the implementing agent would not surface.
-
-- **The token guard is structural**: the audit runs outside the conversation
-  through `modelRegistry.complete()`, and findings are custom session entries,
-  which never enter LLM context. A clean audit renders nothing at all — no
-  entry, no toast, no noise.
-- **One cohesive surface**, in the same visual idiom as `/btw`: findings render
-  as a chrome-composed transcript box labeled `YOU SHOULD KNOW` (severity-glyph
-  head rows like the `✦` question row, wrapped details, one dim provenance
-  line: counts · threshold · sub-agent · tokens · latency), plus a transient
-  **above-editor card** that auto-hides after 30 seconds and points at the full
-  findings in the transcript — so a mid-flow surfacing is actually seen. The
-  box lands in the transcript right after the edits that raised it; context
-  stays attached to context. Critical findings also toast (critical-only,
-  unchanged). While enabled, YSK shows its state the way the rest of AIO does:
-  embedded in the minimalist frame's border (`mode · style · effort · context ·
-  time · ysk · btw` — muted while armed, accent while auditing) through the
-  frame metadata protocol, and as a `◉ YSK` pill in the status row's
-  `statuses` segment in unframed sessions.
-- **Subagents included**: children spawned by the `subagent` tool audit their
-  own writes, mirror findings into a sidecar beside their runner-managed
-  session file, and the parent surfaces (and consumes) them through the same
-  box and toast when the child run completes.
-- **Settings persist** (goal-settings contract) in
-  `~/.pi/agent/aio-you-should-know.settings.json`; `AIO_YSK_SETTINGS_FILE`
-  overrides it for tests and sandboxes. YSK is **off by default** — enabling it
-  once keeps it on across sessions *and* in subagent children, and disabling
-  it stops both immediately.
-
-Commands: `/ysk` shows status — including the **last audit failure** (age and
-message), so "why is it surfacing nothing" is answerable: once an
-infrastructure failure toasts (once), later failures stay silent until
-settings change, and `/ysk status` is the way to see them. Silence can also
-mean genuinely-clean audits (nothing found), findings below the `severity`
-threshold, or recent duplicates (a dedupe window suppresses repeats).
-`/ysk enable`, `/ysk disable`,
-`/ysk model <provider/id> | off` (default: the session model),
-`/ysk severity info|warning|critical`, `/ysk tools <list>`, and
-`/ysk audit <path>` for a manual one-shot audit.
-
 ## Layout
 
 ```text
@@ -1632,7 +1596,6 @@ threshold, or recent duplicates (a dedupe window suppresses repeats).
 ├── subagents/               # child-agent discovery, execution, and lifecycle
 ├── session-naming/          # background AI titles for new sessions
 ├── user-bash/               # !/!! editor hints; native shell execution
-├── you-should-know/        # YSK dual-agent shadow auditor
 └── yaml-hooks/              # hooks.yaml automation (ported from pi-yaml-hooks)
 ```
 

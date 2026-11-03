@@ -35,3 +35,26 @@ test("real user prompts still reach submission hooks", async () => {
 		else process.env.PI_YAML_HOOKS_PROMPT_AWARENESS = previous;
 	}
 });
+
+test("the awareness note is only sent when hooks are loaded or a hook file has errors", async () => {
+	const { mkdtempSync, mkdirSync, rmSync, writeFileSync } = await import("node:fs");
+	const { join } = await import("node:path");
+	const { tmpdir } = await import("node:os");
+	const { buildHookAwarenessSystemPrompt } = await import("./prompt-support.ts");
+	const agentDir = mkdtempSync(join(tmpdir(), "aio-hooks-note-"));
+	const project = join(agentDir, "project");
+	mkdirSync(project);
+	const saved = { dir: process.env.PI_CODING_AGENT_DIR, awareness: process.env.PI_YAML_HOOKS_PROMPT_AWARENESS };
+	process.env.PI_CODING_AGENT_DIR = agentDir;
+	delete process.env.PI_YAML_HOOKS_PROMPT_AWARENESS;
+	try {
+		assert.equal(buildHookAwarenessSystemPrompt({ cwd: project, hasUI: true }), undefined);
+		writeFileSync(join(agentDir, "hooks.yaml"), "this: [is not valid hooks\n");
+		assert.match(buildHookAwarenessSystemPrompt({ cwd: project, hasUI: true }) ?? "", /validation issue/);
+	} finally {
+		if (saved.dir === undefined) delete process.env.PI_CODING_AGENT_DIR;
+		else process.env.PI_CODING_AGENT_DIR = saved.dir;
+		if (saved.awareness !== undefined) process.env.PI_YAML_HOOKS_PROMPT_AWARENESS = saved.awareness;
+		rmSync(agentDir, { recursive: true, force: true });
+	}
+});

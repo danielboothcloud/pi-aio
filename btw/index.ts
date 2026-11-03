@@ -7,7 +7,7 @@
  *   without interrupting, queuing, or steering the run — and nothing about
  *   it enters LLM context.
  * - Engine: one bounded, isolated ctx.modelRegistry.complete() call on the
- *   session model (the YSK shadow-audit seam) with its OWN AbortController:
+ *   session model with its OWN AbortController:
  *   an Esc abort of the main flow never touches it; a newer /btw replaces it
  *   (last wins) and shutdown aborts it.
  * - Context: a bounded recent-flow digest + a bounded workspace snapshot
@@ -209,7 +209,7 @@ export function registerBtw(pi: ExtensionAPI, options: RegisterBtwOptions = {}):
 				prompt,
 				// SAFETY: the registry's complete() fulfills the injected
 				// engine signature; its generic SDK types are erased at this
-				// single seam (the same cast you-should-know uses).
+				// single seam.
 				complete: run.ctx.modelRegistry.complete.bind(
 					run.ctx.modelRegistry,
 				) as unknown as BtwCompleteFn,

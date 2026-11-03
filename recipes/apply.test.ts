@@ -3,6 +3,8 @@ import test from "node:test";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { parseRecipeConfig, RECIPE_STATE_ENTRY } from "./config.ts";
 import { RECIPE_BLOCKLIST_ENV, recipeBlocklist } from "../blocklist/config.ts";
+import { getRecipePermissionMode, type PermissionMode, setPermissionModeAccess } from "../permission-modes/mode-access.ts";
+import { getRecipeStyle, setStyleAccess, type Style } from "../styles/style-access.ts";
 import {
 	applyRecipe,
 	deactivateRecipe,
@@ -400,4 +402,63 @@ test("updateRecipeStatus: a frame-capable host hides the footer fallback", async
 	await applyRecipe(h.pi as never, h.ctx as never, def, { source: "flag", persist: false });
 	updateRecipeStatus(h.pi as never, h.ctx as never);
 	assert.equal(h.state.statuses.get("recipe"), undefined, "framed hosts use the border pill");
+});
+
+test("recipe permissionMode/style: parsed, published as starting values, cleared on deactivate", async () => {
+	const parsed = parseRecipeConfig("x", "directory", "/repo", { permissionMode: "PLAN", style: "mentor" })?.config;
+	assert.equal(parsed?.permissionMode, "plan");
+	assert.equal(parsed?.style, "tutor");
+	assert.equal(parseRecipeConfig("x", "global", "/b", { mode: "auto" })?.config.permissionMode, "auto");
+	const junk = parseRecipeConfig("x", "global", "/b", { permissionMode: "yolo", style: 3 })?.config;
+	assert.equal(junk?.permissionMode, undefined);
+	assert.equal(junk?.style, undefined);
+
+	const h = makeHarness();
+	const result = await applyRecipe(h.pi as never, h.ctx as never, recipe({ permissionMode: "ask", style: "concise" }), {
+		source: "session",
+		persist: false,
+	});
+	assert.deepEqual(result.applied.filter((key) => key === "mode" || key === "style"), ["mode", "style"]);
+	assert.equal(getRecipePermissionMode(), "ask");
+	assert.equal(getRecipeStyle(), "concise");
+	await applyRecipe(h.pi as never, h.ctx as never, recipe({}), { source: "command", persist: false });
+	assert.equal(getRecipePermissionMode(), undefined);
+	assert.equal(getRecipeStyle(), undefined);
+	await applyRecipe(h.pi as never, h.ctx as never, recipe({ permissionMode: "plan" }), { source: "session", persist: false });
+	deactivateRecipe(h.pi as never, h.ctx as never, { persist: false });
+	assert.equal(getRecipePermissionMode(), undefined);
+});
+
+test("a live /recipe switch sets the mode and style now; missing features warn", async () => {
+	const h = makeHarness();
+	const calls: string[] = [];
+	let mode: PermissionMode = "default";
+	let style: Style = "none";
+	setPermissionModeAccess({ getMode: () => mode, setMode: async (next) => { calls.push(`mode:${next}`); mode = next; } });
+	setStyleAccess({
+		getStyle: () => style,
+		setStyle: async (next, _ctx, options) => { calls.push(`style:${next}:${options?.quiet ? "quiet" : "loud"}`); style = next; },
+	});
+	try {
+		const def = recipe({ permissionMode: "plan", style: "ste" });
+		const first = await applyRecipe(h.pi as never, h.ctx as never, def, { source: "command", persist: false, live: true });
+		assert.deepEqual(calls, ["mode:plan", "style:ste:quiet"]);
+		assert.deepEqual(first.warnings, []);
+		// Already there: no redundant switch (and no extra persisted entry).
+		await applyRecipe(h.pi as never, h.ctx as never, def, { source: "command", persist: false, live: true });
+		assert.equal(calls.length, 2);
+		// Not live (startup): only publish; the features pick it up themselves.
+		await applyRecipe(h.pi as never, h.ctx as never, recipe({ permissionMode: "auto" }), { source: "session", persist: false });
+		assert.equal(calls.length, 2);
+	} finally {
+		setPermissionModeAccess(undefined);
+		setStyleAccess(undefined);
+	}
+	const missing = await applyRecipe(h.pi as never, h.ctx as never, recipe({ permissionMode: "plan", style: "ste" }), {
+		source: "command",
+		persist: false,
+		live: true,
+	});
+	assert.equal(missing.applied.includes("mode"), false);
+	assert.equal(missing.warnings.length, 2);
 });

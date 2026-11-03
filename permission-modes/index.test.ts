@@ -10,6 +10,7 @@ import type {
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { registerPermissionModes } from "./index.ts";
+import { getPermissionModeAccess, setPermissionModeAccess, setRecipePermissionMode } from "./mode-access.ts";
 
 type EventHandler = (event: any, ctx: ExtensionContext) => Promise<any>;
 
@@ -646,4 +647,37 @@ test("default mode: an outside edit shows one outside-directory prompt, not two"
 	} finally {
 		ws.cleanup();
 	}
+});
+
+async function startWithRecipeMode(options: { argv: string[]; persisted?: string }): Promise<string | undefined> {
+	const saved = process.env.AIO_SUBAGENT_CHILD;
+	delete process.env.AIO_SUBAGENT_CHILD;
+	setRecipePermissionMode("plan");
+	try {
+		const { ctx, handlers, pi } = makeHarness();
+		Object.assign(pi, { getFlag: () => "default" });
+		Object.assign(ctx, {
+			hasUI: false,
+			sessionManager: {
+				getEntries: () => options.persisted
+					? [{ type: "custom", customType: "modes", data: { currentMode: options.persisted } }]
+					: [],
+			},
+		});
+		registerPermissionModes(pi, options.argv);
+		for (const handler of handlers.get("session_start") ?? []) await handler({}, ctx);
+		return getPermissionModeAccess()?.getMode();
+	} finally {
+		setRecipePermissionMode(undefined);
+		setPermissionModeAccess(undefined);
+		if (saved === undefined) delete process.env.AIO_SUBAGENT_CHILD;
+		else process.env.AIO_SUBAGENT_CHILD = saved;
+	}
+}
+
+test("a recipe's permissionMode is the starting mode; an explicit flag or saved mode wins", async () => {
+	assert.equal(await startWithRecipeMode({ argv: ["pi", "pi"] }), "plan");
+	assert.equal(await startWithRecipeMode({ argv: ["pi", "pi", "--permission-mode", "default"] }), "default");
+	assert.equal(await startWithRecipeMode({ argv: ["pi", "pi", "--permission-mode=default"] }), "default");
+	assert.equal(await startWithRecipeMode({ argv: ["pi", "pi"], persisted: "ask" }), "ask");
 });

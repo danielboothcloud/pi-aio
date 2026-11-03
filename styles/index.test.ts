@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { getStyleAccess, setRecipeStyle } from "./style-access.ts";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type {
 	ExtensionAPI,
@@ -538,13 +539,39 @@ test("style guidance adapts to the active permission mode", async () => {
 		/co-design the plan/,
 	);
 	assert.match(
+		buildStyleContext("collaborate", "plan"),
+		/Shape the plan as reviewable increments/,
+	);
+	assert.match(
 		buildStyleContext("collaborate", "auto"),
-		/not to the check-ins this style asks for/,
+		/not to the check-ins and review pauses this style asks for/,
+	);
+	assert.match(
+		buildStyleContext("collaborate", "auto"),
+		/not permission to run every step in one turn/,
 	);
 	assert.match(
 		buildStyleContext("collaborate", "default"),
 		/per-edit approvals are not a substitute/,
 	);
+	assert.match(
+		buildStyleContext("collaborate", "default"),
+		/still stop after each increment/,
+	);
+
+	// Iterative delivery applies in every mode: agree on the breakdown, make
+	// one judgment-sized increment per turn, then stop for the user's review.
+	for (const mode of ["default", "auto", "plan", "ask"] as const) {
+		const context = buildStyleContext("collaborate", mode);
+		assert.match(context, /small, reviewable increments/);
+		assert.match(context, /Discuss the approach before the first edit/);
+		assert.match(context, /Size each increment by judgment, not a fixed limit/);
+		assert.match(context, /Make one increment per turn.*then end your turn/);
+		assert.match(context, /wait for their review and reply/);
+		assert.match(context, /Leave the code working at every stop/);
+		assert.match(context, /continue through the remaining steps or to just do it/);
+		assert.doesNotMatch(context, /Work in small increments: finish one meaningful chunk/);
+	}
 
 	// End to end: the injection reads the live permission mode.
 	const previous = getPermissionModeAccess();
@@ -722,4 +749,33 @@ test("subagent children never get a style and strip inherited instructions", asy
 		if (previous === undefined) delete process.env.AIO_SUBAGENT_CHILD;
 		else process.env.AIO_SUBAGENT_CHILD = previous;
 	}
+});
+
+test("a recipe's style applies when the branch has no /style choice; a saved choice wins", async () => {
+	setRecipeStyle("concise");
+	try {
+		const fresh = makeHarness();
+		await fresh.emit("session_start");
+		assert.match(String((await fresh.emit("before_agent_start"))?.message?.content), /concise/i);
+
+		const saved = makeHarness({ branch: [{ type: "custom", customType: "styles", data: { style: "none" } }] });
+		await saved.emit("session_start");
+		assert.equal(await saved.emit("before_agent_start"), undefined);
+	} finally {
+		setRecipeStyle(undefined);
+	}
+	const off = makeHarness();
+	await off.emit("session_start");
+	assert.equal(await off.emit("before_agent_start"), undefined);
+});
+
+test("style access sets the style quietly for a recipe switch", async () => {
+	const harness = makeHarness();
+	await harness.emit("session_start");
+	const access = getStyleAccess();
+	assert.ok(access);
+	await access.setStyle("ste", {} as never, { quiet: true });
+	assert.equal(access.getStyle(), "ste");
+	assert.deepEqual(harness.notifications, []);
+	assert.deepEqual(harness.entries.at(-1), { customType: "styles", data: { style: "ste" } });
 });

@@ -22,6 +22,7 @@ import {
 	SUBAGENT_CHILD_ENV,
 	decideRelaunch,
 	execRelaunch,
+	settingsDisabledBuiltins,
 	stripRecipeInvocation,
 	type RelaunchSpec,
 	type TrampolineDecision,
@@ -74,6 +75,7 @@ export function selectedSessionRelaunch(options: {
 		argv, command: options.command, env,
 		recipes: { [options.def.name]: options.def },
 		continuedRecipe: { name: options.def.name, file: options.file },
+		disabledBuiltins: settingsDisabledBuiltins(),
 	}) : undefined;
 	if (decision?.action === "relaunch") return decision;
 	const count = Number(options.env[RECIPE_INJECTED_ARGS_ENV]);

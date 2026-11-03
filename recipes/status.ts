@@ -4,6 +4,8 @@ import { wrapTextWithAnsi } from "@earendil-works/pi-tui";
 import { chromeFrameRow, chromeFrameRule, type ChromeTheme } from "../ui/chrome.js";
 import { ACTIVE_RECIPE_ENV, RECIPE_FLAG, RECIPE_STAGE_ENV, parseModelSpec } from "./config.js";
 import { findRecipeModel, recipeRuntime } from "./apply.js";
+import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
+import { getStyleAccess } from "../styles/style-access.js";
 
 /** Custom session entries never enter model context or start a model call. */
 export const RECIPE_STATUS_ENTRY = "recipe-status-report";
@@ -27,6 +29,8 @@ export interface RecipeStatusReport {
 		thinking: string | null;
 		models: string[] | null;
 		extensions: string[] | null;
+		permissionMode: string | null;
+		style: string | null;
 	};
 	runtime: {
 		model: string | null;
@@ -37,6 +41,9 @@ export interface RecipeStatusReport {
 		scopedModels: string[];
 		activeTools: string[];
 		registeredProviders: string[] | null;
+		/** null when permission modes or styles are not loaded. */
+		permissionMode: string | null;
+		style: string | null;
 	};
 	launch: {
 		recipe: string | null;
@@ -135,6 +142,8 @@ export function buildRecipeStatus(
 			thinking: def?.config.thinkingLevel ?? requested?.thinking ?? null,
 			models: def?.config.models ? [...def.config.models] : null,
 			extensions: def?.config.extensions?.map(safeText) ?? null,
+			permissionMode: def?.config.permissionMode ?? null,
+			style: def?.config.style ?? null,
 		},
 		runtime: {
 			model: canonical,
@@ -145,6 +154,8 @@ export function buildRecipeStatus(
 			scopedModels: ctx.scopedModels.map(entry => `${entry.model.provider}/${entry.model.id}`),
 			activeTools: [...pi.getActiveTools()],
 			registeredProviders: ctx.modelRegistry.getRegisteredProviderIds?.().map(safeText) ?? null,
+			permissionMode: getPermissionModeAccess()?.getMode() ?? null,
+			style: getStyleAccess()?.getStyle() ?? null,
 		},
 		launch: {
 			recipe: launchRecipe,
@@ -176,6 +187,8 @@ export function formatRecipeStatus(report: RecipeStatusReport, view: "summary" |
 		`Extensions — launch policy: ${report.launch.extensionPolicy}${report.launch.bridged ? " (recipe relaunch)" : ""}`,
 		...report.launch.extensions.map(source => `  ${source}`),
 		`Extensions — configured: ${report.configured.extensions?.join(", ") ?? "inherited"}`,
+		`Permission mode — runtime: ${report.runtime.permissionMode ?? "unavailable"}; configured: ${report.configured.permissionMode ?? "inherited"}`,
+		`Style — runtime: ${report.runtime.style ?? "unavailable"}; configured: ${report.configured.style ?? "inherited"}`,
 		"Observed extension sources (runtime registrations):",
 	];
 	for (const source of report.observedExtensionSources) {

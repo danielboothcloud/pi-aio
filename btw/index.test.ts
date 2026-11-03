@@ -1,8 +1,7 @@
 /**
  * btw/index.ts — registrar wiring tests.
  *
- * Drives the real registrar through a mocked Pi/ctx harness (the
- * you-should-know wiring-test pattern): command surfacing (parent vs
+ * Drives the real registrar through a mocked Pi/ctx harness: command surfacing (parent vs
  * headless child), the end-to-end ask flow (prompt = digest + snapshot +
  * question), the multi-surface lifecycle (entry box, toast, pending →
  * answered card with auto-hide, frame pill vs footer status), last-wins

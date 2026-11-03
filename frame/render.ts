@@ -63,8 +63,6 @@ export interface FrameMetadata {
 	style?: { icon: string; label: string; role: string };
 	/** Active launch recipe, contributed by recipes; absent when none is active. */
 	recipe?: { icon: string; label: string; role: string };
-	/** Shadow-auditor state, contributed by you-should-know; absent when disabled. */
-	ysk?: { icon: string; label: string; role: string };
 	/** Side-question state, contributed by btw; present only while a /btw call is in flight. */
 	btw?: { icon: string; label: string; role: string };
 	/** Provider quota line, contributed by status-line (pre-joined text + theme role). */
@@ -147,8 +145,8 @@ function renderTopLeft(
 	// Permission mode leads the metadata (it gates what the agent may do),
 	// then the opt-in interaction style that rides on top of it, then the
 	// active launch recipe (a session-scope backdrop), then the effort level,
-	// then the run timer, then the shadow-auditor pill, then any in-flight
-	// /btw side question — mode-style-recipe-effort-time-ysk-btw.
+	// then the run timer, then any in-flight /btw side question —
+	// mode-style-recipe-effort-time-btw.
 	const mode = metadata.mode;
 	if (mode) {
 		parts.push(safeThemeFg(uiTheme, mode.role, `${mode.icon} ${mode.label}`));
@@ -214,12 +212,6 @@ function renderTopLeft(
 					)
 				: muted(duration),
 		);
-	}
-	// YSK shadow-auditor state: a muted pill while armed, an accent flash
-	// while a background audit runs. Absent when disabled.
-	const ysk = metadata.ysk;
-	if (ysk) {
-		parts.push(safeThemeFg(uiTheme, ysk.role, `${ysk.icon} ${ysk.label}`));
 	}
 	// The btw side-question pill flashes only while a /btw side call is in
 	// flight; it closes the cluster and is absent otherwise.

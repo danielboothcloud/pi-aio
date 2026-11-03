@@ -353,7 +353,7 @@ export function registerSubagents(
 									content: formatRunResult(continuation),
 									display: true,
 									details: publicRun(continuation),
-								}, { deliverAs: "followUp", triggerTurn: true });
+								}, { deliverAs: "steer", triggerTurn: true });
 							}).catch((error) => {
 								if (shuttingDown || epoch !== sessionEpoch) return;
 								ctx.ui.notify(`Could not resume subagent: ${error instanceof Error ? error.message : String(error)}`, "warning");
@@ -422,7 +422,7 @@ export function registerSubagents(
 			"Use subagent for focused, self-contained delegation and independent parallel review.",
 			"Keep one writer in the shared checkout; parallel subagent tasks should normally be read-only.",
 			"Use subagent action=list before choosing an unfamiliar configured agent.",
-			"Budget timeoutMs generously for research-heavy tasks: the default is 15 minutes, and tight budgets kill healthy children mid-request and waste the tokens they already spent.",
+			"Use async=true only when you have other independent work to do meanwhile; its result arrives as a message after your current tool calls finish. If you would just wait for it, run in the foreground instead.",
 			"If a child fails after its automatic retry, narrow or split the task instead of re-sending it unchanged.",
 		],
 		parameters: SubagentSchema,
@@ -540,7 +540,7 @@ export function registerSubagents(
 								display: true,
 								details: publicRun(run),
 							},
-							{ deliverAs: "followUp", triggerTurn: true },
+							{ deliverAs: "steer", triggerTurn: true },
 						);
 					})
 					.catch((error) => {
@@ -553,7 +553,7 @@ export function registerSubagents(
 								content: `Subagent launch failed: ${error instanceof Error ? error.message : String(error)}`,
 								display: true,
 							},
-							{ deliverAs: "followUp", triggerTurn: true },
+							{ deliverAs: "steer", triggerTurn: true },
 						);
 					});
 				return toolResult(

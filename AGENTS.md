@@ -6,7 +6,7 @@ diff rendering, shell rewriting, and structural search.
 
 > **Runtime user configuration lives in the agent directory.** Features read
 > their user-facing config from `<agent-dir>` at runtime (`aio-recipes.json`,
-> `aio-blocklist.json`, the goal/YSK settings files) — that is the shipped
+> `aio-blocklist.json`, the goal settings files) — that is the shipped
 > contract. The rule below is about *development work*: never let the agent
 > place feature code, scratch state, or out-of-tree settings there during
 > edits or tests.
@@ -84,7 +84,10 @@ generated `dist/` tree without changing the package contract.
   `--export`/`--list-models`, explicit user `-e`/`--models` flags, and it
   reads only the global recipes file since project trust is unresolved during
   factories), then `execRelaunch()` re-spawns pi once via pi's own argv
-  (`-ne -e <aio> -e <ext> --models …`), stripping the `--recipe` token and
+  (`-ne -e <aio> -e builtin:{mcp,codemode,tool-search} -e <ext> --models …`;
+  `-ne` drops Pi's built-in extensions too, so those three are re-added
+  unless global settings disable one with `-builtin:<name>` — subagents
+  forward them from the parent argv), stripping the `--recipe` token and
   handing the name over as `AIO_RECIPE_ACTIVE`; `AIO_RECIPE_STAGE=1` makes a
   loop impossible and a failed spawn falls back in-session with a warning
   (a later `close` after a spawn `error` must not kill that fallback). Compiled
@@ -156,8 +159,20 @@ generated `dist/` tree without changing the package contract.
   portable: its `defaultRecipe` resolves only against its own `recipes`
   (never global/project ones; otherwise ignored with a warning);
   `/recipe trust` / `/recipe untrust` record or forget the decision.
-  Recipes support only description/model/thinkingLevel/models/mcpServers/extensions/blocklist;
-  unknown keys are ignored. `blocklist` (session-scoped, same shape as
+  Recipes support only description/model/thinkingLevel/models/mcpServers/extensions/blocklist/
+  permissionMode/style; unknown keys are ignored. `permissionMode`
+  (`default|ask|plan|auto`, alias `mode`) and `style` (the `/style` names,
+  legacy aliases accepted) are session-scoped starting values: `applyRecipe`
+  publishes them through `permission-modes/mode-access.ts` and
+  `styles/style-access.ts`, and those features read them at their own
+  session_start only when nothing more specific exists (an explicit
+  `--permission-mode` flag or a saved `modes` entry; a `/style` entry on the
+  branch). A live `/recipe` switch or just-trusted directory default
+  (`live: true`) sets them immediately via the access handles (style switch is
+  quiet). Deactivating clears only the starting values; the session keeps its
+  current mode and style, like the model. `/recipe init` copies them only from
+  a template, never into a blank scaffold. Subagent children never activate
+  recipes, so they stay pinned to `auto`. `blocklist` (session-scoped, same shape as
   `aio-blocklist.json` or a bare entries array) is published by
   `applyRecipe`/`deactivateRecipe` through `setRecipeBlocklist` and unioned
   into the hard blocklist as source `recipe:<name>`; it can only add rules.
@@ -308,9 +323,10 @@ generated `dist/` tree without changing the package contract.
   per-turn `styles-context` instruction (mode-aware, e.g. no `TODO(human)`
   markers in ask/plan); it never gates tools, and it is NOT a permission mode
   (keep it out of `mode-access.ts`, Shift+Tab, and `--permission-mode`).
-  Off by default: no flag or setting enables it; only `/style` does, and the
-  choice persists as a `styles` session entry restored from the current
-  branch. Tutor teaches in small explain → practice → feedback steps, waits
+  Off by default: no flag or setting enables it; `/style` or an active
+  recipe's `style` key does. A `/style` choice persists as a `styles`
+  session entry restored from the current branch and beats the recipe's
+  starting style. Tutor teaches in small explain → practice → feedback steps, waits
   for participation, and uses hands-on edits only with agreement; passive modes
   keep exercises in chat. The former `mentor` command and persisted name map to
   canonical `tutor` (not advertised as a separate style). Concise minimizes
@@ -353,9 +369,15 @@ generated `dist/` tree without changing the package contract.
   survive the failed attempt; fork retries resume the forked session with
   `--session` (dropping `--fork`, which cannot combine with it). Final
   failures report the preserved session file so the parent can inspect or
-  resume manually. Tool description and promptGuidelines steer the parent
-  toward generous `timeoutMs` budgets (pi's own HTTP idle timeout is 300s by
-  default, so budgets below that kill children mid-recovery). Completion is
+  resume manually. The guidelines deliberately do not push larger
+  `timeoutMs` budgets (agent defaults plus automatic retry cover slow
+  children; pi's own HTTP idle timeout is 300s, so budgets below that kill
+  children mid-recovery). Background (`async`) results and inspector-resumed
+  continuations are delivered as `steer` messages, so they reach the parent
+  at its next turn boundary while it is still working (a `followUp` would
+  wait until the parent finished, by which point it no longer uses them);
+  a guideline tells the model to use `async` only when it has independent
+  work to do meanwhile. Completion is
   the child's `agent_settled` JSON event, NOT process exit: `pi -p` only exits
   once its event loop drains, so any inherited extension that leaves a live
   handle in the headless child would otherwise hang the parent tool until the
@@ -396,37 +418,11 @@ generated `dist/` tree without changing the package contract.
   eviction. Detached lifecycle changes (including explicit stops) stay dirty,
   exempt from every pruning path, until reattachment checkpoints them on their
   own branch without stale follow-ups; session epochs guard replacements.
-- `you-should-know/` owns the YSK shadow auditor: successful
-  `write`/`edit`/`apply_patch` tool results are debounced into one bounded,
-  isolated `ctx.modelRegistry.complete()` audit (the sub-agent) whose findings
-  surface through one shared path: a chrome-composed custom entry in the btw
-  box idiom (`YOU SHOULD KNOW` label, severity-glyph head rows, wrapped
-  details, one dim provenance line) — custom entries never enter LLM context
-  — plus an above-editor findings card in the btw answer-card idiom (max 9
-  rows, auto-hides after 30s, TUI-only, replaced by newer findings,
-  test-overridable via `registerYouShouldKnow`'s `cardMs`); the critical-only
-  toast contract is unchanged, and a clean audit renders nothing. Infra
-  failures toast once then latch silent (reset by enable/model changes), but
-  the latest failure is always recorded and reported by `/ysk status` (age
-  + message); otherwise silence means clean audits, below-threshold
-  findings, or deduped repeats. Off by default — `/ysk
-  enable|disable|model|severity|tools|audit` persists to
-  `~/.pi/agent/aio-you-should-know.settings.json` (goal-settings contract;
-  `AIO_YSK_SETTINGS_FILE` overrides for tests). Subagent children resolve the
-  same file mid-run, so a disabled parent audits nothing in its children
-  either; children audit their own writes and mirror findings into a
-  `you-should-know.jsonl` sidecar beside their runner-managed session file,
-  which the parent consumes (and deletes) when the `subagent` tool result
-  arrives. The state indicator is dual-channel: the minimalist frame's border
-  via the frame metadata protocol (muted armed, accent while auditing) while
-  a frame owns the surface, else the status row's `statuses` segment. It owns
-  no tool and gates nothing; registration order is not load-bearing
-  (registered late, before yaml-hooks).
 - `btw/` owns the `/btw` command — "by the way" side questions: pi executes
   extension commands immediately even while streaming, so a mid-flow question
   runs its handler without interrupting, queuing, or steering the run, and
   nothing enters LLM context. One bounded, isolated `ctx.modelRegistry.complete()`
-  call on the session model (the YSK engine seam) with its own AbortController
+  call on the session model with its own AbortController
   — the main run's abort signal never touches it; a newer `/btw` replaces
   (last wins) and shutdown aborts. Context is bounded: a 40-message / 12k-char
   flow digest, a capped snapshot walk (excluded dirs, 2,500 files), and a 28k
@@ -436,7 +432,7 @@ generated `dist/` tree without changing the package contract.
   arrival toast (warning toast on failure; no entry), and the transient
   `btw asking` pill — frame metadata protocol when a frame owns the surface,
   else footer status. No settings file, no tool names, no gating; registration
-  order is not load-bearing (late, beside YSK, before yaml-hooks). Subagent
+  order is not load-bearing (late, before yaml-hooks). Subagent
   children register no command but keep the entry renderer.
 - `session-naming/` gives fresh unnamed parent sessions a native Pi title after
   their first successful `agent_end`, using one isolated, bounded background
@@ -444,6 +440,31 @@ generated `dist/` tree without changing the package contract.
   or backfill. Existing/resumed/reloaded/forked sessions and manual names are
   preserved. Shutdown aborts work; session identity and name are rechecked
   before applying a late result. Subagent children register nothing.
+- `session-nav/` owns `/rewind`, `/sessions`, and the `--sessions` flag:
+  friendlier replacements for pi's checkpoint and resume menus. Double-Esc
+  on an idle, empty editor opens `/rewind`: only the user's prompts are
+  listed (tool calls and injected context fold into each turn), newest
+  first, with relative age, edit/tool counts, "you are here" and
+  "⑂ alternate" markers, type-to-filter, and a preview. Enter opens one
+  plain-English action step mapped to public command-context APIs: edit
+  and resend (`navigateTree(prompt)`), go back to right after the answer
+  (`navigateTree(turn end)`, hidden at the leaf), rewind with a summary
+  (`summarize: true`), and start a new session (`fork(..., before)`). It
+  states that files on disk are not changed. `/resume` (exact text) and a
+  bound `app.session.resume` key open `/sessions`: day-grouped sessions
+  with clean titles (skill XML → `skill: name`), labeled age/message
+  counts, a this-folder/all tab, search, and a lazy preview that reads at
+  most a 256 KB tail of the file. Selection uses `ctx.switchSession`, so
+  the recipe resume relaunch still applies. Pi's `pi --resume` picker runs
+  before extensions load and cannot be replaced; `pi --sessions` starts pi
+  and opens `/sessions` once. Interception goes through
+  `ui/editor-intercepts.ts`, which the `QueueEditor` consults (Esc, wrapped
+  `onSubmit`, app actions). Without the AIO editor (standalone Zentui),
+  pi's native behavior is untouched. Editor-originated commands dispatch
+  through `pi.sendUserMessage("/cmd", { expandPromptTemplates: true })` to
+  get a command context. `doubleEscapeAction: "none"` (global, or trusted
+  project settings) keeps double-Esc inert. Native `/tree`, `/fork` and
+  `pi --resume` remain available. TUI-only; intercepts clear on shutdown.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

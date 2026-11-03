@@ -86,6 +86,7 @@ import {
 	decideRelaunch,
 	execRelaunch,
 	relaunchNotice,
+	settingsDisabledBuiltins,
 } from "./trampoline.js";
 
 import { registerRecipeStatusRenderer, showRecipeStatus } from "./status.js";
@@ -197,7 +198,7 @@ async function activateDirectoryDefault(
 		);
 		return;
 	}
-	const result = await applyRecipe(pi, ctx, def, { source: "directory", persist: true });
+	const result = await applyRecipe(pi, ctx, def, { source: "directory", persist: true, live: true });
 	notifyActivation(ctx, def, result, "directory");
 }
 
@@ -299,6 +300,9 @@ export function recipeScaffold(
 		// Copied entries carry their resolved `match`; an empty list is a no-op.
 		blocklist: { entries: template?.blocklist ?? [] },
 	});
+	// Copied only: a blank scaffold must not pick a mode or style for the repo.
+	if (template?.permissionMode) recipe.permissionMode = template.permissionMode;
+	if (template?.style) recipe.style = template.style;
 	return `${JSON.stringify({ defaultRecipe: name, recipes: { [name]: recipe } }, null, 2)}\n`;
 }
 
@@ -453,7 +457,7 @@ async function switchRecipe(
 		notify(ctx, `Unknown recipe "${name}". Available: ${availableNamesText()}`, "error");
 		return;
 	}
-	const result = await applyRecipe(pi, ctx, def, { source: "command", persist: true });
+	const result = await applyRecipe(pi, ctx, def, { source: "command", persist: true, live: true });
 	notifyActivation(ctx, def, result, "command");
 }
 
@@ -715,6 +719,7 @@ export async function registerRecipes(
 			directoryRecipe: launch.defaultSource === "directory" ? launch.defaultRecipe : undefined,
 			continuedRecipe: resumed,
 			aioExtensionPath: AIO_RECIPE_EXTENSION_PATH,
+			disabledBuiltins: settingsDisabledBuiltins(),
 		});
 		if (decision.action === "relaunch") {
 			process.stderr.write(`${relaunchNotice(decision.spec)}\n`);

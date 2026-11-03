@@ -16,10 +16,11 @@
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { StringEnum, type AssistantMessage } from "@earendil-works/pi-ai";
-import type {
-	ExtensionAPI,
-	ExtensionContext,
-	WorkingIndicatorOptions,
+import {
+	type ExtensionAPI,
+	type ExtensionContext,
+	parseArgs,
+	type WorkingIndicatorOptions,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { withAgentPrompt } from "../notifications/protocol.js";
@@ -29,7 +30,7 @@ import {
 	requestFrameRepaint,
 	setFrameMetadataContributor,
 } from "../frame/protocol.js";
-import { setPermissionModeAccess } from "./mode-access.js";
+import { getRecipePermissionMode, setPermissionModeAccess } from "./mode-access.js";
 import { showMutationApproval } from "./approval-dialog.js";
 import {
 	approvalScopes,
@@ -169,6 +170,11 @@ export function modeMetadata(mode: Mode): {
 	}
 }
 
+/** True when the launch argv explicitly passes --permission-mode (pi's own parser). */
+export function permissionModeFlagGiven(argv: string[]): boolean {
+	return parseArgs(argv.slice(2)).unknownFlags.has("permission-mode");
+}
+
 function normalizeModeFlag(value: unknown): Mode {
 	if (typeof value !== "string") return "default";
 	const v = value.toLowerCase();
@@ -181,7 +187,7 @@ function normalizeModeFlag(value: unknown): Mode {
 
 // ---------- Extension factory ----------
 
-export function registerPermissionModes(pi: ExtensionAPI): void {
+export function registerPermissionModes(pi: ExtensionAPI, argv: string[] = process.argv): void {
 	// ---- Closure state ----
 	let currentMode: Mode = "default";
 	let toolsBeforePassiveMode: string[] | undefined;
@@ -323,7 +329,6 @@ After finishing each step, include a [DONE:n] tag in your response.`;
 			"When executing a numbered plan, call todo action=toggle for the matching step immediately after that step's work is finished, before starting the next step.",
 			"Use todo action=list at the start of plan execution and again whenever you need to confirm which steps remain.",
 			"Do not leave completed steps unchecked; toggle flips completion state, so only call it once per finished step.",
-			"After toggling a step, briefly note what was completed in your response so the user can see progress.",
 		],
 		parameters: Type.Object({
 			action: StringEnum([
@@ -729,7 +734,7 @@ ${todoList}
 ${todoHint}
 
 Execute each step in order. Mark progress in the todo tool as you go; do not batch toggles at the end.
-Observe, don't narrate: run the check (test, command, log) instead of reasoning about what it would show. If you catch yourself deriving the same conclusion twice, stop — produce an artifact (test, table, log line) or change the hypothesis.`,
+When a cheap check (test, command, log) would answer a question, run it rather than speculating.`,
 					display: false,
 				},
 			};
@@ -746,10 +751,9 @@ Restrictions:
 - scripts, compound commands, and execution-capable wrappers are blocked
 - reads (read/grep/find/ls) pass through
 
-Answer the user's request directly. Ground answers in what you can read — files, logs, git history — and prefer evidence over prediction. Where the answer cannot be determined without running something, say "unknown — would need to run it" instead of reasoning past the evidence.
+Answer the user's request directly. Ground answers in what you can read (files, logs, git history); when something can only be determined by running it, say so rather than guessing.
 Inspect the codebase when useful, but do not modify files or system state.
-Do not create an implementation plan unless the user explicitly asks for one.
-Do not re-derive a conclusion you have already stated; a repeat adds nothing — offer new evidence or drop the thread.`;
+Do not create an implementation plan unless the user explicitly asks for one.`;
 		} else if (currentMode === "plan") {
 			body = `[PLAN MODE ACTIVE]
 You are in plan mode — a read-only exploration mode for safe code analysis.
@@ -767,25 +771,15 @@ Plan:
 2. Second step description
 ...
 
-For diagnostic tasks, put these sections BEFORE the "Plan:" header:
-- "Hypotheses:" — one line per hypothesis, each with the single observation that would confirm or kill it (a test to run, a log line to read, a command to execute once tools are unlocked).
-- "Open questions:" — anything unresolvable read-only, marked "unknown — determine at runtime". These are valid plan output; do NOT paper over them by reasoning.
+For diagnostic tasks you may add "Hypotheses:" or "Open questions:" sections before the "Plan:" header when they help; anything that can only be settled by running something can stay an open question.
 
-Do NOT attempt to make changes — just plan. Observe, don't deduce: prefer a read-only look (file, log, git history) over predicting behavior in prose. Split multi-symptom bugs: plan one symptom at a time. More than ~4 interacting state variables: use a state or hypothesis table, not prose. Never state the same conclusion a third time — repetition is not evidence; add an observation or change the hypothesis.`;
+Do NOT attempt to make changes — just plan. Prefer a read-only look (file, log, git history) over predicting behavior.`;
 		} else if (currentMode === "auto") {
 			body = `[AUTO MODE ACTIVE]
 All tool calls (edit, write, apply_patch, bash, hypa_shell) are auto-approved — no permission prompts.
 Exception: edit, write, and apply_patch on files outside the working directory (and its subdirectories) still require manual user approval; keep changes inside it unless the task needs otherwise.
-Proceed without asking for confirmation.
-
-Work rules:
-- Observe behavior, don't reason about it: when a test, command, or log check is cheap, run it. One observation beats three paragraphs of deliberation.
-- Verify by running: after a change, verify with the cheapest available check (test, build, command) instead of narrating why it should work.
-- Multi-symptom bugs: split and fix one symptom at a time; verify each before the next.
-- Juggling more than ~4 interacting state variables: switch to a state or hypothesis table instead of prose.
-- Hard rule: if you have stated the same conclusion twice, stop — produce an artifact (test, table, log line, code change) or change the hypothesis. Never state it a third time.
-
-After completing each meaningful chunk, briefly summarize progress.
+No approval prompts are needed for tool calls. Still ask the user when the request itself is ambiguous.
+When a cheap check (test, command, log) would answer a question, run it rather than speculating.
 If a todo list is active, toggle each finished step with the todo tool before continuing.`;
 		} else {
 			body = `[DEFAULT MODE ACTIVE]
@@ -793,7 +787,7 @@ If a todo list is active, toggle each finished step with the todo tool before co
 - bash and hypa_shell commands outside the simple read-only allowlist require per-call user approval
 - Python/Node scripts, compound commands, and execution-capable wrappers require approval too; never use them to bypass edit/write approval
 - simple read-only shell commands and reads (read/grep/find/ls) pass through without prompting
-Prefer running a cheap check (test, command, log line) over reasoning about behavior you could observe.`;
+When a cheap check (test, command, log) would answer a question, run it rather than speculating.`;
 		}
 
 		if (ctx.model?.provider === "cursor") {
@@ -920,9 +914,12 @@ Prefer running a cheap check (test, command, log line) over reasoning about beha
 	// ---------- session_start / session_tree: restore state ----------
 
 	async function restoreSession(ctx: ExtensionContext): Promise<void> {
-		// 1) Read --permission-mode flag first
+		// 1) Read --permission-mode flag first. Without an explicit flag, the
+		// active recipe's permissionMode is the starting mode (CLI beats config).
 		const flag = pi.getFlag("permission-mode");
 		currentMode = normalizeModeFlag(flag);
+		const recipeMode = getRecipePermissionMode();
+		if (recipeMode && !permissionModeFlagGiven(argv)) currentMode = recipeMode;
 		planExecuting = false;
 		planTodos = [];
 
