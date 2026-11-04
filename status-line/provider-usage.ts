@@ -115,6 +115,9 @@ export function mapProviderUsage(
 	const usedPercent = mapping.usedPercent
 		? finiteNumber(readScalarPath(payload, mapping.usedPercent))
 		: undefined;
+	const remainingPercentInput = mapping.remainingPercent
+		? finiteNumber(readScalarPath(payload, mapping.remainingPercent))
+		: undefined;
 	const text = mapping.text
 		? stringValue(readScalarPath(payload, mapping.text))
 		: undefined;
@@ -126,19 +129,24 @@ export function mapProviderUsage(
 		limit === undefined &&
 		remaining === undefined &&
 		usedPercent === undefined &&
+		remainingPercentInput === undefined &&
 		text === undefined
 	) {
 		return undefined;
 	}
 
 	// Endpoints that only expose percent-used (Anthropic's usage API) invert
-	// into the remaining percentage the status line colors by.
+	// into the remaining percentage the status line colors by. Endpoints that
+	// expose percent-remaining directly (Synthetic's planWeeklyLimit) are used
+	// as-is.
 	const remainingPercent =
 		remaining !== undefined && limit !== undefined && limit > 0
 			? Math.max(0, Math.min(100, Math.round((remaining / limit) * 100)))
-			: usedPercent !== undefined
-				? Math.max(0, Math.min(100, Math.round(100 - usedPercent)))
-				: undefined;
+			: remainingPercentInput !== undefined
+				? Math.max(0, Math.min(100, Math.round(remainingPercentInput)))
+				: usedPercent !== undefined
+					? Math.max(0, Math.min(100, Math.round(100 - usedPercent)))
+					: undefined;
 	return {
 		provider,
 		label: label ?? provider,

@@ -93,6 +93,50 @@ test("loadStatusLineConfig merges global and project provider usage", () => {
 	}
 });
 
+test("loadStatusLineConfig keeps remainingPercent window mappings", () => {
+	const tmpDir = mkdtempSync(join(tmpdir(), "aio-status-line-remaining-pct-"));
+	try {
+		mkdirSync(join(tmpDir, ".pi"), { recursive: true });
+		writeFileSync(
+			join(tmpDir, ".pi", "settings.json"),
+			JSON.stringify({
+				aio: {
+					statusLine: {
+						providerUsage: {
+							providers: {
+								synthetic: {
+									endpoint: "https://api.synthetic.new/v2/quotas",
+									windows: {
+										weekly: {
+											label: "wk",
+											mapping: {
+												remainingPercent: "planWeeklyLimit.percentRemaining",
+												renewsAt: "planWeeklyLimit.nextRegenAt",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}),
+			"utf-8",
+		);
+
+		const config = loadStatusLineConfig(tmpDir, { includeGlobal: false });
+		assert.deepEqual(
+			config.providerUsage?.providers.synthetic?.windows?.weekly?.mapping,
+			{
+				remainingPercent: "planWeeklyLimit.percentRemaining",
+				renewsAt: "planWeeklyLimit.nextRegenAt",
+			},
+		);
+	} finally {
+		rmSync(tmpDir, { recursive: true, force: true });
+	}
+});
+
 test("loadStatusLineConfig parses provider usage endpoints and mappings", () => {
 	const tmpDir = mkdtempSync(join(tmpdir(), "aio-status-line-usage-config-"));
 	try {

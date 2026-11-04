@@ -26,6 +26,8 @@ export interface ProviderUsageMapping {
 	remaining?: string;
 	/** Percent-used scalar; inverted into the remaining percentage. */
 	usedPercent?: string;
+	/** Percent-remaining scalar; used as-is (e.g. Synthetic's planWeeklyLimit). */
+	remainingPercent?: string;
 	renewsAt?: string;
 	text?: string;
 }
@@ -145,6 +147,7 @@ const USAGE_MAPPING_KEYS = [
 	"limit",
 	"remaining",
 	"usedPercent",
+	"remainingPercent",
 	"renewsAt",
 	"text",
 ] as const;

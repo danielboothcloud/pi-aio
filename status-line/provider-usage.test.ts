@@ -129,6 +129,34 @@ test("resolveEnvironmentTemplate fails closed for missing variables", () => {
 	}
 });
 
+test("mapProviderUsage honors an explicit remainingPercent mapping", () => {
+	const usage = mapProviderUsage(
+		"synthetic",
+		"Synthetic",
+		{
+			remainingPercent: "planWeeklyLimit.percentRemaining",
+			renewsAt: "planWeeklyLimit.nextRegenAt",
+		},
+		{
+			planWeeklyLimit: {
+				percentRemaining: 87.4,
+				nextRegenAt: "2030-01-01T18:20:01.000Z",
+			},
+		},
+	);
+	assert.equal(usage?.remainingPercent, 87);
+	assert.equal(usage?.renewsAt, "2030-01-01T18:20:01.000Z");
+	assert.equal(
+		mapProviderUsage(
+			"synthetic",
+			"Synthetic",
+			{ remainingPercent: "p" },
+			{ p: 0.2 },
+			)?.remainingPercent,
+		0,
+	);
+});
+
 test("mapProviderUsage inverts usedPercent into a remaining percentage", () => {
 	const usage = mapProviderUsage(
 		"anthropic",
