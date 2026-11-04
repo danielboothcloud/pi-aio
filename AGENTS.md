@@ -221,7 +221,9 @@ generated `dist/` tree without changing the package contract.
   form from the pure, dependency-free `segments.ts` (wrappers live in the
   named `COMMAND_WRAPPERS` constant). A `null`/`ok: false` segmentation fails
   CLOSED: any active command-mode rule blocks the command outright. Never
-  turn a parse failure into an allow.
+  turn a parse failure into an allow. The rule list is not injected into
+  model context. A blocked `bash` or `hypa_shell` call fails with that
+  entry's configured reason.
 - `ui/chrome.ts` is the shared visual vocabulary for AIO-owned surfaces:
   theme-aware accent rails, headers, items, hints, dividers, pluralization, and
   ANSI-aware width fitting. Diff/approval, pretty tools, copy picker, queue,
