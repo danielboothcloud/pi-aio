@@ -26,6 +26,10 @@ under the MIT license in [`LICENSE`](LICENSE).
   `withAgentPrompt` marker so desktop notifications distinguish agent questions
   from user-opened menus. This does not change the public `rpiv:*` event or its
   emission timing, and observer failures never affect the questionnaire.
+- Questionnaire text is passed through `tool/sanitize-questionnaire.ts` before
+  validation: CRLF becomes `\n` and other control characters (stray `\r`,
+  ESC, …) are dropped. Some models emit `\r` inside tool-call strings, which
+  made the dialog render warped.
 
 When updating this directory, compare against the recorded upstream version,
 preserve `LICENSE`, reapply the integration changes above, and run `npm test`

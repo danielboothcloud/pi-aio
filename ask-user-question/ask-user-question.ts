@@ -29,6 +29,7 @@ import {
 	type QuestionParams,
 	QuestionParamsSchema,
 } from "./tool/types.js";
+import { sanitizeQuestionnaire } from "./tool/sanitize-questionnaire.js";
 import { validateQuestionnaire } from "./tool/validate-questionnaire.js";
 import type { WrappingSelectItem } from "./view/components/wrapping-select.js";
 
@@ -172,7 +173,7 @@ Preview content is rendered as markdown in a monospace box. Multi-line text with
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
 			// SAFETY: Pi validates params against QuestionParamsSchema above;
 			// the vendored interface expresses the same JSON questionnaire shape.
-			const typed = params as unknown as QuestionParams;
+			const typed = sanitizeQuestionnaire(params as unknown as QuestionParams);
 			if (!ctx.hasUI)
 				return buildToolResult(ERROR_NO_UI, {
 					answers: [],
