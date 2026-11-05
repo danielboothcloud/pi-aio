@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { registerBtw } from "../btw/index.ts";
 import { registerPermissionModes } from "../permission-modes/index.ts";
-import registerGoalLoop from "../goal-loop/index.ts";
+import { registerGoals } from "../goals/index.ts";
 import { AGENT_PROMPT_EVENT, GOAL_ACTIVITY_EVENT, NOTIFICATION_EVENT, type NotificationSignal } from "./protocol.ts";
 
 type Handler = (event: any, ctx: ExtensionContext) => unknown;
@@ -27,13 +27,13 @@ function harness() {
 		on: (name: string, handler: Handler) => handlers.set(name, [...(handlers.get(name) ?? []), handler]),
 		registerCommand: (name: string, command: any) => commands.set(name, command),
 		registerTool: (tool: any) => tools.set(tool.name, tool),
-		registerEntryRenderer() {}, registerShortcut() {}, registerFlag() {}, appendEntry() {}, sendMessage() {}, sendUserMessage() {},
+		registerEntryRenderer() {}, registerMessageRenderer() {}, registerShortcut() {}, registerFlag() {}, appendEntry() {}, sendMessage() {}, sendUserMessage() {},
 		getActiveTools: () => [...tools.keys()], setActiveTools() {}, getAllTools: () => [{ name: "write" }], getCommands: () => [], getFlag: () => undefined,
 		getThinkingLevel: () => "high", exec: async () => ({ stdout: "", stderr: "", code: 0 }),
 	} as unknown as ExtensionAPI;
 	const ctx = {
 		cwd: directory, mode: "tui", hasUI: true, scopedModels: [], model: { provider: "openai", id: "test" },
-		sessionManager: { getSessionId: () => "producer-session", getBranch: () => [], getSessionFile: () => undefined },
+		sessionManager: { getSessionId: () => "producer-session", getBranch: () => [], getEntries: () => [], getSessionFile: () => undefined },
 		isIdle: () => true, hasPendingMessages: () => false, abort() {},
 		ui: { theme: { fg: (_role: string, text: string) => text }, notify() {}, setStatus() {}, setWidget() {}, setWorkingIndicator() {}, select: async () => "Allow", custom: async () => "allow", confirm: async () => true },
 		modelRegistry: { complete: async () => ({ stopReason: "stop", content: [{ type: "text", text: "Answer" }] }) },
@@ -83,15 +83,14 @@ test("real /btw completion publishes a session-bound background signal", async (
 test("actual goal pause transitions notify once, while manual pause/cancel are quiet stops", async () => {
 	const h = harness();
 	try {
-		mkdirSync(join(h.directory, ".pi-glla"));
-		writeFileSync(join(h.directory, ".pi-glla", "settings.json"), JSON.stringify({ notifyCmd: "", aggressiveMode: false, autoAcceptDrafts: false }));
-		registerGoalLoop(h.pi); await h.fire("session_start");
-		await h.commands.get("goal").handler("start Test notification transitions", h.ctx);
-		const pause = h.tools.get("pause_goal");
-		assert.ok(pause);
-		await pause.execute("pause", { reason: "Need credentials" }, undefined, undefined, h.ctx);
+		registerGoals(h.pi); await h.fire("session_start");
+		await h.commands.get("goal").handler("Test notification transitions", h.ctx);
+		await h.tools.get("goal_propose").execute("propose", { objective: "Test notification transitions", doneWhen: "signals fire" }, undefined, undefined, h.ctx);
+		const blocked = h.tools.get("goal_blocked");
+		assert.ok(blocked);
+		await blocked.execute("pause", { reason: "Need credentials" }, undefined, undefined, h.ctx);
 		assert.equal(h.signals.length, 1); assert.equal(h.signals[0].title, "Goal needs attention");
-		await pause.execute("pause-again", { reason: "Need credentials" }, undefined, undefined, h.ctx);
+		await assert.rejects(blocked.execute("pause-again", { reason: "Need credentials" }, undefined, undefined, h.ctx));
 		assert.equal(h.signals.length, 1);
 		await h.commands.get("goal").handler("resume", h.ctx);
 		await h.commands.get("goal").handler("pause", h.ctx);

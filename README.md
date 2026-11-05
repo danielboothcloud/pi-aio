@@ -55,8 +55,8 @@ Enabled by default in parent TUI sessions. AIO notifies when:
   error. Recovered tool errors and intentional Escape/abort are silent.
 - A question, file-mutation approval, shell approval (`bash` or `hypa_shell`), or
   other agent-driven dialog needs input.
-- A goal completes or becomes blocked. Routine goal continuations, manual
-  pause/cancel, and quota pauses with an automatic retry are silent.
+- A goal completes or becomes blocked. Routine goal continuations and manual
+  pause/cancel are silent.
 - A background subagent run completes/fails, or a `/btw` answer/error arrives.
   Subagents notify once per group, not once per child or retry; their completion
   replaces the next generic idle alert.
@@ -99,8 +99,7 @@ working-directory basename even with previews off.
 Changes persist in `<agent-dir>/aio-notifications.settings.json` (test override:
 `AIO_NOTIFY_SETTINGS_FILE`). Startup never creates a settings file. Notification
 failures never block agent work; no desktop output is emitted in RPC, print/JSON,
-or subagent children. Existing goal `notifyCmd` hooks remain independent; disable
-`/notify events goal off` if your hook already handles desktop goal alerts.
+or subagent children.
 
 ## Recipes — `--recipe <name>`, `/recipe`
 
@@ -368,7 +367,7 @@ selection and registrations, **not whether a remote model can answer**.
   resumed and forked context.
 - Config errors fail open: unreadable files warn once on `stderr` and the
   session runs without a recipe. `AIO_RECIPES_FILE` replaces the global recipes
-  file for tests and sandboxes (the same contract goal settings use).
+  file for tests and sandboxes.
 
 ## `ask_user_question` tool
 
@@ -1178,6 +1177,40 @@ the rare cases it cannot (messages queued during compaction, or across an
 extension reload) the widget simply hides and pi's built-in dim queue lines
 above the editor remain the fallback.
 
+## Goals (`/goal`)
+
+Give the agent a goal, and it works on it until the goal is done.
+
+```text
+/goal add a dark mode toggle to the settings page
+```
+
+1. The agent reads the request. If an important detail is unclear, it asks
+   you first with `ask_user_question`. If the request is clear, it does not ask.
+2. The agent proposes a precise objective and its done criteria. You confirm
+   the goal, and the agent starts the work.
+3. When a turn ends, AIO tells the agent to continue. The agent keeps working
+   without a prompt from you.
+4. When the agent reports the goal as done, one independent review call checks
+   the claim against the done criteria, the conversation, and `git status`. If
+   the review rejects the claim, the agent gets the open points and continues.
+
+The loop pauses when you press Esc, when the model stops with an error, after
+50 automatic continuations, after 3 rejected reviews, or when the agent reports
+that it is blocked and needs you.
+
+| Command | Action |
+|---|---|
+| `/goal <text>` | Start a new goal (asks first if one is unfinished) |
+| `/goal` or `/goal status` | Show the goal, its state, and the last review |
+| `/goal pause` | Stop the loop |
+| `/goal resume` | Start the loop again and reset the continuation count |
+| `/goal cancel` or `/goal clear` | Drop the goal |
+
+A goal belongs to its session. It is stored in the session file, so another
+session in the same folder does not see it. When you open the session again,
+the goal is paused until you run `/goal resume`. There are no settings files.
+
 ## By the way (`/btw`)
 
 Quick aside questions while the agent is busy. Type `/btw` plus a question
@@ -1582,6 +1615,7 @@ view). `path:line` and `path:line:col` shorthand work.
 ├── copy-widget/             # /pick parser + TUI overlay
 ├── diff-tools/              # write/edit/apply_patch diff rendering
 ├── effort/                  # /effort command + status
+├── goals/                   # /goal loop with one review call
 ├── tuicr/                   # /tuicr review loop (ported from pi-tuicr)
 ├── init/                    # /init AGENTS.md bootstrap
 ├── nvim/                    # open files in Neovim in a new otty pane

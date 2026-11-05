@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // aio-blocklist.json config loader
 //
-// Two-tier config with UNION semantics (unlike goal-loop's per-key override):
+// Two-tier config with UNION semantics (not a per-key override):
 // the effective rule set is the global entries plus the project entries —
 // both apply. Each file's own `enabled` flag (default true) gates only that
 // file's entries.

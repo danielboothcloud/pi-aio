@@ -52,11 +52,11 @@ function harness(options: { mode?: string; settings?: NotificationSettings; wait
 	const end = () => fire("agent_settled", { aborted: false });
 	const message = (stopReason = "stop", text = "Private model output") => fire("message_end", { message: { role: "assistant", stopReason, content: [{ type: "text", text }] } });
 	const tool = (name: string, _args: unknown = {}) => {
-		if (!["ask_user_question", "write", "edit", "apply_patch", "bash", "hypa_shell", "propose_goal_draft"].includes(name)) return;
+		if (!["ask_user_question", "write", "edit", "apply_patch", "bash", "hypa_shell", "goal_propose"].includes(name)) return;
 		events.emit(AGENT_PROMPT_EVENT, {
 			id: 1, sessionId: id, active: true,
-			kind: ["bash", "hypa_shell", "propose_goal_draft"].includes(name) ? "confirm" : "custom",
-			title: name === "ask_user_question" ? "Question waiting" : name === "propose_goal_draft" ? "Input needed" : "Approval needed",
+			kind: ["bash", "hypa_shell", "goal_propose"].includes(name) ? "confirm" : "custom",
+			title: name === "ask_user_question" ? "Question waiting" : name === "goal_propose" ? "Input needed" : "Approval needed",
 			body: "The agent needs your attention.", preview: "Secret details",
 		});
 	};
@@ -118,14 +118,14 @@ for (const abort of [{ aborted: true }, { aborted: false, stopReason: "aborted" 
 	});
 }
 
-for (const name of ["ask_user_question", "write", "edit", "apply_patch", "bash", "hypa_shell", "propose_goal_draft"]) {
+for (const name of ["ask_user_question", "write", "edit", "apply_patch", "bash", "hypa_shell", "goal_propose"]) {
 	test(`actual blocking ${name} prompts notify without duration gating`, async () => {
 		const settings = defaultSettings(); settings.minSeconds = 100;
 		const h = harness({ settings }); h.start();
 		h.tool(name, { questions: [{ question: "Secret question?" }] });
-		h.fire("ui_prompt_start", { kind: ["bash", "hypa_shell", "propose_goal_draft"].includes(name) ? "confirm" : "custom", title: "Secret command" });
+		h.fire("ui_prompt_start", { kind: ["bash", "hypa_shell", "goal_propose"].includes(name) ? "confirm" : "custom", title: "Secret command" });
 		await flush(); assert.equal(h.sent.length, 1);
-		assert.match(h.sent[0].title, name === "ask_user_question" ? /Question/ : name === "propose_goal_draft" ? /Input/ : /Approval/);
+		assert.match(h.sent[0].title, name === "ask_user_question" ? /Question/ : name === "goal_propose" ? /Input/ : /Approval/);
 		assert.doesNotMatch(h.sent[0].body, /Secret/);
 	});
 }

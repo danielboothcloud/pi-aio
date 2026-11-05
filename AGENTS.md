@@ -6,7 +6,7 @@ diff rendering, shell rewriting, and structural search.
 
 > **Runtime user configuration lives in the agent directory.** Features read
 > their user-facing config from `<agent-dir>` at runtime (`aio-recipes.json`,
-> `aio-blocklist.json`, the goal settings files) — that is the shipped
+> `aio-blocklist.json`, `aio-notifications.settings.json`) — that is the shipped
 > contract. The rule below is about *development work*: never let the agent
 > place feature code, scratch state, or out-of-tree settings there during
 > edits or tests.
@@ -72,8 +72,8 @@ generated `dist/` tree without changing the package contract.
 - `recipes/` owns `--recipe` and `/recipe`: named launch configurations from
   `<agentDir>/aio-recipes.json` (two-tier: trusted project
   `/.pi/aio-recipes.json` recipes override same-name globals; the global file
-  is also replaced whole by `AIO_RECIPES_FILE` for tests — goal-settings
-  contract — and is never written by AIO). Session-scoped keys (model plus
+  is also replaced whole by `AIO_RECIPES_FILE` for tests, and is never
+  written by AIO). Session-scoped keys (model plus
   `:thinking` spec suffix, thinking level, and MCP servers registered through
   `registerMcpServer`/`unregisterMcpServer` by this feature only)
   apply at `session_start` and on `/recipe` switches — the command refreshes
@@ -244,15 +244,28 @@ generated `dist/` tree without changing the package contract.
   `ask-user-question/UPSTREAM.md`: preserve its license, config/event
   namespaces, sequential execution, soft i18n peer, and
   `*.upstream.test.ts` coverage when syncing upstream.
-- `goal-loop/` is vendored from pi-goal-list-loop-audit (MIT, DraconDev — see
-  `goal-loop/LICENSE-glla`). Only the `/goal` command and its supporting
-  modules are retained (`goal-loop-core`, `goal-loop-auditor`,
-  `goal-loop-shield`, `goal-loop-display`, `goal-loop-backoff`,
-  `goal-settings`, `quota-retry`); the `/list`, `/loop`, `/gla`, `/review`
-  commands, the reviewer/stats/forever/repetition/subagents modules, and all
-  loop/list state were stripped. It drives `agent_end` continuations (the
-  Two-Driver Rule) and is inert in aio subagent child processes
-  (`AIO_SUBAGENT_CHILD=1`) so a child never restores the parent's goal.
+- `goals/` owns `/goal` and the `goal_propose`, `goal_done`, and
+  `goal_blocked` tools (AIO-owned; it replaced the vendored goal-loop).
+  `/goal <text>` sends a visible draft message; the agent asks
+  `ask_user_question` only when the request is unclear, then calls
+  `goal_propose`, which the user confirms (auto-confirmed without UI) and
+  the agent starts in the same run. The loop is driven ONLY by
+  `agent_before_settle`: while the goal is active it returns a state entry
+  plus one hidden continuation `custom_message` and `continue: true` — no
+  timers, no `agent_end` polling. Stops: Esc (aborted runs skip that
+  boundary; `agent_settled` pauses), an `error` outcome, `MAX_CONTINUATIONS`
+  (50, reset by `/goal resume`), `goal_blocked`, `/goal pause`.
+  `goal_done` runs one isolated `ctx.modelRegistry.complete()` review
+  (bounded transcript digest from `btw/context.ts` plus `git status`/
+  `git diff --stat`); approval finishes, rejection returns the reason and
+  the loop continues, `MAX_REJECTIONS` (3) or a review failure pauses.
+  State is session-bound: the newest `aio-goal` custom entry in the session
+  file (`getEntries()`, not the branch) wins; nothing is read from or
+  written to the project directory or the agent directory, and there are no
+  settings files. Every `session_start` holds an active goal paused until
+  `/goal resume`. The tools stay registered (dynamic activation would fight
+  permission-modes' passive-mode tool snapshot) and throw when no draft or
+  active goal applies. Subagent children register nothing.
 - `yaml-hooks/` is ported from pi-yaml-hooks (MIT, KristjanPikhof — see
   `yaml-hooks/LICENSE` and `yaml-hooks/UPSTREAM.md`). It owns the
   `hooks.yaml` automation surface: discovery + trust, bash/tool/notify/

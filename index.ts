@@ -21,7 +21,7 @@ import registerDiffTools from "./diff-tools/index.js";
 import { registerEffort } from "./effort/index.js";
 import { registerInit } from "./init/index.js";
 import registerNvim from "./nvim/index.js";
-import registerGoalLoop from "./goal-loop/index.js";
+import { registerGoals } from "./goals/index.js";
 import { registerHypa } from "./hypa/index.js";
 import { registerPermissionModes } from "./permission-modes/index.js";
 import { registerRecipes } from "./recipes/index.js";
@@ -56,7 +56,7 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// reconciles its tool. Everything else may keep its registration order.
 	await registerRecipes(pi);
 	registerAskUserQuestion(pi);
-	registerGoalLoop(pi);
+	registerGoals(pi);
 	registerAstGrep(pi);
 	registerBrowserSearch(pi);
 	registerCopyWidget(pi);
