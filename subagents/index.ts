@@ -21,6 +21,7 @@ import { SubagentInspector } from "./inspector.js";
 import { publicRun, runsFromBranch, SUBAGENT_STATE_ENTRY } from "./history.js";
 import { clearRuns, getRun, isOwnedRun, listRuns, reconcileRuns, restoreRun, stopRun } from "./registry.js";
 import { loadSavedTranscript } from "./saved-transcript.js";
+import { suspendImagesUnderOverlays } from "../ui/overlay-images.js";
 import {
 	executeSubagentRun,
 	formatRunResult,
@@ -311,9 +312,13 @@ export function registerSubagents(
 			ctx.ui.notify("No subagent runs in this session yet.", "info");
 			return;
 		}
+		let restoreImages: (() => void) | undefined;
 		try {
 			await ctx.ui.custom<void>(
 				(tui, theme, _keybindings, done) => {
+					// Inline images paint above text; hide them so they do not
+					// cover the inspector while it is open.
+					restoreImages = suspendImagesUnderOverlays(tui);
 					const inspector = new SubagentInspector({
 						theme,
 						getRuns: visibleRuns,
@@ -376,6 +381,7 @@ export function registerSubagents(
 			);
 		} finally {
 			closeInspector = undefined;
+			restoreImages?.();
 		}
 	};
 	pi.registerCommand("subagents", {
