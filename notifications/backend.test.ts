@@ -27,8 +27,8 @@ for (const failure of ["missing", "delivery"]) {
 			if (args[0] === "-help") { probes++; if (failure === "missing") throw new Error("ENOENT"); return ""; }
 			throw new Error("notification denied");
 		} });
-		await backend.send({ ...notification, body: "Hello;\x07\x1b]52;c;secrets\x07\nWorld" }, signal(), () => true);
-		await backend.send(notification, signal(), () => true);
+		await backend.send({ ...notification, sound: "off", body: "Hello;\x07\x1b]52;c;secrets\x07\nWorld" }, signal(), () => true);
+		await backend.send({ ...notification, sound: "off" }, signal(), () => true);
 		assert.equal(probes, 1);
 		assert.equal(output.length, 2);
 		assert.match(output[0], /^\x1b\]777;notify;Pi · Finished;Session — Hello World\x07$/);
@@ -40,7 +40,8 @@ for (const env of [{ SSH_CONNECTION: "remote" }, { SSH_TTY: "/dev/pts/1" }]) {
 		const output: string[] = [];
 		const backend = createNotificationBackend({ platform: "darwin", env, write: (text) => output.push(text), execute: async () => { throw new Error("must not execute"); } });
 		assert.equal(await backend.focused(signal()), false);
-		await backend.send(notification, signal(), () => true); assert.equal(output.length, 1);
+		await backend.send(notification, signal(), () => true);
+		assert.deepEqual(output.slice(1), ["\x07"], "SSH sound uses the terminal bell");
 	});
 }
 
@@ -75,4 +76,34 @@ test("cancellation/invalidated work after discovery never delivers or emits a fa
 test("control characters, OSC delimiters and ANSI are removed and snippets bounded", () => {
 	assert.equal(cleanText("\x1b[31mred\x1b[0m;\n\x9d\x07 hi"), "red hi");
 	assert.equal(cleanText("x".repeat(1000)).length, 160);
+});
+
+test("terminal fallback plays a macOS system sound, else rings the bell, and stays silent when off", async () => {
+	const calls: string[][] = []; const output: string[] = [];
+	const backend = createNotificationBackend({ platform: "darwin", env: {}, write: (text) => output.push(text), execute: async (bin, args) => {
+		if (bin === "terminal-notifier") throw new Error("ENOENT");
+		calls.push([bin, ...args]); return "";
+	} });
+	await backend.send(notification, signal(), () => true);
+	assert.deepEqual(calls, [["afplay", "/System/Library/Sounds/Glass.aiff"]]);
+	assert.equal(output.length, 1);
+	await backend.send({ ...notification, sound: "off" }, signal(), () => true);
+	assert.equal(calls.length, 1);
+	assert.equal(output.length, 2);
+
+	const bell: string[] = [];
+	const failing = createNotificationBackend({ platform: "darwin", env: {}, write: (text) => bell.push(text), execute: async () => { throw new Error("missing"); } });
+	await failing.send({ ...notification, sound: "Unknown" }, signal(), () => true);
+	assert.equal(bell.at(-1), "\x07");
+	const linux: string[] = [];
+	await createNotificationBackend({ platform: "linux", env: {}, write: (text) => linux.push(text) }).send(notification, signal(), () => true);
+	assert.deepEqual(linux.slice(1), ["\x07"]);
+});
+
+test("native notifications do not also play a fallback sound", async () => {
+	const calls: string[] = []; const output: string[] = [];
+	const backend = createNotificationBackend({ platform: "darwin", env: {}, write: (text) => output.push(text), execute: async (bin) => { calls.push(bin); return ""; } });
+	await backend.send(notification, signal(), () => true);
+	assert.deepEqual(calls, ["terminal-notifier", "terminal-notifier"]);
+	assert.equal(output.length, 0);
 });

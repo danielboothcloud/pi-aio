@@ -79,6 +79,19 @@ export function createNotificationBackend(options: {
 				: `\x1b]777;notify;${title};${message}\x07`;
 			if (env.TMUX) sequence = `\x1bPtmux;${sequence.replace(/\x1b/g, "\x1b\x1b")}\x1b\\`;
 			write(sequence);
+			await playSound(notification.sound, signal, valid);
 		},
 	};
+
+	/** Fallback sound: a macOS system sound via afplay, else the terminal bell. */
+	async function playSound(name: string, signal: AbortSignal, valid: () => boolean): Promise<void> {
+		const sound = cleanText(name, 64);
+		if (!sound || sound === "off" || !valid() || signal.aborted) return;
+		if (localMac && /^[\w -]+$/.test(sound)) {
+			const file = sound === "default" ? "Glass" : sound;
+			try { await run("afplay", [`/System/Library/Sounds/${file}.aiff`], signal); return; }
+			catch { if (!valid() || signal.aborted) return; }
+		}
+		write("\x07");
+	}
 }

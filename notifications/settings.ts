@@ -13,7 +13,7 @@ export interface NotificationSettings {
 }
 
 export function defaultSettings(): NotificationSettings {
-	return { enabled: true, focusSkip: true, minSeconds: 0, sound: "off", preview: false, categories: { core: true, goal: true, background: true, critical: true } };
+	return { enabled: true, focusSkip: true, minSeconds: 0, sound: "Glass", preview: false, categories: { core: true, goal: true, background: true, critical: true } };
 }
 
 export function settingsPath(): string {

@@ -18,6 +18,7 @@ test("persistent settings use the explicit in-repository sandbox and tolerate br
 		process.env.AIO_NOTIFY_SETTINGS_FILE = file;
 		assert.equal(settingsPath(), file);
 		assert.deepEqual(loadSettings(), defaultSettings());
+		assert.equal(defaultSettings().sound, "Glass");
 		const settings = { ...defaultSettings(), enabled: false, sound: "Ping" };
 		saveSettings(settings);
 		assert.deepEqual(loadSettings(), settings);

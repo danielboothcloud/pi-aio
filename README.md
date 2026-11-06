@@ -91,10 +91,14 @@ working-directory basename even with previews off.
 /notify off                     Disable notifications
 /notify focus off               Notify even while the terminal app is focused
 /notify min 5                   Require 5 seconds for normal completion alerts
-/notify sound Glass             Native macOS sound; `off` disables it
+/notify sound Ping              macOS system sound (default Glass); `off` disables it
 /notify preview on              Include short text previews (off by default)
 /notify events background off   Toggle core, goal, background, or critical
 ```
+
+Notifications play the `Glass` sound by default. `terminal-notifier` plays the
+sound natively. The terminal fallback plays `/System/Library/Sounds/<name>.aiff`
+with `afplay` on local macOS, and rings the terminal bell otherwise.
 
 Changes persist in `<agent-dir>/aio-notifications.settings.json` (test override:
 `AIO_NOTIFY_SETTINGS_FILE`). Startup never creates a settings file. Notification
