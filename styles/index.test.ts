@@ -540,7 +540,7 @@ test("style guidance adapts to the active permission mode", async () => {
 	);
 	assert.match(
 		buildStyleContext("collaborate", "plan"),
-		/Shape the plan as reviewable increments/,
+		/Shape the increments around those decisions and the size of the task/,
 	);
 	assert.match(
 		buildStyleContext("collaborate", "auto"),
@@ -548,7 +548,7 @@ test("style guidance adapts to the active permission mode", async () => {
 	);
 	assert.match(
 		buildStyleContext("collaborate", "auto"),
-		/not permission to run every step in one turn/,
+		/not a requirement to pause after every small step/,
 	);
 	assert.match(
 		buildStyleContext("collaborate", "default"),
@@ -556,20 +556,22 @@ test("style guidance adapts to the active permission mode", async () => {
 	);
 	assert.match(
 		buildStyleContext("collaborate", "default"),
-		/still stop after each increment/,
+		/pause when a review would change the next step/,
 	);
 
-	// Iterative delivery applies in every mode: agree on the breakdown, make
-	// one judgment-sized increment per turn, then stop for the user's review.
+	// Iterative delivery applies in every mode. Increment size and when to
+	// pause follow the task and the user's cues, not one fixed step per turn.
 	for (const mode of ["default", "auto", "plan", "ask"] as const) {
 		const context = buildStyleContext("collaborate", mode);
-		assert.match(context, /small, reviewable increments/);
+		assert.match(context, /size each iteration to the task/);
+		assert.match(context, /Do not invent extra iterations/);
 		assert.match(context, /Discuss the approach before the first edit/);
-		assert.match(context, /Size each increment by judgment, not a fixed limit/);
-		assert.match(context, /Make one increment per turn.*then end your turn/);
+		assert.match(context, /Size each increment to the task/);
+		assert.match(context, /Continue through the next obvious steps in the same turn/);
 		assert.match(context, /wait for their review and reply/);
 		assert.match(context, /Leave the code working at every stop/);
-		assert.match(context, /continue through the remaining steps or to just do it/);
+		assert.match(context, /continue, keep going, or just do it/);
+		assert.doesNotMatch(context, /Make one increment per turn/);
 		assert.doesNotMatch(context, /Work in small increments: finish one meaningful chunk/);
 	}
 
