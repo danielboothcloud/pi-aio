@@ -12,7 +12,7 @@ import {
 	TOOL_RESULT_INDENT,
 	termWidth,
 } from "../config.js";
-import { findGnuGrepInvocation } from "../grep-guard.js";
+import { findGnuGrepInvocation, findRgReplaceMisuse } from "../grep-guard.js";
 import {
 	compactErrorLines,
 	inferBashExitCode,
@@ -43,6 +43,28 @@ type ResponsiveBashState = {
 	baseRender: (width: number) => string[];
 	renderText: (width: number) => string;
 };
+
+/** Error text when the grep guard blocks a command, else undefined. */
+export function grepGuardMessage(command: string): string | undefined {
+	const gnuGrep = findGnuGrepInvocation(command);
+	if (gnuGrep) {
+		return [
+			`Blocked GNU grep invocation: \`${gnuGrep}\`. Use the grep tool instead — it runs ripgrep (rg).`,
+			`If you need shell search, run: rg -n "pattern"`,
+			`Set PRETTY_BASH_GREP_GUARD=0 to disable this guard.`,
+		].join("\n");
+	}
+	const misuse = findRgReplaceMisuse(command);
+	if (misuse) {
+		return [
+			`Blocked \`rg ${misuse.flag}\`: in ripgrep, -r means --replace, so every match would be printed as "${misuse.replacement}".`,
+			`rg already searches recursively. Drop -r and run: rg -n "pattern" [path]`,
+			`To replace matches on purpose, use --replace=TEXT.`,
+			`Set PRETTY_BASH_GREP_GUARD=0 to disable this guard.`,
+		].join("\n");
+	}
+	return undefined;
+}
 
 const responsiveBashStates = new WeakMap<object, ResponsiveBashState>();
 
@@ -98,6 +120,7 @@ export function registerBashTool(
 			"For text search: `rg -n`. If no results, try `rg -u` (respects .gitignore by default).",
 			"In rg: | means alternation, \\| means literal pipe. Opposite of GNU grep. Never use \\| for alternation.",
 			"GNU grep (grep/egrep/fgrep) is blocked in bash; use the grep tool or `rg -n` instead.",
+			"rg is recursive by default; its `-r` means `--replace`, so never write `rg -rn` (it replaces every match with `n`).",
 		],
 		parameters: sdkTool.parameters,
 		renderShell: "self",
@@ -105,21 +128,16 @@ export function registerBashTool(
 		execute: wrapExecuteWithMetrics(
 			async (tid, params, sig, _upd, ctx: ExtensionContext) => {
 				const command = String((params as any).command ?? "");
-				const gnuGrep = bashGrepGuardEnabled()
-					? findGnuGrepInvocation(command)
+				const blocked = bashGrepGuardEnabled()
+					? grepGuardMessage(command)
 					: undefined;
-				if (gnuGrep) {
-					const msg = [
-						`Blocked GNU grep invocation: \`${gnuGrep}\`. Use the grep tool instead — it runs ripgrep (rg).`,
-						`If you need shell search, run: rg -n "pattern"`,
-						`Set PRETTY_BASH_GREP_GUARD=0 to disable this guard.`,
-					].join("\n");
+				if (blocked) {
 					return {
-						content: [{ type: "text" as const, text: msg }],
+						content: [{ type: "text" as const, text: blocked }],
 						isError: true,
 						details: {
 							_type: "bashResult",
-							text: msg,
+							text: blocked,
 							exitCode: 1,
 							command,
 						} as BashDetails,

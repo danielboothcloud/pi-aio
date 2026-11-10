@@ -27,6 +27,7 @@ import {
 	type RelaunchSpec,
 	type TrampolineDecision,
 } from "./trampoline.js";
+import { isPigHost } from "./pig-host.js";
 
 /** Keep user flags, but never replay an old initial prompt or recipe's CLI injection. */
 export function argvForSessionSwitch(argv: string[], env: Record<string, string | undefined>): string[] {
@@ -68,6 +69,7 @@ export function selectedSessionRelaunch(options: {
 	const startup = options.reason === "startup" &&
 		(parsed.resume || parsed.session !== undefined || parsed.sessionId !== undefined || parsed.continue);
 	if (!switching && !startup) return undefined;
+	if (isPigHost(options.env)) return pigSessionRestartHint(options, switching || !!parsed.resume);
 	const env = { ...options.env };
 	if (switching) delete env[RECIPE_STAGE_ENV]; // Intentional new target, not a startup retry.
 	const argv = switching ? argvForSessionSwitch(options.argv, options.env) : options.argv;
@@ -87,6 +89,30 @@ export function selectedSessionRelaunch(options: {
 		}) };
 	}
 	return decision;
+}
+
+/**
+ * PiG cannot relaunch from inside pig. When the selected session's recipe
+ * needs a different extension set/model scope, say how to restart (through
+ * the aio-pig launcher, `pig --session <file>` restores it). Only the native
+ * picker and in-session /resume need this: direct references were already
+ * resolved before pig started (launcher) or reported by the factory.
+ */
+function pigSessionRestartHint(
+	options: Parameters<typeof selectedSessionRelaunch>[0],
+	afterPicker: boolean,
+): TrampolineDecision | undefined {
+	if (!afterPicker) return undefined;
+	const asPi = { ...options.env };
+	delete asPi.AI_AGENT;
+	const wanted = selectedSessionRelaunch({ ...options, env: asPi });
+	if (wanted?.action !== "relaunch") return undefined;
+	const { recipeName, reasons } = wanted.spec;
+	return {
+		action: "session-apply",
+		name: recipeName,
+		note: `Recipe "${recipeName}" needs a restart for its ${reasons.join(" + ")}: pig --session ${JSON.stringify(options.file)}`,
+	};
 }
 
 /** Use the same public terminal handoff as tuicr and Pi's interactive-shell example. */

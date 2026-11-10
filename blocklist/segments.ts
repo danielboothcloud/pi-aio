@@ -355,6 +355,8 @@ function shellInvocation(args: readonly Word[]): ShellInvocation {
 class Parser {
 	pos = 0;
 	readonly segments: Segment[] = [];
+	/** Dequoted program words per segment, parallel to `segments`. */
+	readonly argvs: string[][] = [];
 	private pending: PendingHeredoc[] = [];
 
 	constructor(
@@ -371,6 +373,7 @@ class Parser {
 		if (this.depth >= MAX_NESTING) fail("shell code is nested too deeply");
 		const child = new Parser(script, this.depth + 1);
 		this.segments.push(...child.run());
+		this.argvs.push(...child.argvs);
 	}
 
 	private skipBlanks(): void {
@@ -715,6 +718,7 @@ class Parser {
 			full: joinWords(words.slice(start)),
 			program: joinWords(programWords),
 		});
+		this.argvs.push(programWords.map((word) => word.value));
 		if (programWords.length === 0) return;
 
 		const first = programWords[0];
@@ -756,4 +760,19 @@ export function segmentCommand(command: string): SegmentResult {
 export function commandSegments(command: string): Segment[] | null {
 	const result = segmentCommand(command);
 	return result.ok ? result.segments : null;
+}
+
+/**
+ * The dequoted program words (after assignments and wrappers) of each command
+ * the shell would run, or null when the command cannot be segmented. Unlike
+ * `program`, a quoted argument stays one word, so callers can inspect flags.
+ */
+export function commandArgvs(command: string): string[][] | null {
+	try {
+		const parser = new Parser(command, 0);
+		parser.run();
+		return parser.argvs;
+	} catch {
+		return null;
+	}
 }

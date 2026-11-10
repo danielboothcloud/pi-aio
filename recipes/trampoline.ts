@@ -48,6 +48,7 @@ import {
 	resolveExtensionSource,
 	type RecipeDefinition,
 } from "./config.js";
+import { isPigHost, startedByPigLauncher } from "./pig-host.js";
 
 /** This package's own entry point, re-injected in the child via `-e`. */
 export const AIO_RECIPE_EXTENSION_PATH = fileURLToPath(
@@ -84,6 +85,16 @@ export function settingsDisabledBuiltins(agentDir?: string): string[] {
 	} catch {
 		return [];
 	}
+}
+
+/** Why a restart-scoped recipe stays in-session under PiG without the launcher. */
+export function pigRestartNote(label: string): string {
+	return `${label}: extension set and model scope not applied — PiG cannot restart from an extension; start pig through AIO's bin/aio-pig.mjs launcher to apply them. Everything else applies in-session`;
+}
+
+/** The launcher ran but AIO inside pig still wanted a relaunch (inputs differ). */
+export function pigLauncherMismatchNote(label: string): string {
+	return `${label}: extension set and model scope not applied — the aio-pig launcher did not apply them for this launch; everything else applies in-session`;
 }
 
 /** Guard: subagent children are pinned workloads, never bridge. */
@@ -311,6 +322,13 @@ export function decideRelaunch(options: TrampolineOptions): TrampolineDecision {
 	const recipe = options.recipes[name];
 	if (!recipe) return { action: "unknown-recipe", name };
 	if (!isRestartScoped(recipe.config)) return { action: "session-apply", name };
+	// PiG runs AIO in a helper process whose argv/execPath/stdio are not the
+	// `pig` CLI or the terminal; a re-spawn from here starts a second pig on
+	// pipes while the first waits forever. Without the aio-pig launcher
+	// (which bridges before pig starts) apply what fits in-session.
+	if (isPigHost(env) && !startedByPigLauncher(env)) {
+		return { action: "session-apply", name, note: pigRestartNote(label) };
+	}
 
 	// CLI flags the user typed win over recipe keys (preset contract).
 	const userExtFlags = parsed.noExtensions || (parsed.extensions?.length ?? 0) > 0;
@@ -368,6 +386,11 @@ export function decideRelaunch(options: TrampolineOptions): TrampolineDecision {
 	let bridgeable = origin === "flag" ? (stripRecipeInvocation(cliArgs) ?? cliArgs) : cliArgs;
 	if (options.continuedRecipe) {
 		bridgeable = pinSessionInvocation(bridgeable, options.continuedRecipe.file);
+	}
+	// Under the launcher the same inputs already decided "none" before pig
+	// started; never spawn from inside pig even if they disagree.
+	if (isPigHost(env)) {
+		return { action: "session-apply", name, note: pigLauncherMismatchNote(label) };
 	}
 	const args = [...relaunchEntryArgs(options.argv), ...injected, ...bridgeable];
 	const childEnv: Record<string, string | undefined> = {

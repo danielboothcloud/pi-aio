@@ -103,6 +103,34 @@ generated `dist/` tree without changing the package contract.
   fixtures, no credentials/network/model calls;
   select the binary via `AIO_RECIPES_SMOKE_PI`. `pi list` describes saved
   package configuration, not the recipe child's loaded extension set.
+  PiG (the Go Pi port) runs AIO in a Node helper process whose
+  argv/execPath/stdio are not the `pig` CLI or the terminal, so a relaunch
+  there starts a second pig on pipes while the first waits forever.
+  `recipes/pig-host.ts` detects PiG (`PIG_HARNESS_BINARY` set AND
+  `AI_AGENT=pig`; real Pi resets `AI_AGENT=pi`, so an inherited marker never
+  misfires) and every relaunch path (factory, `--continue`, `/resume`)
+  stands down: restart-scoped keys are reported as not applied and
+  everything else applies in-session. Parity comes from the
+  `bin/aio-pig.mjs` launcher (used in place of `pig`, e.g. a fish
+  function): it runs the SAME bridge before pig starts — `continue.ts`,
+  trust prompt, `loadRecipes`, `decideRelaunch` via `pig-launch/plan.ts` —
+  and starts pig once with the relaunch args/env plus
+  `AIO_PIG_LAUNCHER=1`, exiting with pig's status. Pi's package is absent
+  there, so jiti aliases `@earendil-works/pi-coding-agent` to
+  `pig-launch/pi-shim.ts`: a vendored `parseArgs` (MIT port, drift-tested
+  against the pinned parser in `args.test.ts`), PiG's directory rules
+  (`PIG_HOME`/`PIG_CODING_AGENT_DIR`/`PIG_USE_PI_DIRS`,
+  `PIG_CODING_AGENT_SESSION_DIR`), and a read-only SessionManager slice
+  checked against Pi's. Keep launch-time recipe modules free of other
+  runtime Pi imports. Launcher-only: `--piglet <name>` aliases
+  `--recipe` when that recipe exists (paths/real Piglets pass through),
+  pig subcommands pass through, `AIO_PIG_BINARY` picks the binary,
+  `AIO_PIG_DRY_RUN=1` prints the plan, and any planning error starts pig
+  unchanged. Inside launcher-started pig, a still-relaunching decision
+  becomes a "launcher did not apply" note (never a spawn); the native
+  picker and `/resume` get a `pig --session <file>` restart hint; the
+  launcher's trust question is not repeated (`AIO_PIG_TRUST_ASKED`).
+  None of this is reachable under native Pi.
   Selection precedence: flag > bridge env > session `recipe-state` entry
   (branch-pinned; off pins `name: null`) > `defaultRecipe` on fresh startups.
   `/new` additionally applies and pins the current trusted directory default
@@ -372,7 +400,11 @@ generated `dist/` tree without changing the package contract.
   `-ne -e <aio> -e <parent -e…>`; otherwise the child omits `-ne` and loads
   the same configured packages plus the parent's `-e` entries.
   `enforceChildExtensions` guarantees aio is listed whenever `-ne` is passed.
-  `AIO_SUBAGENT_EXTRA_EXTENSIONS` can only add. Children always run in
+  `AIO_SUBAGENT_EXTRA_EXTENSIONS` can only add. The child binary is
+  `AIO_SUBAGENT_PI_BINARY`, else `$PIG_HARNESS_BINARY` under PiG (children
+  use PiG and its config like the parent; its JSON stream is Pi's), else
+  `pi`. The child env drops PiG's per-cell `PIG_EXT_*`/`PIG_HARNESS_*`
+  wiring. Children always run in
   `auto` permission mode whatever the parent's mode (they are headless, so
   any other mode blocks every edit and non-read-only command): the runner
   passes `--permission-mode auto` and permission-modes pins `auto` under

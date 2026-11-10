@@ -20,6 +20,8 @@ import { clearRuns, listRuns, reconcileRuns, restoreRun, stopRun } from "./regis
 import { decodeHistoricalRun, publicRun } from "./history.ts";
 import {
 	buildSpawnSpec,
+	childAgentBinary,
+	childBaseEnv,
 	executeSubagentRun,
 	formatRunResult,
 	childResumeUnavailable,
@@ -958,4 +960,28 @@ test("stopped children wait for process cleanup, then can resume without retryin
 	assert.equal(resumed.children.length, 1);
 	assert.equal(run.children[1].state, "stopped");
 	await assert.rejects(resumeSubagentChild({ run: resumed, child: resumed.children[0], deps }), /Only failed or stopped/);
+});
+
+test("children run pig under PiG, pi elsewhere, and an explicit binary always wins", () => {
+	const pig = { AI_AGENT: "pig", PIG_HARNESS_BINARY: "/go/bin/pig" };
+	assert.equal(childAgentBinary({}), "pi");
+	assert.equal(childAgentBinary(pig), "/go/bin/pig");
+	// Real pi resets AI_AGENT=pi, so an inherited PIG_HARNESS_BINARY is ignored.
+	assert.equal(childAgentBinary({ ...pig, AI_AGENT: "pi" }), "pi");
+	assert.equal(childAgentBinary({ ...pig, AIO_SUBAGENT_PI_BINARY: " /opt/pi " }), "/opt/pi");
+});
+
+test("child env drops PiG's per-cell wiring and keeps everything else", () => {
+	assert.deepEqual(
+		childBaseEnv({
+			PATH: "/usr/bin",
+			AI_AGENT: "pig",
+			PIG_HOME: "/home/me/.config/pig",
+			PIG_HARNESS_BINARY: "/go/bin/pig",
+			PIG_HARNESS_ARGV_FILE: "/tmp/argv.json",
+			PIG_EXT_SOCKET__AIO: "/tmp/e-0.sock",
+			PIG_EXT_HOST_INFO: "{}",
+		}),
+		{ PATH: "/usr/bin", AI_AGENT: "pig", PIG_HOME: "/home/me/.config/pig" },
+	);
 });

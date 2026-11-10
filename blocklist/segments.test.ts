@@ -2,10 +2,27 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	COMMAND_WRAPPERS,
+	commandArgvs,
 	commandSegments,
 	segmentCommand,
 	type Segment,
 } from "./segments.ts";
+
+test("commandArgvs keeps quoted words whole and parallels the segments", () => {
+	const command = `sudo -u me rg -n 'a -rn b' . | xargs -n1 grep x; echo $(ls "d e")`;
+	const argvs = commandArgvs(command);
+	assert.deepEqual(argvs, [
+		["rg", "-n", "a -rn b", "."],
+		["grep", "x"],
+		["ls", "d e"],
+		["echo", "$(ls \"d e\")"],
+	]);
+	assert.deepEqual(
+		argvs?.map((argv) => argv.join(" ")),
+		programs(command),
+	);
+	assert.equal(commandArgvs("echo 'unbalanced"), null);
+});
 
 function programs(command: string): string[] {
 	const segments = commandSegments(command);

@@ -32,6 +32,7 @@ import {
 	resolveChildExtensionLaunch,
 } from "./extensions.js";
 import { childSessionOwner, claimChildSession, createRun, getRun } from "./registry.js";
+import { pigHarnessBinary } from "../recipes/pig-host.js";
 import { loadSavedTranscript } from "./saved-transcript.js";
 import type {
 	AgentConfig,
@@ -383,13 +384,11 @@ export function buildSpawnSpec(input: {
 	}
 
 	return {
-		command:
-			input.deps?.piBinary ??
-			(process.env.AIO_SUBAGENT_PI_BINARY?.trim() || "pi"),
+		command: input.deps?.piBinary ?? childAgentBinary(),
 		args,
 		cwd: input.parent.cwd,
 		env: {
-			...process.env,
+			...childBaseEnv(),
 			AIO_SUBAGENT_CHILD: "1",
 			AIO_SUBAGENT_RUN_ID: input.runId,
 			AIO_SUBAGENT_AGENT: input.agent.name,
@@ -397,6 +396,32 @@ export function buildSpawnSpec(input: {
 		sessionDir: childDir,
 		requestedSessionFile,
 	};
+}
+
+/**
+ * The agent binary a child runs: an explicit `AIO_SUBAGENT_PI_BINARY`, else
+ * the `pig` binary when AIO runs inside PiG (children then use PiG and its
+ * config like the parent), else `pi` from PATH.
+ */
+export function childAgentBinary(
+	env: Record<string, string | undefined> = process.env,
+): string {
+	return env.AIO_SUBAGENT_PI_BINARY?.trim() || pigHarnessBinary(env) || "pi";
+}
+
+/**
+ * The parent environment minus PiG's per-cell wiring (`PIG_EXT_*` sockets
+ * and cell identity, `PIG_HARNESS_*` argv file and binary). Those describe
+ * this extension helper process, not the child agent, which builds its own.
+ */
+export function childBaseEnv(
+	env: Record<string, string | undefined> = process.env,
+): Record<string, string | undefined> {
+	return Object.fromEntries(
+		Object.entries(env).filter(
+			([key]) => !key.startsWith("PIG_EXT_") && !key.startsWith("PIG_HARNESS_"),
+		),
+	);
 }
 
 function normalizeTasks(request: SubagentRunRequest): SubagentTask[] {

@@ -6,6 +6,7 @@ type TextCtor = new (
 	paddingY?: number,
 ) => {
 	setText(value: string): void;
+	invalidate?(): void;
 };
 
 export function getTextCtor(): TextCtor {

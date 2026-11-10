@@ -92,6 +92,7 @@ import {
 import { registerRecipeStatusRenderer, showRecipeStatus } from "./status.js";
 import { resumedRecipeForLaunch } from "./continue.js";
 import { relaunchFromSession, selectedSessionRelaunch } from "./resume.js";
+import { PIG_TRUST_ASKED_ENV, isPigHost, startedByPigLauncher } from "./pig-host.js";
 
 function isSubagentChild(): boolean {
 	return process.env[SUBAGENT_CHILD_ENV] === "1";
@@ -121,6 +122,17 @@ function notifyActivation(
 	if (result.warnings.length > 0) text += `; ${result.warnings.join("; ")}`;
 	notify(ctx, text, result.warnings.length > 0 ? "warning" : "info");
 	if (isRestartScoped(def.config) && !bridgedRecipe(def.name)) {
+		if (isPigHost()) {
+			const how = startedByPigLauncher()
+				? `restart with \`pig --recipe "${def.name}"\``
+				: "start pig through AIO's bin/aio-pig.mjs launcher";
+			notify(
+				ctx,
+				`"${def.name}" also scopes the extension set and enabled models — ${how} to apply them`,
+				"info",
+			);
+			return;
+		}
 		const next =
 			source === "directory"
 				? "the next fresh `pi` start in this folder"
@@ -584,6 +596,9 @@ async function sessionStart(
 			} else {
 				notify(ctx, `Recipe "${name ?? "off"}" needs a restart to restore extensions/model scope: pi --session ${JSON.stringify(ctx.sessionManager.getSessionFile())}`, "warning");
 			}
+		} else if (decision?.action === "session-apply" && decision.note && isPigHost()) {
+			// PiG never relaunches in-process; the hint names the restart command.
+			notify(ctx, decision.note, "warning");
 		}
 	}
 	if (name === undefined) {
@@ -676,6 +691,9 @@ export async function registerRecipes(
 	// changed `.pi-recipe` is asked about HERE, on the terminal, before the
 	// TUI starts, so a just-trusted restart-scoped recipe can still relaunch.
 	let launchNotice: string | undefined;
+	// The aio-pig launcher already asked the terminal trust question (a
+	// "not now" must not be asked again through the session UI).
+	if (process.env[PIG_TRUST_ASKED_ENV] === "1") recipeRuntime().directoryAsked = true;
 	try {
 		const resumed = await resumedRecipeForLaunch({ argv: process.argv, env: process.env, cwd: process.cwd() });
 		const launchCwd = resumed?.cwd ?? process.cwd();
