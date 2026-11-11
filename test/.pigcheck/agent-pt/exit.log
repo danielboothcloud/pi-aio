@@ -1,0 +1,7 @@
+2026-11-11T14:22:10.375Z pid=86572 ppid=86571 received SIGTERM
+2026-11-11T14:25:21.507Z pid=86572 ppid=86571 session started 2026-11-11T14:21:45Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pt ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T14:25:46.146Z pid=93901 ppid=93899 received SIGTERM
+2026-11-11T14:30:51.500Z pid=93901 ppid=93899 session started 2026-11-11T14:25:21Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pt ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T14:31:08.643Z pid=5131 ppid=5130 received SIGTERM
+2026-11-11T14:35:50.162Z pid=5131 ppid=5130 session started 2026-11-11T14:30:51Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pt ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T14:35:57.628Z pid=14698 ppid=14697 received SIGTERM

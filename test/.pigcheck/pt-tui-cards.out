@@ -1,0 +1,122 @@
+===== cards collapsed =====
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx,
+slo-check-status, slo-investigate, slo-manage, slo-optimize, synth-check-status,
+synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio conflicts with
+built-in shortcut. Skipping.
+
+
+ do it
+
+
+
+ ▎ READ · a.ts:0
+ ◇ 4 lines · ctrl+o expand
+
+
+
+ ▎ LS · .
+
+ ◇ 3 entrys · ctrl+o expand· 20ms · 29 chars
+
+
+
+  ✱ FIND · *.py · src
+
+ ◇ 1 file · 19ms · ctrl+o expand
+
+
+
+  ✱ GREP · /foo/ · notes.txt
+
+ ◇ 1 line · ctrl+o expand
+
+
+ cards done
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pt (feature/pig) • done
+↑50 ↓10 0.0%/128k (auto)                                                                (fixture) m1
+effort:off ▶ Auto
+===== cards expanded (ctrl+o) =====
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio conflicts with
+built-in shortcut. Skipping.
+
+
+ do it
+
+
+
+ ▎ READ · a.ts:0
+ ───────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ const a = 1;
+   2 │ const foo = 2;
+   3 │ // note
+   4 │ export { a, foo };
+
+
+
+ ▎ LS · .
+
+
+ 3 entries· 20ms · 29 chars
+ ├──  src
+ ├──  a.ts  55B
+ └──  notes.txt  12B
+
+
+
+  ✱ FIND · *.py · src
+
+
+ 1 files· 19ms
+ ./
+  b.py
+ [Search engine: RTK find.]
+
+
+
+  ✱ GREP · /foo/ · notes.txt
+
+ notes.txt:foo bar
+
+
+
+ cards done
+
+ Tool output: expanded
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pt (feature/pig) • done
+↑50 ↓10 0.0%/128k (auto)                                                                (fixture) m1
+effort:off ▶ Auto

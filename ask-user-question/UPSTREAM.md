@@ -34,3 +34,10 @@ under the MIT license in [`LICENSE`](LICENSE).
 When updating this directory, compare against the recorded upstream version,
 preserve `LICENSE`, reapply the integration changes above, and run `npm test`
 plus `npm pack --dry-run --json` from the repository root.
+
+## Go port
+
+`go/internal/askuserquestion` (with `go/internal/rpivconfig`) is the Go port
+for PiG. Its golden data comes from this directory. After an upstream sync,
+run `npx tsx go/internal/askuserquestion/testdata/gen-golden.ts`, then make
+`npm run test:go` pass again. See `go/README.md` for the known gaps.

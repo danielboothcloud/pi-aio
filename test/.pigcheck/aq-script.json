@@ -1,0 +1,7 @@
+[{"tool":"ask_user_question","args":{"questions":[{"question":"Which database?","header":"DB","options":[{"label":"Postgres","description":"Relational"},{"label":"SQLite","description":"Embedded"}]}]}},
+ {"tool":"ask_user_question","args":{"questions":[{"question":"Which features?","header":"Features","multiSelect":true,"options":[{"label":"Auth","description":"Login"},{"label":"Billing","description":"Payments"},{"label":"Search","description":"Find"}]}]}},
+ {"tool":"ask_user_question","args":{"questions":[{"question":"Which layout?","header":"Layout","options":[{"label":"Code","description":"Code sample","preview":"```ts\nconst answer = 42;\nfunction greet(name: string) {\n  return name;\n}\n```"},{"label":"List","description":"Markdown list","preview":"## Plan\n\n- one\n- **two**"}]}]}},
+ {"tool":"ask_user_question","args":{"questions":[{"question":"Name it?","header":"Name","options":[{"label":"Alpha","description":"a"},{"label":"Beta","description":"b"}]}]}},
+ {"tool":"ask_user_question","args":{"questions":[{"question":"Cancel me?","header":"Cancel","options":[{"label":"Yes","description":"y"},{"label":"No","description":"n"}]}]}},
+ {"tool":"ask_user_question","args":{"questions":[{"question":"Pick a language","header":"Lang","options":[{"label":"Go","description":"Compiled"},{"label":"TS","description":"Typed"}]},{"question":"Pick extras","header":"Extras","multiSelect":true,"options":[{"label":"Lint","description":"checks"},{"label":"Format","description":"style"}]}]}},
+ {"text":"aq done"}]

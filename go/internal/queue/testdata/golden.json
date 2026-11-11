@@ -1,0 +1,4394 @@
+{
+ "roleCodes": {
+  "accent": 36,
+  "success": 32,
+  "warning": 33,
+  "error": 31,
+  "muted": 90,
+  "dim": 2,
+  "text": 39,
+  "borderMuted": 94,
+  "toolTitle": 35,
+  "thinkingText": 95,
+  "toolOutput": 96,
+  "selectedBg": 44
+ },
+ "mirrorSteps": [
+  {
+   "op": "add",
+   "args": [
+    "a",
+    "steer"
+   ],
+   "out": null,
+   "entries": [
+    {
+     "text": "a",
+     "mode": "steer"
+    }
+   ]
+  },
+  {
+   "op": "add",
+   "args": [
+    "b",
+    "followUp"
+   ],
+   "out": null,
+   "entries": [
+    {
+     "text": "a",
+     "mode": "steer"
+    },
+    {
+     "text": "b",
+     "mode": "followUp"
+    }
+   ]
+  },
+  {
+   "op": "add",
+   "args": [
+    "a",
+    "followUp"
+   ],
+   "out": null,
+   "entries": [
+    {
+     "text": "a",
+     "mode": "steer"
+    },
+    {
+     "text": "b",
+     "mode": "followUp"
+    },
+    {
+     "text": "a",
+     "mode": "followUp"
+    }
+   ]
+  },
+  {
+   "op": "add",
+   "args": [
+    "c",
+    "steer"
+   ],
+   "out": null,
+   "entries": [
+    {
+     "text": "a",
+     "mode": "steer"
+    },
+    {
+     "text": "c",
+     "mode": "steer"
+    },
+    {
+     "text": "b",
+     "mode": "followUp"
+    },
+    {
+     "text": "a",
+     "mode": "followUp"
+    }
+   ]
+  },
+  {
+   "op": "entries",
+   "args": [],
+   "out": [
+    {
+     "text": "a",
+     "mode": "steer"
+    },
+    {
+     "text": "c",
+     "mode": "steer"
+    },
+    {
+     "text": "b",
+     "mode": "followUp"
+    },
+    {
+     "text": "a",
+     "mode": "followUp"
+    }
+   ],
+   "entries": [
+    {
+     "text": "a",
+     "mode": "steer"
+    },
+    {
+     "text": "c",
+     "mode": "steer"
+    },
+    {
+     "text": "b",
+     "mode": "followUp"
+    },
+    {
+     "text": "a",
+     "mode": "followUp"
+    }
+   ]
+  },
+  {
+   "op": "next",
+   "args": [],
+   "out": {
+    "text": "a",
+    "mode": "steer"
+   },
+   "entries": [
+    {
+     "text": "a",
+     "mode": "steer"
+    },
+    {
+     "text": "c",
+     "mode": "steer"
+    },
+    {
+     "text": "b",
+     "mode": "followUp"
+    },
+    {
+     "text": "a",
+     "mode": "followUp"
+    }
+   ]
+  },
+  {
+   "op": "removeDelivered",
+   "args": [
+    "a"
+   ],
+   "out": "steer",
+   "entries": [
+    {
+     "text": "c",
+     "mode": "steer"
+    },
+    {
+     "text": "b",
+     "mode": "followUp"
+    },
+    {
+     "text": "a",
+     "mode": "followUp"
+    }
+   ]
+  },
+  {
+   "op": "removeDelivered",
+   "args": [
+    "a"
+   ],
+   "out": "followUp",
+   "entries": [
+    {
+     "text": "c",
+     "mode": "steer"
+    },
+    {
+     "text": "b",
+     "mode": "followUp"
+    }
+   ]
+  },
+  {
+   "op": "removeDelivered",
+   "args": [
+    "zz"
+   ],
+   "out": null,
+   "entries": [
+    {
+     "text": "c",
+     "mode": "steer"
+    },
+    {
+     "text": "b",
+     "mode": "followUp"
+    }
+   ]
+  },
+  {
+   "op": "remove",
+   "args": [
+    {
+     "text": "b",
+     "mode": "steer"
+    }
+   ],
+   "out": false,
+   "entries": [
+    {
+     "text": "c",
+     "mode": "steer"
+    },
+    {
+     "text": "b",
+     "mode": "followUp"
+    }
+   ]
+  },
+  {
+   "op": "remove",
+   "args": [
+    {
+     "text": "b",
+     "mode": "followUp"
+    }
+   ],
+   "out": true,
+   "entries": [
+    {
+     "text": "c",
+     "mode": "steer"
+    }
+   ]
+  },
+  {
+   "op": "removeNext",
+   "args": [],
+   "out": {
+    "text": "c",
+    "mode": "steer"
+   },
+   "entries": []
+  },
+  {
+   "op": "removeNext",
+   "args": [],
+   "out": null,
+   "entries": []
+  },
+  {
+   "op": "isEmpty",
+   "args": [],
+   "out": true,
+   "entries": []
+  },
+  {
+   "op": "add",
+   "args": [
+    "d",
+    "followUp"
+   ],
+   "out": null,
+   "entries": [
+    {
+     "text": "d",
+     "mode": "followUp"
+    }
+   ]
+  },
+  {
+   "op": "size",
+   "args": [],
+   "out": 1,
+   "entries": [
+    {
+     "text": "d",
+     "mode": "followUp"
+    }
+   ]
+  },
+  {
+   "op": "clear",
+   "args": [],
+   "out": [
+    {
+     "text": "d",
+     "mode": "followUp"
+    }
+   ],
+   "entries": []
+  },
+  {
+   "op": "next",
+   "args": [],
+   "out": null,
+   "entries": []
+  },
+  {
+   "op": "removeNext",
+   "args": [],
+   "out": null,
+   "entries": []
+  }
+ ],
+ "controllers": [
+  {
+   "name": "interrupt and deliver",
+   "steps": [
+    {
+     "step": {
+      "op": "queued",
+      "arg": "first",
+      "mode": "steer",
+      "idle": false,
+      "pending": true
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "first",
+       "mode": "steer"
+      }
+     ],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "queued",
+      "arg": "second",
+      "mode": "followUp"
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "first",
+       "mode": "steer"
+      },
+      {
+       "text": "second",
+       "mode": "followUp"
+      }
+     ],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "queued",
+      "arg": "third",
+      "mode": "steer"
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "first",
+       "mode": "steer"
+      },
+      {
+       "text": "third",
+       "mode": "steer"
+      },
+      {
+       "text": "second",
+       "mode": "followUp"
+      }
+     ],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "emptySubmit"
+     },
+     "out": true,
+     "calls": [
+      [
+       "abort"
+      ],
+      [
+       "clearEditor"
+      ],
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "third",
+       "mode": "steer"
+      },
+      {
+       "text": "second",
+       "mode": "followUp"
+      }
+     ],
+     "busy": true
+    },
+    {
+     "step": {
+      "op": "emptySubmit"
+     },
+     "out": true,
+     "calls": [],
+     "entries": [
+      {
+       "text": "third",
+       "mode": "steer"
+      },
+      {
+       "text": "second",
+       "mode": "followUp"
+      }
+     ],
+     "busy": true
+    },
+    {
+     "step": {
+      "op": "agentSettled",
+      "idle": true,
+      "pending": false
+     },
+     "out": null,
+     "calls": [
+      [
+       "send",
+       "first",
+       "steer"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "third",
+       "mode": "steer"
+      },
+      {
+       "text": "second",
+       "mode": "followUp"
+      }
+     ],
+     "busy": true
+    },
+    {
+     "step": {
+      "op": "delivered",
+      "arg": "first"
+     },
+     "out": null,
+     "calls": [],
+     "entries": [
+      {
+       "text": "third",
+       "mode": "steer"
+      },
+      {
+       "text": "second",
+       "mode": "followUp"
+      }
+     ],
+     "busy": true
+    },
+    {
+     "step": {
+      "op": "agentStart",
+      "idle": false
+     },
+     "out": null,
+     "calls": [
+      [
+       "send",
+       "third",
+       "steer"
+      ],
+      [
+       "send",
+       "second",
+       "followUp"
+      ],
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "queued",
+      "arg": "third",
+      "mode": "steer",
+      "pending": true
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "third",
+       "mode": "steer"
+      }
+     ],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "queued",
+      "arg": "second",
+      "mode": "followUp"
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "third",
+       "mode": "steer"
+      },
+      {
+       "text": "second",
+       "mode": "followUp"
+      }
+     ],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "delivered",
+      "arg": "third"
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "second",
+       "mode": "followUp"
+      }
+     ],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "agentSettled",
+      "idle": true
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "second",
+       "mode": "followUp"
+      }
+     ],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "resync",
+      "pending": false
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [],
+     "busy": false
+    }
+   ]
+  },
+  {
+   "name": "deferred send fails",
+   "steps": [
+    {
+     "step": {
+      "op": "queued",
+      "arg": "x",
+      "mode": "followUp",
+      "idle": false,
+      "pending": true
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "x",
+       "mode": "followUp"
+      }
+     ],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "queued",
+      "arg": "y",
+      "mode": "followUp"
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "x",
+       "mode": "followUp"
+      },
+      {
+       "text": "y",
+       "mode": "followUp"
+      }
+     ],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "emptySubmit"
+     },
+     "out": true,
+     "calls": [
+      [
+       "abort"
+      ],
+      [
+       "clearEditor"
+      ],
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "y",
+       "mode": "followUp"
+      }
+     ],
+     "busy": true
+    },
+    {
+     "step": {
+      "op": "agentSettled",
+      "idle": false
+     },
+     "out": null,
+     "calls": [
+      [
+       "restore",
+       [
+        "x",
+        "y"
+       ]
+      ],
+      [
+       "notify",
+       "Queue interrupt did not start a run; pending messages restored to the editor",
+       "warning"
+      ],
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "emptySubmit",
+      "idle": true,
+      "pending": false
+     },
+     "out": false,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "emptySubmit"
+     },
+     "out": false,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [],
+     "busy": false
+    }
+   ]
+  },
+  {
+   "name": "orphans on settle",
+   "steps": [
+    {
+     "step": {
+      "op": "queued",
+      "arg": "only",
+      "mode": "steer",
+      "idle": false,
+      "pending": true
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "only",
+       "mode": "steer"
+      }
+     ],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "emptySubmit"
+     },
+     "out": true,
+     "calls": [
+      [
+       "abort"
+      ],
+      [
+       "clearEditor"
+      ],
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [],
+     "busy": true
+    },
+    {
+     "step": {
+      "op": "delivered",
+      "arg": "other"
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "agentSettled",
+      "idle": true,
+      "pending": false
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [],
+     "busy": false
+    }
+   ]
+  },
+  {
+   "name": "mirror miss",
+   "steps": [
+    {
+     "step": {
+      "op": "emptySubmit",
+      "idle": false,
+      "pending": true
+     },
+     "out": false,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "emptySubmit",
+      "pending": false
+     },
+     "out": false,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "queued",
+      "arg": "q",
+      "mode": "steer"
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [
+      {
+       "text": "q",
+       "mode": "steer"
+      }
+     ],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "resync",
+      "pending": false
+     },
+     "out": null,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [],
+     "busy": false
+    },
+    {
+     "step": {
+      "op": "emptySubmit",
+      "idle": true
+     },
+     "out": false,
+     "calls": [
+      [
+       "updateWidget"
+      ]
+     ],
+     "entries": [],
+     "busy": false
+    }
+   ]
+  }
+ ],
+ "entrySets": {
+  "none": [],
+  "one": [
+   {
+    "text": "fix the tests",
+    "mode": "steer"
+   }
+  ],
+  "mixed": [
+   {
+    "text": "first line\nsecond line",
+    "mode": "steer"
+   },
+   {
+    "text": "follow up with a much longer message that will not fit in narrow widths",
+    "mode": "followUp"
+   },
+   {
+    "text": "漢字 message 🙂",
+    "mode": "followUp"
+   },
+   {
+    "text": "",
+    "mode": "steer"
+   },
+   {
+    "text": "five",
+    "mode": "followUp"
+   },
+   {
+    "text": "six",
+    "mode": "followUp"
+   },
+   {
+    "text": "seven",
+    "mode": "steer"
+   }
+  ]
+ },
+ "widgetLines": [
+  {
+   "name": "none",
+   "width": 0,
+   "maxRows": null,
+   "out": []
+  },
+  {
+   "name": "none",
+   "width": 0,
+   "maxRows": 2,
+   "out": []
+  },
+  {
+   "name": "none",
+   "width": 1,
+   "maxRows": null,
+   "out": []
+  },
+  {
+   "name": "none",
+   "width": 1,
+   "maxRows": 2,
+   "out": []
+  },
+  {
+   "name": "none",
+   "width": 8,
+   "maxRows": null,
+   "out": []
+  },
+  {
+   "name": "none",
+   "width": 8,
+   "maxRows": 2,
+   "out": []
+  },
+  {
+   "name": "none",
+   "width": 20,
+   "maxRows": null,
+   "out": []
+  },
+  {
+   "name": "none",
+   "width": 20,
+   "maxRows": 2,
+   "out": []
+  },
+  {
+   "name": "none",
+   "width": 40,
+   "maxRows": null,
+   "out": []
+  },
+  {
+   "name": "none",
+   "width": 40,
+   "maxRows": 2,
+   "out": []
+  },
+  {
+   "name": "none",
+   "width": 80,
+   "maxRows": null,
+   "out": []
+  },
+  {
+   "name": "none",
+   "width": 80,
+   "maxRows": 2,
+   "out": []
+  },
+  {
+   "name": "one",
+   "width": 0,
+   "maxRows": null,
+   "out": []
+  },
+  {
+   "name": "one",
+   "width": 0,
+   "maxRows": 2,
+   "out": []
+  },
+  {
+   "name": "one",
+   "width": 1,
+   "maxRows": null,
+   "out": [
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "name": "one",
+   "width": 1,
+   "maxRows": 2,
+   "out": [
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "name": "one",
+   "width": 8,
+   "maxRows": null,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[0m…\u001b[0m",
+    " \u001b[36m1\u001b[39m \u001b[36mfix \u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "name": "one",
+   "width": 8,
+   "maxRows": 2,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[0m…\u001b[0m",
+    " \u001b[36m1\u001b[39m \u001b[36mfix \u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "name": "one",
+   "width": 20,
+   "maxRows": null,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m1 pending\u001b[0m…\u001b[0m",
+    " \u001b[36m1\u001b[39m \u001b[36mfix the tests\u001b[39m\u001b[2m · \u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "name": "one",
+   "width": 20,
+   "maxRows": 2,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m1 pending\u001b[0m…\u001b[0m",
+    " \u001b[36m1\u001b[39m \u001b[36mfix the tests\u001b[39m\u001b[2m · \u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "name": "one",
+   "width": 40,
+   "maxRows": null,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m1 pending message · Enter sen\u001b[0m…\u001b[0m",
+    " \u001b[36m1\u001b[39m \u001b[36mfix the tests\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m"
+   ]
+  },
+  {
+   "name": "one",
+   "width": 40,
+   "maxRows": 2,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m1 pending message · Enter sen\u001b[0m…\u001b[0m",
+    " \u001b[36m1\u001b[39m \u001b[36mfix the tests\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m"
+   ]
+  },
+  {
+   "name": "one",
+   "width": 80,
+   "maxRows": null,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m1 pending message · Enter sends next\u001b[39m",
+    " \u001b[36m1\u001b[39m \u001b[36mfix the tests\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m"
+   ]
+  },
+  {
+   "name": "one",
+   "width": 80,
+   "maxRows": 2,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m1 pending message · Enter sends next\u001b[39m",
+    " \u001b[36m1\u001b[39m \u001b[36mfix the tests\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m"
+   ]
+  },
+  {
+   "name": "mixed",
+   "width": 0,
+   "maxRows": null,
+   "out": []
+  },
+  {
+   "name": "mixed",
+   "width": 0,
+   "maxRows": 2,
+   "out": []
+  },
+  {
+   "name": "mixed",
+   "width": 1,
+   "maxRows": null,
+   "out": [
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "name": "mixed",
+   "width": 1,
+   "maxRows": 2,
+   "out": [
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "name": "mixed",
+   "width": 8,
+   "maxRows": null,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[0m…\u001b[0m",
+    " \u001b[36m1\u001b[39m \u001b[36mfirs\u001b[0m…\u001b[0m",
+    " \u001b[90m2\u001b[39m \u001b[90mfoll\u001b[0m…\u001b[0m",
+    " \u001b[90m3\u001b[39m \u001b[90m漢字\u001b[0m…\u001b[0m",
+    " \u001b[36m4\u001b[39m \u001b[36m\u001b[39m\u001b[2m · \u001b[39m\u001b[90ms\u001b[0m…\u001b[0m",
+    " \u001b[90m5\u001b[39m \u001b[90mfive\u001b[0m…\u001b[0m",
+    "  \u001b[2m+2 mo\u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "name": "mixed",
+   "width": 8,
+   "maxRows": 2,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[0m…\u001b[0m",
+    " \u001b[36m1\u001b[39m \u001b[36mfirs\u001b[0m…\u001b[0m",
+    " \u001b[90m2\u001b[39m \u001b[90mfoll\u001b[0m…\u001b[0m",
+    "  \u001b[2m+5 mo\u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "name": "mixed",
+   "width": 20,
+   "maxRows": null,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m7 pending\u001b[0m…\u001b[0m",
+    " \u001b[36m1\u001b[39m \u001b[36mfirst line …\u001b[39m\u001b[2m · \u001b[39m\u001b[90ms\u001b[0m…\u001b[0m",
+    " \u001b[90m2\u001b[39m \u001b[90mfollow up with a\u001b[0m…\u001b[0m",
+    " \u001b[90m3\u001b[39m \u001b[90m漢字 message 🙂\u001b[39m\u001b[2m \u001b[0m…\u001b[0m",
+    " \u001b[36m4\u001b[39m \u001b[36m\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m",
+    " \u001b[90m5\u001b[39m \u001b[90mfive\u001b[39m\u001b[2m · \u001b[39m\u001b[90mfollow\u001b[39m",
+    "  \u001b[2m+2 more queued\u001b[39m"
+   ]
+  },
+  {
+   "name": "mixed",
+   "width": 20,
+   "maxRows": 2,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m7 pending\u001b[0m…\u001b[0m",
+    " \u001b[36m1\u001b[39m \u001b[36mfirst line …\u001b[39m\u001b[2m · \u001b[39m\u001b[90ms\u001b[0m…\u001b[0m",
+    " \u001b[90m2\u001b[39m \u001b[90mfollow up with a\u001b[0m…\u001b[0m",
+    "  \u001b[2m+5 more queued\u001b[39m"
+   ]
+  },
+  {
+   "name": "mixed",
+   "width": 40,
+   "maxRows": null,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m7 pending messages · Enter se\u001b[0m…\u001b[0m",
+    " \u001b[36m1\u001b[39m \u001b[36mfirst line …\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m",
+    " \u001b[90m2\u001b[39m \u001b[90mfollow up with a much longer message\u001b[0m…\u001b[0m",
+    " \u001b[90m3\u001b[39m \u001b[90m漢字 message 🙂\u001b[39m\u001b[2m · \u001b[39m\u001b[90mfollow\u001b[39m",
+    " \u001b[36m4\u001b[39m \u001b[36m\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m",
+    " \u001b[90m5\u001b[39m \u001b[90mfive\u001b[39m\u001b[2m · \u001b[39m\u001b[90mfollow\u001b[39m",
+    "  \u001b[2m+2 more queued\u001b[39m"
+   ]
+  },
+  {
+   "name": "mixed",
+   "width": 40,
+   "maxRows": 2,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m7 pending messages · Enter se\u001b[0m…\u001b[0m",
+    " \u001b[36m1\u001b[39m \u001b[36mfirst line …\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m",
+    " \u001b[90m2\u001b[39m \u001b[90mfollow up with a much longer message\u001b[0m…\u001b[0m",
+    "  \u001b[2m+5 more queued\u001b[39m"
+   ]
+  },
+  {
+   "name": "mixed",
+   "width": 80,
+   "maxRows": null,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m7 pending messages · Enter sends next\u001b[39m",
+    " \u001b[36m1\u001b[39m \u001b[36mfirst line …\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m",
+    " \u001b[90m2\u001b[39m \u001b[90mfollow up with a much longer message that will not fit in narrow widths\u001b[39m\u001b[2m · \u001b[39m\u001b[90mfo\u001b[0m…\u001b[0m",
+    " \u001b[90m3\u001b[39m \u001b[90m漢字 message 🙂\u001b[39m\u001b[2m · \u001b[39m\u001b[90mfollow\u001b[39m",
+    " \u001b[36m4\u001b[39m \u001b[36m\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m",
+    " \u001b[90m5\u001b[39m \u001b[90mfive\u001b[39m\u001b[2m · \u001b[39m\u001b[90mfollow\u001b[39m",
+    "  \u001b[2m+2 more queued\u001b[39m"
+   ]
+  },
+  {
+   "name": "mixed",
+   "width": 80,
+   "maxRows": 2,
+   "out": [
+    "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m7 pending messages · Enter sends next\u001b[39m",
+    " \u001b[36m1\u001b[39m \u001b[36mfirst line …\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m",
+    " \u001b[90m2\u001b[39m \u001b[90mfollow up with a much longer message that will not fit in narrow widths\u001b[39m\u001b[2m · \u001b[39m\u001b[90mfo\u001b[0m…\u001b[0m",
+    "  \u001b[2m+5 more queued\u001b[39m"
+   ]
+  }
+ ],
+ "previews": [
+  {
+   "text": "",
+   "out": {
+    "line": "",
+    "truncated": false
+   }
+  },
+  {
+   "text": "one",
+   "out": {
+    "line": "one",
+    "truncated": false
+   }
+  },
+  {
+   "text": "a\nb",
+   "out": {
+    "line": "a",
+    "truncated": true
+   }
+  },
+  {
+   "text": "\nlead",
+   "out": {
+    "line": "",
+    "truncated": true
+   }
+  },
+  {
+   "text": "x\r\ny",
+   "out": {
+    "line": "x\r",
+    "truncated": true
+   }
+  }
+ ],
+ "registrars": [
+  {
+   "name": "plain",
+   "options": {},
+   "records": [
+    {
+     "op": "session_start",
+     "arg": null,
+     "log": [
+      [
+       "setEditorComponent"
+      ],
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ]
+     ],
+     "panel": []
+    },
+    {
+     "op": "input",
+     "arg": {
+      "text": "queued one",
+      "streamingBehavior": "steer"
+     },
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       [
+        "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m1 pending message · Enter sends next\u001b[39m",
+        " \u001b[36m1\u001b[39m \u001b[36mqueued one\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m"
+       ],
+       {
+        "placement": "belowEditor"
+       }
+      ]
+     ],
+     "panel": [
+      "queue · 1 pending message · Enter sends next",
+      "1 queued one · steer"
+     ]
+    },
+    {
+     "op": "input",
+     "arg": {
+      "text": "queued two\nmore",
+      "streamingBehavior": "followUp"
+     },
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       [
+        "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m2 pending messages · Enter sends next\u001b[39m",
+        " \u001b[36m1\u001b[39m \u001b[36mqueued one\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m",
+        " \u001b[90m2\u001b[39m \u001b[90mqueued two …\u001b[39m\u001b[2m · \u001b[39m\u001b[90mfollow\u001b[39m"
+       ],
+       {
+        "placement": "belowEditor"
+       }
+      ]
+     ],
+     "panel": [
+      "queue · 2 pending messages · Enter sends next",
+      "1 queued one · steer",
+      "2 queued two …"
+     ]
+    },
+    {
+     "op": "input",
+     "arg": {
+      "text": "not queued"
+     },
+     "log": [],
+     "panel": [
+      "queue · 2 pending messages · Enter sends next",
+      "1 queued one · steer",
+      "2 queued two …"
+     ]
+    },
+    {
+     "op": "command",
+     "arg": "status",
+     "log": [
+      [
+       "notify",
+       "Queue UI on · pending:\n1. [steer] queued one\n2. [followUp] queued two\nmore",
+       "info"
+      ]
+     ],
+     "panel": [
+      "queue · 2 pending messages · Enter sends next",
+      "1 queued one · steer",
+      "2 queued two …"
+     ]
+    },
+    {
+     "op": "command",
+     "arg": "off",
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ],
+      [
+       "notify",
+       "Queue UI disabled (Enter-on-empty interrupt is off)",
+       "info"
+      ]
+     ],
+     "panel": []
+    },
+    {
+     "op": "command",
+     "arg": "",
+     "log": [
+      [
+       "notify",
+       "Queue UI off · pending:\n1. [steer] queued one\n2. [followUp] queued two\nmore",
+       "info"
+      ]
+     ],
+     "panel": []
+    },
+    {
+     "op": "command",
+     "arg": "on",
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       [
+        "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m2 pending messages · Enter sends next\u001b[39m",
+        " \u001b[36m1\u001b[39m \u001b[36mqueued one\u001b[39m\u001b[2m · \u001b[39m\u001b[90msteer\u001b[39m",
+        " \u001b[90m2\u001b[39m \u001b[90mqueued two …\u001b[39m\u001b[2m · \u001b[39m\u001b[90mfollow\u001b[39m"
+       ],
+       {
+        "placement": "belowEditor"
+       }
+      ],
+      [
+       "notify",
+       "Queue UI enabled",
+       "info"
+      ]
+     ],
+     "panel": [
+      "queue · 2 pending messages · Enter sends next",
+      "1 queued one · steer",
+      "2 queued two …"
+     ]
+    },
+    {
+     "op": "command",
+     "arg": "bogus",
+     "log": [
+      [
+       "notify",
+       "Usage: /queue [on|off|status]",
+       "warning"
+      ]
+     ],
+     "panel": [
+      "queue · 2 pending messages · Enter sends next",
+      "1 queued one · steer",
+      "2 queued two …"
+     ]
+    },
+    {
+     "op": "message_start",
+     "arg": {
+      "message": {
+       "role": "user",
+       "content": [
+        {
+         "type": "text",
+         "text": "queued "
+        },
+        {
+         "type": "image"
+        },
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ]
+      }
+     },
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       [
+        "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m1 pending message · Enter sends next\u001b[39m",
+        " \u001b[90m1\u001b[39m \u001b[90mqueued two …\u001b[39m\u001b[2m · \u001b[39m\u001b[90mfollow\u001b[39m"
+       ],
+       {
+        "placement": "belowEditor"
+       }
+      ]
+     ],
+     "panel": [
+      "queue · 1 pending message · Enter sends next",
+      "1 queued two …"
+     ]
+    },
+    {
+     "op": "message_start",
+     "arg": {
+      "message": {
+       "role": "assistant",
+       "content": "x"
+      }
+     },
+     "log": [],
+     "panel": [
+      "queue · 1 pending message · Enter sends next",
+      "1 queued two …"
+     ]
+    },
+    {
+     "op": "agent_end",
+     "arg": null,
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       [
+        "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mQUEUE\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90m1 pending message · Enter sends next\u001b[39m",
+        " \u001b[90m1\u001b[39m \u001b[90mqueued two …\u001b[39m\u001b[2m · \u001b[39m\u001b[90mfollow\u001b[39m"
+       ],
+       {
+        "placement": "belowEditor"
+       }
+      ]
+     ],
+     "panel": [
+      "queue · 1 pending message · Enter sends next",
+      "1 queued two …"
+     ]
+    },
+    {
+     "op": "session_shutdown",
+     "arg": null,
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ]
+     ],
+     "panel": [
+      "queue · 1 pending message · Enter sends next",
+      "1 queued two …"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "framed",
+   "options": {
+    "framed": true
+   },
+   "records": [
+    {
+     "op": "session_start",
+     "arg": null,
+     "log": [
+      [
+       "setEditorComponent"
+      ],
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ]
+     ],
+     "panel": []
+    },
+    {
+     "op": "input",
+     "arg": {
+      "text": "queued one",
+      "streamingBehavior": "steer"
+     },
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ]
+     ],
+     "panel": [
+      "queue · 1 pending message · Enter sends next",
+      "1 queued one · steer"
+     ]
+    },
+    {
+     "op": "input",
+     "arg": {
+      "text": "queued two\nmore",
+      "streamingBehavior": "followUp"
+     },
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ]
+     ],
+     "panel": [
+      "queue · 2 pending messages · Enter sends next",
+      "1 queued one · steer",
+      "2 queued two …"
+     ]
+    },
+    {
+     "op": "input",
+     "arg": {
+      "text": "not queued"
+     },
+     "log": [],
+     "panel": [
+      "queue · 2 pending messages · Enter sends next",
+      "1 queued one · steer",
+      "2 queued two …"
+     ]
+    },
+    {
+     "op": "command",
+     "arg": "status",
+     "log": [
+      [
+       "notify",
+       "Queue UI on · pending:\n1. [steer] queued one\n2. [followUp] queued two\nmore",
+       "info"
+      ]
+     ],
+     "panel": [
+      "queue · 2 pending messages · Enter sends next",
+      "1 queued one · steer",
+      "2 queued two …"
+     ]
+    },
+    {
+     "op": "command",
+     "arg": "off",
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ],
+      [
+       "notify",
+       "Queue UI disabled (Enter-on-empty interrupt is off)",
+       "info"
+      ]
+     ],
+     "panel": []
+    },
+    {
+     "op": "command",
+     "arg": "",
+     "log": [
+      [
+       "notify",
+       "Queue UI off · pending:\n1. [steer] queued one\n2. [followUp] queued two\nmore",
+       "info"
+      ]
+     ],
+     "panel": []
+    },
+    {
+     "op": "command",
+     "arg": "on",
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ],
+      [
+       "notify",
+       "Queue UI enabled",
+       "info"
+      ]
+     ],
+     "panel": [
+      "queue · 2 pending messages · Enter sends next",
+      "1 queued one · steer",
+      "2 queued two …"
+     ]
+    },
+    {
+     "op": "command",
+     "arg": "bogus",
+     "log": [
+      [
+       "notify",
+       "Usage: /queue [on|off|status]",
+       "warning"
+      ]
+     ],
+     "panel": [
+      "queue · 2 pending messages · Enter sends next",
+      "1 queued one · steer",
+      "2 queued two …"
+     ]
+    },
+    {
+     "op": "message_start",
+     "arg": {
+      "message": {
+       "role": "user",
+       "content": [
+        {
+         "type": "text",
+         "text": "queued "
+        },
+        {
+         "type": "image"
+        },
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ]
+      }
+     },
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ]
+     ],
+     "panel": [
+      "queue · 1 pending message · Enter sends next",
+      "1 queued two …"
+     ]
+    },
+    {
+     "op": "message_start",
+     "arg": {
+      "message": {
+       "role": "assistant",
+       "content": "x"
+      }
+     },
+     "log": [],
+     "panel": [
+      "queue · 1 pending message · Enter sends next",
+      "1 queued two …"
+     ]
+    },
+    {
+     "op": "agent_end",
+     "arg": null,
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ]
+     ],
+     "panel": [
+      "queue · 1 pending message · Enter sends next",
+      "1 queued two …"
+     ]
+    },
+    {
+     "op": "session_shutdown",
+     "arg": null,
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ]
+     ],
+     "panel": [
+      "queue · 1 pending message · Enter sends next",
+      "1 queued two …"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "rpc",
+   "options": {
+    "mode": "rpc"
+   },
+   "records": [
+    {
+     "op": "session_start",
+     "arg": null,
+     "log": [],
+     "panel": []
+    },
+    {
+     "op": "input",
+     "arg": {
+      "text": "queued one",
+      "streamingBehavior": "steer"
+     },
+     "log": [],
+     "panel": []
+    },
+    {
+     "op": "input",
+     "arg": {
+      "text": "queued two\nmore",
+      "streamingBehavior": "followUp"
+     },
+     "log": [],
+     "panel": []
+    },
+    {
+     "op": "input",
+     "arg": {
+      "text": "not queued"
+     },
+     "log": [],
+     "panel": []
+    },
+    {
+     "op": "command",
+     "arg": "status",
+     "log": [
+      [
+       "notify",
+       "Queue UI on · no pending messages",
+       "info"
+      ]
+     ],
+     "panel": []
+    },
+    {
+     "op": "command",
+     "arg": "off",
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ],
+      [
+       "notify",
+       "Queue UI disabled (Enter-on-empty interrupt is off)",
+       "info"
+      ]
+     ],
+     "panel": []
+    },
+    {
+     "op": "command",
+     "arg": "",
+     "log": [
+      [
+       "notify",
+       "Queue UI off · no pending messages",
+       "info"
+      ]
+     ],
+     "panel": []
+    },
+    {
+     "op": "command",
+     "arg": "on",
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ],
+      [
+       "notify",
+       "Queue UI enabled",
+       "info"
+      ]
+     ],
+     "panel": []
+    },
+    {
+     "op": "command",
+     "arg": "bogus",
+     "log": [
+      [
+       "notify",
+       "Usage: /queue [on|off|status]",
+       "warning"
+      ]
+     ],
+     "panel": []
+    },
+    {
+     "op": "message_start",
+     "arg": {
+      "message": {
+       "role": "user",
+       "content": [
+        {
+         "type": "text",
+         "text": "queued "
+        },
+        {
+         "type": "image"
+        },
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ]
+      }
+     },
+     "log": [],
+     "panel": []
+    },
+    {
+     "op": "message_start",
+     "arg": {
+      "message": {
+       "role": "assistant",
+       "content": "x"
+      }
+     },
+     "log": [],
+     "panel": []
+    },
+    {
+     "op": "agent_end",
+     "arg": null,
+     "log": [],
+     "panel": []
+    },
+    {
+     "op": "session_shutdown",
+     "arg": null,
+     "log": [
+      [
+       "setWidget",
+       "aio-queue",
+       null,
+       null
+      ]
+     ],
+     "panel": []
+    }
+   ]
+  }
+ ],
+ "restores": [
+  {
+   "current": "",
+   "texts": [
+    "a",
+    "b"
+   ],
+   "out": "a\n\nb"
+  },
+  {
+   "current": "draft",
+   "texts": [
+    "a"
+   ],
+   "out": "draft"
+  },
+  {
+   "current": "has a inside",
+   "texts": [
+    "a",
+    "b"
+   ],
+   "out": "b\n\nhas a inside"
+  },
+  {
+   "current": "  ",
+   "texts": [],
+   "out": null
+  },
+  {
+   "current": "x",
+   "texts": [
+    "x"
+   ],
+   "out": "x"
+  },
+  {
+   "current": "",
+   "texts": [
+    "",
+    " "
+   ],
+   "out": ""
+  }
+ ],
+ "keyTable": [
+  {
+   "name": "esc",
+   "data": "\u001b",
+   "bindings": [
+    "app.interrupt"
+   ]
+  },
+  {
+   "name": "enter",
+   "data": "\r",
+   "bindings": [
+    "tui.input.submit"
+   ]
+  },
+  {
+   "name": "ctrlR",
+   "data": "\u0012",
+   "bindings": [
+    "app.session.resume"
+   ]
+  },
+  {
+   "name": "bs",
+   "data": "",
+   "bindings": []
+  },
+  {
+   "name": "bang",
+   "data": "!",
+   "bindings": []
+  },
+  {
+   "name": "l",
+   "data": "l",
+   "bindings": []
+  },
+  {
+   "name": "s",
+   "data": "s",
+   "bindings": []
+  },
+  {
+   "name": "x",
+   "data": "x",
+   "bindings": []
+  },
+  {
+   "name": "space",
+   "data": " ",
+   "bindings": []
+  },
+  {
+   "name": "backslash",
+   "data": "\\",
+   "bindings": []
+  },
+  {
+   "name": "left",
+   "data": "\u001b[D",
+   "bindings": []
+  }
+ ],
+ "editors": [
+  {
+   "name": "intercepts",
+   "withIntercepts": true,
+   "records": [
+    {
+     "step": {
+      "key": "esc"
+     },
+     "before": "",
+     "base": [],
+     "events": [
+      [
+       "escape"
+      ]
+     ],
+     "statuses": [],
+     "text": ""
+    },
+    {
+     "step": {
+      "key": "esc",
+      "claim": {
+       "escape": false
+      }
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "\u001b",
+       "after": ""
+      }
+     ],
+     "events": [
+      [
+       "escape"
+      ],
+      [
+       "piEscape"
+      ]
+     ],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": ""
+    },
+    {
+     "step": {
+      "key": "x"
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "x",
+       "after": "x"
+      }
+     ],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": "x"
+    },
+    {
+     "step": {
+      "key": "esc",
+      "claim": {
+       "escape": true
+      }
+     },
+     "before": "x",
+     "base": [
+      {
+       "data": "\u001b",
+       "after": "x"
+      }
+     ],
+     "events": [
+      [
+       "piEscape"
+      ]
+     ],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": "x"
+    },
+    {
+     "step": {
+      "key": "bs"
+     },
+     "before": "x",
+     "base": [
+      {
+       "data": "",
+       "after": ""
+      }
+     ],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": ""
+    },
+    {
+     "step": {
+      "key": "enter",
+      "claim": {
+       "emptySubmit": true
+      }
+     },
+     "before": "",
+     "base": [],
+     "events": [
+      [
+       "emptySubmit"
+      ]
+     ],
+     "statuses": [],
+     "text": ""
+    },
+    {
+     "step": {
+      "key": "enter",
+      "claim": {
+       "emptySubmit": false
+      }
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "\r",
+       "after": ""
+      }
+     ],
+     "events": [
+      [
+       "emptySubmit"
+      ],
+      [
+       "submit",
+       ""
+      ],
+      [
+       "piSubmit",
+       ""
+      ]
+     ],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": ""
+    },
+    {
+     "step": {
+      "setText": "/resume",
+      "key": "enter"
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "\r",
+       "after": ""
+      }
+     ],
+     "events": [
+      [
+       "submit",
+       "/resume"
+      ]
+     ],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ],
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": ""
+    },
+    {
+     "step": {
+      "setText": "  /resume  ",
+      "key": "enter"
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "\r",
+       "after": ""
+      }
+     ],
+     "events": [
+      [
+       "submit",
+       "/resume"
+      ]
+     ],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ],
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": ""
+    },
+    {
+     "step": {
+      "setText": "hello",
+      "key": "enter"
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "\r",
+       "after": ""
+      }
+     ],
+     "events": [
+      [
+       "submit",
+       "hello"
+      ],
+      [
+       "piSubmit",
+       "hello"
+      ]
+     ],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ],
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": ""
+    },
+    {
+     "step": {
+      "setText": "line\\",
+      "key": "enter"
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "\r",
+       "after": "line\n"
+      }
+     ],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ],
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": "line\n"
+    },
+    {
+     "step": {
+      "key": "ctrlR"
+     },
+     "before": "line\n",
+     "base": [],
+     "events": [
+      [
+       "action",
+       "app.session.resume"
+      ]
+     ],
+     "statuses": [],
+     "text": "line\n"
+    },
+    {
+     "step": {
+      "key": "ctrlR",
+      "claim": {
+       "action": false
+      }
+     },
+     "before": "line\n",
+     "base": [
+      {
+       "data": "\u0012",
+       "after": "line\n"
+      }
+     ],
+     "events": [
+      [
+       "action",
+       "app.session.resume"
+      ]
+     ],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": "line\n"
+    },
+    {
+     "step": {
+      "setText": ""
+     },
+     "before": "line\n",
+     "base": [],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": ""
+    },
+    {
+     "step": {
+      "key": "bang"
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "!",
+       "after": "!"
+      }
+     ],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       "\u001b[37m!bash\u001b[39m"
+      ]
+     ],
+     "text": "!"
+    },
+    {
+     "step": {
+      "key": "l"
+     },
+     "before": "!",
+     "base": [
+      {
+       "data": "l",
+       "after": "!l"
+      }
+     ],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       "\u001b[37m!bash\u001b[39m"
+      ],
+      [
+       "user-bash",
+       "\u001b[37m!bash\u001b[39m"
+      ]
+     ],
+     "text": "! l"
+    },
+    {
+     "step": {
+      "key": "s"
+     },
+     "before": "! l",
+     "base": [
+      {
+       "data": "s",
+       "after": "! ls"
+      }
+     ],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       "\u001b[37m!bash\u001b[39m"
+      ]
+     ],
+     "text": "! ls"
+    },
+    {
+     "step": {
+      "key": "space"
+     },
+     "before": "! ls",
+     "base": [
+      {
+       "data": " ",
+       "after": "! ls "
+      }
+     ],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       "\u001b[37m!bash\u001b[39m"
+      ]
+     ],
+     "text": "! ls "
+    },
+    {
+     "step": {
+      "setText": "!!x"
+     },
+     "before": "! ls ",
+     "base": [],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       "\u001b[37m!!bash\u001b[39m"
+      ]
+     ],
+     "text": "!!x"
+    },
+    {
+     "step": {
+      "key": "x"
+     },
+     "before": "!!x",
+     "base": [
+      {
+       "data": "x",
+       "after": "!!xx"
+      }
+     ],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       "\u001b[37m!!bash\u001b[39m"
+      ],
+      [
+       "user-bash",
+       "\u001b[37m!!bash\u001b[39m"
+      ]
+     ],
+     "text": "!! xx"
+    },
+    {
+     "step": {
+      "key": "enter",
+      "claim": {
+       "submit": []
+      }
+     },
+     "before": "!! xx",
+     "base": [
+      {
+       "data": "\r",
+       "after": ""
+      }
+     ],
+     "events": [
+      [
+       "submit",
+       "!! xx"
+      ],
+      [
+       "piSubmit",
+       "!! xx"
+      ]
+     ],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": ""
+    },
+    {
+     "step": {
+      "setText": "  ",
+      "key": "enter",
+      "claim": {
+       "emptySubmit": true
+      }
+     },
+     "before": "",
+     "base": [],
+     "events": [
+      [
+       "emptySubmit"
+      ]
+     ],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": "  "
+    }
+   ]
+  },
+  {
+   "name": "no intercepts",
+   "withIntercepts": false,
+   "records": [
+    {
+     "step": {
+      "key": "esc"
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "\u001b",
+       "after": ""
+      }
+     ],
+     "events": [
+      [
+       "piEscape"
+      ]
+     ],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": ""
+    },
+    {
+     "step": {
+      "setText": "/resume",
+      "key": "enter"
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "\r",
+       "after": ""
+      }
+     ],
+     "events": [
+      [
+       "piSubmit",
+       "/resume"
+      ]
+     ],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ],
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": ""
+    },
+    {
+     "step": {
+      "key": "ctrlR"
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "\u0012",
+       "after": ""
+      }
+     ],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": ""
+    },
+    {
+     "step": {
+      "key": "enter"
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "\r",
+       "after": ""
+      }
+     ],
+     "events": [
+      [
+       "emptySubmit"
+      ],
+      [
+       "piSubmit",
+       ""
+      ]
+     ],
+     "statuses": [
+      [
+       "user-bash",
+       null
+      ]
+     ],
+     "text": ""
+    },
+    {
+     "step": {
+      "key": "bang"
+     },
+     "before": "",
+     "base": [
+      {
+       "data": "!",
+       "after": "!"
+      }
+     ],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       "\u001b[37m!bash\u001b[39m"
+      ]
+     ],
+     "text": "!"
+    },
+    {
+     "step": {
+      "key": "x"
+     },
+     "before": "!",
+     "base": [
+      {
+       "data": "x",
+       "after": "!x"
+      }
+     ],
+     "events": [],
+     "statuses": [
+      [
+       "user-bash",
+       "\u001b[37m!bash\u001b[39m"
+      ],
+      [
+       "user-bash",
+       "\u001b[37m!bash\u001b[39m"
+      ]
+     ],
+     "text": "! x"
+    }
+   ]
+  }
+ ],
+ "bashRenders": [
+  {
+   "text": "!ls -la",
+   "frameChrome": false,
+   "width": 1,
+   "base": [
+    "─",
+    "!",
+    "l",
+    "s",
+    " ",
+    "-",
+    "l",
+    "a\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "out": [
+    "─",
+    "!",
+    "l",
+    "s",
+    " ",
+    "-",
+    "l",
+    "a\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "unframed": [
+    "─",
+    "!",
+    "l",
+    "s",
+    " ",
+    "-",
+    "l",
+    "a\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": false,
+   "width": 2,
+   "base": [
+    "──",
+    "! ",
+    "l ",
+    "s ",
+    "  ",
+    "- ",
+    "l ",
+    "a\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "out": [
+    "──",
+    "! ",
+    "l ",
+    "s ",
+    "  ",
+    "- ",
+    "l ",
+    "a\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "unframed": [
+    "──",
+    "! ",
+    "l ",
+    "s ",
+    "  ",
+    "- ",
+    "l ",
+    "a\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": false,
+   "width": 5,
+   "base": [
+    "─\u001b[37m !\u001b[0m──",
+    "!ls  ",
+    "-la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "─────"
+   ],
+   "out": [
+    "─\u001b[37m !\u001b[0m──",
+    "!ls  ",
+    "-la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "─────"
+   ],
+   "unframed": [
+    "─\u001b[37m !\u001b[0m──",
+    "!ls  ",
+    "-la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "─────"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": false,
+   "width": 10,
+   "base": [
+    "─\u001b[37m ! bash\u001b[0m──",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007  ",
+    "──────────"
+   ],
+   "out": [
+    "─\u001b[37m ! bash\u001b[0m──",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007  ",
+    "──────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash\u001b[0m──",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007  ",
+    "──────────"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": false,
+   "width": 16,
+   "base": [
+    "─\u001b[37m ! bash \u001b[39m─\u001b[2m Ente\u001b[0m─",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007        ",
+    "────────────────"
+   ],
+   "out": [
+    "─\u001b[37m ! bash \u001b[39m─\u001b[2m Ente\u001b[0m─",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007        ",
+    "────────────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash \u001b[39m─\u001b[2m Ente\u001b[0m─",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007        ",
+    "────────────────"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": false,
+   "width": 30,
+   "base": [
+    "─\u001b[37m ! bash \u001b[39m──────\u001b[2m Enter to run \u001b[39m─",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                      ",
+    "──────────────────────────────"
+   ],
+   "out": [
+    "─\u001b[37m ! bash \u001b[39m──────\u001b[2m Enter to run \u001b[39m─",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                      ",
+    "──────────────────────────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash \u001b[39m──────\u001b[2m Enter to run \u001b[39m─",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                      ",
+    "──────────────────────────────"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": false,
+   "width": 60,
+   "base": [
+    "─\u001b[37m ! bash \u001b[39m────────────────────────────────────\u001b[2m Enter to run \u001b[39m─",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                    ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "out": [
+    "─\u001b[37m ! bash \u001b[39m────────────────────────────────────\u001b[2m Enter to run \u001b[39m─",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                    ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash \u001b[39m────────────────────────────────────\u001b[2m Enter to run \u001b[39m─",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                    ",
+    "────────────────────────────────────────────────────────────"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": true,
+   "width": 1,
+   "base": [
+    "─",
+    "!",
+    "l",
+    "s",
+    " ",
+    "-",
+    "l",
+    "a\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "out": [
+    "─",
+    "!",
+    "l",
+    "s",
+    " ",
+    "-",
+    "l",
+    "a\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "unframed": [
+    "─",
+    "!",
+    "l",
+    "s",
+    " ",
+    "-",
+    "l",
+    "a\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": true,
+   "width": 2,
+   "base": [
+    "──",
+    "! ",
+    "l ",
+    "s ",
+    "  ",
+    "- ",
+    "l ",
+    "a\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "out": [
+    "──",
+    "! ",
+    "l ",
+    "s ",
+    "  ",
+    "- ",
+    "l ",
+    "a\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "unframed": [
+    "──",
+    "! ",
+    "l ",
+    "s ",
+    "  ",
+    "- ",
+    "l ",
+    "a\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": true,
+   "width": 5,
+   "base": [
+    "─────",
+    "!ls  ",
+    "-la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "─────"
+   ],
+   "out": [
+    "─────",
+    "!ls  ",
+    "-la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "─────"
+   ],
+   "unframed": [
+    "─\u001b[37m !\u001b[0m──",
+    "!ls  ",
+    "-la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "─────"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": true,
+   "width": 10,
+   "base": [
+    "──────────",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007  ",
+    "──────────"
+   ],
+   "out": [
+    "──────────",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007  ",
+    "──────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash\u001b[0m──",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007  ",
+    "──────────"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": true,
+   "width": 16,
+   "base": [
+    "────────────────",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007        ",
+    "────────────────"
+   ],
+   "out": [
+    "────────────────",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007        ",
+    "────────────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash \u001b[39m─\u001b[2m Ente\u001b[0m─",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007        ",
+    "────────────────"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": true,
+   "width": 30,
+   "base": [
+    "──────────────────────────────",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                      ",
+    "──────────────────────────────"
+   ],
+   "out": [
+    "──────────────────────────────",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                      ",
+    "──────────────────────────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash \u001b[39m──────\u001b[2m Enter to run \u001b[39m─",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                      ",
+    "──────────────────────────────"
+   ]
+  },
+  {
+   "text": "!ls -la",
+   "frameChrome": true,
+   "width": 60,
+   "base": [
+    "────────────────────────────────────────────────────────────",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                    ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "out": [
+    "────────────────────────────────────────────────────────────",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                    ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash \u001b[39m────────────────────────────────────\u001b[2m Enter to run \u001b[39m─",
+    "!ls -la\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                    ",
+    "────────────────────────────────────────────────────────────"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": false,
+   "width": 1,
+   "base": [
+    "─",
+    "!",
+    "s",
+    "e",
+    "c",
+    "r",
+    "e",
+    "t\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "out": [
+    "─",
+    "!",
+    "s",
+    "e",
+    "c",
+    "r",
+    "e",
+    "t\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "unframed": [
+    "─",
+    "!",
+    "s",
+    "e",
+    "c",
+    "r",
+    "e",
+    "t\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": false,
+   "width": 2,
+   "base": [
+    "──",
+    "! ",
+    "s ",
+    "e ",
+    "c ",
+    "r ",
+    "e ",
+    "t\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "out": [
+    "──",
+    "! ",
+    "s ",
+    "e ",
+    "c ",
+    "r ",
+    "e ",
+    "t\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "unframed": [
+    "──",
+    "! ",
+    "s ",
+    "e ",
+    "c ",
+    "r ",
+    "e ",
+    "t\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": false,
+   "width": 5,
+   "base": [
+    "─\u001b[90m !\u001b[0m──",
+    "!!se ",
+    "cret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─────"
+   ],
+   "out": [
+    "─\u001b[90m !\u001b[0m──",
+    "!!se ",
+    "cret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─────"
+   ],
+   "unframed": [
+    "─\u001b[90m !\u001b[0m──",
+    "!!se ",
+    "cret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─────"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": false,
+   "width": 10,
+   "base": [
+    "─\u001b[90m !! hid\u001b[0m──",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "──────────"
+   ],
+   "out": [
+    "─\u001b[90m !! hid\u001b[0m──",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "──────────"
+   ],
+   "unframed": [
+    "─\u001b[90m !! hid\u001b[0m──",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "──────────"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": false,
+   "width": 16,
+   "base": [
+    "─\u001b[90m !! hidden \u001b[39m─\u001b[2m E\u001b[0m─",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007       ",
+    "────────────────"
+   ],
+   "out": [
+    "─\u001b[90m !! hidden \u001b[39m─\u001b[2m E\u001b[0m─",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007       ",
+    "────────────────"
+   ],
+   "unframed": [
+    "─\u001b[90m !! hidden \u001b[39m─\u001b[2m E\u001b[0m─",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007       ",
+    "────────────────"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": false,
+   "width": 30,
+   "base": [
+    "─\u001b[90m !! hidden \u001b[39m───\u001b[2m Enter to run \u001b[39m─",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                     ",
+    "──────────────────────────────"
+   ],
+   "out": [
+    "─\u001b[90m !! hidden \u001b[39m───\u001b[2m Enter to run \u001b[39m─",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                     ",
+    "──────────────────────────────"
+   ],
+   "unframed": [
+    "─\u001b[90m !! hidden \u001b[39m───\u001b[2m Enter to run \u001b[39m─",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                     ",
+    "──────────────────────────────"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": false,
+   "width": 60,
+   "base": [
+    "─\u001b[90m !! hidden \u001b[39m─────────────────────────────────\u001b[2m Enter to run \u001b[39m─",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                   ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "out": [
+    "─\u001b[90m !! hidden \u001b[39m─────────────────────────────────\u001b[2m Enter to run \u001b[39m─",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                   ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "unframed": [
+    "─\u001b[90m !! hidden \u001b[39m─────────────────────────────────\u001b[2m Enter to run \u001b[39m─",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                   ",
+    "────────────────────────────────────────────────────────────"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": true,
+   "width": 1,
+   "base": [
+    ".",
+    "!",
+    "s",
+    "e",
+    "c",
+    "r",
+    "e",
+    "t\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "out": [
+    ".",
+    "!",
+    "s",
+    "e",
+    "c",
+    "r",
+    "e",
+    "t\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "unframed": [
+    "─",
+    "!",
+    "s",
+    "e",
+    "c",
+    "r",
+    "e",
+    "t\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": true,
+   "width": 2,
+   "base": [
+    "..",
+    "! ",
+    "s ",
+    "e ",
+    "c ",
+    "r ",
+    "e ",
+    "t\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "out": [
+    "..",
+    "! ",
+    "s ",
+    "e ",
+    "c ",
+    "r ",
+    "e ",
+    "t\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "unframed": [
+    "──",
+    "! ",
+    "s ",
+    "e ",
+    "c ",
+    "r ",
+    "e ",
+    "t\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": true,
+   "width": 5,
+   "base": [
+    "─────",
+    "!!se ",
+    "cret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─────"
+   ],
+   "out": [
+    "─────",
+    "!!se ",
+    "cret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─────"
+   ],
+   "unframed": [
+    "─\u001b[90m !\u001b[0m──",
+    "!!se ",
+    "cret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─────"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": true,
+   "width": 10,
+   "base": [
+    "──────────",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "──────────"
+   ],
+   "out": [
+    "──────────",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "──────────"
+   ],
+   "unframed": [
+    "─\u001b[90m !! hid\u001b[0m──",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "──────────"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": true,
+   "width": 16,
+   "base": [
+    "────────────────",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007       ",
+    "────────────────"
+   ],
+   "out": [
+    "────────────────",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007       ",
+    "────────────────"
+   ],
+   "unframed": [
+    "─\u001b[90m !! hidden \u001b[39m─\u001b[2m E\u001b[0m─",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007       ",
+    "────────────────"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": true,
+   "width": 30,
+   "base": [
+    "──────────────────────────────",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                     ",
+    "──────────────────────────────"
+   ],
+   "out": [
+    "──────────────────────────────",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                     ",
+    "──────────────────────────────"
+   ],
+   "unframed": [
+    "─\u001b[90m !! hidden \u001b[39m───\u001b[2m Enter to run \u001b[39m─",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                     ",
+    "──────────────────────────────"
+   ]
+  },
+  {
+   "text": "!!secret",
+   "frameChrome": true,
+   "width": 60,
+   "base": [
+    "────────────────────────────────────────────────────────────",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                   ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "out": [
+    "────────────────────────────────────────────────────────────",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                   ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "unframed": [
+    "─\u001b[90m !! hidden \u001b[39m─────────────────────────────────\u001b[2m Enter to run \u001b[39m─",
+    "!!secret\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                   ",
+    "────────────────────────────────────────────────────────────"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": false,
+   "width": 1,
+   "base": [
+    "─",
+    " ",
+    " ",
+    "!",
+    "x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "out": [
+    "─",
+    " ",
+    " ",
+    "!",
+    "x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "unframed": [
+    "─",
+    " ",
+    " ",
+    "!",
+    "x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": false,
+   "width": 2,
+   "base": [
+    "──",
+    "  ",
+    "  ",
+    "! ",
+    "x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "out": [
+    "──",
+    "  ",
+    "  ",
+    "! ",
+    "x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "unframed": [
+    "──",
+    "  ",
+    "  ",
+    "! ",
+    "x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": false,
+   "width": 5,
+   "base": [
+    "─\u001b[37m !\u001b[0m──",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─────"
+   ],
+   "out": [
+    "─\u001b[37m !\u001b[0m──",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─────"
+   ],
+   "unframed": [
+    "─\u001b[37m !\u001b[0m──",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─────"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": false,
+   "width": 10,
+   "base": [
+    "─\u001b[37m ! bash\u001b[0m──",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007     ",
+    "──────────"
+   ],
+   "out": [
+    "─\u001b[37m ! bash\u001b[0m──",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007     ",
+    "──────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash\u001b[0m──",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007     ",
+    "──────────"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": false,
+   "width": 16,
+   "base": [
+    "─\u001b[37m ! bash \u001b[39m─\u001b[2m Ente\u001b[0m─",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007           ",
+    "────────────────"
+   ],
+   "out": [
+    "─\u001b[37m ! bash \u001b[39m─\u001b[2m Ente\u001b[0m─",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007           ",
+    "────────────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash \u001b[39m─\u001b[2m Ente\u001b[0m─",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007           ",
+    "────────────────"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": false,
+   "width": 30,
+   "base": [
+    "─\u001b[37m ! bash \u001b[39m──────\u001b[2m Enter to run \u001b[39m─",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                         ",
+    "──────────────────────────────"
+   ],
+   "out": [
+    "─\u001b[37m ! bash \u001b[39m──────\u001b[2m Enter to run \u001b[39m─",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                         ",
+    "──────────────────────────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash \u001b[39m──────\u001b[2m Enter to run \u001b[39m─",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                         ",
+    "──────────────────────────────"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": false,
+   "width": 60,
+   "base": [
+    "─\u001b[37m ! bash \u001b[39m────────────────────────────────────\u001b[2m Enter to run \u001b[39m─",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                       ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "out": [
+    "─\u001b[37m ! bash \u001b[39m────────────────────────────────────\u001b[2m Enter to run \u001b[39m─",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                       ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash \u001b[39m────────────────────────────────────\u001b[2m Enter to run \u001b[39m─",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                       ",
+    "────────────────────────────────────────────────────────────"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": true,
+   "width": 1,
+   "base": [
+    "─",
+    " ",
+    " ",
+    "!",
+    "x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "out": [
+    "─",
+    " ",
+    " ",
+    "!",
+    "x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "unframed": [
+    "─",
+    " ",
+    " ",
+    "!",
+    "x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": true,
+   "width": 2,
+   "base": [
+    "──",
+    "  ",
+    "  ",
+    "! ",
+    "x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "out": [
+    "──",
+    "  ",
+    "  ",
+    "! ",
+    "x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "unframed": [
+    "──",
+    "  ",
+    "  ",
+    "! ",
+    "x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": true,
+   "width": 5,
+   "base": [
+    "─────",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─────"
+   ],
+   "out": [
+    "─────",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─────"
+   ],
+   "unframed": [
+    "─\u001b[37m !\u001b[0m──",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─────"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": true,
+   "width": 10,
+   "base": [
+    "──────────",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007     ",
+    "──────────"
+   ],
+   "out": [
+    "──────────",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007     ",
+    "──────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash\u001b[0m──",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007     ",
+    "──────────"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": true,
+   "width": 16,
+   "base": [
+    "────────────────",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007           ",
+    "────────────────"
+   ],
+   "out": [
+    "────────────────",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007           ",
+    "────────────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash \u001b[39m─\u001b[2m Ente\u001b[0m─",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007           ",
+    "────────────────"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": true,
+   "width": 30,
+   "base": [
+    "──────────────────────────────",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                         ",
+    "──────────────────────────────"
+   ],
+   "out": [
+    "──────────────────────────────",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                         ",
+    "──────────────────────────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash \u001b[39m──────\u001b[2m Enter to run \u001b[39m─",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                         ",
+    "──────────────────────────────"
+   ]
+  },
+  {
+   "text": "  !x",
+   "frameChrome": true,
+   "width": 60,
+   "base": [
+    "────────────────────────────────────────────────────────────",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                       ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "out": [
+    "────────────────────────────────────────────────────────────",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                       ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "unframed": [
+    "─\u001b[37m ! bash \u001b[39m────────────────────────────────────\u001b[2m Enter to run \u001b[39m─",
+    "  !x\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                       ",
+    "────────────────────────────────────────────────────────────"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": false,
+   "width": 1,
+   "base": [
+    "─",
+    "h",
+    "e",
+    "l",
+    "l",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "out": [
+    "─",
+    "h",
+    "e",
+    "l",
+    "l",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "unframed": [
+    "─",
+    "h",
+    "e",
+    "l",
+    "l",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": false,
+   "width": 2,
+   "base": [
+    "──",
+    "h ",
+    "e ",
+    "l ",
+    "l ",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "out": [
+    "──",
+    "h ",
+    "e ",
+    "l ",
+    "l ",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "unframed": [
+    "──",
+    "h ",
+    "e ",
+    "l ",
+    "l ",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": false,
+   "width": 5,
+   "base": [
+    "─────",
+    "hell ",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007   ",
+    "─────"
+   ],
+   "out": [
+    "─────",
+    "hell ",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007   ",
+    "─────"
+   ],
+   "unframed": [
+    "─────",
+    "hell ",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007   ",
+    "─────"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": false,
+   "width": 10,
+   "base": [
+    "──────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007    ",
+    "──────────"
+   ],
+   "out": [
+    "──────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007    ",
+    "──────────"
+   ],
+   "unframed": [
+    "──────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007    ",
+    "──────────"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": false,
+   "width": 16,
+   "base": [
+    "────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007          ",
+    "────────────────"
+   ],
+   "out": [
+    "────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007          ",
+    "────────────────"
+   ],
+   "unframed": [
+    "────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007          ",
+    "────────────────"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": false,
+   "width": 30,
+   "base": [
+    "──────────────────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                        ",
+    "──────────────────────────────"
+   ],
+   "out": [
+    "──────────────────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                        ",
+    "──────────────────────────────"
+   ],
+   "unframed": [
+    "──────────────────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                        ",
+    "──────────────────────────────"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": false,
+   "width": 60,
+   "base": [
+    "────────────────────────────────────────────────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                      ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "out": [
+    "────────────────────────────────────────────────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                      ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "unframed": [
+    "────────────────────────────────────────────────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                      ",
+    "────────────────────────────────────────────────────────────"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": true,
+   "width": 1,
+   "base": [
+    "─",
+    "h",
+    "e",
+    "l",
+    "l",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "out": [
+    "─",
+    "h",
+    "e",
+    "l",
+    "l",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "unframed": [
+    "─",
+    "h",
+    "e",
+    "l",
+    "l",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": true,
+   "width": 2,
+   "base": [
+    "──",
+    "h ",
+    "e ",
+    "l ",
+    "l ",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "out": [
+    "──",
+    "h ",
+    "e ",
+    "l ",
+    "l ",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ],
+   "unframed": [
+    "──",
+    "h ",
+    "e ",
+    "l ",
+    "l ",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "──"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": true,
+   "width": 5,
+   "base": [
+    "─────",
+    "hell ",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007   ",
+    "─────"
+   ],
+   "out": [
+    "─────",
+    "hell ",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007   ",
+    "─────"
+   ],
+   "unframed": [
+    "─────",
+    "hell ",
+    "o\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007   ",
+    "─────"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": true,
+   "width": 10,
+   "base": [
+    "──────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007    ",
+    "──────────"
+   ],
+   "out": [
+    "──────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007    ",
+    "──────────"
+   ],
+   "unframed": [
+    "──────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007    ",
+    "──────────"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": true,
+   "width": 16,
+   "base": [
+    "────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007          ",
+    "────────────────"
+   ],
+   "out": [
+    "────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007          ",
+    "────────────────"
+   ],
+   "unframed": [
+    "────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007          ",
+    "────────────────"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": true,
+   "width": 30,
+   "base": [
+    "──────────────────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                        ",
+    "──────────────────────────────"
+   ],
+   "out": [
+    "──────────────────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                        ",
+    "──────────────────────────────"
+   ],
+   "unframed": [
+    "──────────────────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                        ",
+    "──────────────────────────────"
+   ]
+  },
+  {
+   "text": "hello",
+   "frameChrome": true,
+   "width": 60,
+   "base": [
+    "────────────────────────────────────────────────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                      ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "out": [
+    "────────────────────────────────────────────────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                      ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "unframed": [
+    "────────────────────────────────────────────────────────────",
+    "hello\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                      ",
+    "────────────────────────────────────────────────────────────"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": false,
+   "width": 1,
+   "base": [
+    "─",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "out": [
+    "─",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "unframed": [
+    "─",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": false,
+   "width": 2,
+   "base": [
+    "──",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "──"
+   ],
+   "out": [
+    "──",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "──"
+   ],
+   "unframed": [
+    "──",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "──"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": false,
+   "width": 5,
+   "base": [
+    "─────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007    ",
+    "─────"
+   ],
+   "out": [
+    "─────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007    ",
+    "─────"
+   ],
+   "unframed": [
+    "─────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007    ",
+    "─────"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": false,
+   "width": 10,
+   "base": [
+    "──────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007         ",
+    "──────────"
+   ],
+   "out": [
+    "──────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007         ",
+    "──────────"
+   ],
+   "unframed": [
+    "──────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007         ",
+    "──────────"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": false,
+   "width": 16,
+   "base": [
+    "────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007               ",
+    "────────────────"
+   ],
+   "out": [
+    "────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007               ",
+    "────────────────"
+   ],
+   "unframed": [
+    "────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007               ",
+    "────────────────"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": false,
+   "width": 30,
+   "base": [
+    "──────────────────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                             ",
+    "──────────────────────────────"
+   ],
+   "out": [
+    "──────────────────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                             ",
+    "──────────────────────────────"
+   ],
+   "unframed": [
+    "──────────────────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                             ",
+    "──────────────────────────────"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": false,
+   "width": 60,
+   "base": [
+    "────────────────────────────────────────────────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                           ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "out": [
+    "────────────────────────────────────────────────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                           ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "unframed": [
+    "────────────────────────────────────────────────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                           ",
+    "────────────────────────────────────────────────────────────"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": true,
+   "width": 1,
+   "base": [
+    "─",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "out": [
+    "─",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ],
+   "unframed": [
+    "─",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007",
+    "─"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": true,
+   "width": 2,
+   "base": [
+    "──",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "──"
+   ],
+   "out": [
+    "──",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "──"
+   ],
+   "unframed": [
+    "──",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007 ",
+    "──"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": true,
+   "width": 5,
+   "base": [
+    "─────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007    ",
+    "─────"
+   ],
+   "out": [
+    "─────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007    ",
+    "─────"
+   ],
+   "unframed": [
+    "─────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007    ",
+    "─────"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": true,
+   "width": 10,
+   "base": [
+    "──────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007         ",
+    "──────────"
+   ],
+   "out": [
+    "──────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007         ",
+    "──────────"
+   ],
+   "unframed": [
+    "──────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007         ",
+    "──────────"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": true,
+   "width": 16,
+   "base": [
+    "────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007               ",
+    "────────────────"
+   ],
+   "out": [
+    "────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007               ",
+    "────────────────"
+   ],
+   "unframed": [
+    "────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007               ",
+    "────────────────"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": true,
+   "width": 30,
+   "base": [
+    "──────────────────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                             ",
+    "──────────────────────────────"
+   ],
+   "out": [
+    "──────────────────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                             ",
+    "──────────────────────────────"
+   ],
+   "unframed": [
+    "──────────────────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                             ",
+    "──────────────────────────────"
+   ]
+  },
+  {
+   "text": "",
+   "frameChrome": true,
+   "width": 60,
+   "base": [
+    "────────────────────────────────────────────────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                           ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "out": [
+    "────────────────────────────────────────────────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                           ",
+    "────────────────────────────────────────────────────────────"
+   ],
+   "unframed": [
+    "────────────────────────────────────────────────────────────",
+    "\u001b_pi:fc\u0007 \u001b_pi:/fc\u0007                                                           ",
+    "────────────────────────────────────────────────────────────"
+   ]
+  }
+ ]
+}

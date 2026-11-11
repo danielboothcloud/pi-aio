@@ -1,0 +1,41 @@
+===== rewind picker (double esc) =====
+
+    ▄▄▄▄  ▄▄▄▄    v0.7.0+1.5.0
+   ▄▀▀▀▀▄▄▀▀▀▀▄   escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  Press ctrl+o to show full startup help and loaded resources.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  PiG can explain its own features and look up its docs. Ask it how to use or extend PiG.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ No prompts to rewind to yet.
+
+
+
+
+
+╭─ ● Default · 0% ───────────────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ main * ───────────────────────────────────────────────────────────────────────────────────────── ui-work ─╯

@@ -1,0 +1,20 @@
+UI {"method": "setStatus", "statusKey": "recipe"}
+UI {"method": "setStatus", "statusKey": "aio-goal"}
+UI {"method": "setWidget", "widgetKey": "plan-todos"}
+UI {"method": "setStatus", "statusKey": "style"}
+UI {"method": "notify", "message": "Queue UI on · no pending messages", "notifyType": "info"}
+UI {"method": "setWidget", "widgetKey": "aio-queue"}
+UI {"method": "notify", "message": "Queue UI disabled (Enter-on-empty interrupt is off)", "notifyType": "info"}
+UI {"method": "notify", "message": "Queue UI off · no pending messages", "notifyType": "info"}
+UI {"method": "setStatus", "statusKey": "aio-provider-usage"}
+UI {"method": "setWidget", "widgetKey": "aio-provider-usage"}
+UI {"method": "notify", "message": "Status line data (frame owns the visuals) disabled", "notifyType": "info"}
+UI {"method": "notify", "message": "Status line working message: verbose", "notifyType": "info"}
+UI {"method": "notify", "message": "The session picker needs the interactive terminal.", "notifyType": "warning"}
+UI {"method": "notify", "message": "Rewind needs the interactive terminal; use /tree instead.", "notifyType": "warning"}
+UI {"method": "setStatus", "statusKey": "style"}
+UI {"method": "notify", "message": "Style: Concise — minimal commentary: key decisions, blockers, and results", "notifyType": "info"}
+UI {"method": "setWidget", "widgetKey": "plan-todos"}
+UI {"method": "setStatus", "statusKey": "style"}
+UI {"method": "notify", "message": "Style: none — interaction style off", "notifyType": "info"}
+AGENT_END

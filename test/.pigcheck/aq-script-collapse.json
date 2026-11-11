@@ -1,0 +1,2 @@
+[{"tool":"ask_user_question","args":{"questions":[{"question":"Cancel me?","header":"Cancel","options":[{"label":"Yes","description":"y"},{"label":"No","description":"n"}]}]}},
+ {"text":"aq done"}]

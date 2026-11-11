@@ -1,0 +1,3 @@
+2026-11-11T16:22:27.494Z pid=83457 ppid=83455 received SIGTERM
+2026-11-11T16:25:46.121Z pid=83457 ppid=83455 session started 2026-11-11T16:22:12Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/bs-work ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T16:26:01.650Z pid=88846 ppid=88845 received SIGTERM

@@ -1,7 +1,8 @@
 package aio
 
-// Styles wiring (port of styles/index.ts). Difference from TypeScript: no
-// frame pill (frame is not ported); the style shows as the "style" status.
+// Styles wiring (port of styles/index.ts). The style rides the frame's top
+// border beside the mode; the "style" footer status is the fallback without
+// the frame.
 
 import (
 	"fmt"
@@ -11,6 +12,7 @@ import (
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 
+	"github.com/danielboothcloud/pi-aio/go/internal/frame"
 	"github.com/danielboothcloud/pi-aio/go/internal/styles"
 )
 
@@ -24,17 +26,29 @@ type stylesState struct {
 // stylesAccess lets recipes set the style on a live /recipe switch.
 var stylesAccess *stylesState
 
+// syncDisplay is syncDisplay: the frame contribution, then the footer
+// status only without the frame.
 func (s *stylesState) syncDisplay(ctx sdk.Context) {
+	if s.current == "none" {
+		frame.SetMetadataContributor(styleFrameKey, nil)
+	} else {
+		meta := styles.StyleMetadata(s.current)
+		pill := &frame.Pill{Icon: meta.Icon, Label: meta.Label, Role: meta.Role}
+		frame.SetMetadataContributor(styleFrameKey, func() frame.Contribution { return frame.Contribution{Style: pill} })
+	}
+	frame.RequestRepaint()
 	if !ctx.HasUI() {
 		return
 	}
-	if s.current == "none" {
+	if s.current == "none" || frame.Probe().Supported {
 		ctx.ClearStatus(styles.StatusKey)
 		return
 	}
 	meta := styles.StyleMetadata(s.current)
-	ctx.SetStatus(styles.StatusKey, meta.Icon+" "+meta.Label)
+	ctx.SetStatus(styles.StatusKey, ctx.UITheme().Fg(meta.Role, meta.Icon+" "+meta.Label))
 }
+
+const styleFrameKey = "style"
 
 // setLocked sets the style and saves it. The caller holds s.mu.
 func (s *stylesState) setLocked(ctx sdk.Context, style string, quiet bool) {
@@ -152,6 +166,10 @@ func registerStyles(e *sdk.Extension) {
 	})
 	e.OnEvent("session_tree", func(ctx sdk.Context, _ map[string]any) (any, error) {
 		s.restore(ctx)
+		return nil, nil
+	})
+	e.OnSessionShutdown(func(sdk.Context, map[string]any) (any, error) {
+		frame.SetMetadataContributor(styleFrameKey, nil)
 		return nil, nil
 	})
 }

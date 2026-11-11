@@ -1,0 +1,5 @@
+[{"tool":"web_search","args":{"query":"release notes","includeContent":true,"domainFilter":["example.com"]}},
+ {"tool":"fetch_content","args":{"url":"https://8.8.8.8/article"}},
+ {"tool":"fetch_content","args":{"urls":["https://8.8.8.8/challenge","http://127.0.0.1/x"],"format":"text"}},
+ {"tool":"fetch_content","args":{"url":"https://8.8.8.8/page","format":"html"}},
+ {"text":"bs done"}]

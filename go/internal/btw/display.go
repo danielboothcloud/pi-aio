@@ -267,3 +267,22 @@ func UsageLine(inFlight bool, modelID string) string {
 
 // ModelID is the id part of a "provider/id" description.
 func ModelID(description string) string { return lastSegment(description) }
+
+// FrameAskingMeta is frameAskingMeta: the frame pill while a question is
+// in flight (icon, label, theme role).
+func FrameAskingMeta(modelID string) (icon, label, role string) {
+	label = "btw asking"
+	if modelID != "" {
+		label += " · " + modelID
+	}
+	return glyphAsking, label, "accent"
+}
+
+// AskingModelID recovers the model id from a StatusAskingLine text; ok is
+// false for another text.
+func AskingModelID(status string) (modelID string, ok bool) {
+	if status == StatusAskingLine("") {
+		return "", true
+	}
+	return strings.CutPrefix(status, StatusAskingLine("")+" · ")
+}

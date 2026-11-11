@@ -1,0 +1,306 @@
+===== after run (collapsed) =====
+
+
+
+ $ BASH · egrep foo notes.txt
+
+ ✓ exit 0 · 2 lines · 294ms · ctrl+o expand
+
+
+
+ $ BASH · rg -rn foo .
+
+ ✕ exit 1 · 4 lines · 0ms · ctrl+o expand
+
+
+
+ $ BASH · ls -la src
+
+ ✓ exit 0 · 2 lines · 20ms · ctrl+o expand
+
+
+
+ $ BASH · git status
+
+ ✓ exit 0 · 36 lines · 83ms · ctrl+o expand
+
+
+
+ $ BASH · exit 3
+
+ ✕ exit 1 · 1 line · 251ms · ctrl+o expand
+
+
+ pt done
+
+ ```ts
+   const copied = 1;
+ ```
+
+ │ quoted line for the clipboard
+
+ ```sh
+   echo second
+ ```
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pt (feature/pig) • done
+↑130 ↓26 0.0%/128k (auto)                                                                         (fixture) m1
+effort:off ▶ Auto
+===== after ctrl+shift+o =====
+ ?? test/.pigcheck/gocopy/aio/prettytools.go
+ ?? test/.pigcheck/gocopy/internal/copywidget/
+ ?? test/.pigcheck/gocopy/internal/prettytools/
+ ?? test/.pigcheck/gocopy/internal/rtk/toolrouting.go
+ ?? test/.pigcheck/pt-clip.after
+ ?? test/.pigcheck/pt-clip.saved
+ ?? test/.pigcheck/pt-json.err
+ ?? test/.pigcheck/pt-json.out
+ ?? test/.pigcheck/pt-out.txt
+ ?? test/.pigcheck/pt-rpc.err
+ ?? test/.pigcheck/pt-run.sh
+ ?? test/.pigcheck/pt-script.tmpl
+ ?? test/.pigcheck/pt-server.err
+ ?? test/.pigcheck/pt-tui.json
+ ?? test/.pigcheck/pt-tui.out
+ ?? test/.pigcheck/pt.log
+ ?? test/.pigcheck/pt.port
+ ?? test/.pigcheck/pt/
+ ?? test/.pigcheck/pt_rpc.py
+
+
+
+
+ $ BASH · exit 3
+
+ ✕ exit 1 · 1 line · 251ms
+
+ hypa: An error occurred trying to start process 'exit' with working directory '/Users/danielbooth/projects/wo
+
+
+ pt done
+
+ ```ts
+   const copied = 1;
+ ```
+
+ │ quoted line for the clipboard
+
+ ```sh
+   echo second
+ ```
+
+ Tool output: expanded
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pt (feature/pig) • done
+↑130 ↓26 0.0%/128k (auto)                                                                         (fixture) m1
+effort:off ▶ Auto
+===== picker (ctrl+p) =====
+ ?? test/.pigcheck/gocopy/aio/prettytools.go
+ ?? test/.pigcheck/gocopy/internal/copywidget/
+ ?? test/.pigcheck/gocopy/internal/prettytools/
+ ?? test/.pigcheck/gocopy/internal/rtk/toolrouting.go
+ ?? test/.pigcheck/pt-clip.after
+ ?? test/.pigcheck/pt-clip.saved
+ ?? test/.pigcheck/pt-json.err
+ ?? test/.pigcheck/pt-json.out
+ ?? test/.pigcheck/pt-out.txt
+ ?? test/.pigcheck/pt-rpc.err
+ ?? test/.pigcheck/pt-run.sh
+ ?? test/.pigcheck/pt-script.tmpl
+ ?? test/.pigcheck/pt-server.err
+ ?? test/.pigcheck/pt-tui.json
+ ?? test/.pigcheck/pt-tui.out
+ ?? test/.pigcheck/pt.log
+ ?? test/.pigcheck/pt.port
+ ?? test/.pigcheck/pt/
+ ?? test/.pigcheck/pt_rpc.py
+        ╭───────────────────────────────────────────────────────────────────────────────────────────╮
+        │ ▎ COPY · 3 blocks in last response                                                        │
+        │ › #1 · ts · 1 line                                                                        │
+        │ · #2 · quote · 5 words · quoted line for the clipboard                                    │
+ $ BASH │ · #3 · sh · 1 line                                                                        │
+        ├───────────────────────────────────────────────────────────────────────────────────────────┤
+ ✕ exit │ ▎ PREVIEW · #1 · ts · 1 line                                                              │
+        │  ```ts                                                                                    │
+ hypa: A│    const copied = 1;                                                                      │ojects/wo
+        │  ```                                                                                      │
+        │ j/k move · Ctrl+u/d jump · g/G ends · Enter copy · q cancel                               │
+ pt done╰───────────────────────────────────────────────────────────────────────────────────────────╯
+
+ ```ts
+   const copied = 1;
+ ```
+
+ │ quoted line for the clipboard
+
+ ```sh
+   echo second
+ ```
+
+ Tool output: expanded
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pt (feature/pig) • done
+↑130 ↓26 0.0%/128k (auto)                                                                         (fixture) m1
+effort:off ▶ Auto
+===== picker after j =====
+ ?? test/.pigcheck/gocopy/aio/prettytools.go
+ ?? test/.pigcheck/gocopy/internal/copywidget/
+ ?? test/.pigcheck/gocopy/internal/prettytools/
+ ?? test/.pigcheck/gocopy/internal/rtk/toolrouting.go
+ ?? test/.pigcheck/pt-clip.after
+ ?? test/.pigcheck/pt-clip.saved
+ ?? test/.pigcheck/pt-json.err
+ ?? test/.pigcheck/pt-json.out
+ ?? test/.pigcheck/pt-out.txt
+ ?? test/.pigcheck/pt-rpc.err
+ ?? test/.pigcheck/pt-run.sh
+ ?? test/.pigcheck/pt-script.tmpl
+ ?? test/.pigcheck/pt-server.err
+ ?? test/.pigcheck/pt-tui.json
+ ?? test/.pigcheck/pt-tui.out
+ ?? test/.pigcheck/pt.log
+ ?? test/.pigcheck/pt.port
+ ?? test/.pigcheck/pt/
+ ?? test/.pigcheck/pt_rpc.py
+
+        ╭───────────────────────────────────────────────────────────────────────────────────────────╮
+        │ ▎ COPY · 3 blocks in last response                                                        │
+        │ · #1 · ts · 1 line                                                                        │
+ $ BASH │ › #2 · quote · 5 words · quoted line for the clipboard                                    │
+        │ · #3 · sh · 1 line                                                                        │
+ ✕ exit ├───────────────────────────────────────────────────────────────────────────────────────────┤
+        │ ▎ PREVIEW · #2 · quote · 5 words · quoted line for the clipboard                          │
+ hypa: A│  │ quoted line for the clipboard                                                          │ojects/wo
+        │ j/k move · Ctrl+u/d jump · g/G ends · Enter copy · q cancel                               │
+        ╰───────────────────────────────────────────────────────────────────────────────────────────╯
+ pt done
+
+ ```ts
+   const copied = 1;
+ ```
+
+ │ quoted line for the clipboard
+
+ ```sh
+   echo second
+ ```
+
+ Tool output: expanded
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pt (feature/pig) • done
+↑130 ↓26 0.0%/128k (auto)                                                                         (fixture) m1
+effort:off ▶ Auto
+===== after enter =====
+ ?? test/.pigcheck/gocopy/aio/prettytools.go
+ ?? test/.pigcheck/gocopy/internal/copywidget/
+ ?? test/.pigcheck/gocopy/internal/prettytools/
+ ?? test/.pigcheck/gocopy/internal/rtk/toolrouting.go
+ ?? test/.pigcheck/pt-clip.after
+ ?? test/.pigcheck/pt-clip.saved
+ ?? test/.pigcheck/pt-json.err
+ ?? test/.pigcheck/pt-json.out
+ ?? test/.pigcheck/pt-out.txt
+ ?? test/.pigcheck/pt-rpc.err
+ ?? test/.pigcheck/pt-run.sh
+ ?? test/.pigcheck/pt-script.tmpl
+ ?? test/.pigcheck/pt-server.err
+ ?? test/.pigcheck/pt-tui.json
+ ?? test/.pigcheck/pt-tui.out
+ ?? test/.pigcheck/pt.log
+ ?? test/.pigcheck/pt.port
+ ?? test/.pigcheck/pt/
+ ?? test/.pigcheck/pt_rpc.py
+
+
+
+
+ $ BASH · exit 3
+
+ ✕ exit 1 · 1 line · 251ms
+
+ hypa: An error occurred trying to start process 'exit' with working directory '/Users/danielbooth/projects/wo
+
+
+ pt done
+
+ ```ts
+   const copied = 1;
+ ```
+
+ │ quoted line for the clipboard
+
+ ```sh
+   echo second
+ ```
+
+ Copied quote #2 to the clipboard
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pt (feature/pig) • done
+↑130 ↓26 0.0%/128k (auto)                                                                         (fixture) m1
+effort:off ▶ Auto
+===== after /pick and q =====
+ ?? test/.pigcheck/gocopy/aio/prettytools.go
+ ?? test/.pigcheck/gocopy/internal/copywidget/
+ ?? test/.pigcheck/gocopy/internal/prettytools/
+ ?? test/.pigcheck/gocopy/internal/rtk/toolrouting.go
+ ?? test/.pigcheck/pt-clip.after
+ ?? test/.pigcheck/pt-clip.saved
+ ?? test/.pigcheck/pt-json.err
+ ?? test/.pigcheck/pt-json.out
+ ?? test/.pigcheck/pt-out.txt
+ ?? test/.pigcheck/pt-rpc.err
+ ?? test/.pigcheck/pt-run.sh
+ ?? test/.pigcheck/pt-script.tmpl
+ ?? test/.pigcheck/pt-server.err
+ ?? test/.pigcheck/pt-tui.json
+ ?? test/.pigcheck/pt-tui.out
+ ?? test/.pigcheck/pt.log
+ ?? test/.pigcheck/pt.port
+ ?? test/.pigcheck/pt/
+ ?? test/.pigcheck/pt_rpc.py
+
+
+
+
+ $ BASH · exit 3
+
+ ✕ exit 1 · 1 line · 251ms
+
+ hypa: An error occurred trying to start process 'exit' with working directory '/Users/danielbooth/projects/wo
+
+
+ pt done
+
+ ```ts
+   const copied = 1;
+ ```
+
+ │ quoted line for the clipboard
+
+ ```sh
+   echo second
+ ```
+
+ Copied quote #2 to the clipboard
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pt (feature/pig) • done
+↑130 ↓26 0.0%/128k (auto)                                                                         (fixture) m1
+effort:off ▶ Auto

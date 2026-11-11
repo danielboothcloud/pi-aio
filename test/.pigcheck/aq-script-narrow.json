@@ -1,0 +1,2 @@
+[{"tool":"ask_user_question","args":{"questions":[{"question":"Which layout?","header":"Layout","options":[{"label":"Code","description":"Code sample","preview":"```ts\nconst answer = 42;\n```"},{"label":"List","description":"Markdown list","preview":"## Plan\n\n- one\n- **two**"}]}]}},
+ {"text":"aq done"}]

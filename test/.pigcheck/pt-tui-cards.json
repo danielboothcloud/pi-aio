@@ -1,0 +1,5 @@
+{"argv": ["pig", "--no-session", "-ne", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/fixture-provider.ts", "--model", "fixture/m1", "--permission-mode", "auto"],
+ "env": {}, "cols": 100, "rows": 60,
+ "steps": [{"wait": "fixture", "timeout": 60}, {"sleep": 2},
+  {"send": "do it\r"}, {"wait": "cards done", "timeout": 60}, {"sleep": 2}, {"screen": "cards collapsed"},
+  {"send": "\u000f"}, {"sleep": 1.5}, {"screen": "cards expanded (ctrl+o)"}]}

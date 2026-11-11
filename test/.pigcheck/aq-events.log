@@ -1,0 +1,3 @@
+{"channel":"rpiv:ask-user:prompt","data":{"questions":[{"question":"Cancel me?","header":"Cancel","multiSelect":false,"options":[{"label":"Yes","description":"y","hasPreview":false},{"label":"No","description":"n","hasPreview":false}]}]}}
+{"channel":"aio:notification:agent-prompt","data":{"kind":"custom","title":"Question waiting","body":"The agent needs your answer to continue.","preview":"Cancel me?","id":1,"sessionId":"01a1cb31-c070-7462-af34-71e8ce2455bd","active":true}}
+{"channel":"aio:notification:agent-prompt","data":{"kind":"custom","title":"Question waiting","body":"The agent needs your answer to continue.","preview":"Cancel me?","id":1,"sessionId":"01a1cb31-c070-7462-af34-71e8ce2455bd","active":false}}

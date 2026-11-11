@@ -1,0 +1,7 @@
+{"argv": ["/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pigfork/pig", "-ne", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/ui-abort-ext.ts", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/fixture-provider.ts", "--model", "fixture/m1", "--no-session"],
+ "env": {}, "cols": 80, "rows": 30,
+ "steps": [{"wait": "fixture", "timeout": 60}, {"sleep": 2},
+  {"send": "first prompt\r"}, {"wait": "hello from", "timeout": 30}, {"sleep": 1},
+  {"send": "second prompt slow\r"}, {"sleep": 2},
+  {"send": "queued one\r"}, {"sleep": 1}, {"screen": "queued"},
+  {"send": "/ui-abort\r"}, {"sleep": 6}, {"screen": "after extension abort"}]}

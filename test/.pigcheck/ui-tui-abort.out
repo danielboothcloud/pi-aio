@@ -1,0 +1,62 @@
+===== queued =====
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability,
+generate-resource-stubs, import-dashboards, investigate-alert,
+manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status,
+synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  fixture-provider.ts, ui-abort-ext.ts
+
+
+ first prompt
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to keep the
+
+ Steering: queued one
+ ↳ Option+Up to edit all queued messages
+
+── ⠏ Working ───────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/ui-work (main)
+↑10 ↓2 0.0%/128k (auto)                                             (fixture) m1
+===== after extension abort =====
+[Extensions]
+  fixture-provider.ts, ui-abort-ext.ts
+
+
+ first prompt
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to keep the
+
+ Operation aborted
+
+
+ queued one
+
+
+ q1 answered
+
+ ui-abort: abort() returned
+
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/ui-work (main)
+↑20 ↓4 0.0%/128k (auto)                                             (fixture) m1

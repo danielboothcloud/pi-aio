@@ -22,6 +22,7 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 
 	"github.com/danielboothcloud/pi-aio/go/internal/blocklist"
+	"github.com/danielboothcloud/pi-aio/go/internal/frame"
 	pm "github.com/danielboothcloud/pi-aio/go/internal/permissionmodes"
 	"github.com/danielboothcloud/pi-aio/go/internal/recipes"
 )
@@ -118,16 +119,33 @@ func (r *recipeState) refresh(ctx sdk.Context) {
 	}
 }
 
+// updateStatus is updateRecipeStatus: the aio:ui-state event, the frame
+// pill while the frame is registered, else the footer status.
 func (r *recipeState) updateStatus(ctx sdk.Context) {
+	update := map[string]any{}
+	if r.activeName != "" {
+		update["recipe"] = r.activeName
+	}
+	_ = ctx.Events().Emit(frame.UIStateEvent, update)
 	if !ctx.HasUI() {
 		return
 	}
-	if r.activeName == "" {
+	framed := frame.Probe().Supported
+	if framed && r.activeName != "" {
+		pill := &frame.Pill{Icon: "✦", Label: r.activeName, Role: "accent"}
+		frame.SetMetadataContributor(recipeFrameKey, func() frame.Contribution { return frame.Contribution{Recipe: pill} })
+		frame.RequestRepaint()
+	} else {
+		frame.SetMetadataContributor(recipeFrameKey, nil)
+	}
+	if framed || r.activeName == "" {
 		ctx.ClearStatus(recipes.StatusKey)
 		return
 	}
-	ctx.SetStatus(recipes.StatusKey, "✦ recipe:"+r.activeName)
+	ctx.SetStatus(recipes.StatusKey, ctx.UITheme().Fg("accent", "✦ recipe:"+r.activeName))
 }
+
+const recipeFrameKey = "recipe"
 
 // findModel resolves a spec like findRecipeModel: registry, then the session
 // scope, then the chat catalog. It returns "provider/id", or "".
@@ -586,6 +604,10 @@ func registerRecipes(e *sdk.Extension) {
 	})
 	e.OnEvent("session_tree", func(ctx sdk.Context, _ map[string]any) (any, error) {
 		r.restoreFromBranch(ctx)
+		return nil, nil
+	})
+	e.OnSessionShutdown(func(sdk.Context, map[string]any) (any, error) {
+		frame.SetMetadataContributor(recipeFrameKey, nil)
 		return nil, nil
 	})
 	e.RegisterCommand("recipe", sdk.CommandOptions{

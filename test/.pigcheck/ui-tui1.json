@@ -1,0 +1,10 @@
+{"argv": ["/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pigfork/pig", "-ne", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/fixture-provider.ts", "--model", "fixture/m1", "--session-dir", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/ui-sessions"],
+ "env": {}, "cols": 110, "rows": 36,
+ "steps": [{"wait": "╭", "timeout": 120}, {"sleep": 3}, {"screen": "startup frame"},
+  {"send": "!ls"}, {"sleep": 1}, {"screen": "bash mode"},
+  {"send": "\u0015"}, {"sleep": 0.5}, {"send": "!!env"}, {"sleep": 1}, {"screen": "hidden bash"},
+  {"send": "\u0015"}, {"sleep": 0.5}, {"send": "\u001b[Z"}, {"sleep": 1}, {"screen": "shift-tab mode"},
+  {"send": "/style tutor\r"}, {"sleep": 1.5}, {"screen": "style pill"},
+  {"send": "/st"}, {"sleep": 1}, {"screen": "autocomplete"}, {"send": "\u0015"}, {"sleep": 0.5},
+  {"send": "first prompt\r"}, {"wait": "hello", "timeout": 30}, {"sleep": 2}, {"screen": "after first answer"}
+ ]}

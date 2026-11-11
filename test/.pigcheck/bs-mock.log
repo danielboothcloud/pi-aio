@@ -1,0 +1,21 @@
+{"method": "GET", "path": "/sx/search?q=release+notes+site%3Aexample.com&format=json", "auth": null, "key": null, "body": {}}
+{"method": "GET", "path": "/cf/health", "auth": null, "key": null, "body": {}}
+{"method": "POST", "path": "/cf/tabs", "auth": null, "key": null, "body": {"userId": "pi-bot", "sessionKey": "default", "url": "https://8.8.8.8/a"}}
+{"method": "POST", "path": "/cf/tabs/tab-1/evaluate", "auth": "Bearer local-cf-key", "key": null, "body": {"userId": "pi-bot", "expression": "/*\n * Copyright (c) 2010 Arc90 Inc\n *\n * Licensed under the \u2026"}}
+{"method": "DELETE", "path": "/cf/tabs/tab-1", "auth": null, "key": null, "body": {"userId": "pi-bot"}}
+{"method": "GET", "path": "/cf/health", "auth": null, "key": null, "body": {}}
+{"method": "POST", "path": "/cf/tabs", "auth": null, "key": null, "body": {"userId": "pi-bot", "sessionKey": "default", "url": "https://8.8.8.8/b"}}
+{"method": "POST", "path": "/cf/tabs/tab-2/evaluate", "auth": "Bearer local-cf-key", "key": null, "body": {"userId": "pi-bot", "expression": "/*\n * Copyright (c) 2010 Arc90 Inc\n *\n * Licensed under the \u2026"}}
+{"method": "DELETE", "path": "/cf/tabs/tab-2", "auth": null, "key": null, "body": {"userId": "pi-bot"}}
+{"method": "GET", "path": "/cf/health", "auth": null, "key": null, "body": {}}
+{"method": "POST", "path": "/cf/tabs", "auth": null, "key": null, "body": {"userId": "pi-bot", "sessionKey": "default", "url": "https://8.8.8.8/article"}}
+{"method": "POST", "path": "/cf/tabs/tab-3/evaluate", "auth": "Bearer local-cf-key", "key": null, "body": {"userId": "pi-bot", "expression": "/*\n * Copyright (c) 2010 Arc90 Inc\n *\n * Licensed under the \u2026"}}
+{"method": "DELETE", "path": "/cf/tabs/tab-3", "auth": null, "key": null, "body": {"userId": "pi-bot"}}
+{"method": "GET", "path": "/cf/health", "auth": null, "key": null, "body": {}}
+{"method": "POST", "path": "/cf/tabs", "auth": null, "key": null, "body": {"userId": "pi-bot", "sessionKey": "default", "url": "https://8.8.8.8/challenge"}}
+{"method": "POST", "path": "/cf/tabs/tab-4/evaluate", "auth": "Bearer local-cf-key", "key": null, "body": {"userId": "pi-bot", "expression": "/*\n * Copyright (c) 2010 Arc90 Inc\n *\n * Licensed under the \u2026"}}
+{"method": "DELETE", "path": "/cf/tabs/tab-4", "auth": null, "key": null, "body": {"userId": "pi-bot"}}
+{"method": "GET", "path": "/cf/health", "auth": null, "key": null, "body": {}}
+{"method": "POST", "path": "/cf/tabs", "auth": null, "key": null, "body": {"userId": "pi-bot", "sessionKey": "default", "url": "https://8.8.8.8/page"}}
+{"method": "POST", "path": "/cf/tabs/tab-5/evaluate", "auth": "Bearer local-cf-key", "key": null, "body": {"userId": "pi-bot", "expression": "document.documentElement?.outerHTML || ''"}}
+{"method": "DELETE", "path": "/cf/tabs/tab-5", "auth": null, "key": null, "body": {"userId": "pi-bot"}}

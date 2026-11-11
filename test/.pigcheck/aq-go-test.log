@@ -1,0 +1,32 @@
+ok  	github.com/danielboothcloud/pi-aio/go/internal/askuserquestion	2.219s
+ok  	github.com/danielboothcloud/pi-aio/go/internal/astgrep	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/blocklist	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/btw	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/chrome	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/copywidget	1.576s
+ok  	github.com/danielboothcloud/pi-aio/go/internal/difftools	2.497s
+ok  	github.com/danielboothcloud/pi-aio/go/internal/effort	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/goals	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/hypa	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/initcmd	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/jsdiff	(cached)
+?   	github.com/danielboothcloud/pi-aio/go/internal/jsstr	[no test files]
+ok  	github.com/danielboothcloud/pi-aio/go/internal/notifications	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/nvim	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/permissionmodes	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/piargs	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/prettytools	2.043s
+ok  	github.com/danielboothcloud/pi-aio/go/internal/recipes	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/rpivconfig	1.354s
+ok  	github.com/danielboothcloud/pi-aio/go/internal/rtk	1.255s
+ok  	github.com/danielboothcloud/pi-aio/go/internal/sessionnaming	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/styles	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/subagents	(cached)
+?   	github.com/danielboothcloud/pi-aio/go/internal/toolpaths	[no test files]
+ok  	github.com/danielboothcloud/pi-aio/go/internal/tuicr	(cached)
+?   	github.com/danielboothcloud/pi-aio/go/internal/tuiwidth	[no test files]
+?   	github.com/danielboothcloud/pi-aio/go/internal/tuiwidth/internal/jsstring	[no test files]
+?   	github.com/danielboothcloud/pi-aio/go/internal/tuiwidth/internal/lazyregexp	[no test files]
+?   	github.com/danielboothcloud/pi-aio/go/internal/userbash	[no test files]
+ok  	github.com/danielboothcloud/pi-aio/go/internal/xxhash32	(cached)
+ok  	github.com/danielboothcloud/pi-aio/go/internal/yamlhooks	(cached)

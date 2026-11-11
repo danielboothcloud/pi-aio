@@ -1,0 +1,35 @@
+UPDATE web_search Searching Exa (1/2): release notes
+UPDATE web_search Searching Exa (2/2): offline
+TOOL web_search isError= False
+  text: ## "release notes" — 1 result(s)
+
+1. [Exa hit](https://8.8.8.8/exa) _(exa · 2026-01-02)_
+  Local Exa highlight
+
+---
+
+## "offline" — 1 result(s)
+
+1. [Exa hit](https://8.8.8.8/exa) _(exa · 2026-01-02)_
+  Local Exa highlight
+  details: {"includeContent": false, "provider": "exa", "queries": [{"fetched": 0, "query": "release notes", "resultCount": 1}, {"fetched": 0, "query": "offline", "resultCount": 1}], "queryCount": 2, "requestedProvider": "brave", "tier": "exa", "totalHits": 2, "truncated": false}
+TOOL fetch_content isError= True
+  text: This self-hosted fetch_content backend supports web pages only; repository cloning and video analysis options are unavailable.
+  details: {}
+UPDATE fetch_content Fetching 2 URL(s) via Camofox → CloakBrowser…
+UPDATE fetch_content Fetching (1/2) https://8.8.8.8/article
+UPDATE fetch_content Fetching (2/2) https://8.8.8.8/challenge
+TOOL fetch_content isError= False
+  text: ## Local release notes
+
+# Local release notes
+
+Local release notes Version 2 adds offline search.
+
+---
+
+## https://8.8.8.8/challenge
+
+Node 26.13.0; Bun none
+  details: {"results": [{"chars": 73, "format": "markdown", "tier": "camofox", "title": "Local release notes", "truncated": false, "url": "https://8.8.8.8/article"}, {"chars": 30, "format": "markdown", "tier": "cloak", "truncated": false, "url": "https://8.8.8.8/challenge"}], "successful": 2, "truncated": false, "urlCount": 2}
+AGENT_END

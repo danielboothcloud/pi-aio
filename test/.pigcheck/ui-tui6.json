@@ -1,0 +1,5 @@
+{"argv": ["/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pigfork/pig", "-ne", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/ui-fixture-provider.ts", "--model", "fixturer/m2", "--no-session"],
+ "env": {}, "cols": 100, "rows": 30,
+ "steps": [{"wait": "╭", "timeout": 200}, {"sleep": 2}, {"screen": "reasoning model start"},
+  {"send": "/effort high\r"}, {"sleep": 2}, {"screen": "effort high"},
+  {"send": "/effort low\r"}, {"sleep": 2}, {"screen": "effort low"}]}

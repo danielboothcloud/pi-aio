@@ -6,8 +6,6 @@ package aio
 // Differences from TypeScript, until the related features are ported:
 //   - File-mutation approvals use the diff-tools overlay in the TUI
 //     (ApproveMutation in difftools.go) and ctx.Select elsewhere.
-//   - No frame pill or AIO UI-state event (frame, notifications); the mode
-//     shows as the "modes" footer status.
 //   - The Cursor bridge switch goes through PiG's shared environment
 //     (ctx.SetSharedEnv, PiG divergence D234), which reaches the Node
 //     provider's process.env but not this process's environment.
@@ -21,6 +19,7 @@ import (
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 
+	"github.com/danielboothcloud/pi-aio/go/internal/frame"
 	pm "github.com/danielboothcloud/pi-aio/go/internal/permissionmodes"
 )
 
@@ -79,13 +78,30 @@ func (u ctxUI) Select(title string, options []string) (string, bool) {
 
 var spinnerFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
+// updateStatus is updateStatus: the frame pill (or the "modes" footer
+// status without the frame), the working indicator while the frame is not
+// active, and the aio:ui-state event.
 func (s *modesState) updateStatus(ctx sdk.Context) {
+	_ = ctx.Events().Emit(frame.UIStateEvent, map[string]any{"mode": string(s.mode)})
 	if !ctx.HasUI() {
 		return
 	}
 	meta := pm.ModeMetadata(s.mode)
-	ctx.SetStatus("modes", meta.Icon+" "+meta.Label)
-	_ = ctx.SetWorkingIndicator(sdk.WorkingIndicatorOptions{"frames": spinnerFrames, "intervalMs": 80})
+	if !frame.Probe().Supported {
+		ctx.SetStatus("modes", ctx.UITheme().Fg(meta.Role, meta.Icon+" "+meta.Label))
+	} else {
+		pill := &frame.Pill{Icon: meta.Icon, Label: meta.Label, Role: meta.Role}
+		frame.SetMetadataContributor("mode", func() frame.Contribution { return frame.Contribution{Mode: pill} })
+		frame.RequestRepaint()
+	}
+	if !frame.Probe().Active {
+		theme := ctx.UITheme()
+		frames := make([]string, len(spinnerFrames))
+		for i, f := range spinnerFrames {
+			frames[i] = theme.Fg(meta.Role, f)
+		}
+		_ = ctx.SetWorkingIndicator(sdk.WorkingIndicatorOptions{"frames": frames, "intervalMs": 80})
+	}
 }
 
 func (s *modesState) persist(ctx sdk.Context) {

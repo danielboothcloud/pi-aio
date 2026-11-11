@@ -1,0 +1,192 @@
+17:46:49.048 frame refresh start
+17:46:49.049 frame refresh thinking
+17:46:49.049 frame refresh usage
+17:46:49.049 frame refresh end
+17:46:49.074 repaint start
+17:46:49.096 repaint done
+17:46:53.872 event input
+17:46:53.933 event before_agent_start
+17:46:53.937 repaint start
+17:46:53.939 repaint done
+17:46:53.939 event agent_start
+17:46:53.944 event turn_start
+17:46:53.955 event message_start
+17:46:53.959 frame refresh start
+17:46:53.960 frame refresh thinking
+17:46:53.960 frame refresh usage
+17:46:53.960 frame refresh end
+17:46:53.960 repaint start
+17:46:53.961 repaint done
+17:46:53.963 repaint start
+17:46:53.963 repaint done
+17:46:53.968 event message_end
+17:46:53.981 event message_start
+17:46:53.982 frame refresh start
+17:46:53.982 frame refresh thinking
+17:46:53.982 frame refresh usage
+17:46:53.986 frame refresh end
+17:46:53.986 repaint start
+17:46:53.987 repaint done
+17:46:53.988 event message_end
+17:46:53.992 event message_start
+17:46:53.993 frame refresh start
+17:46:53.993 frame refresh thinking
+17:46:53.993 frame refresh usage
+17:46:53.998 frame refresh end
+17:46:53.998 repaint start
+17:46:53.998 repaint done
+17:46:53.999 event message_end
+17:46:54.004 event context
+17:46:54.016 event before_provider_request
+17:46:54.023 event message_start
+17:46:54.024 frame refresh start
+17:46:54.024 frame refresh thinking
+17:46:54.024 frame refresh usage
+17:46:54.029 frame refresh end
+17:46:54.029 repaint start
+17:46:54.030 repaint done
+17:46:54.031 event message_end
+17:46:54.051 frame refresh start
+17:46:54.052 frame refresh thinking
+17:46:54.052 frame refresh usage
+17:46:54.052 frame refresh end
+17:46:54.052 repaint start
+17:46:54.053 repaint done
+17:46:54.059 event turn_end
+17:46:54.080 frame refresh start
+17:46:54.081 frame refresh thinking
+17:46:54.081 frame refresh usage
+17:46:54.085 frame refresh end
+17:46:54.085 repaint start
+17:46:54.086 repaint done
+17:46:54.098 event agent_end
+17:46:54.110 event agent_settled
+17:46:54.112 repaint start
+17:46:54.115 repaint done
+17:46:55.751 event input
+17:46:55.815 event before_agent_start
+17:46:55.819 repaint start
+17:46:55.820 repaint done
+17:46:55.820 event agent_start
+17:46:55.825 event turn_start
+17:46:55.832 event message_start
+17:46:55.833 frame refresh start
+17:46:55.833 frame refresh thinking
+17:46:55.833 frame refresh usage
+17:46:55.842 frame refresh end
+17:46:55.842 repaint start
+17:46:55.843 repaint done
+17:46:55.844 event message_end
+17:46:55.844 repaint start
+17:46:55.844 repaint done
+17:46:55.846 event message_start
+17:46:55.851 frame refresh start
+17:46:55.851 frame refresh thinking
+17:46:55.851 frame refresh usage
+17:46:55.860 frame refresh end
+17:46:55.860 repaint start
+17:46:55.860 repaint done
+17:46:55.861 event message_end
+17:46:55.868 event context
+17:46:55.879 event before_provider_request
+17:46:55.884 event message_start
+17:46:56.820 repaint start
+17:46:56.830 repaint done
+17:46:57.820 repaint start
+17:46:57.824 repaint done
+17:46:58.055 event input
+17:46:58.713 event input
+17:46:58.820 repaint start
+17:46:58.821 repaint done
+17:46:59.080 repaint start
+17:46:59.080 repaint done
+17:46:59.820 repaint start
+17:46:59.823 repaint done
+17:47:00.391 frame refresh start
+17:47:00.391 frame refresh thinking
+17:47:00.392 frame refresh usage
+17:47:00.398 frame refresh end
+17:47:00.398 repaint start
+17:47:00.399 repaint done
+17:47:00.400 event message_end
+17:47:00.416 frame refresh start
+17:47:00.417 frame refresh thinking
+17:47:00.417 frame refresh usage
+17:47:00.417 frame refresh end
+17:47:00.417 repaint start
+17:47:00.417 repaint done
+17:47:00.424 event turn_end
+17:47:00.428 frame refresh start
+17:47:00.428 frame refresh thinking
+17:47:00.429 frame refresh usage
+17:47:00.433 frame refresh end
+17:47:00.433 repaint start
+17:47:00.433 repaint done
+17:47:00.435 event agent_end
+17:47:00.438 event agent_settled
+17:47:00.439 event input
+17:47:00.457 repaint start
+17:47:00.458 repaint done
+17:47:00.497 event before_agent_start
+17:47:00.500 repaint start
+17:47:00.501 event input
+17:47:00.501 repaint done
+17:47:00.503 event agent_start
+17:47:00.506 event turn_start
+17:47:00.508 event message_start
+17:47:00.508 frame refresh start
+17:47:00.509 frame refresh thinking
+17:47:00.509 frame refresh usage
+17:47:00.516 frame refresh end
+17:47:00.516 repaint start
+17:47:00.517 repaint done
+17:47:00.518 event message_end
+17:47:00.519 event message_start
+17:47:00.520 frame refresh start
+17:47:00.520 frame refresh thinking
+17:47:00.520 frame refresh usage
+17:47:00.525 frame refresh end
+17:47:00.525 repaint start
+17:47:00.526 event message_end
+17:47:00.527 repaint done
+17:47:00.527 repaint start
+17:47:00.528 event message_start
+17:47:00.529 frame refresh start
+17:47:00.530 frame refresh thinking
+17:47:00.530 repaint done
+17:47:00.530 frame refresh usage
+17:47:00.535 frame refresh end
+17:47:00.535 repaint start
+17:47:00.536 event message_end
+17:47:00.536 repaint done
+17:47:00.540 event context
+17:47:00.549 event before_provider_request
+17:47:00.554 event message_start
+17:47:00.555 frame refresh start
+17:47:00.555 frame refresh thinking
+17:47:00.555 frame refresh usage
+17:47:00.560 frame refresh end
+17:47:00.560 repaint start
+17:47:00.560 repaint done
+17:47:00.561 event message_end
+17:47:00.576 frame refresh start
+17:47:00.576 frame refresh thinking
+17:47:00.577 frame refresh usage
+17:47:00.577 frame refresh end
+17:47:00.577 repaint start
+17:47:00.582 repaint done
+17:47:00.585 event turn_end
+17:47:00.591 frame refresh start
+17:47:00.592 frame refresh thinking
+17:47:00.592 frame refresh usage
+17:47:00.597 frame refresh end
+17:47:00.597 repaint start
+17:47:00.598 repaint done
+17:47:00.601 event agent_end
+17:47:00.612 event agent_settled
+17:47:00.622 repaint start
+17:47:00.622 repaint done
+17:47:09.090 repaint start
+17:47:09.091 repaint done
+17:47:19.082 repaint start
+17:47:19.084 repaint done

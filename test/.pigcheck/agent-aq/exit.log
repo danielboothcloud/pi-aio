@@ -1,0 +1,15 @@
+2026-11-11T15:08:44.573Z pid=8030 ppid=8029 received SIGTERM
+2026-11-11T15:11:47.054Z pid=8030 ppid=8029 session started 2026-11-11T15:08:15Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T15:12:15.759Z pid=14570 ppid=14569 received SIGTERM
+2026-11-11T15:12:35.804Z pid=14570 ppid=14569 session started 2026-11-11T15:11:47Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T15:12:47.741Z pid=16612 ppid=16611 received SIGTERM
+2026-11-11T15:15:19.142Z pid=16612 ppid=16611 session started 2026-11-11T15:12:35Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T15:15:33.256Z pid=23143 ppid=23141 received SIGTERM
+2026-11-11T15:17:53.653Z pid=23143 ppid=23141 session started 2026-11-11T15:15:19Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T15:18:07.999Z pid=29969 ppid=29966 received SIGTERM
+2026-11-11T15:19:49.030Z pid=29969 ppid=29966 session started 2026-11-11T15:17:53Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T15:20:09.333Z pid=33709 ppid=33708 received SIGTERM
+2026-11-11T15:21:45.552Z pid=33709 ppid=33708 session started 2026-11-11T15:19:56Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T15:21:52.873Z pid=37466 ppid=37465 received SIGTERM
+2026-11-11T15:23:32.210Z pid=37466 ppid=37465 session started 2026-11-11T15:21:45Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T15:24:01.014Z pid=41453 ppid=41452 received SIGTERM

@@ -1,0 +1,157 @@
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.prefix, expected /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/venv, got /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work/../venv
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.exec_prefix, expected /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/venv, got /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work/../venv
+===== collapsed 0.2s =====
+[Extensions]
+  aio, aq-listener.ts, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio conflicts with
+built-in shortcut. Skipping.
+
+
+ go
+
+
+
+ ask_user_question questions=[{"question":"Cancel
+ me?","header":"Cancel","options":[{"label":"Yes","description":"y"...
+
+
+ ask_user_question hidden — press ctrl+] to reopen
+
+── ⠸ Working ───────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work (feature/pig)
+↑10 ↓2 0.0%/128k (auto)                                                                 (fixture) m1
+effort:off ● Default
+===== collapsed 2s =====
+[Extensions]
+  aio, aq-listener.ts, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio conflicts with
+built-in shortcut. Skipping.
+
+
+ go
+
+
+
+ ask_user_question questions=[{"question":"Cancel
+ me?","header":"Cancel","options":[{"label":"Yes","description":"y"...
+
+
+ ask_user_question hidden — press ctrl+] to reopen
+
+── ⠹ Working ───────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work (feature/pig)
+↑10 ↓2 0.0%/128k (auto)                                                                 (fixture) m1
+effort:off ● Default
+===== typed x while hidden (goes to editor) =====
+[Extensions]
+  aio, aq-listener.ts, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio conflicts with
+built-in shortcut. Skipping.
+
+
+ go
+
+
+
+ ask_user_question questions=[{"question":"Cancel
+ me?","header":"Cancel","options":[{"label":"Yes","description":"y"...
+
+
+ ask_user_question hidden — press ctrl+] to reopen
+
+── ⠴ Working ───────────────────────────────────────────────────────────────────────────────────────
+x
+────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work (feature/pig)
+↑10 ↓2 0.0%/128k (auto)                                                                 (fixture) m1
+effort:off ● Default
+===== expanded =====
+[Extensions]
+  aio, aq-listener.ts, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio conflicts with
+built-in shortcut. Skipping.
+
+
+ go
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Cancel
+
+ Cancel me?
+
+❯ 1. Yes
+     y
+  2. No
+     n
+  3. Type something.
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Enter to select · ↑/↓/j/k to navigate · Esc to cancel · Ctrl+] to collapse
+===== done =====
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio conflicts with
+built-in shortcut. Skipping.
+
+
+ go
+
+
+
+ ask_user_question questions=[{"question":"Cancel
+ me?","header":"Cancel","options":[{"label":"Yes","description":"y"...
+ User has answered your questions: "Cancel me?"="No". You can now continue with the user's answers
+ in mind.
+
+
+ ask_user_question hidden — press ctrl+] to reopen
+
+ aq done
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+x
+────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work (feature/pig) • done
+↑20 ↓4 0.0%/128k (auto)                                                                 (fixture) m1
+effort:off ● Default

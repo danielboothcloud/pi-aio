@@ -1,0 +1,11 @@
+{
+  "aio": {
+    "browserSearch": {
+      "provider": "searxng",
+      "searxng": {
+        "baseUrl": "http://127.0.0.1:65354/sx/"
+      }
+    }
+  },
+  "lastChangelogVersion": "1.5.0"
+}

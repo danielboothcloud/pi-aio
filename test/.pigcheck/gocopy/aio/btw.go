@@ -5,12 +5,14 @@ package aio
 // sdk.Context to its Host, runs each question on its own goroutine, and keeps
 // the above-editor card current.
 //
-// Not ported: AIO notification events and the frame "btw asking" pill (the
-// footer status is used). The box and card are plain text without theme
-// colors. A replaced or shut-down question cannot cancel its host model call;
-// the late result is discarded.
+// Not ported: AIO notification events. The "btw asking" pill rides the
+// frame's top border (the footer status without the frame). The box and
+// card are plain text without theme
+// colors. Each question has its own abort, as in btw/index.ts: a newer
+// question or a shutdown aborts the older question's provider request.
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -21,6 +23,7 @@ import (
 	sdktui "github.com/MichaelKinsy/PiG/extensions/sdk/tui"
 
 	"github.com/danielboothcloud/pi-aio/go/internal/btw"
+	"github.com/danielboothcloud/pi-aio/go/internal/frame"
 )
 
 func init() {
@@ -132,6 +135,46 @@ func (c *btwCard) stopTimer() {
 	}
 }
 
+// btwAborts owns the abort of the question in flight (the AbortController
+// of btw/index.ts). Last wins: starting a question aborts the older one.
+type btwAborts struct {
+	mu     sync.Mutex
+	run    *btw.Run
+	cancel context.CancelFunc
+}
+
+// start aborts the older question and returns the abort scope of run.
+func (a *btwAborts) start(run *btw.Run) context.Context {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.cancel != nil {
+		a.cancel()
+	}
+	scope, cancel := context.WithCancel(context.Background())
+	a.run, a.cancel = run, cancel
+	return scope
+}
+
+// finish releases the scope of run when it is still the newest question.
+func (a *btwAborts) finish(run *btw.Run) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.run == run {
+		a.cancel()
+		a.run, a.cancel = nil, nil
+	}
+}
+
+// abort aborts the question in flight, if any.
+func (a *btwAborts) abort() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.cancel != nil {
+		a.cancel()
+		a.run, a.cancel = nil, nil
+	}
+}
+
 // btwHost adapts one sdk.Context to btw.Host.
 type btwHost struct {
 	ctx  sdk.Context
@@ -142,13 +185,32 @@ func (h btwHost) HasUI() bool                  { return h.ctx.HasUI() }
 func (h btwHost) IsTUI() bool                  { return h.ctx.Mode() == "tui" }
 func (h btwHost) Notify(message, level string) { h.ctx.Notify(message, level) }
 
+// SetStatus is syncAsking: the frame "btw asking" pill while the frame is
+// registered, else the footer status.
 func (h btwHost) SetStatus(text string) {
+	if frame.Probe().Supported {
+		if modelID, ok := btw.AskingModelID(text); ok && text != "" {
+			icon, label, role := btw.FrameAskingMeta(modelID)
+			pill := &frame.Pill{Icon: icon, Label: label, Role: role}
+			frame.SetMetadataContributor(btwFrameKey, func() frame.Contribution { return frame.Contribution{Btw: pill} })
+		} else {
+			frame.SetMetadataContributor(btwFrameKey, nil)
+		}
+		frame.RequestRepaint()
+		if h.ctx.HasUI() {
+			h.ctx.ClearStatus(btw.StatusKey)
+		}
+		return
+	}
+	frame.SetMetadataContributor(btwFrameKey, nil)
 	if text == "" {
 		h.ctx.ClearStatus(btw.StatusKey)
 		return
 	}
 	h.ctx.SetStatus(btw.StatusKey, text)
 }
+
+const btwFrameKey = "btw"
 
 func (h btwHost) ShowCard(card btw.Card)    { h.card.show(h.ctx, card) }
 func (h btwHost) ClearCard()                { h.card.clear(h.ctx) }
@@ -180,6 +242,7 @@ func registerBtw(e *sdk.Extension) {
 	}
 	runner := btw.NewRunner(sdkLayout{}, -1)
 	card := &btwCard{}
+	aborts := &btwAborts{}
 
 	e.RegisterCommand("btw", sdk.CommandOptions{
 		Description: "Ask a quick side question without interrupting the agent — answered in the background by the session model (works mid-flow)",
@@ -196,8 +259,10 @@ func registerBtw(e *sdk.Extension) {
 				return nil
 			}
 			cwd := ctx.Cwd()
+			abort := aborts.start(run)
 			// Return at once: the context and the call run detached.
 			go func() {
+				defer aborts.finish(run)
 				defer func() {
 					if r := recover(); r != nil {
 						fmt.Fprintf(os.Stderr, "aio btw: side question stopped: %v\n", r)
@@ -207,7 +272,7 @@ func registerBtw(e *sdk.Extension) {
 					Branch: func() []json.RawMessage { return sessionBranch(ctx) },
 					Cwd:    cwd,
 					Complete: func(systemPrompt, prompt string) (map[string]any, error) {
-						return completeWith(ctx, provider, id, systemPrompt, prompt)
+						return completeWith(abort, ctx, provider, id, systemPrompt, prompt)
 					},
 				})
 			}()
@@ -216,6 +281,7 @@ func registerBtw(e *sdk.Extension) {
 	})
 
 	e.OnSessionShutdown(func(ctx sdk.Context, _ map[string]any) (any, error) {
+		aborts.abort()
 		runner.Shutdown(btwHost{ctx, card})
 		return nil, nil
 	})

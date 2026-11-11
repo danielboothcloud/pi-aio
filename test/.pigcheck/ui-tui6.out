@@ -1,0 +1,93 @@
+===== reasoning model start =====
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  extend PiG.
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx,
+slo-check-status, slo-investigate, slo-manage, slo-optimize, synth-check-status,
+synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, ui-fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts with built-in shortcut.
+Skipping.
+
+
+╭─ ● Default · medium · 0% ────────────────────────────────────────────────────────── $0.000 – m2 ─╮
+│                                                                                                  │
+╰─ main * ─────────────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== effort high =====
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  extend PiG.
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx,
+slo-check-status, slo-investigate, slo-manage, slo-optimize, synth-check-status,
+synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, ui-fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts with built-in shortcut.
+Skipping.
+
+
+╭─ ● Default · medium · 0% ────────────────────────────────────────────────────────── $0.000 – m2 ─╮
+│  /effort high                                                                                    │
+╰─ main * ─────────────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== effort low =====
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx,
+slo-check-status, slo-investigate, slo-manage, slo-optimize, synth-check-status,
+synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, ui-fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts with built-in shortcut.
+Skipping.
+
+
+ Thinking effort set to low.
+
+╭─ ● Default · low · 0% ───────────────────────────────────────────────────────────── $0.000 – m2 ─╮
+│                                                                                                  │
+╰─ main * ─────────────────────────────────────────────────────────────────────────────── ui-work ─╯

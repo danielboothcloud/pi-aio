@@ -545,8 +545,9 @@ generated `dist/` tree without changing the package contract.
   btw) is ported: the goal loop runs only on `agent_before_settle`, the
   goal review and `/btw` share one isolated completion helper
   (`completeWith` in `go/aio/goals.go`) and the btw branch digest, and a
-  `/btw` question runs on its own goroutine (a replaced question cannot
-  cancel its host call; the late result is discarded). Group 6
+  `/btw` question runs on its own goroutine (a newer question or a shutdown
+  aborts the older question's model call through
+  `ModelRegistry.CompleteContext`, PiG D235). Group 6
   (subagents) is ported: children run `$PIG_HARNESS_BINARY`, the parent's
   `-ne`/`-e` flags come from pig's argv in `PIG_HARNESS_ARGV_FILE` (read
   with `go/internal/piargs`, the Go port of Pi's `parseArgs`), the runner
@@ -563,7 +564,34 @@ generated `dist/` tree without changing the package contract.
   diff-tools is ported in `go/internal/difftools` (with `go/internal/jsdiff`
   and `go/internal/xxhash32`). It owns `write`, `edit`, and `apply_patch`,
   highlights through `sdk.HighlightCode`, and gives permission-modes its
-  approval overlay.
+  approval overlay. The rest of group 8 is ported too.
+  `go/internal/prettytools` owns `read`, `bash`, `ls`, `find`, and `grep`.
+  It wraps the host built-in tools, runs rtk through the tool-routing port
+  in `go/internal/rtk`, and registers after rtk and hypa. It has
+  no FFF: it uses the path TypeScript takes when FFF does not load.
+  `go/internal/copywidget` owns `/pick` and `ctrl+p`. It parses Markdown with
+  `github.com/yuin/goldmark` and rebuilds the results of marked.
+  Group 9 (ask-user-question) is ported in `go/internal/askuserquestion`,
+  with `go/internal/rpivconfig` for the config load. The questionnaire is an
+  `sdk.RemoteComponent` overlay; RPC uses the select/input walker. Previews
+  use the copywidget Markdown port, and i18n is English only. PiG sends a
+  key to a focused overlay before the terminal-input listeners, so the
+  "hidden" notice is also sent when the overlay hides itself.
+  Group 10 (browser-search) is ported in `go/internal/browsersearch`. It owns
+  `web_search` (registered at session start only when `aio.browserSearch`
+  selects a provider) and `fetch_content`. Camofox runs the embedded
+  `Readability.js` in the page, as TypeScript does. The CloakBrowser
+  fallback starts the same Node worker (`browser-search/cloak-worker.mjs`),
+  so a missing Node or worker fails one URL, never the load. Host names
+  come from a port of the WHATWG URL host parser (`golang.org/x/net/idna`).
+  Group 11 (frame, status-line, queue, session-nav, ui) is ported in
+  `go/internal/{frame,statusline,queue,sessionnav,ui}`. As in `index.ts`,
+  user-bash installs its editor, queue replaces it, and the frame wraps
+  this extension's last editor at session start; the frame protocol is
+  package state shared by the Go features, because PiG's event bus carries
+  JSON by value. Editor commands (/rewind, /sessions) run through the
+  base editor's host onSubmit, and the queue interrupt sends the host's
+  interrupt key; `go/PIG-LIMITS.md` lists why.
   Shared Go packages: `go/internal/chrome` (port of
   `ui/chrome.ts`), `go/internal/tuiwidth` (copy of the SDK's internal
   pi-tui width code, because internal packages cannot import the SDK), and
@@ -577,8 +605,9 @@ generated `dist/` tree without changing the package contract.
   deadlocked effort once). Group 7 (init, rtk, user-bash, ast-grep,
   nvim, tuicr, hypa) is ported; `go/internal/toolpaths` is the shared port
   of `yaml-hooks/tool-paths.ts`. PiG 0.7.0 panics when a Go editor
-  component overrides any method, so the Go user-bash editor is opt-in
-  (`AIO_GO_USER_BASH_EDITOR=1`); the Go SDK cannot suspend the host TUI, so
+  component overrides any method; the PiG fork fixes it, and the Go
+  user-bash, queue, and frame editors need that fork. The Go SDK cannot
+  suspend the host TUI, so
   Go `/tuicr` opens tuicr in a pane and `/tuicr done` loads the comments. `go/` is
   not in the npm `files` allowlist; PiG loads it from the git checkout.
 - This is one npm package, not a monorepo; feature directories do not need

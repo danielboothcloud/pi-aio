@@ -1,0 +1,6 @@
+{"argv": ["pig", "--no-session", "-ne", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/fixture-provider.ts", "--model", "fixture/m1"],
+ "env": {}, "cols": 60, "rows": 30,
+ "steps": [{"wait": "fixture", "timeout": 60}, {"sleep": 2}, {"send": "go\r"},
+  {"wait": "Which layout?", "timeout": 30}, {"sleep": 1}, {"screen": "stacked preview at 60 cols"},
+  {"send": "j"}, {"sleep": 0.5}, {"screen": "second option"}, {"send": "\r"},
+  {"wait": "aq done", "timeout": 30}, {"sleep": 1}, {"screen": "done"}]}

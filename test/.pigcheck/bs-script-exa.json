@@ -1,0 +1,4 @@
+[{"tool":"web_search","args":{"queries":["release notes","offline"],"domainFilter":["example.com","-ads.example.com"],"recencyFilter":"week","provider":"brave"}},
+ {"tool":"fetch_content","args":{"url":"https://8.8.8.8/article","frames":2}},
+ {"tool":"fetch_content","args":{"urls":["https://8.8.8.8/article","https://8.8.8.8/challenge"]}},
+ {"text":"bs exa done"}]

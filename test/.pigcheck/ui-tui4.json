@@ -1,0 +1,5 @@
+{"argv": ["/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pigfork/pig", "--sessions", "-ne", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/fixture-provider.ts", "--model", "fixture/m1", "--session-dir", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/ui-sessions"],
+ "env": {}, "cols": 100, "rows": 34,
+ "steps": [{"wait": "RESUME", "timeout": 200}, {"sleep": 2}, {"screen": "--sessions picker at startup"},
+  {"send": "\u001b[B"}, {"sleep": 1}, {"screen": "second session selected"},
+  {"send": "\r"}, {"sleep": 3}, {"screen": "after switch"}]}

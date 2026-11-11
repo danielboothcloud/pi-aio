@@ -1,8 +1,9 @@
 package aio
 
-// Effort wiring (port of effort/). Differences from TypeScript: no frame
-// metadata or AIO UI-state event (frame, notifications); print mode notices
-// go through ctx.Notify, not stdout/stderr.
+// Effort wiring (port of effort/). The frame shows the thinking level, so
+// the "effort" footer status is set only without the frame; every change
+// emits the aio:ui-state event. Difference from TypeScript: print mode
+// notices go through ctx.Notify, not stdout/stderr.
 
 import (
 	"strings"
@@ -11,6 +12,7 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 
 	"github.com/danielboothcloud/pi-aio/go/internal/effort"
+	"github.com/danielboothcloud/pi-aio/go/internal/frame"
 )
 
 func init() { addRegistrar(OrderEffort, "effort", registerEffort) }
@@ -65,10 +67,29 @@ func (s *effortState) effective(ctx sdk.Context) string {
 	return currentLevel(ctx)
 }
 
+// showEffort is updateEffortStatus: the aio:ui-state event, then the
+// footer status only without the frame (the frame shows the thinking level
+// itself).
 func showEffort(ctx sdk.Context, level string) {
-	if ctx.HasUI() {
-		ctx.SetStatus(effort.StatusKey, "effort:"+level)
+	_ = ctx.Events().Emit(frame.UIStateEvent, map[string]any{"effort": level})
+	if !ctx.HasUI() || frame.Probe().Supported {
+		return
 	}
+	ctx.SetStatus(effort.StatusKey, effortStatusText(ctx, level))
+}
+
+// effortStatusText is formatEffortStatus.
+func effortStatusText(ctx sdk.Context, level string) string {
+	theme, text := ctx.UITheme(), "effort:"+level
+	switch level {
+	case "off":
+		return theme.Fg("dim", text)
+	case "minimal", "low":
+		return theme.Fg("muted", text)
+	case "high", "xhigh":
+		return theme.Fg("accent", text)
+	}
+	return text
 }
 
 // setLevel is setThinkingEffort.

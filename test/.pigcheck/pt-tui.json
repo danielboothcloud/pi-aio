@@ -1,0 +1,9 @@
+{"argv": ["pig", "--no-session", "-ne", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/fixture-provider.ts", "--model", "fixture/m1", "--permission-mode", "auto"],
+ "env": {}, "cols": 110, "rows": 50,
+ "steps": [{"wait": "fixture", "timeout": 60}, {"sleep": 2},
+  {"send": "do it\r"}, {"wait": "pt done", "timeout": 60}, {"sleep": 2}, {"screen": "after run (collapsed)"},
+  {"send": "\u001b[111;6u"}, {"sleep": 1.5}, {"screen": "after ctrl+shift+o"},
+  {"send": "\u0010"}, {"wait": "COPY", "timeout": 15}, {"sleep": 1}, {"screen": "picker (ctrl+p)"},
+  {"send": "j"}, {"sleep": 0.8}, {"screen": "picker after j"},
+  {"send": "\r"}, {"wait": "Copied", "timeout": 15}, {"sleep": 1}, {"screen": "after enter"},
+  {"send": "/pick\r"}, {"wait": "COPY", "timeout": 15}, {"sleep": 1}, {"send": "q"}, {"sleep": 1}, {"screen": "after /pick and q"}]}

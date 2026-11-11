@@ -1,0 +1,4212 @@
+{
+ "roleCodes": {
+  "accent": 36,
+  "success": 32,
+  "warning": 33,
+  "error": 31,
+  "muted": 90,
+  "dim": 2,
+  "text": 39,
+  "borderMuted": 94,
+  "toolTitle": 35,
+  "thinkingText": 95,
+  "toolOutput": 96,
+  "selectedBg": 44
+ },
+ "configDirName": ".pi",
+ "now": 1700000000000,
+ "home": "@@ROOT@@/home",
+ "settingsFiles": {
+  "global": {
+   "none": "{\n  \"theme\": \"dark\"\n}",
+   "basic": "{\n  \"aio\": {\n    \"statusLine\": {\n      \"enabled\": false,\n      \"segments\": [\n        \"model\",\n        \"bogus\",\n        \"cost\"\n      ],\n      \"path\": \"full\",\n      \"workingMessage\": \"verbose\",\n      \"statusKeys\": [\n        \"rtk\",\n        \"\",\n        5,\n        \"fff\"\n      ]\n    }\n  }\n}",
+   "invalid": "{\n  \"aio\": {\n    \"statusLine\": {\n      \"enabled\": \"yes\",\n      \"segments\": [\n        \"bogus\"\n      ],\n      \"path\": \"tiny\",\n      \"workingMessage\": \"loud\",\n      \"statusKeys\": \"rtk\"\n    }\n  }\n}",
+   "emptySegments": "{\n  \"aio\": {\n    \"statusLine\": {\n      \"segments\": [],\n      \"statusKeys\": []\n    }\n  }\n}",
+   "usage": "{\n  \"aio\": {\n    \"statusLine\": {\n      \"providerUsage\": {\n        \"refreshIntervalMs\": 1000,\n        \"timeoutMs\": 99999,\n        \"providers\": {\n          \"anthropic\": {\n            \"endpoint\": \"https://api.anthropic.com/api/oauth/usage\",\n            \"auth\": \"pi-oauth\",\n            \"label\": \"Claude\",\n            \"refreshIntervalMs\": 120000.4,\n            \"windows\": {\n              \"2\": {\n                \"mapping\": {\n                  \"used\": \"x\"\n                }\n              },\n              \"5h\": {\n                \"label\": \"5h\",\n                \"mapping\": {\n                  \"usedPercent\": \"five_hour.utilization\",\n                  \"renewsAt\": \"five_hour.resets_at\"\n                }\n              },\n              \"week\": {\n                \"label\": \"week\",\n                \"mapping\": {\n                  \"usedPercent\": \"seven_day.utilization\"\n                }\n              },\n              \"empty\": {\n                \"mapping\": {}\n              },\n              \"bad\": \"nope\",\n              \"\": {\n                \"mapping\": {\n                  \"used\": \"y\"\n                }\n              }\n            }\n          },\n          \"synthetic\": {\n            \"endpoint\": \"https://api.synthetic.new/v2/quotas\",\n            \"headers\": {\n              \"Authorization\": \"Bearer ${SYN_KEY}\",\n              \" X-Empty \": \" \",\n              \"\": \"x\"\n            },\n            \"mapping\": {\n              \"remainingPercent\": \"plan.weekly\",\n              \"text\": \"\",\n              \"renewsAt\": \"plan.reset\"\n            }\n          },\n          \"ftp\": {\n            \"endpoint\": \"ftp://example.com/usage\",\n            \"mapping\": {\n              \"used\": \"a\"\n            }\n          },\n          \"broken\": {\n            \"endpoint\": \"not a url\",\n            \"mapping\": {\n              \"used\": \"a\"\n            }\n          },\n          \"nomapping\": {\n            \"endpoint\": \"https://example.com/u\"\n          },\n          \" \": {\n            \"endpoint\": \"https://example.com/u\",\n            \"mapping\": {\n              \"used\": \"a\"\n            }\n          },\n          \"arr\": [\n            1,\n            2\n          ]\n        }\n      }\n    }\n  }\n}",
+   "notObject": "{\n  \"aio\": {\n    \"statusLine\": \"on\"\n  }\n}",
+   "badJson": "{ not json",
+   "arrayAio": "{\n  \"aio\": [\n    1\n  ]\n}"
+  },
+  "project": {
+   "override": "{\n  \"aio\": {\n    \"statusLine\": {\n      \"enabled\": true,\n      \"path\": \"abbreviated\",\n      \"providerUsage\": {\n        \"timeoutMs\": 100,\n        \"providers\": {\n          \"synthetic\": {\n            \"endpoint\": \"http://localhost:9999/q\",\n            \"mapping\": {\n              \"used\": \"u\",\n              \"limit\": \"l\"\n            }\n          },\n          \"extra\": {\n            \"endpoint\": \"https://x.dev/u\",\n            \"mapping\": {\n              \"remaining\": \"r\"\n            }\n          }\n        }\n      }\n    }\n  }\n}",
+   "segmentsOnly": "{\n  \"aio\": {\n    \"statusLine\": {\n      \"segments\": [\n        \"tokens\",\n        \"cost\",\n        \"tokens\"\n      ]\n    }\n  }\n}"
+  }
+ },
+ "loads": [
+  {
+   "global": "none",
+   "project": "none",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/none-none/agent",
+   "cwd": "@@ROOT@@/cfg/none-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "none",
+   "project": "none",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/none-none/agent",
+   "cwd": "@@ROOT@@/cfg/none-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "none",
+   "project": "override",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/none-override/agent",
+   "cwd": "@@ROOT@@/cfg/none-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "abbreviated",
+    "workingMessage": "minimal",
+    "providerUsage": {
+     "refreshIntervalMs": 60000,
+     "timeoutMs": 500,
+     "providers": {
+      "synthetic": {
+       "endpoint": "http://localhost:9999/q",
+       "headers": {},
+       "mapping": {
+        "used": "u",
+        "limit": "l"
+       }
+      },
+      "extra": {
+       "endpoint": "https://x.dev/u",
+       "headers": {},
+       "mapping": {
+        "remaining": "r"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "used": "u",
+       "limit": "l"
+      }
+     }
+    ],
+    "extra": [
+     {
+      "name": "default",
+      "mapping": {
+       "remaining": "r"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "none",
+   "project": "override",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/none-override/agent",
+   "cwd": "@@ROOT@@/cfg/none-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "none",
+   "project": "segmentsOnly",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/none-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/none-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "tokens",
+     "cost",
+     "tokens"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "none",
+   "project": "segmentsOnly",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/none-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/none-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "basic",
+   "project": "none",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/basic-none/agent",
+   "cwd": "@@ROOT@@/cfg/basic-none/work",
+   "config": {
+    "enabled": false,
+    "segments": [
+     "model",
+     "cost"
+    ],
+    "path": "full",
+    "workingMessage": "verbose",
+    "statusKeys": [
+     "rtk",
+     "fff"
+    ]
+   },
+   "windows": {}
+  },
+  {
+   "global": "basic",
+   "project": "none",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/basic-none/agent",
+   "cwd": "@@ROOT@@/cfg/basic-none/work",
+   "config": {
+    "enabled": false,
+    "segments": [
+     "model",
+     "cost"
+    ],
+    "path": "full",
+    "workingMessage": "verbose",
+    "statusKeys": [
+     "rtk",
+     "fff"
+    ]
+   },
+   "windows": {}
+  },
+  {
+   "global": "basic",
+   "project": "override",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/basic-override/agent",
+   "cwd": "@@ROOT@@/cfg/basic-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "model",
+     "cost"
+    ],
+    "path": "abbreviated",
+    "workingMessage": "verbose",
+    "statusKeys": [
+     "rtk",
+     "fff"
+    ],
+    "providerUsage": {
+     "refreshIntervalMs": 60000,
+     "timeoutMs": 500,
+     "providers": {
+      "synthetic": {
+       "endpoint": "http://localhost:9999/q",
+       "headers": {},
+       "mapping": {
+        "used": "u",
+        "limit": "l"
+       }
+      },
+      "extra": {
+       "endpoint": "https://x.dev/u",
+       "headers": {},
+       "mapping": {
+        "remaining": "r"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "used": "u",
+       "limit": "l"
+      }
+     }
+    ],
+    "extra": [
+     {
+      "name": "default",
+      "mapping": {
+       "remaining": "r"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "basic",
+   "project": "override",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/basic-override/agent",
+   "cwd": "@@ROOT@@/cfg/basic-override/work",
+   "config": {
+    "enabled": false,
+    "segments": [
+     "model",
+     "cost"
+    ],
+    "path": "full",
+    "workingMessage": "verbose",
+    "statusKeys": [
+     "rtk",
+     "fff"
+    ]
+   },
+   "windows": {}
+  },
+  {
+   "global": "basic",
+   "project": "segmentsOnly",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/basic-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/basic-segmentsOnly/work",
+   "config": {
+    "enabled": false,
+    "segments": [
+     "tokens",
+     "cost",
+     "tokens"
+    ],
+    "path": "full",
+    "workingMessage": "verbose",
+    "statusKeys": [
+     "rtk",
+     "fff"
+    ]
+   },
+   "windows": {}
+  },
+  {
+   "global": "basic",
+   "project": "segmentsOnly",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/basic-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/basic-segmentsOnly/work",
+   "config": {
+    "enabled": false,
+    "segments": [
+     "model",
+     "cost"
+    ],
+    "path": "full",
+    "workingMessage": "verbose",
+    "statusKeys": [
+     "rtk",
+     "fff"
+    ]
+   },
+   "windows": {}
+  },
+  {
+   "global": "invalid",
+   "project": "none",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/invalid-none/agent",
+   "cwd": "@@ROOT@@/cfg/invalid-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "invalid",
+   "project": "none",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/invalid-none/agent",
+   "cwd": "@@ROOT@@/cfg/invalid-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "invalid",
+   "project": "override",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/invalid-override/agent",
+   "cwd": "@@ROOT@@/cfg/invalid-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "abbreviated",
+    "workingMessage": "minimal",
+    "providerUsage": {
+     "refreshIntervalMs": 60000,
+     "timeoutMs": 500,
+     "providers": {
+      "synthetic": {
+       "endpoint": "http://localhost:9999/q",
+       "headers": {},
+       "mapping": {
+        "used": "u",
+        "limit": "l"
+       }
+      },
+      "extra": {
+       "endpoint": "https://x.dev/u",
+       "headers": {},
+       "mapping": {
+        "remaining": "r"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "used": "u",
+       "limit": "l"
+      }
+     }
+    ],
+    "extra": [
+     {
+      "name": "default",
+      "mapping": {
+       "remaining": "r"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "invalid",
+   "project": "override",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/invalid-override/agent",
+   "cwd": "@@ROOT@@/cfg/invalid-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "invalid",
+   "project": "segmentsOnly",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/invalid-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/invalid-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "tokens",
+     "cost",
+     "tokens"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "invalid",
+   "project": "segmentsOnly",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/invalid-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/invalid-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "emptySegments",
+   "project": "none",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/emptySegments-none/agent",
+   "cwd": "@@ROOT@@/cfg/emptySegments-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal",
+    "statusKeys": []
+   },
+   "windows": {}
+  },
+  {
+   "global": "emptySegments",
+   "project": "none",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/emptySegments-none/agent",
+   "cwd": "@@ROOT@@/cfg/emptySegments-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal",
+    "statusKeys": []
+   },
+   "windows": {}
+  },
+  {
+   "global": "emptySegments",
+   "project": "override",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/emptySegments-override/agent",
+   "cwd": "@@ROOT@@/cfg/emptySegments-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "abbreviated",
+    "workingMessage": "minimal",
+    "statusKeys": [],
+    "providerUsage": {
+     "refreshIntervalMs": 60000,
+     "timeoutMs": 500,
+     "providers": {
+      "synthetic": {
+       "endpoint": "http://localhost:9999/q",
+       "headers": {},
+       "mapping": {
+        "used": "u",
+        "limit": "l"
+       }
+      },
+      "extra": {
+       "endpoint": "https://x.dev/u",
+       "headers": {},
+       "mapping": {
+        "remaining": "r"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "used": "u",
+       "limit": "l"
+      }
+     }
+    ],
+    "extra": [
+     {
+      "name": "default",
+      "mapping": {
+       "remaining": "r"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "emptySegments",
+   "project": "override",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/emptySegments-override/agent",
+   "cwd": "@@ROOT@@/cfg/emptySegments-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal",
+    "statusKeys": []
+   },
+   "windows": {}
+  },
+  {
+   "global": "emptySegments",
+   "project": "segmentsOnly",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/emptySegments-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/emptySegments-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "tokens",
+     "cost",
+     "tokens"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal",
+    "statusKeys": []
+   },
+   "windows": {}
+  },
+  {
+   "global": "emptySegments",
+   "project": "segmentsOnly",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/emptySegments-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/emptySegments-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal",
+    "statusKeys": []
+   },
+   "windows": {}
+  },
+  {
+   "global": "usage",
+   "project": "none",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/usage-none/agent",
+   "cwd": "@@ROOT@@/cfg/usage-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal",
+    "providerUsage": {
+     "refreshIntervalMs": 5000,
+     "timeoutMs": 30000,
+     "providers": {
+      "anthropic": {
+       "endpoint": "https://api.anthropic.com/api/oauth/usage",
+       "label": "Claude",
+       "headers": {},
+       "auth": "pi-oauth",
+       "refreshIntervalMs": 120000,
+       "windows": {
+        "2": {
+         "mapping": {
+          "used": "x"
+         }
+        },
+        "5h": {
+         "label": "5h",
+         "mapping": {
+          "usedPercent": "five_hour.utilization",
+          "renewsAt": "five_hour.resets_at"
+         }
+        },
+        "week": {
+         "label": "week",
+         "mapping": {
+          "usedPercent": "seven_day.utilization"
+         }
+        }
+       }
+      },
+      "synthetic": {
+       "endpoint": "https://api.synthetic.new/v2/quotas",
+       "headers": {
+        "Authorization": "Bearer ${SYN_KEY}"
+       },
+       "mapping": {
+        "remainingPercent": "plan.weekly",
+        "renewsAt": "plan.reset"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "anthropic": [
+     {
+      "name": "2",
+      "label": "Claude",
+      "mapping": {
+       "used": "x"
+      }
+     },
+     {
+      "name": "5h",
+      "label": "5h",
+      "mapping": {
+       "usedPercent": "five_hour.utilization",
+       "renewsAt": "five_hour.resets_at"
+      }
+     },
+     {
+      "name": "week",
+      "label": "week",
+      "mapping": {
+       "usedPercent": "seven_day.utilization"
+      }
+     }
+    ],
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "remainingPercent": "plan.weekly",
+       "renewsAt": "plan.reset"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "usage",
+   "project": "none",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/usage-none/agent",
+   "cwd": "@@ROOT@@/cfg/usage-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal",
+    "providerUsage": {
+     "refreshIntervalMs": 5000,
+     "timeoutMs": 30000,
+     "providers": {
+      "anthropic": {
+       "endpoint": "https://api.anthropic.com/api/oauth/usage",
+       "label": "Claude",
+       "headers": {},
+       "auth": "pi-oauth",
+       "refreshIntervalMs": 120000,
+       "windows": {
+        "2": {
+         "mapping": {
+          "used": "x"
+         }
+        },
+        "5h": {
+         "label": "5h",
+         "mapping": {
+          "usedPercent": "five_hour.utilization",
+          "renewsAt": "five_hour.resets_at"
+         }
+        },
+        "week": {
+         "label": "week",
+         "mapping": {
+          "usedPercent": "seven_day.utilization"
+         }
+        }
+       }
+      },
+      "synthetic": {
+       "endpoint": "https://api.synthetic.new/v2/quotas",
+       "headers": {
+        "Authorization": "Bearer ${SYN_KEY}"
+       },
+       "mapping": {
+        "remainingPercent": "plan.weekly",
+        "renewsAt": "plan.reset"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "anthropic": [
+     {
+      "name": "2",
+      "label": "Claude",
+      "mapping": {
+       "used": "x"
+      }
+     },
+     {
+      "name": "5h",
+      "label": "5h",
+      "mapping": {
+       "usedPercent": "five_hour.utilization",
+       "renewsAt": "five_hour.resets_at"
+      }
+     },
+     {
+      "name": "week",
+      "label": "week",
+      "mapping": {
+       "usedPercent": "seven_day.utilization"
+      }
+     }
+    ],
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "remainingPercent": "plan.weekly",
+       "renewsAt": "plan.reset"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "usage",
+   "project": "override",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/usage-override/agent",
+   "cwd": "@@ROOT@@/cfg/usage-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "abbreviated",
+    "workingMessage": "minimal",
+    "providerUsage": {
+     "refreshIntervalMs": 5000,
+     "timeoutMs": 500,
+     "providers": {
+      "anthropic": {
+       "endpoint": "https://api.anthropic.com/api/oauth/usage",
+       "label": "Claude",
+       "headers": {},
+       "auth": "pi-oauth",
+       "refreshIntervalMs": 120000,
+       "windows": {
+        "2": {
+         "mapping": {
+          "used": "x"
+         }
+        },
+        "5h": {
+         "label": "5h",
+         "mapping": {
+          "usedPercent": "five_hour.utilization",
+          "renewsAt": "five_hour.resets_at"
+         }
+        },
+        "week": {
+         "label": "week",
+         "mapping": {
+          "usedPercent": "seven_day.utilization"
+         }
+        }
+       }
+      },
+      "synthetic": {
+       "endpoint": "http://localhost:9999/q",
+       "headers": {},
+       "mapping": {
+        "used": "u",
+        "limit": "l"
+       }
+      },
+      "extra": {
+       "endpoint": "https://x.dev/u",
+       "headers": {},
+       "mapping": {
+        "remaining": "r"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "anthropic": [
+     {
+      "name": "2",
+      "label": "Claude",
+      "mapping": {
+       "used": "x"
+      }
+     },
+     {
+      "name": "5h",
+      "label": "5h",
+      "mapping": {
+       "usedPercent": "five_hour.utilization",
+       "renewsAt": "five_hour.resets_at"
+      }
+     },
+     {
+      "name": "week",
+      "label": "week",
+      "mapping": {
+       "usedPercent": "seven_day.utilization"
+      }
+     }
+    ],
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "used": "u",
+       "limit": "l"
+      }
+     }
+    ],
+    "extra": [
+     {
+      "name": "default",
+      "mapping": {
+       "remaining": "r"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "usage",
+   "project": "override",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/usage-override/agent",
+   "cwd": "@@ROOT@@/cfg/usage-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal",
+    "providerUsage": {
+     "refreshIntervalMs": 5000,
+     "timeoutMs": 30000,
+     "providers": {
+      "anthropic": {
+       "endpoint": "https://api.anthropic.com/api/oauth/usage",
+       "label": "Claude",
+       "headers": {},
+       "auth": "pi-oauth",
+       "refreshIntervalMs": 120000,
+       "windows": {
+        "2": {
+         "mapping": {
+          "used": "x"
+         }
+        },
+        "5h": {
+         "label": "5h",
+         "mapping": {
+          "usedPercent": "five_hour.utilization",
+          "renewsAt": "five_hour.resets_at"
+         }
+        },
+        "week": {
+         "label": "week",
+         "mapping": {
+          "usedPercent": "seven_day.utilization"
+         }
+        }
+       }
+      },
+      "synthetic": {
+       "endpoint": "https://api.synthetic.new/v2/quotas",
+       "headers": {
+        "Authorization": "Bearer ${SYN_KEY}"
+       },
+       "mapping": {
+        "remainingPercent": "plan.weekly",
+        "renewsAt": "plan.reset"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "anthropic": [
+     {
+      "name": "2",
+      "label": "Claude",
+      "mapping": {
+       "used": "x"
+      }
+     },
+     {
+      "name": "5h",
+      "label": "5h",
+      "mapping": {
+       "usedPercent": "five_hour.utilization",
+       "renewsAt": "five_hour.resets_at"
+      }
+     },
+     {
+      "name": "week",
+      "label": "week",
+      "mapping": {
+       "usedPercent": "seven_day.utilization"
+      }
+     }
+    ],
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "remainingPercent": "plan.weekly",
+       "renewsAt": "plan.reset"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "usage",
+   "project": "segmentsOnly",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/usage-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/usage-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "tokens",
+     "cost",
+     "tokens"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal",
+    "providerUsage": {
+     "refreshIntervalMs": 5000,
+     "timeoutMs": 30000,
+     "providers": {
+      "anthropic": {
+       "endpoint": "https://api.anthropic.com/api/oauth/usage",
+       "label": "Claude",
+       "headers": {},
+       "auth": "pi-oauth",
+       "refreshIntervalMs": 120000,
+       "windows": {
+        "2": {
+         "mapping": {
+          "used": "x"
+         }
+        },
+        "5h": {
+         "label": "5h",
+         "mapping": {
+          "usedPercent": "five_hour.utilization",
+          "renewsAt": "five_hour.resets_at"
+         }
+        },
+        "week": {
+         "label": "week",
+         "mapping": {
+          "usedPercent": "seven_day.utilization"
+         }
+        }
+       }
+      },
+      "synthetic": {
+       "endpoint": "https://api.synthetic.new/v2/quotas",
+       "headers": {
+        "Authorization": "Bearer ${SYN_KEY}"
+       },
+       "mapping": {
+        "remainingPercent": "plan.weekly",
+        "renewsAt": "plan.reset"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "anthropic": [
+     {
+      "name": "2",
+      "label": "Claude",
+      "mapping": {
+       "used": "x"
+      }
+     },
+     {
+      "name": "5h",
+      "label": "5h",
+      "mapping": {
+       "usedPercent": "five_hour.utilization",
+       "renewsAt": "five_hour.resets_at"
+      }
+     },
+     {
+      "name": "week",
+      "label": "week",
+      "mapping": {
+       "usedPercent": "seven_day.utilization"
+      }
+     }
+    ],
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "remainingPercent": "plan.weekly",
+       "renewsAt": "plan.reset"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "usage",
+   "project": "segmentsOnly",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/usage-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/usage-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal",
+    "providerUsage": {
+     "refreshIntervalMs": 5000,
+     "timeoutMs": 30000,
+     "providers": {
+      "anthropic": {
+       "endpoint": "https://api.anthropic.com/api/oauth/usage",
+       "label": "Claude",
+       "headers": {},
+       "auth": "pi-oauth",
+       "refreshIntervalMs": 120000,
+       "windows": {
+        "2": {
+         "mapping": {
+          "used": "x"
+         }
+        },
+        "5h": {
+         "label": "5h",
+         "mapping": {
+          "usedPercent": "five_hour.utilization",
+          "renewsAt": "five_hour.resets_at"
+         }
+        },
+        "week": {
+         "label": "week",
+         "mapping": {
+          "usedPercent": "seven_day.utilization"
+         }
+        }
+       }
+      },
+      "synthetic": {
+       "endpoint": "https://api.synthetic.new/v2/quotas",
+       "headers": {
+        "Authorization": "Bearer ${SYN_KEY}"
+       },
+       "mapping": {
+        "remainingPercent": "plan.weekly",
+        "renewsAt": "plan.reset"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "anthropic": [
+     {
+      "name": "2",
+      "label": "Claude",
+      "mapping": {
+       "used": "x"
+      }
+     },
+     {
+      "name": "5h",
+      "label": "5h",
+      "mapping": {
+       "usedPercent": "five_hour.utilization",
+       "renewsAt": "five_hour.resets_at"
+      }
+     },
+     {
+      "name": "week",
+      "label": "week",
+      "mapping": {
+       "usedPercent": "seven_day.utilization"
+      }
+     }
+    ],
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "remainingPercent": "plan.weekly",
+       "renewsAt": "plan.reset"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "notObject",
+   "project": "none",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/notObject-none/agent",
+   "cwd": "@@ROOT@@/cfg/notObject-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "notObject",
+   "project": "none",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/notObject-none/agent",
+   "cwd": "@@ROOT@@/cfg/notObject-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "notObject",
+   "project": "override",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/notObject-override/agent",
+   "cwd": "@@ROOT@@/cfg/notObject-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "abbreviated",
+    "workingMessage": "minimal",
+    "providerUsage": {
+     "refreshIntervalMs": 60000,
+     "timeoutMs": 500,
+     "providers": {
+      "synthetic": {
+       "endpoint": "http://localhost:9999/q",
+       "headers": {},
+       "mapping": {
+        "used": "u",
+        "limit": "l"
+       }
+      },
+      "extra": {
+       "endpoint": "https://x.dev/u",
+       "headers": {},
+       "mapping": {
+        "remaining": "r"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "used": "u",
+       "limit": "l"
+      }
+     }
+    ],
+    "extra": [
+     {
+      "name": "default",
+      "mapping": {
+       "remaining": "r"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "notObject",
+   "project": "override",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/notObject-override/agent",
+   "cwd": "@@ROOT@@/cfg/notObject-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "notObject",
+   "project": "segmentsOnly",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/notObject-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/notObject-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "tokens",
+     "cost",
+     "tokens"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "notObject",
+   "project": "segmentsOnly",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/notObject-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/notObject-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "badJson",
+   "project": "none",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/badJson-none/agent",
+   "cwd": "@@ROOT@@/cfg/badJson-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "badJson",
+   "project": "none",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/badJson-none/agent",
+   "cwd": "@@ROOT@@/cfg/badJson-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "badJson",
+   "project": "override",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/badJson-override/agent",
+   "cwd": "@@ROOT@@/cfg/badJson-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "abbreviated",
+    "workingMessage": "minimal",
+    "providerUsage": {
+     "refreshIntervalMs": 60000,
+     "timeoutMs": 500,
+     "providers": {
+      "synthetic": {
+       "endpoint": "http://localhost:9999/q",
+       "headers": {},
+       "mapping": {
+        "used": "u",
+        "limit": "l"
+       }
+      },
+      "extra": {
+       "endpoint": "https://x.dev/u",
+       "headers": {},
+       "mapping": {
+        "remaining": "r"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "used": "u",
+       "limit": "l"
+      }
+     }
+    ],
+    "extra": [
+     {
+      "name": "default",
+      "mapping": {
+       "remaining": "r"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "badJson",
+   "project": "override",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/badJson-override/agent",
+   "cwd": "@@ROOT@@/cfg/badJson-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "badJson",
+   "project": "segmentsOnly",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/badJson-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/badJson-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "tokens",
+     "cost",
+     "tokens"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "badJson",
+   "project": "segmentsOnly",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/badJson-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/badJson-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "arrayAio",
+   "project": "none",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/arrayAio-none/agent",
+   "cwd": "@@ROOT@@/cfg/arrayAio-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "arrayAio",
+   "project": "none",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/arrayAio-none/agent",
+   "cwd": "@@ROOT@@/cfg/arrayAio-none/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "arrayAio",
+   "project": "override",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/arrayAio-override/agent",
+   "cwd": "@@ROOT@@/cfg/arrayAio-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "abbreviated",
+    "workingMessage": "minimal",
+    "providerUsage": {
+     "refreshIntervalMs": 60000,
+     "timeoutMs": 500,
+     "providers": {
+      "synthetic": {
+       "endpoint": "http://localhost:9999/q",
+       "headers": {},
+       "mapping": {
+        "used": "u",
+        "limit": "l"
+       }
+      },
+      "extra": {
+       "endpoint": "https://x.dev/u",
+       "headers": {},
+       "mapping": {
+        "remaining": "r"
+       }
+      }
+     }
+    }
+   },
+   "windows": {
+    "synthetic": [
+     {
+      "name": "default",
+      "mapping": {
+       "used": "u",
+       "limit": "l"
+      }
+     }
+    ],
+    "extra": [
+     {
+      "name": "default",
+      "mapping": {
+       "remaining": "r"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "global": "arrayAio",
+   "project": "override",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/arrayAio-override/agent",
+   "cwd": "@@ROOT@@/cfg/arrayAio-override/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "arrayAio",
+   "project": "segmentsOnly",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/cfg/arrayAio-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/arrayAio-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "tokens",
+     "cost",
+     "tokens"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "arrayAio",
+   "project": "segmentsOnly",
+   "includeProject": false,
+   "agentDir": "@@ROOT@@/cfg/arrayAio-segmentsOnly/agent",
+   "cwd": "@@ROOT@@/cfg/arrayAio-segmentsOnly/work",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  },
+  {
+   "global": "none",
+   "project": "none",
+   "includeProject": true,
+   "agentDir": "@@ROOT@@/missing",
+   "cwd": "",
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "windows": {}
+  }
+ ],
+ "statusSets": {
+  "none": [],
+  "mixed": [
+   [
+    "zeta",
+    "\u001b[35mZ\u001b[39m"
+   ],
+   [
+    "rtk",
+    "rtk on"
+   ],
+   [
+    "modes",
+    "hidden"
+   ],
+   [
+    "effort",
+    "effort:high"
+   ],
+   [
+    "cursor",
+    "L1"
+   ],
+   [
+    "style",
+    "\u001b[36m✎ Tutor\u001b[39m"
+   ],
+   [
+    "Alpha",
+    "A"
+   ],
+   [
+    "codex-quota",
+    "cq"
+   ],
+   [
+    "user-bash",
+    "!bash"
+   ],
+   [
+    "fff",
+    "fff ok"
+   ],
+   [
+    "empty",
+    ""
+   ],
+   [
+    "beta",
+    "B"
+   ]
+  ],
+  "effortOnly": [
+   [
+    "effort",
+    "effort:low"
+   ]
+  ]
+ },
+ "providerUsages": {
+  "none": [],
+  "two": [
+   {
+    "provider": "anthropic",
+    "label": "5h",
+    "remainingPercent": 30,
+    "renewsAt": "2023-11-15T00:13:25.000Z"
+   },
+   {
+    "provider": "anthropic",
+    "label": "week",
+    "remainingPercent": 8
+   }
+  ],
+  "text": [
+   {
+    "provider": "x",
+    "label": "Pl\u0007an  ",
+    "text": "  12 credits\nleft\t "
+   }
+  ]
+ },
+ "renderInputs": {
+  "defaults": {
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "cwd": "@@ROOT@@/home/projects/app",
+   "model": {
+    "provider": "anthropic",
+    "id": "claude"
+   },
+   "mode": "default",
+   "gitBranch": "main",
+   "contextPercent": 42,
+   "statuses": "mixed",
+   "usageStats": {
+    "input": 1234,
+    "output": 56,
+    "cost": 0.1
+   },
+   "providerUsage": "two"
+  },
+  "allSegments": {
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model",
+     "tokens",
+     "cost"
+    ],
+    "path": "abbreviated",
+    "workingMessage": "minimal"
+   },
+   "cwd": "@@ROOT@@/home/a/b/c",
+   "model": {
+    "id": "solo"
+   },
+   "mode": "plan",
+   "gitBranch": null,
+   "contextPercent": 95,
+   "statuses": "effortOnly",
+   "usageStats": {
+    "input": 12345678,
+    "output": 999,
+    "cost": 12.34567
+   },
+   "providerUsage": "text"
+  },
+  "statusKeys": {
+   "config": {
+    "enabled": true,
+    "segments": [
+     "mode",
+     "path",
+     "git",
+     "context",
+     "effort",
+     "statuses",
+     "cursor",
+     "quota",
+     "model"
+    ],
+    "path": "full",
+    "workingMessage": "minimal",
+    "statusKeys": [
+     "beta",
+     "rtk",
+     "missing"
+    ]
+   },
+   "cwd": "C:\\Users\\x\\proj",
+   "model": null,
+   "mode": "ask",
+   "gitBranch": "dev",
+   "contextPercent": 72,
+   "statuses": "mixed",
+   "usageStats": {
+    "input": 0,
+    "output": 0,
+    "cost": 0
+   },
+   "providerUsage": "none"
+  },
+  "empty": {
+   "config": {
+    "enabled": true,
+    "segments": [
+     "git",
+     "quota",
+     "effort"
+    ],
+    "path": "basename",
+    "workingMessage": "minimal"
+   },
+   "cwd": "",
+   "mode": "auto",
+   "gitBranch": null,
+   "contextPercent": 0,
+   "statuses": "none",
+   "usageStats": {
+    "input": 0,
+    "output": 0,
+    "cost": 0
+   },
+   "providerUsage": "none"
+  },
+  "abbrevShort": {
+   "config": {
+    "enabled": true,
+    "segments": [
+     "path",
+     "tokens",
+     "cost"
+    ],
+    "path": "abbreviated",
+    "workingMessage": "minimal"
+   },
+   "cwd": "@@ROOT@@/home/x",
+   "model": {
+    "provider": "p"
+   },
+   "mode": "default",
+   "gitBranch": null,
+   "contextPercent": 5,
+   "statuses": "none",
+   "usageStats": {
+    "input": 9999,
+    "output": 10000,
+    "cost": 1
+   },
+   "providerUsage": "none"
+  }
+ },
+ "renders": [
+  {
+   "name": "defaults",
+   "theme": "ansi",
+   "width": 0,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "ansi",
+   "width": 1,
+   "out": [
+    "\u001b[0m.\u001b[0m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "ansi",
+   "width": 5,
+   "out": [
+    "\u001b[90m● \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "ansi",
+   "width": 10,
+   "out": [
+    "\u001b[90m● Defau\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "ansi",
+   "width": 20,
+   "out": [
+    "\u001b[90m● Default\u001b[39m\u001b[90m · \u001b[39m\u001b[36m✎ Tut\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "ansi",
+   "width": 40,
+   "out": [
+    "\u001b[90m● Default\u001b[39m\u001b[90m · \u001b[39m\u001b[36m✎ Tutor\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90mapp\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⎇\u001b[39m \u001b[36mmain\u001b[39m\u001b[90m \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "ansi",
+   "width": 80,
+   "out": [
+    "\u001b[90m● Default\u001b[39m\u001b[90m · \u001b[39m\u001b[36m✎ Tutor\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90mapp\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⎇\u001b[39m \u001b[36mmain\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◫\u001b[39m \u001b[90m42%\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⚡\u001b[39m effort:high\u001b[90m · \u001b[39mrtk on\u001b[90m · \u001b[39m!bas\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "ansi",
+   "width": 160,
+   "out": [
+    "\u001b[90m● Default\u001b[39m\u001b[90m · \u001b[39m\u001b[36m✎ Tutor\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90mapp\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⎇\u001b[39m \u001b[36mmain\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◫\u001b[39m \u001b[90m42%\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⚡\u001b[39m effort:high\u001b[90m · \u001b[39mrtk on\u001b[90m · \u001b[39m!bash\u001b[90m · \u001b[39mfff ok\u001b[90m · \u001b[39mcq\u001b[90m · \u001b[39mA\u001b[90m · \u001b[39mB\u001b[90m · \u001b[39m\u001b[35mZ\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◈\u001b[39m \u001b[90mL1\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◴\u001b[39m \u001b[31m5h 30% →3h\u001b[39m\u001b[90m · \u001b[39m\u001b[31mweek 8%\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◇\u001b[39m \u001b[36manthropic/claude\u001b[39m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "ansi",
+   "width": 300,
+   "out": [
+    "\u001b[90m● Default\u001b[39m\u001b[90m · \u001b[39m\u001b[36m✎ Tutor\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90mapp\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⎇\u001b[39m \u001b[36mmain\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◫\u001b[39m \u001b[90m42%\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⚡\u001b[39m effort:high\u001b[90m · \u001b[39mrtk on\u001b[90m · \u001b[39m!bash\u001b[90m · \u001b[39mfff ok\u001b[90m · \u001b[39mcq\u001b[90m · \u001b[39mA\u001b[90m · \u001b[39mB\u001b[90m · \u001b[39m\u001b[35mZ\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◈\u001b[39m \u001b[90mL1\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◴\u001b[39m \u001b[31m5h 30% →3h\u001b[39m\u001b[90m · \u001b[39m\u001b[31mweek 8%\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◇\u001b[39m \u001b[36manthropic/claude\u001b[39m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "plain",
+   "width": 0,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "plain",
+   "width": 1,
+   "out": [
+    "\u001b[0m.\u001b[0m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "plain",
+   "width": 5,
+   "out": [
+    "● \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "plain",
+   "width": 10,
+   "out": [
+    "● Defau\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "plain",
+   "width": 20,
+   "out": [
+    "● Default · \u001b[36m✎ Tut\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "plain",
+   "width": 40,
+   "out": [
+    "● Default · \u001b[36m✎ Tutor\u001b[39m · ⌂ app · ⎇ main \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "plain",
+   "width": 80,
+   "out": [
+    "● Default · \u001b[36m✎ Tutor\u001b[39m · ⌂ app · ⎇ main · ◫ 42% · ⚡ effort:high · rtk on · !bas\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "plain",
+   "width": 160,
+   "out": [
+    "● Default · \u001b[36m✎ Tutor\u001b[39m · ⌂ app · ⎇ main · ◫ 42% · ⚡ effort:high · rtk on · !bash · fff ok · cq · A · B · \u001b[35mZ\u001b[39m · ◈ L1 · ◴ 5h 30% →3h · week 8% · ◇ anthropic/claude"
+   ]
+  },
+  {
+   "name": "defaults",
+   "theme": "plain",
+   "width": 300,
+   "out": [
+    "● Default · \u001b[36m✎ Tutor\u001b[39m · ⌂ app · ⎇ main · ◫ 42% · ⚡ effort:high · rtk on · !bash · fff ok · cq · A · B · \u001b[35mZ\u001b[39m · ◈ L1 · ◴ 5h 30% →3h · week 8% · ◇ anthropic/claude"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "ansi",
+   "width": 0,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "ansi",
+   "width": 1,
+   "out": [
+    "\u001b[0m.\u001b[0m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "ansi",
+   "width": 5,
+   "out": [
+    "\u001b[33m⏸ \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "ansi",
+   "width": 10,
+   "out": [
+    "\u001b[33m⏸ Plan\u001b[39m\u001b[90m \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "ansi",
+   "width": 20,
+   "out": [
+    "\u001b[33m⏸ Plan\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90m…/b/c\u001b[39m\u001b[90m \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "ansi",
+   "width": 40,
+   "out": [
+    "\u001b[33m⏸ Plan\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90m…/b/c\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◫\u001b[39m \u001b[31m95%\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⚡\u001b[39m effort:\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "ansi",
+   "width": 80,
+   "out": [
+    "\u001b[33m⏸ Plan\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90m…/b/c\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◫\u001b[39m \u001b[31m95%\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⚡\u001b[39m effort:low\u001b[90m · \u001b[39m\u001b[2m◴\u001b[39m \u001b[90mPl an 12 credits left\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◇\u001b[39m \u001b[36msolo\u001b[39m\u001b[90m ·\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "ansi",
+   "width": 160,
+   "out": [
+    "\u001b[33m⏸ Plan\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90m…/b/c\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◫\u001b[39m \u001b[31m95%\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⚡\u001b[39m effort:low\u001b[90m · \u001b[39m\u001b[2m◴\u001b[39m \u001b[90mPl an 12 credits left\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◇\u001b[39m \u001b[36msolo\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⊛\u001b[39m \u001b[90m↑12.3M ↓999\u001b[39m\u001b[90m · \u001b[39m\u001b[2m$\u001b[39m \u001b[90m12.346\u001b[39m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "ansi",
+   "width": 300,
+   "out": [
+    "\u001b[33m⏸ Plan\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90m…/b/c\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◫\u001b[39m \u001b[31m95%\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⚡\u001b[39m effort:low\u001b[90m · \u001b[39m\u001b[2m◴\u001b[39m \u001b[90mPl an 12 credits left\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◇\u001b[39m \u001b[36msolo\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⊛\u001b[39m \u001b[90m↑12.3M ↓999\u001b[39m\u001b[90m · \u001b[39m\u001b[2m$\u001b[39m \u001b[90m12.346\u001b[39m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "plain",
+   "width": 0,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "plain",
+   "width": 1,
+   "out": [
+    "\u001b[0m.\u001b[0m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "plain",
+   "width": 5,
+   "out": [
+    "⏸ \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "plain",
+   "width": 10,
+   "out": [
+    "⏸ Plan \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "plain",
+   "width": 20,
+   "out": [
+    "⏸ Plan · ⌂ …/b/c \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "plain",
+   "width": 40,
+   "out": [
+    "⏸ Plan · ⌂ …/b/c · ◫ 95% · ⚡ effort:\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "plain",
+   "width": 80,
+   "out": [
+    "⏸ Plan · ⌂ …/b/c · ◫ 95% · ⚡ effort:low · ◴ Pl an 12 credits left · ◇ solo ·\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "plain",
+   "width": 160,
+   "out": [
+    "⏸ Plan · ⌂ …/b/c · ◫ 95% · ⚡ effort:low · ◴ Pl an 12 credits left · ◇ solo · ⊛ ↑12.3M ↓999 · $ 12.346"
+   ]
+  },
+  {
+   "name": "allSegments",
+   "theme": "plain",
+   "width": 300,
+   "out": [
+    "⏸ Plan · ⌂ …/b/c · ◫ 95% · ⚡ effort:low · ◴ Pl an 12 credits left · ◇ solo · ⊛ ↑12.3M ↓999 · $ 12.346"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "ansi",
+   "width": 0,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "ansi",
+   "width": 1,
+   "out": [
+    "\u001b[0m.\u001b[0m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "ansi",
+   "width": 5,
+   "out": [
+    "\u001b[36m? \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "ansi",
+   "width": 10,
+   "out": [
+    "\u001b[36m? Ask\u001b[39m\u001b[90m ·\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "ansi",
+   "width": 20,
+   "out": [
+    "\u001b[36m? Ask\u001b[39m\u001b[90m · \u001b[39m\u001b[36m✎ Tutor\u001b[39m\u001b[90m ·\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "ansi",
+   "width": 40,
+   "out": [
+    "\u001b[36m? Ask\u001b[39m\u001b[90m · \u001b[39m\u001b[36m✎ Tutor\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90mC:\\Users\\x\\proj\u001b[39m\u001b[90m ·\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "ansi",
+   "width": 80,
+   "out": [
+    "\u001b[36m? Ask\u001b[39m\u001b[90m · \u001b[39m\u001b[36m✎ Tutor\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90mC:\\Users\\x\\proj\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⎇\u001b[39m \u001b[36mdev\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◫\u001b[39m \u001b[33m72%\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⚡\u001b[39m effort:high\u001b[90m · \u001b[39mrtk on\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "ansi",
+   "width": 160,
+   "out": [
+    "\u001b[36m? Ask\u001b[39m\u001b[90m · \u001b[39m\u001b[36m✎ Tutor\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90mC:\\Users\\x\\proj\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⎇\u001b[39m \u001b[36mdev\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◫\u001b[39m \u001b[33m72%\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⚡\u001b[39m effort:high\u001b[90m · \u001b[39mrtk on\u001b[90m · \u001b[39mB\u001b[90m · \u001b[39m\u001b[2m◈\u001b[39m \u001b[90mL1\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◇\u001b[39m \u001b[36mno-model\u001b[39m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "ansi",
+   "width": 300,
+   "out": [
+    "\u001b[36m? Ask\u001b[39m\u001b[90m · \u001b[39m\u001b[36m✎ Tutor\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⌂\u001b[39m \u001b[90mC:\\Users\\x\\proj\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⎇\u001b[39m \u001b[36mdev\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◫\u001b[39m \u001b[33m72%\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⚡\u001b[39m effort:high\u001b[90m · \u001b[39mrtk on\u001b[90m · \u001b[39mB\u001b[90m · \u001b[39m\u001b[2m◈\u001b[39m \u001b[90mL1\u001b[39m\u001b[90m · \u001b[39m\u001b[2m◇\u001b[39m \u001b[36mno-model\u001b[39m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "plain",
+   "width": 0,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "plain",
+   "width": 1,
+   "out": [
+    "\u001b[0m.\u001b[0m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "plain",
+   "width": 5,
+   "out": [
+    "? \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "plain",
+   "width": 10,
+   "out": [
+    "? Ask ·\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "plain",
+   "width": 20,
+   "out": [
+    "? Ask · \u001b[36m✎ Tutor\u001b[39m ·\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "plain",
+   "width": 40,
+   "out": [
+    "? Ask · \u001b[36m✎ Tutor\u001b[39m · ⌂ C:\\Users\\x\\proj ·\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "plain",
+   "width": 80,
+   "out": [
+    "? Ask · \u001b[36m✎ Tutor\u001b[39m · ⌂ C:\\Users\\x\\proj · ⎇ dev · ◫ 72% · ⚡ effort:high · rtk on\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "plain",
+   "width": 160,
+   "out": [
+    "? Ask · \u001b[36m✎ Tutor\u001b[39m · ⌂ C:\\Users\\x\\proj · ⎇ dev · ◫ 72% · ⚡ effort:high · rtk on · B · ◈ L1 · ◇ no-model"
+   ]
+  },
+  {
+   "name": "statusKeys",
+   "theme": "plain",
+   "width": 300,
+   "out": [
+    "? Ask · \u001b[36m✎ Tutor\u001b[39m · ⌂ C:\\Users\\x\\proj · ⎇ dev · ◫ 72% · ⚡ effort:high · rtk on · B · ◈ L1 · ◇ no-model"
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "ansi",
+   "width": 0,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "ansi",
+   "width": 1,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "ansi",
+   "width": 5,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "ansi",
+   "width": 10,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "ansi",
+   "width": 20,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "ansi",
+   "width": 40,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "ansi",
+   "width": 80,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "ansi",
+   "width": 160,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "ansi",
+   "width": 300,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "plain",
+   "width": 0,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "plain",
+   "width": 1,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "plain",
+   "width": 5,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "plain",
+   "width": 10,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "plain",
+   "width": 20,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "plain",
+   "width": 40,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "plain",
+   "width": 80,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "plain",
+   "width": 160,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "empty",
+   "theme": "plain",
+   "width": 300,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "ansi",
+   "width": 0,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "ansi",
+   "width": 1,
+   "out": [
+    "\u001b[0m.\u001b[0m"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "ansi",
+   "width": 5,
+   "out": [
+    "\u001b[2m⌂\u001b[39m \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "ansi",
+   "width": 10,
+   "out": [
+    "\u001b[2m⌂\u001b[39m \u001b[90m~/x\u001b[39m\u001b[90m ·\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "ansi",
+   "width": 20,
+   "out": [
+    "\u001b[2m⌂\u001b[39m \u001b[90m~/x\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⊛\u001b[39m \u001b[90m↑10.0k \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "ansi",
+   "width": 40,
+   "out": [
+    "\u001b[2m⌂\u001b[39m \u001b[90m~/x\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⊛\u001b[39m \u001b[90m↑10.0k ↓10k\u001b[39m\u001b[90m · \u001b[39m\u001b[2m$\u001b[39m \u001b[90m1.000\u001b[39m"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "ansi",
+   "width": 80,
+   "out": [
+    "\u001b[2m⌂\u001b[39m \u001b[90m~/x\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⊛\u001b[39m \u001b[90m↑10.0k ↓10k\u001b[39m\u001b[90m · \u001b[39m\u001b[2m$\u001b[39m \u001b[90m1.000\u001b[39m"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "ansi",
+   "width": 160,
+   "out": [
+    "\u001b[2m⌂\u001b[39m \u001b[90m~/x\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⊛\u001b[39m \u001b[90m↑10.0k ↓10k\u001b[39m\u001b[90m · \u001b[39m\u001b[2m$\u001b[39m \u001b[90m1.000\u001b[39m"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "ansi",
+   "width": 300,
+   "out": [
+    "\u001b[2m⌂\u001b[39m \u001b[90m~/x\u001b[39m\u001b[90m · \u001b[39m\u001b[2m⊛\u001b[39m \u001b[90m↑10.0k ↓10k\u001b[39m\u001b[90m · \u001b[39m\u001b[2m$\u001b[39m \u001b[90m1.000\u001b[39m"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "plain",
+   "width": 0,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "plain",
+   "width": 1,
+   "out": [
+    "\u001b[0m.\u001b[0m"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "plain",
+   "width": 5,
+   "out": [
+    "⌂ \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "plain",
+   "width": 10,
+   "out": [
+    "⌂ ~/x ·\u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "plain",
+   "width": 20,
+   "out": [
+    "⌂ ~/x · ⊛ ↑10.0k \u001b[0m...\u001b[0m"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "plain",
+   "width": 40,
+   "out": [
+    "⌂ ~/x · ⊛ ↑10.0k ↓10k · $ 1.000"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "plain",
+   "width": 80,
+   "out": [
+    "⌂ ~/x · ⊛ ↑10.0k ↓10k · $ 1.000"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "plain",
+   "width": 160,
+   "out": [
+    "⌂ ~/x · ⊛ ↑10.0k ↓10k · $ 1.000"
+   ]
+  },
+  {
+   "name": "abbrevShort",
+   "theme": "plain",
+   "width": 300,
+   "out": [
+    "⌂ ~/x · ⊛ ↑10.0k ↓10k · $ 1.000"
+   ]
+  }
+ ],
+ "contextPercents": [
+  {
+   "usage": null,
+   "out": 0
+  },
+  {
+   "usage": {},
+   "out": 0
+  },
+  {
+   "usage": {
+    "tokens": 0,
+    "contextWindow": 100
+   },
+   "out": 0
+  },
+  {
+   "usage": {
+    "tokens": 50,
+    "contextWindow": 0
+   },
+   "out": 0
+  },
+  {
+   "usage": {
+    "tokens": 333,
+    "contextWindow": 1000
+   },
+   "out": 33
+  },
+  {
+   "usage": {
+    "tokens": 125,
+    "contextWindow": 1000
+   },
+   "out": 13
+  },
+  {
+   "usage": {
+    "tokens": null,
+    "contextWindow": 10
+   },
+   "out": 0
+  },
+  {
+   "usage": {
+    "tokens": 2000,
+    "contextWindow": 1000
+   },
+   "out": 200
+  }
+ ],
+ "usageStats": {
+  "branch": [
+   {
+    "type": "message",
+    "message": {
+     "role": "assistant",
+     "usage": {
+      "input": 10,
+      "output": 5,
+      "cost": {
+       "total": 0.25
+      }
+     }
+    }
+   },
+   {
+    "type": "message",
+    "message": {
+     "role": "user",
+     "usage": {
+      "input": 99
+     }
+    }
+   },
+   {
+    "type": "message",
+    "message": {
+     "role": "assistant"
+    }
+   },
+   {
+    "type": "message",
+    "message": {
+     "role": "assistant",
+     "usage": {
+      "output": 7
+     }
+    }
+   },
+   {
+    "type": "compaction",
+    "usage": {
+     "input": 1000
+    }
+   }
+  ],
+  "out": {
+   "input": 10,
+   "output": 12,
+   "cost": 0.25
+  }
+ },
+ "working": [
+  {
+   "mode": "off",
+   "stats": {
+    "input": 1234,
+    "output": 56789,
+    "cost": 0,
+    "contextPercent": 33,
+    "elapsedSec": 12.345,
+    "tps": 4.25
+   },
+   "out": null
+  },
+  {
+   "mode": "off",
+   "stats": {
+    "input": 0,
+    "output": 0,
+    "cost": 0,
+    "contextPercent": 0,
+    "elapsedSec": 0.001,
+    "tps": 0
+   },
+   "out": null
+  },
+  {
+   "mode": "minimal",
+   "stats": {
+    "input": 1234,
+    "output": 56789,
+    "cost": 0,
+    "contextPercent": 33,
+    "elapsedSec": 12.345,
+    "tps": 4.25
+   },
+   "out": "Working…"
+  },
+  {
+   "mode": "minimal",
+   "stats": {
+    "input": 0,
+    "output": 0,
+    "cost": 0,
+    "contextPercent": 0,
+    "elapsedSec": 0.001,
+    "tps": 0
+   },
+   "out": "Working…"
+  },
+  {
+   "mode": "verbose",
+   "stats": {
+    "input": 1234,
+    "output": 56789,
+    "cost": 0,
+    "contextPercent": 33,
+    "elapsedSec": 12.345,
+    "tps": 4.25
+   },
+   "out": "Working (12.3s  ↑1.2k ↓57k 4.3 tok/s  33% ctx)"
+  },
+  {
+   "mode": "verbose",
+   "stats": {
+    "input": 0,
+    "output": 0,
+    "cost": 0,
+    "contextPercent": 0,
+    "elapsedSec": 0.001,
+    "tps": 0
+   },
+   "out": "Working (0.0s  ↑0 ↓0 0.0 tok/s  0% ctx)"
+  }
+ ],
+ "payload": {
+  "five_hour": {
+   "utilization": 23.6,
+   "resets_at": "2023-11-14T23:43:20.000Z"
+  },
+  "seven_day": {
+   "utilization": "71.2"
+  },
+  "plan": {
+   "weekly": 44.4,
+   "reset": "2023-11-20T00:00:00Z",
+   "text": "\u0007weirdtext  "
+  },
+  "counts": {
+   "used": 30,
+   "limit": 120,
+   "remaining": "15",
+   "zero": 0,
+   "hex": "0x10",
+   "inf": "Infinity",
+   "blank": "  "
+  },
+  "list": [
+   5,
+   {
+    "v": 6
+   }
+  ],
+  "nested": {
+   "a.b": 1,
+   "__proto__value": 2
+  }
+ },
+ "mapped": [
+  {
+   "mapping": {
+    "usedPercent": "five_hour.utilization",
+    "renewsAt": "five_hour.resets_at"
+   },
+   "label": null,
+   "out": {
+    "provider": "prov",
+    "label": "prov",
+    "remainingPercent": 76,
+    "renewsAt": "2023-11-14T23:43:20.000Z"
+   }
+  },
+  {
+   "mapping": {
+    "usedPercent": "five_hour.utilization",
+    "renewsAt": "five_hour.resets_at"
+   },
+   "label": "Label",
+   "out": {
+    "provider": "prov",
+    "label": "Label",
+    "remainingPercent": 76,
+    "renewsAt": "2023-11-14T23:43:20.000Z"
+   }
+  },
+  {
+   "mapping": {
+    "usedPercent": "seven_day.utilization"
+   },
+   "label": null,
+   "out": {
+    "provider": "prov",
+    "label": "prov",
+    "remainingPercent": 29
+   }
+  },
+  {
+   "mapping": {
+    "usedPercent": "seven_day.utilization"
+   },
+   "label": "Label",
+   "out": {
+    "provider": "prov",
+    "label": "Label",
+    "remainingPercent": 29
+   }
+  },
+  {
+   "mapping": {
+    "remainingPercent": "plan.weekly",
+    "text": "plan.text"
+   },
+   "label": null,
+   "out": {
+    "provider": "prov",
+    "label": "prov",
+    "remainingPercent": 44,
+    "text": "\u0007weirdtext"
+   }
+  },
+  {
+   "mapping": {
+    "remainingPercent": "plan.weekly",
+    "text": "plan.text"
+   },
+   "label": "Label",
+   "out": {
+    "provider": "prov",
+    "label": "Label",
+    "remainingPercent": 44,
+    "text": "\u0007weirdtext"
+   }
+  },
+  {
+   "mapping": {
+    "used": "counts.used",
+    "limit": "counts.limit"
+   },
+   "label": null,
+   "out": {
+    "provider": "prov",
+    "label": "prov",
+    "used": 30,
+    "limit": 120,
+    "remaining": 90,
+    "remainingPercent": 75
+   }
+  },
+  {
+   "mapping": {
+    "used": "counts.used",
+    "limit": "counts.limit"
+   },
+   "label": "Label",
+   "out": {
+    "provider": "prov",
+    "label": "Label",
+    "used": 30,
+    "limit": 120,
+    "remaining": 90,
+    "remainingPercent": 75
+   }
+  },
+  {
+   "mapping": {
+    "used": "counts.used",
+    "limit": "counts.limit",
+    "remaining": "counts.remaining"
+   },
+   "label": null,
+   "out": {
+    "provider": "prov",
+    "label": "prov",
+    "used": 30,
+    "limit": 120,
+    "remaining": 15,
+    "remainingPercent": 13
+   }
+  },
+  {
+   "mapping": {
+    "used": "counts.used",
+    "limit": "counts.limit",
+    "remaining": "counts.remaining"
+   },
+   "label": "Label",
+   "out": {
+    "provider": "prov",
+    "label": "Label",
+    "used": 30,
+    "limit": 120,
+    "remaining": 15,
+    "remainingPercent": 13
+   }
+  },
+  {
+   "mapping": {
+    "used": "counts.used",
+    "limit": "counts.zero"
+   },
+   "label": null,
+   "out": {
+    "provider": "prov",
+    "label": "prov",
+    "used": 30,
+    "limit": 0,
+    "remaining": -30
+   }
+  },
+  {
+   "mapping": {
+    "used": "counts.used",
+    "limit": "counts.zero"
+   },
+   "label": "Label",
+   "out": {
+    "provider": "prov",
+    "label": "Label",
+    "used": 30,
+    "limit": 0,
+    "remaining": -30
+   }
+  },
+  {
+   "mapping": {
+    "limit": "counts.hex"
+   },
+   "label": null,
+   "out": {
+    "provider": "prov",
+    "label": "prov",
+    "limit": 16
+   }
+  },
+  {
+   "mapping": {
+    "limit": "counts.hex"
+   },
+   "label": "Label",
+   "out": {
+    "provider": "prov",
+    "label": "Label",
+    "limit": 16
+   }
+  },
+  {
+   "mapping": {
+    "used": "counts.inf"
+   },
+   "label": null,
+   "out": null
+  },
+  {
+   "mapping": {
+    "used": "counts.inf"
+   },
+   "label": "Label",
+   "out": null
+  },
+  {
+   "mapping": {
+    "used": "counts.blank"
+   },
+   "label": null,
+   "out": null
+  },
+  {
+   "mapping": {
+    "used": "counts.blank"
+   },
+   "label": "Label",
+   "out": null
+  },
+  {
+   "mapping": {
+    "used": "list.0",
+    "limit": "list.length"
+   },
+   "label": null,
+   "out": {
+    "provider": "prov",
+    "label": "prov",
+    "used": 5,
+    "limit": 2,
+    "remaining": -3,
+    "remainingPercent": 0
+   }
+  },
+  {
+   "mapping": {
+    "used": "list.0",
+    "limit": "list.length"
+   },
+   "label": "Label",
+   "out": {
+    "provider": "prov",
+    "label": "Label",
+    "used": 5,
+    "limit": 2,
+    "remaining": -3,
+    "remainingPercent": 0
+   }
+  },
+  {
+   "mapping": {
+    "used": "list.1.v"
+   },
+   "label": null,
+   "out": {
+    "provider": "prov",
+    "label": "prov",
+    "used": 6
+   }
+  },
+  {
+   "mapping": {
+    "used": "list.1.v"
+   },
+   "label": "Label",
+   "out": {
+    "provider": "prov",
+    "label": "Label",
+    "used": 6
+   }
+  },
+  {
+   "mapping": {
+    "used": "list.2"
+   },
+   "label": null,
+   "out": null
+  },
+  {
+   "mapping": {
+    "used": "list.2"
+   },
+   "label": "Label",
+   "out": null
+  },
+  {
+   "mapping": {
+    "used": "__proto__.x"
+   },
+   "label": null,
+   "out": null
+  },
+  {
+   "mapping": {
+    "used": "__proto__.x"
+   },
+   "label": "Label",
+   "out": null
+  },
+  {
+   "mapping": {
+    "used": "constructor"
+   },
+   "label": null,
+   "out": null
+  },
+  {
+   "mapping": {
+    "used": "constructor"
+   },
+   "label": "Label",
+   "out": null
+  },
+  {
+   "mapping": {
+    "used": "counts..used"
+   },
+   "label": null,
+   "out": null
+  },
+  {
+   "mapping": {
+    "used": "counts..used"
+   },
+   "label": "Label",
+   "out": null
+  },
+  {
+   "mapping": {
+    "text": "five_hour"
+   },
+   "label": null,
+   "out": null
+  },
+  {
+   "mapping": {
+    "text": "five_hour"
+   },
+   "label": "Label",
+   "out": null
+  },
+  {
+   "mapping": {
+    "remaining": "counts.remaining"
+   },
+   "label": null,
+   "out": {
+    "provider": "prov",
+    "label": "prov",
+    "remaining": 15
+   }
+  },
+  {
+   "mapping": {
+    "remaining": "counts.remaining"
+   },
+   "label": "Label",
+   "out": {
+    "provider": "prov",
+    "label": "Label",
+    "remaining": 15
+   }
+  },
+  {
+   "mapping": {
+    "remainingPercent": "counts.limit"
+   },
+   "label": null,
+   "out": {
+    "provider": "prov",
+    "label": "prov",
+    "remainingPercent": 100
+   }
+  },
+  {
+   "mapping": {
+    "remainingPercent": "counts.limit"
+   },
+   "label": "Label",
+   "out": {
+    "provider": "prov",
+    "label": "Label",
+    "remainingPercent": 100
+   }
+  },
+  {
+   "mapping": {
+    "usedPercent": "counts.limit"
+   },
+   "label": null,
+   "out": {
+    "provider": "prov",
+    "label": "prov",
+    "remainingPercent": 0
+   }
+  },
+  {
+   "mapping": {
+    "usedPercent": "counts.limit"
+   },
+   "label": "Label",
+   "out": {
+    "provider": "prov",
+    "label": "Label",
+    "remainingPercent": 0
+   }
+  },
+  {
+   "mapping": {},
+   "label": null,
+   "out": null
+  },
+  {
+   "mapping": {},
+   "label": "Label",
+   "out": null
+  }
+ ],
+ "templates": [
+  {
+   "value": "plain",
+   "out": "plain"
+  },
+  {
+   "value": "Bearer $UL_TOKEN",
+   "out": "Bearer tok"
+  },
+  {
+   "value": "Bearer ${UL_TOKEN}!",
+   "out": "Bearer tok!"
+  },
+  {
+   "value": "$$UL_TOKEN",
+   "out": "$UL_TOKEN"
+  },
+  {
+   "value": "$UL_EMPTY-x",
+   "out": "-x"
+  },
+  {
+   "value": "${UL_MISSING}",
+   "out": null
+  },
+  {
+   "value": "$UL_TOKEN$UL_MISSING",
+   "out": null
+  },
+  {
+   "value": "$1abc",
+   "out": "$1abc"
+  },
+  {
+   "value": "${bad-name}",
+   "out": "${bad-name}"
+  },
+  {
+   "value": "a$",
+   "out": "a$"
+  },
+  {
+   "value": "$$$$",
+   "out": "$$"
+  }
+ ],
+ "tokens": [
+  {
+   "account": "anthropic",
+   "dir": "@@ROOT@@/auth",
+   "out": "acc-123"
+  },
+  {
+   "account": "key",
+   "dir": "@@ROOT@@/auth",
+   "out": null
+  },
+  {
+   "account": "blank",
+   "dir": "@@ROOT@@/auth",
+   "out": null
+  },
+  {
+   "account": "num",
+   "dir": "@@ROOT@@/auth",
+   "out": null
+  },
+  {
+   "account": "absent",
+   "dir": "@@ROOT@@/auth",
+   "out": null
+  },
+  {
+   "account": "anthropic",
+   "dir": "@@ROOT@@/badauth",
+   "out": null
+  },
+  {
+   "account": "anthropic",
+   "dir": "@@ROOT@@/none",
+   "out": null
+  }
+ ],
+ "fetches": [
+  {
+   "name": "windows",
+   "provider": "anthropic",
+   "config": {
+    "endpoint": "https://a.test/u",
+    "headers": {
+     "x-extra": "1"
+    },
+    "auth": "pi-oauth",
+    "label": "Claude",
+    "windows": {
+     "2": {
+      "mapping": {
+       "used": "x"
+      }
+     },
+     "week": {
+      "label": "week",
+      "mapping": {
+       "usedPercent": "seven_day.utilization"
+      }
+     },
+     "5h": {
+      "mapping": {
+       "usedPercent": "five_hour.utilization",
+       "renewsAt": "five_hour.resets_at"
+      }
+     }
+    }
+   },
+   "reply": {
+    "body": {
+     "five_hour": {
+      "utilization": 23.6,
+      "resets_at": "2023-11-14T23:43:20.000Z"
+     },
+     "seven_day": {
+      "utilization": "71.2"
+     },
+     "plan": {
+      "weekly": 44.4,
+      "reset": "2023-11-20T00:00:00Z",
+      "text": "\u0007weirdtext  "
+     },
+     "counts": {
+      "used": 30,
+      "limit": 120,
+      "remaining": "15",
+      "zero": 0,
+      "hex": "0x10",
+      "inf": "Infinity",
+      "blank": "  "
+     },
+     "list": [
+      5,
+      {
+       "v": 6
+      }
+     ],
+     "nested": {
+      "a.b": 1,
+      "__proto__value": 2
+     }
+    }
+   },
+   "token": "acc-123",
+   "requests": [
+    {
+     "url": "https://a.test/u",
+     "method": "GET",
+     "headers": {
+      "x-extra": "1",
+      "Authorization": "Bearer acc-123",
+      "anthropic-beta": "oauth-2025-04-20"
+     }
+    }
+   ],
+   "out": [
+    {
+     "provider": "anthropic",
+     "label": "week",
+     "remainingPercent": 29
+    },
+    {
+     "provider": "anthropic",
+     "label": "Claude",
+     "remainingPercent": 76,
+     "renewsAt": "2023-11-14T23:43:20.000Z"
+    }
+   ],
+   "error": null
+  },
+  {
+   "name": "explicit auth header",
+   "provider": "anthropic",
+   "config": {
+    "endpoint": "https://a.test/u",
+    "headers": {
+     "Authorization": "Bearer $UL_TOKEN",
+     "anthropic-beta": "custom"
+    },
+    "auth": "pi-oauth",
+    "authAccount": "other",
+    "mapping": {
+     "usedPercent": "five_hour.utilization",
+     "renewsAt": "five_hour.resets_at"
+    }
+   },
+   "reply": {
+    "body": {
+     "five_hour": {
+      "utilization": 23.6,
+      "resets_at": "2023-11-14T23:43:20.000Z"
+     },
+     "seven_day": {
+      "utilization": "71.2"
+     },
+     "plan": {
+      "weekly": 44.4,
+      "reset": "2023-11-20T00:00:00Z",
+      "text": "\u0007weirdtext  "
+     },
+     "counts": {
+      "used": 30,
+      "limit": 120,
+      "remaining": "15",
+      "zero": 0,
+      "hex": "0x10",
+      "inf": "Infinity",
+      "blank": "  "
+     },
+     "list": [
+      5,
+      {
+       "v": 6
+      }
+     ],
+     "nested": {
+      "a.b": 1,
+      "__proto__value": 2
+     }
+    }
+   },
+   "token": "zzz",
+   "requests": [
+    {
+     "url": "https://a.test/u",
+     "method": "GET",
+     "headers": {
+      "Authorization": "Bearer tok",
+      "anthropic-beta": "custom"
+     }
+    }
+   ],
+   "out": [
+    {
+     "provider": "anthropic",
+     "label": "anthropic",
+     "remainingPercent": 76,
+     "renewsAt": "2023-11-14T23:43:20.000Z"
+    }
+   ],
+   "error": null
+  },
+  {
+   "name": "no token",
+   "provider": "anthropic",
+   "config": {
+    "endpoint": "https://a.test/u",
+    "headers": {},
+    "auth": "pi-oauth",
+    "mapping": {
+     "usedPercent": "five_hour.utilization",
+     "renewsAt": "five_hour.resets_at"
+    }
+   },
+   "reply": {
+    "body": {
+     "five_hour": {
+      "utilization": 23.6,
+      "resets_at": "2023-11-14T23:43:20.000Z"
+     },
+     "seven_day": {
+      "utilization": "71.2"
+     },
+     "plan": {
+      "weekly": 44.4,
+      "reset": "2023-11-20T00:00:00Z",
+      "text": "\u0007weirdtext  "
+     },
+     "counts": {
+      "used": 30,
+      "limit": 120,
+      "remaining": "15",
+      "zero": 0,
+      "hex": "0x10",
+      "inf": "Infinity",
+      "blank": "  "
+     },
+     "list": [
+      5,
+      {
+       "v": 6
+      }
+     ],
+     "nested": {
+      "a.b": 1,
+      "__proto__value": 2
+     }
+    }
+   },
+   "token": null,
+   "requests": [],
+   "out": null,
+   "error": "No pi OAuth token for provider anthropic"
+  },
+  {
+   "name": "missing env",
+   "provider": "s",
+   "config": {
+    "endpoint": "https://s.test/u",
+    "headers": {
+     "Authorization": "Bearer ${UL_MISSING}"
+    },
+    "mapping": {
+     "remainingPercent": "plan.weekly",
+     "text": "plan.text"
+    }
+   },
+   "reply": {
+    "body": {
+     "five_hour": {
+      "utilization": 23.6,
+      "resets_at": "2023-11-14T23:43:20.000Z"
+     },
+     "seven_day": {
+      "utilization": "71.2"
+     },
+     "plan": {
+      "weekly": 44.4,
+      "reset": "2023-11-20T00:00:00Z",
+      "text": "\u0007weirdtext  "
+     },
+     "counts": {
+      "used": 30,
+      "limit": 120,
+      "remaining": "15",
+      "zero": 0,
+      "hex": "0x10",
+      "inf": "Infinity",
+      "blank": "  "
+     },
+     "list": [
+      5,
+      {
+       "v": 6
+      }
+     ],
+     "nested": {
+      "a.b": 1,
+      "__proto__value": 2
+     }
+    }
+   },
+   "requests": [],
+   "out": null,
+   "error": "Missing environment variable for provider usage header Authorization"
+  },
+  {
+   "name": "http error",
+   "provider": "s",
+   "config": {
+    "endpoint": "https://s.test/u",
+    "headers": {},
+    "mapping": {
+     "remainingPercent": "plan.weekly",
+     "text": "plan.text"
+    }
+   },
+   "reply": {
+    "status": 429
+   },
+   "requests": [
+    {
+     "url": "https://s.test/u",
+     "method": "GET",
+     "headers": {}
+    }
+   ],
+   "out": null,
+   "error": "Provider usage request failed with HTTP 429"
+  },
+  {
+   "name": "bad json",
+   "provider": "s",
+   "config": {
+    "endpoint": "https://s.test/u",
+    "headers": {},
+    "mapping": {
+     "remainingPercent": "plan.weekly",
+     "text": "plan.text"
+    }
+   },
+   "reply": {
+    "raw": "nope"
+   },
+   "requests": [
+    {
+     "url": "https://s.test/u",
+     "method": "GET",
+     "headers": {}
+    }
+   ],
+   "out": null,
+   "error": "Unexpected token 'o', \"nope\" is not valid JSON"
+  },
+  {
+   "name": "network",
+   "provider": "s",
+   "config": {
+    "endpoint": "https://s.test/u",
+    "headers": {},
+    "mapping": {
+     "remainingPercent": "plan.weekly",
+     "text": "plan.text"
+    }
+   },
+   "reply": {
+    "throws": "ECONNREFUSED"
+   },
+   "requests": [
+    {
+     "url": "https://s.test/u",
+     "method": "GET",
+     "headers": {}
+    }
+   ],
+   "out": null,
+   "error": "ECONNREFUSED"
+  },
+  {
+   "name": "no match",
+   "provider": "s",
+   "config": {
+    "endpoint": "https://s.test/u",
+    "headers": {},
+    "mapping": {
+     "used": "zz"
+    }
+   },
+   "reply": {
+    "body": {
+     "five_hour": {
+      "utilization": 23.6,
+      "resets_at": "2023-11-14T23:43:20.000Z"
+     },
+     "seven_day": {
+      "utilization": "71.2"
+     },
+     "plan": {
+      "weekly": 44.4,
+      "reset": "2023-11-20T00:00:00Z",
+      "text": "\u0007weirdtext  "
+     },
+     "counts": {
+      "used": 30,
+      "limit": 120,
+      "remaining": "15",
+      "zero": 0,
+      "hex": "0x10",
+      "inf": "Infinity",
+      "blank": "  "
+     },
+     "list": [
+      5,
+      {
+       "v": 6
+      }
+     ],
+     "nested": {
+      "a.b": 1,
+      "__proto__value": 2
+     }
+    }
+   },
+   "requests": [
+    {
+     "url": "https://s.test/u",
+     "method": "GET",
+     "headers": {}
+    }
+   ],
+   "out": [],
+   "error": null
+  },
+  {
+   "name": "single",
+   "provider": "s",
+   "config": {
+    "endpoint": "https://s.test/u",
+    "headers": {
+     "X-Key": "$UL_TOKEN"
+    },
+    "label": "Syn",
+    "mapping": {
+     "remainingPercent": "plan.weekly",
+     "text": "plan.text"
+    }
+   },
+   "reply": {
+    "body": {
+     "five_hour": {
+      "utilization": 23.6,
+      "resets_at": "2023-11-14T23:43:20.000Z"
+     },
+     "seven_day": {
+      "utilization": "71.2"
+     },
+     "plan": {
+      "weekly": 44.4,
+      "reset": "2023-11-20T00:00:00Z",
+      "text": "\u0007weirdtext  "
+     },
+     "counts": {
+      "used": 30,
+      "limit": 120,
+      "remaining": "15",
+      "zero": 0,
+      "hex": "0x10",
+      "inf": "Infinity",
+      "blank": "  "
+     },
+     "list": [
+      5,
+      {
+       "v": 6
+      }
+     ],
+     "nested": {
+      "a.b": 1,
+      "__proto__value": 2
+     }
+    }
+   },
+   "requests": [
+    {
+     "url": "https://s.test/u",
+     "method": "GET",
+     "headers": {
+      "X-Key": "tok"
+     }
+    }
+   ],
+   "out": [
+    {
+     "provider": "s",
+     "label": "Syn",
+     "remainingPercent": 44,
+     "text": "\u0007weirdtext"
+    }
+   ],
+   "error": null
+  }
+ ],
+ "formats": [
+  {
+   "usage": {
+    "provider": "p",
+    "label": "5h",
+    "remainingPercent": 30,
+    "renewsAt": "2023-11-14T22:43:19.999Z"
+   },
+   "out": "5h 30% →30m"
+  },
+  {
+   "usage": {
+    "provider": "p",
+    "label": "week",
+    "remainingPercent": 55,
+    "renewsAt": "2023-11-16T21:13:20.000Z"
+   },
+   "out": "week 55% →47h"
+  },
+  {
+   "usage": {
+    "provider": "p",
+    "label": "month",
+    "remaining": 12.5,
+    "renewsAt": "2023-11-19T22:13:20.000Z"
+   },
+   "out": "month 12.5 →5d"
+  },
+  {
+   "usage": {
+    "provider": "p",
+    "label": "x",
+    "used": 3,
+    "limit": 10,
+    "renewsAt": "2023-11-14T22:13:19.000Z"
+   },
+   "out": "x 3/10 →now"
+  },
+  {
+   "usage": {
+    "provider": "p",
+    "label": "y",
+    "used": 3
+   },
+   "out": "y 3 used"
+  },
+  {
+   "usage": {
+    "provider": "p",
+    "label": "z",
+    "limit": 7
+   },
+   "out": "z limit 7"
+  },
+  {
+   "usage": {
+    "provider": "p",
+    "label": "e"
+   },
+   "out": "e limit undefined"
+  },
+  {
+   "usage": {
+    "provider": "p",
+    "label": " tab\tlabel ",
+    "text": "a\u0000b   c",
+    "renewsAt": "garbage"
+   },
+   "out": "tab label a b c"
+  },
+  {
+   "usage": {
+    "provider": "p",
+    "label": "pct",
+    "remainingPercent": 20
+   },
+   "out": "pct 20%"
+  },
+  {
+   "usage": {
+    "provider": "p",
+    "label": "pct",
+    "remainingPercent": 50.5,
+    "renewsAt": "2023-11-14T23:13:20.000Z"
+   },
+   "out": "pct 50.5% →1h"
+  }
+ ],
+ "lines": [
+  {
+   "usages": [],
+   "out": null
+  },
+  {
+   "usages": [
+    {
+     "provider": "p",
+     "label": "5h",
+     "remainingPercent": 30,
+     "renewsAt": "2023-11-14T22:43:19.999Z"
+    }
+   ],
+   "out": {
+    "text": "5h 30% →30m",
+    "role": "warning"
+   }
+  },
+  {
+   "usages": [
+    {
+     "provider": "p",
+     "label": "week",
+     "remainingPercent": 55,
+     "renewsAt": "2023-11-16T21:13:20.000Z"
+    },
+    {
+     "provider": "p",
+     "label": "month",
+     "remaining": 12.5,
+     "renewsAt": "2023-11-19T22:13:20.000Z"
+    }
+   ],
+   "out": {
+    "text": "week 55% →47h · month 12.5 →5d",
+    "role": "muted"
+   }
+  },
+  {
+   "usages": [
+    {
+     "provider": "p",
+     "label": "pct",
+     "remainingPercent": 20
+    },
+    {
+     "provider": "p",
+     "label": "week",
+     "remainingPercent": 55,
+     "renewsAt": "2023-11-16T21:13:20.000Z"
+    }
+   ],
+   "out": {
+    "text": "pct 20% · week 55% →47h",
+    "role": "error"
+   }
+  },
+  {
+   "usages": [
+    {
+     "provider": "p",
+     "label": "pct",
+     "remainingPercent": 50.5,
+     "renewsAt": "2023-11-14T23:13:20.000Z"
+    }
+   ],
+   "out": {
+    "text": "pct 50.5% →1h",
+    "role": "muted"
+   }
+  },
+  {
+   "usages": [
+    {
+     "provider": "p",
+     "label": "y",
+     "used": 3
+    }
+   ],
+   "out": {
+    "text": "y 3 used",
+    "role": "muted"
+   }
+  }
+ ]
+}

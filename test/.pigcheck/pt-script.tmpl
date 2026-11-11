@@ -1,0 +1,13 @@
+[{"tool":"read","args":{"path":"@@D@@/a.ts"}},
+ {"tool":"read","args":{"path":"a.ts","offset":2,"limit":2}},
+ {"tool":"ls","args":{"path":"@@D@@"}},
+ {"tool":"find","args":{"pattern":"*.ts","path":"@@D@@"}},
+ {"tool":"find","args":{"pattern":"src/*/x.py"}},
+ {"tool":"grep","args":{"pattern":"foo","path":"@@D@@"}},
+ {"tool":"bash","args":{"command":"cat notes.txt | grep foo"}},
+ {"tool":"bash","args":{"command":"egrep foo notes.txt"}},
+ {"tool":"bash","args":{"command":"rg -rn foo ."}},
+ {"tool":"bash","args":{"command":"ls -la src"}},
+ {"tool":"bash","args":{"command":"git status"}},
+ {"tool":"bash","args":{"command":"exit 3"}},
+ {"text":"pt done\n\n```ts\nconst copied = 1;\n```\n\n> quoted line for the clipboard\n\n```sh\necho second\n```"}]

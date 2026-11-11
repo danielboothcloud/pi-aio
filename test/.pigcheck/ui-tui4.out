@@ -1,0 +1,105 @@
+===== --sessions picker at startup =====
+   ▄▀▀▀▀▄▄▀▀▀▀▄   escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  Press ctrl+o to show full startup help and loaded resources.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  PiG can explain its own features and look up its docs. Ask it how to use or
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  extend PiG.
+    ▀▀▀▀▀▀▀▀▀▀
+
+       ╭─ ▎ RESUME · ui-work ──────────────────────────────────────────────────────────────╮
+[Contex│ type to search                                               ◉ this folder  ○ all │
+  ~/pro├───────────────────────────────────────────────────────────────────────────────────┤
+       │ today                                                                             │
+[Skills│ › ui check session                                                    1m · 8 msgs │
+  aio11│   ui check session                                                    4m · 5 msgs │-stubs,
+import-│   ui check session                                                    4m · 5 msgs │
+slo-che│   ui check session                                                    5m · 5 msgs │
+synth-i│   ui check session                                                    6m · 5 msgs │
+       │   ui check session                                                    7m · 5 msgs │
+[Extens│   ui check session                                                    9m · 7 msgs │
+  aio, │   ui check session                                                   14m · 8 msgs │
+       │   ui check session                                                   16m · 9 msgs │
+[Extens├─ preview ─────────────────────────────────────────────────────────────────────────┤
+  path │ started  first prompt                                                             │
+    Ext│ last     q1 answered                                                              │d
+/Users/├───────────────────────────────────────────────────────────────────────────────────┤
+/Users/│ ↑↓ choose · enter open · tab this folder/all · esc close                          │
+  path ╰───────────────────────────────────────────────────────────────────────────────────╯
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts with built-in shortcut.
+Skipping.
+
+
+╭─ ● Default · 0% ─────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                  │
+╰─ main * ─────────────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== second session selected =====
+   ▄▀▀▀▀▄▄▀▀▀▀▄   escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  Press ctrl+o to show full startup help and loaded resources.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  PiG can explain its own features and look up its docs. Ask it how to use or
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  extend PiG.
+    ▀▀▀▀▀▀▀▀▀▀
+
+       ╭─ ▎ RESUME · ui-work ──────────────────────────────────────────────────────────────╮
+[Contex│ type to search                                               ◉ this folder  ○ all │
+  ~/pro├───────────────────────────────────────────────────────────────────────────────────┤
+       │ today                                                                             │
+[Skills│   ui check session                                                    1m · 8 msgs │
+  aio11│ › ui check session                                                    4m · 5 msgs │-stubs,
+import-│   ui check session                                                    5m · 5 msgs │
+slo-che│   ui check session                                                    5m · 5 msgs │
+synth-i│   ui check session                                                    6m · 5 msgs │
+       │   ui check session                                                    7m · 5 msgs │
+[Extens│   ui check session                                                    9m · 7 msgs │
+  aio, │   ui check session                                                   14m · 8 msgs │
+       │   ui check session                                                   16m · 9 msgs │
+[Extens├─ preview ─────────────────────────────────────────────────────────────────────────┤
+  path │ started  first prompt                                                             │
+    Ext│ last     slow streaming answer with many words to keep the agent                  │d
+/Users/├───────────────────────────────────────────────────────────────────────────────────┤
+/Users/│ ↑↓ choose · enter open · tab this folder/all · esc close                          │
+  path ╰───────────────────────────────────────────────────────────────────────────────────╯
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts with built-in shortcut.
+Skipping.
+
+
+╭─ ● Default · 0% ─────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                  │
+╰─ main * ─────────────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== after switch =====
+synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts with built-in shortcut.
+Skipping.
+
+
+ first prompt
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to keep the agent
+
+ Operation aborted
+
+ Resumed session
+
+╭─ ● Default · 0% ─────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                  │
+╰─ main * · ui check session ──────────────────────────────────────────────────────────── ui-work ─╯

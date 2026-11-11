@@ -1,0 +1,574 @@
+===== arg autocomplete inside frame =====
+
+    ▄▄▄▄  ▄▄▄▄    v0.7.0+1.5.0
+   ▄▀▀▀▀▄▄▀▀▀▀▄   escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  Press ctrl+o to show full startup help and loaded resources.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  PiG can explain its own features and look up its docs. Ask it how to use or extend PiG.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+
+
+
+
+╭─ ● Default · 0% ───────────────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│  /style tutor                                                                                              │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ → tutor                           learn step by step: explanations, active practice, and feedback          │
+╰─ main * ───────────────────────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== style pill =====
+
+    ▄▄▄▄  ▄▄▄▄    v0.7.0+1.5.0
+   ▄▀▀▀▀▄▄▀▀▀▀▄   escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  Press ctrl+o to show full startup help and loaded resources.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  PiG can explain its own features and look up its docs. Ask it how to use or extend PiG.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ Style: Tutor — learn step by step: explanations, active practice, and feedback
+
+
+
+
+
+╭─ ● Default · ✎ Tutor · 0% ─────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ main * ───────────────────────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== plan + style =====
+
+    ▄▄▄▄  ▄▄▄▄    v0.7.0+1.5.0
+   ▄▀▀▀▀▄▄▀▀▀▀▄   escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  Press ctrl+o to show full startup help and loaded resources.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  PiG can explain its own features and look up its docs. Ask it how to use or extend PiG.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ Style: Tutor — learn step by step: explanations, active practice, and feedback
+
+
+
+
+
+╭─ ⏸ Plan · ✎ Tutor · 0% ────────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ main * ───────────────────────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== streaming timer =====
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ Style: Tutor — learn step by step: explanations, active practice, and feedback
+
+
+ first prompt
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to
+
+ ⠧ Working
+
+╭─ ● Default · ✎ Tutor · 0% · 3s ────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ main * · ui check session ────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== queued rows in frame =====
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ Style: Tutor — learn step by step: explanations, active practice, and feedback
+
+
+ first prompt
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to keep the agent busy for a while
+
+ Steering: queued one
+ Steering: queued two
+ ↳ Option+Up to edit all queued messages
+
+ ⠇ Working
+
+╭─ ● Default · ✎ Tutor · 0% · 5s ────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ queue · 2 pending messages · Enter sends next                                                              │
+│ 1 queued one · steer                                                                                       │
+│ 2 queued two · steer                                                                                       │
+╰─ main * · ui check session ────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== timer later =====
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ Style: Tutor — learn step by step: explanations, active practice, and feedback
+
+
+ first prompt
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to keep the agent busy for a while longer still and more
+
+
+ queued one
+
+
+ q1 answered
+
+
+ queued two
+
+
+ q2 answered
+
+╭─ ● Default · ✎ Tutor · 0% · 7s ────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ main * · ui check session ────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== after queue drained =====
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ Style: Tutor — learn step by step: explanations, active practice, and feedback
+
+
+ first prompt
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to keep the agent busy for a while longer still and more
+
+
+ queued one
+
+
+ q1 answered
+
+
+ queued two
+
+
+ q2 answered
+
+╭─ ● Default · ✎ Tutor · 0% · 7s ────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ main * · ui check session ────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== rewind picker (double esc) =====
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ Style: Tutor — learn step by step: explanations, active practice, and feedback
+
+        ╭─ ▎ REWIND · 4 checkpoints ────────────────────────────────────────────────────────────────╮
+ first p│ Go back to an earlier point. Files on disk are not changed.                               │
+        ├─ your prompts ────────────────────────────────────────────────────────────────────────────┤
+        │ › now   queued two                                                           you are here │
+ hello f│   now   queued one                                                                        │
+        │   now   second prompt slow                                                                │
+        │   now   first prompt                                                                      │
+ second ├─ preview ─────────────────────────────────────────────────────────────────────────────────┤
+        │ you  queued two                                                                           │
+        │ pi   q2 answered                                                                          │
+ slow st├───────────────────────────────────────────────────────────────────────────────────────────┤
+        │ ↑↓ choose · enter select · type to filter · esc close                                     │
+        ╰───────────────────────────────────────────────────────────────────────────────────────────╯
+ queued one
+
+
+ q1 answered
+
+
+ queued two
+
+
+ q2 answered
+
+╭─ ● Default · ✎ Tutor · 0% · 10s ───────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ main * · ui check session ────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== rewind down =====
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ Style: Tutor — learn step by step: explanations, active practice, and feedback
+
+        ╭─ ▎ REWIND · 4 checkpoints ────────────────────────────────────────────────────────────────╮
+ first p│ Go back to an earlier point. Files on disk are not changed.                               │
+        ├─ your prompts ────────────────────────────────────────────────────────────────────────────┤
+        │   now   queued two                                                           you are here │
+ hello f│ › now   queued one                                                                        │
+        │   now   second prompt slow                                                                │
+        │   now   first prompt                                                                      │
+ second ├─ preview ─────────────────────────────────────────────────────────────────────────────────┤
+        │ you  queued one                                                                           │
+        │ pi   q1 answered                                                                          │
+ slow st├───────────────────────────────────────────────────────────────────────────────────────────┤
+        │ ↑↓ choose · enter select · type to filter · esc close                                     │
+        ╰───────────────────────────────────────────────────────────────────────────────────────────╯
+ queued one
+
+
+ q1 answered
+
+
+ queued two
+
+
+ q2 answered
+
+╭─ ● Default · ✎ Tutor · 0% · 10s ───────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ main * · ui check session ────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== rewind actions =====
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ Style: Tutor — learn step by step: explanations, active practice, and feedback
+
+        ╭─ ▎ REWIND ────────────────────────────────────────────────────────────────────────────────╮
+ first p│ Rewind to “queued one”                                                           just now │
+        ├─ what to do ──────────────────────────────────────────────────────────────────────────────┤
+        │ › 1 Edit and resend this prompt                                                           │
+ hello f│   2 Go back to right after this answer                                                    │
+        │   3 Rewind, keeping a summary of what came after                                          │
+        │   4 Start a new session from here                                                         │
+ second ├───────────────────────────────────────────────────────────────────────────────────────────┤
+        │ Go back to just before this prompt and put it in the editor, so you can change it and     │
+        │ send it again. Later messages are kept as an alternate branch.                            │
+ slow st├───────────────────────────────────────────────────────────────────────────────────────────┤
+        │ ↑↓ choose · enter confirm · esc back                                                      │
+        ╰───────────────────────────────────────────────────────────────────────────────────────────╯
+ queued one
+
+
+ q1 answered
+
+
+ queued two
+
+
+ q2 answered
+
+╭─ ● Default · ✎ Tutor · 0% · 10s ───────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ main * · ui check session ────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== after edit-and-resend =====
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ first prompt
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to keep the agent busy for a while longer still and more
+
+ Navigated to selected point
+
+╭─ ● Default · ✎ Tutor · 0% · 17s ───────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│  queued one                                                                                                │
+╰─ main * · ui check session ────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== sessions picker via /resume =====
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extensi╭─ ▎ RESUME · ui-work ──────────────────────────────────────────────────────────────────────╮
+  path (│ type to search                                                       ◉ this folder  ○ all │
+    Exte├───────────────────────────────────────────────────────────────────────────────────────────┤
+/Users/d│ today                                                                                     │
+/Users/d│ › ui check session                                                open now · now · 9 msgs │
+  path (├─ preview ─────────────────────────────────────────────────────────────────────────────────┤
+    Exte│ started  first prompt                                                                     │io
+conflict│ last     q2 answered                                                                      │
+        ├───────────────────────────────────────────────────────────────────────────────────────────┤
+        │ ↑↓ choose · enter open · tab this folder/all · esc close                                  │
+ first p╰───────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to keep the agent busy for a while longer still and more
+
+ Navigated to selected point
+
+╭─ ● Default · ✎ Tutor · 0% · 19s ───────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ main * · ui check session ────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== sessions all =====
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extensi╭─ ▎ RESUME · ui-work ──────────────────────────────────────────────────────────────────────╮
+  path (│ type to search                                                       ○ this folder  ◉ all │
+    Exte├───────────────────────────────────────────────────────────────────────────────────────────┤
+/Users/d│ today                                                                                     │
+/Users/d│ › ui check session                                      open now · ui-work · now · 9 msgs │
+  path (├─ preview ─────────────────────────────────────────────────────────────────────────────────┤
+    Exte│ started  first prompt                                                                     │io
+conflict│ last     q2 answered                                                                      │
+        │ folder   ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/ui-work                   │
+        ├───────────────────────────────────────────────────────────────────────────────────────────┤
+ first p│ ↑↓ choose · enter open · tab this folder/all · esc close                                  │
+        ╰───────────────────────────────────────────────────────────────────────────────────────────╯
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to keep the agent busy for a while longer still and more
+
+ Navigated to selected point
+
+╭─ ● Default · ✎ Tutor · 0% · 19s ───────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ main * · ui check session ────────────────────────────────────────────────────────────────────── ui-work ─╯
+===== closed =====
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut conflict: 'ctrl+p' is built-in shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ first prompt
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to keep the agent busy for a while longer still and more
+
+ Navigated to selected point
+
+╭─ ● Default · ✎ Tutor · 0% · 24s ───────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ main * · ui check session ────────────────────────────────────────────────────────────────────── ui-work ─╯

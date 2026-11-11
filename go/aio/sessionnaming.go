@@ -2,11 +2,12 @@ package aio
 
 // Session naming wiring (port of session-naming/index.ts). The title
 // request runs after agent_end returns, so it uses the long-lived context
-// from OnLoaded; a request-scoped context ends with its handler. The host
-// call cannot be aborted from Go, so a timeout or a newer session only
-// makes the late result void.
+// from OnLoaded; a request-scoped context ends with its handler. As in
+// TypeScript, the request has its own abort: a timeout, a new session, or a
+// shutdown aborts the provider request (ModelRegistry.StreamSimpleContext).
 
 import (
+	"context"
 	"os"
 	"sync"
 	"time"
@@ -26,13 +27,43 @@ type namingState struct {
 	eligible   bool
 	generation int
 	loaded     *sdk.Context
+	// cancel aborts the title request in flight; nil when none runs.
+	cancel context.CancelFunc
 }
 
+// reset voids the current generation and aborts its title request.
 func (s *namingState) reset() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.eligible = false
 	s.generation++
+	if s.cancel != nil {
+		s.cancel()
+		s.cancel = nil
+	}
+}
+
+// begin starts the abort scope of one title request. It returns nil when a
+// newer session already voided generation.
+func (s *namingState) begin(generation int) (context.Context, func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.generation != generation {
+		return nil, nil
+	}
+	if s.cancel != nil {
+		s.cancel()
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), namingTimeout)
+	s.cancel = cancel
+	return ctx, func() {
+		cancel()
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if s.generation == generation {
+			s.cancel = nil
+		}
+	}
 }
 
 func (s *namingState) name(prompt, provider, modelID, sessionID string, generation int) {
@@ -49,19 +80,15 @@ func (s *namingState) name(prompt, provider, modelID, sessionID string, generati
 	if err != nil || model == nil {
 		return
 	}
-	result := make(chan map[string]any, 1)
-	go func() {
-		result <- ctx.ModelRegistry().StreamSimple(model, map[string]any{
-			"systemPrompt": sessionnaming.SystemPrompt,
-			"messages":     []any{map[string]any{"role": "user", "content": prompt, "timestamp": time.Now().UnixMilli()}},
-		}, map[string]any{"maxTokens": 128}).Result()
-	}()
-	var response map[string]any
-	select {
-	case response = <-result:
-	case <-time.After(namingTimeout):
+	callCtx, done := s.begin(generation)
+	if callCtx == nil {
 		return
 	}
+	defer done()
+	response := ctx.ModelRegistry().StreamSimpleContext(callCtx, model, map[string]any{
+		"systemPrompt": sessionnaming.SystemPrompt,
+		"messages":     []any{map[string]any{"role": "user", "content": prompt, "timestamp": time.Now().UnixMilli()}},
+	}, map[string]any{"maxTokens": 128}).Result()
 	id, err := ctx.SessionManager().GetSessionID()
 	if response == nil || !current() || err != nil || id != sessionID || ctx.SessionName() != "" || response["stopReason"] != "stop" {
 		return
@@ -114,8 +141,9 @@ func registerSessionNaming(e *sdk.Extension) {
 		if err != nil {
 			return nil, nil
 		}
-		// Owned background work: the generation check voids it on a new
-		// session or shutdown, and the timeout bounds the wait.
+		// Owned background work: a new session or shutdown aborts the
+		// request and the generation check voids a late result; the
+		// timeout aborts a request that never answers.
 		go s.name(prompt, provider, modelID, sessionID, generation)
 		return nil, nil
 	})

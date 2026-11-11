@@ -1,0 +1,1329 @@
+{
+ "name": "rpiv-ask-user-question",
+ "homes": {
+  "empty": {},
+  "legacy": {
+   ".config/rpiv-ask-user-question/config.json": "{\"collapseKey\":\"alt+o\",\"guidance\":{\"promptSnippet\":\"legacy\"}}"
+  },
+  "xdg": {
+   "xdg/rpiv-ask-user-question/config.json": "{\"collapseKey\":\"ctrl+]\",\"from\":\"xdg\"}",
+   ".config/rpiv-ask-user-question/config.json": "{\"from\":\"legacy\"}"
+  },
+  "xdgMalformed": {
+   "xdg/rpiv-ask-user-question/config.json": "{not json",
+   ".config/rpiv-ask-user-question/config.json": "{\"from\":\"legacy\"}"
+  },
+  "legacyMalformed": {
+   ".config/rpiv-ask-user-question/config.json": ""
+  },
+  "nonObjects": {
+   ".config/rpiv-ask-user-question/config.json": "42",
+   ".config/rpiv-ask-user-question/null.json": "null",
+   ".config/rpiv-ask-user-question/array.json": "[1,2]",
+   ".config/rpiv-ask-user-question/string.json": "\"hello\"",
+   ".config/rpiv-ask-user-question/nested.json": "{\"a\":{\"b\":[1,\"two\",null,true]},\"n\":1.5}"
+  },
+  "tilde": {
+   "cfg/rpiv-ask-user-question/config.json": "{\"from\":\"tilde\"}"
+  },
+  "dir": {
+   ".config/rpiv-ask-user-question/config.json/inner": "x"
+  }
+ },
+ "loads": [
+  {
+   "home": "empty",
+   "xdg": "unset",
+   "xdgValue": null,
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "empty",
+   "xdg": "empty",
+   "xdgValue": "",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "empty",
+   "xdg": "blank",
+   "xdgValue": "   ",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "empty",
+   "xdg": "relative",
+   "xdgValue": "relative/dir",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "empty",
+   "xdg": "absolute",
+   "xdgValue": "@@HOME@@/xdg",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "empty",
+   "xdg": "absolutePadded",
+   "xdgValue": "  @@HOME@@/xdg  ",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "empty",
+   "xdg": "tildeSlash",
+   "xdgValue": "~/cfg",
+   "file": "",
+   "path": "@@HOME@@/cfg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "empty",
+   "xdg": "tilde",
+   "xdgValue": "~",
+   "file": "",
+   "path": "@@HOME@@/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "empty",
+   "xdg": "tildeUser",
+   "xdgValue": "~user/cfg",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "legacy",
+   "xdg": "unset",
+   "xdgValue": null,
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "collapseKey": "alt+o",
+    "guidance": {
+     "promptSnippet": "legacy"
+    }
+   },
+   "warnings": []
+  },
+  {
+   "home": "legacy",
+   "xdg": "empty",
+   "xdgValue": "",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "collapseKey": "alt+o",
+    "guidance": {
+     "promptSnippet": "legacy"
+    }
+   },
+   "warnings": []
+  },
+  {
+   "home": "legacy",
+   "xdg": "blank",
+   "xdgValue": "   ",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "collapseKey": "alt+o",
+    "guidance": {
+     "promptSnippet": "legacy"
+    }
+   },
+   "warnings": []
+  },
+  {
+   "home": "legacy",
+   "xdg": "relative",
+   "xdgValue": "relative/dir",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "collapseKey": "alt+o",
+    "guidance": {
+     "promptSnippet": "legacy"
+    }
+   },
+   "warnings": []
+  },
+  {
+   "home": "legacy",
+   "xdg": "absolute",
+   "xdgValue": "@@HOME@@/xdg",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {
+    "collapseKey": "alt+o",
+    "guidance": {
+     "promptSnippet": "legacy"
+    }
+   },
+   "warnings": []
+  },
+  {
+   "home": "legacy",
+   "xdg": "absolutePadded",
+   "xdgValue": "  @@HOME@@/xdg  ",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {
+    "collapseKey": "alt+o",
+    "guidance": {
+     "promptSnippet": "legacy"
+    }
+   },
+   "warnings": []
+  },
+  {
+   "home": "legacy",
+   "xdg": "tildeSlash",
+   "xdgValue": "~/cfg",
+   "file": "",
+   "path": "@@HOME@@/cfg/rpiv-ask-user-question/config.json",
+   "value": {
+    "collapseKey": "alt+o",
+    "guidance": {
+     "promptSnippet": "legacy"
+    }
+   },
+   "warnings": []
+  },
+  {
+   "home": "legacy",
+   "xdg": "tilde",
+   "xdgValue": "~",
+   "file": "",
+   "path": "@@HOME@@/rpiv-ask-user-question/config.json",
+   "value": {
+    "collapseKey": "alt+o",
+    "guidance": {
+     "promptSnippet": "legacy"
+    }
+   },
+   "warnings": []
+  },
+  {
+   "home": "legacy",
+   "xdg": "tildeUser",
+   "xdgValue": "~user/cfg",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "collapseKey": "alt+o",
+    "guidance": {
+     "promptSnippet": "legacy"
+    }
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdg",
+   "xdg": "unset",
+   "xdgValue": null,
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdg",
+   "xdg": "empty",
+   "xdgValue": "",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdg",
+   "xdg": "blank",
+   "xdgValue": "   ",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdg",
+   "xdg": "relative",
+   "xdgValue": "relative/dir",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdg",
+   "xdg": "absolute",
+   "xdgValue": "@@HOME@@/xdg",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {
+    "collapseKey": "ctrl+]",
+    "from": "xdg"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdg",
+   "xdg": "absolutePadded",
+   "xdgValue": "  @@HOME@@/xdg  ",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {
+    "collapseKey": "ctrl+]",
+    "from": "xdg"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdg",
+   "xdg": "tildeSlash",
+   "xdgValue": "~/cfg",
+   "file": "",
+   "path": "@@HOME@@/cfg/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdg",
+   "xdg": "tilde",
+   "xdgValue": "~",
+   "file": "",
+   "path": "@@HOME@@/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdg",
+   "xdg": "tildeUser",
+   "xdgValue": "~user/cfg",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdgMalformed",
+   "xdg": "unset",
+   "xdgValue": null,
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdgMalformed",
+   "xdg": "empty",
+   "xdgValue": "",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdgMalformed",
+   "xdg": "blank",
+   "xdgValue": "   ",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdgMalformed",
+   "xdg": "relative",
+   "xdgValue": "relative/dir",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdgMalformed",
+   "xdg": "absolute",
+   "xdgValue": "@@HOME@@/xdg",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/xdg/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "xdgMalformed",
+   "xdg": "absolutePadded",
+   "xdgValue": "  @@HOME@@/xdg  ",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/xdg/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "xdgMalformed",
+   "xdg": "tildeSlash",
+   "xdgValue": "~/cfg",
+   "file": "",
+   "path": "@@HOME@@/cfg/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdgMalformed",
+   "xdg": "tilde",
+   "xdgValue": "~",
+   "file": "",
+   "path": "@@HOME@@/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "xdgMalformed",
+   "xdg": "tildeUser",
+   "xdgValue": "~user/cfg",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "legacy"
+   },
+   "warnings": []
+  },
+  {
+   "home": "legacyMalformed",
+   "xdg": "unset",
+   "xdgValue": null,
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "legacyMalformed",
+   "xdg": "empty",
+   "xdgValue": "",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "legacyMalformed",
+   "xdg": "blank",
+   "xdgValue": "   ",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "legacyMalformed",
+   "xdg": "relative",
+   "xdgValue": "relative/dir",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "legacyMalformed",
+   "xdg": "absolute",
+   "xdgValue": "@@HOME@@/xdg",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "legacyMalformed",
+   "xdg": "absolutePadded",
+   "xdgValue": "  @@HOME@@/xdg  ",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "legacyMalformed",
+   "xdg": "tildeSlash",
+   "xdgValue": "~/cfg",
+   "file": "",
+   "path": "@@HOME@@/cfg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "legacyMalformed",
+   "xdg": "tilde",
+   "xdgValue": "~",
+   "file": "",
+   "path": "@@HOME@@/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "legacyMalformed",
+   "xdg": "tildeUser",
+   "xdgValue": "~user/cfg",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "unset",
+   "xdgValue": null,
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "unset",
+   "xdgValue": null,
+   "file": "null.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/null.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "unset",
+   "xdgValue": null,
+   "file": "array.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/array.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "unset",
+   "xdgValue": null,
+   "file": "string.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/string.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "unset",
+   "xdgValue": null,
+   "file": "nested.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/nested.json",
+   "value": {
+    "a": {
+     "b": [
+      1,
+      "two",
+      null,
+      true
+     ]
+    },
+    "n": 1.5
+   },
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "empty",
+   "xdgValue": "",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "empty",
+   "xdgValue": "",
+   "file": "null.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/null.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "empty",
+   "xdgValue": "",
+   "file": "array.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/array.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "empty",
+   "xdgValue": "",
+   "file": "string.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/string.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "empty",
+   "xdgValue": "",
+   "file": "nested.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/nested.json",
+   "value": {
+    "a": {
+     "b": [
+      1,
+      "two",
+      null,
+      true
+     ]
+    },
+    "n": 1.5
+   },
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "blank",
+   "xdgValue": "   ",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "blank",
+   "xdgValue": "   ",
+   "file": "null.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/null.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "blank",
+   "xdgValue": "   ",
+   "file": "array.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/array.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "blank",
+   "xdgValue": "   ",
+   "file": "string.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/string.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "blank",
+   "xdgValue": "   ",
+   "file": "nested.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/nested.json",
+   "value": {
+    "a": {
+     "b": [
+      1,
+      "two",
+      null,
+      true
+     ]
+    },
+    "n": 1.5
+   },
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "relative",
+   "xdgValue": "relative/dir",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "relative",
+   "xdgValue": "relative/dir",
+   "file": "null.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/null.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "relative",
+   "xdgValue": "relative/dir",
+   "file": "array.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/array.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "relative",
+   "xdgValue": "relative/dir",
+   "file": "string.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/string.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "relative",
+   "xdgValue": "relative/dir",
+   "file": "nested.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/nested.json",
+   "value": {
+    "a": {
+     "b": [
+      1,
+      "two",
+      null,
+      true
+     ]
+    },
+    "n": 1.5
+   },
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "absolute",
+   "xdgValue": "@@HOME@@/xdg",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "absolute",
+   "xdgValue": "@@HOME@@/xdg",
+   "file": "null.json",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/null.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "absolute",
+   "xdgValue": "@@HOME@@/xdg",
+   "file": "array.json",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/array.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "absolute",
+   "xdgValue": "@@HOME@@/xdg",
+   "file": "string.json",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/string.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "absolute",
+   "xdgValue": "@@HOME@@/xdg",
+   "file": "nested.json",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/nested.json",
+   "value": {
+    "a": {
+     "b": [
+      1,
+      "two",
+      null,
+      true
+     ]
+    },
+    "n": 1.5
+   },
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "absolutePadded",
+   "xdgValue": "  @@HOME@@/xdg  ",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "absolutePadded",
+   "xdgValue": "  @@HOME@@/xdg  ",
+   "file": "null.json",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/null.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "absolutePadded",
+   "xdgValue": "  @@HOME@@/xdg  ",
+   "file": "array.json",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/array.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "absolutePadded",
+   "xdgValue": "  @@HOME@@/xdg  ",
+   "file": "string.json",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/string.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "absolutePadded",
+   "xdgValue": "  @@HOME@@/xdg  ",
+   "file": "nested.json",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/nested.json",
+   "value": {
+    "a": {
+     "b": [
+      1,
+      "two",
+      null,
+      true
+     ]
+    },
+    "n": 1.5
+   },
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tildeSlash",
+   "xdgValue": "~/cfg",
+   "file": "",
+   "path": "@@HOME@@/cfg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tildeSlash",
+   "xdgValue": "~/cfg",
+   "file": "null.json",
+   "path": "@@HOME@@/cfg/rpiv-ask-user-question/null.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tildeSlash",
+   "xdgValue": "~/cfg",
+   "file": "array.json",
+   "path": "@@HOME@@/cfg/rpiv-ask-user-question/array.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tildeSlash",
+   "xdgValue": "~/cfg",
+   "file": "string.json",
+   "path": "@@HOME@@/cfg/rpiv-ask-user-question/string.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tildeSlash",
+   "xdgValue": "~/cfg",
+   "file": "nested.json",
+   "path": "@@HOME@@/cfg/rpiv-ask-user-question/nested.json",
+   "value": {
+    "a": {
+     "b": [
+      1,
+      "two",
+      null,
+      true
+     ]
+    },
+    "n": 1.5
+   },
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tilde",
+   "xdgValue": "~",
+   "file": "",
+   "path": "@@HOME@@/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tilde",
+   "xdgValue": "~",
+   "file": "null.json",
+   "path": "@@HOME@@/rpiv-ask-user-question/null.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tilde",
+   "xdgValue": "~",
+   "file": "array.json",
+   "path": "@@HOME@@/rpiv-ask-user-question/array.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tilde",
+   "xdgValue": "~",
+   "file": "string.json",
+   "path": "@@HOME@@/rpiv-ask-user-question/string.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tilde",
+   "xdgValue": "~",
+   "file": "nested.json",
+   "path": "@@HOME@@/rpiv-ask-user-question/nested.json",
+   "value": {
+    "a": {
+     "b": [
+      1,
+      "two",
+      null,
+      true
+     ]
+    },
+    "n": 1.5
+   },
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tildeUser",
+   "xdgValue": "~user/cfg",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tildeUser",
+   "xdgValue": "~user/cfg",
+   "file": "null.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/null.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tildeUser",
+   "xdgValue": "~user/cfg",
+   "file": "array.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/array.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tildeUser",
+   "xdgValue": "~user/cfg",
+   "file": "string.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/string.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "nonObjects",
+   "xdg": "tildeUser",
+   "xdgValue": "~user/cfg",
+   "file": "nested.json",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/nested.json",
+   "value": {
+    "a": {
+     "b": [
+      1,
+      "two",
+      null,
+      true
+     ]
+    },
+    "n": 1.5
+   },
+   "warnings": []
+  },
+  {
+   "home": "tilde",
+   "xdg": "unset",
+   "xdgValue": null,
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "tilde",
+   "xdg": "empty",
+   "xdgValue": "",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "tilde",
+   "xdg": "blank",
+   "xdgValue": "   ",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "tilde",
+   "xdg": "relative",
+   "xdgValue": "relative/dir",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "tilde",
+   "xdg": "absolute",
+   "xdgValue": "@@HOME@@/xdg",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "tilde",
+   "xdg": "absolutePadded",
+   "xdgValue": "  @@HOME@@/xdg  ",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "tilde",
+   "xdg": "tildeSlash",
+   "xdgValue": "~/cfg",
+   "file": "",
+   "path": "@@HOME@@/cfg/rpiv-ask-user-question/config.json",
+   "value": {
+    "from": "tilde"
+   },
+   "warnings": []
+  },
+  {
+   "home": "tilde",
+   "xdg": "tilde",
+   "xdgValue": "~",
+   "file": "",
+   "path": "@@HOME@@/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "tilde",
+   "xdg": "tildeUser",
+   "xdgValue": "~user/cfg",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": []
+  },
+  {
+   "home": "dir",
+   "xdg": "unset",
+   "xdgValue": null,
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "dir",
+   "xdg": "empty",
+   "xdgValue": "",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "dir",
+   "xdg": "blank",
+   "xdgValue": "   ",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "dir",
+   "xdg": "relative",
+   "xdgValue": "relative/dir",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "dir",
+   "xdg": "absolute",
+   "xdgValue": "@@HOME@@/xdg",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "dir",
+   "xdg": "absolutePadded",
+   "xdgValue": "  @@HOME@@/xdg  ",
+   "file": "",
+   "path": "@@HOME@@/xdg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "dir",
+   "xdg": "tildeSlash",
+   "xdgValue": "~/cfg",
+   "file": "",
+   "path": "@@HOME@@/cfg/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "dir",
+   "xdg": "tilde",
+   "xdgValue": "~",
+   "file": "",
+   "path": "@@HOME@@/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  },
+  {
+   "home": "dir",
+   "xdg": "tildeUser",
+   "xdgValue": "~user/cfg",
+   "file": "",
+   "path": "@@HOME@@/.config/rpiv-ask-user-question/config.json",
+   "value": {},
+   "warnings": [
+    "rpiv-config: invalid JSON at @@HOME@@/.config/rpiv-ask-user-question/config.json, using default ({}) — "
+   ]
+  }
+ ],
+ "guidance": [
+  {
+   "input": null,
+   "out": {}
+  },
+  {
+   "input": "@@UNDEFINED@@",
+   "out": {}
+  },
+  {
+   "input": 0,
+   "out": {}
+  },
+  {
+   "input": "text",
+   "out": {}
+  },
+  {
+   "input": [],
+   "out": {}
+  },
+  {
+   "input": [
+    "x"
+   ],
+   "out": {}
+  },
+  {
+   "input": {},
+   "out": {}
+  },
+  {
+   "input": {
+    "promptSnippet": ""
+   },
+   "out": {}
+  },
+  {
+   "input": {
+    "promptSnippet": "snippet"
+   },
+   "out": {
+    "promptSnippet": "snippet"
+   }
+  },
+  {
+   "input": {
+    "promptSnippet": 3
+   },
+   "out": {}
+  },
+  {
+   "input": {
+    "promptGuidelines": []
+   },
+   "out": {}
+  },
+  {
+   "input": {
+    "promptGuidelines": [
+     "one",
+     "two"
+    ]
+   },
+   "out": {
+    "promptGuidelines": [
+     "one",
+     "two"
+    ]
+   }
+  },
+  {
+   "input": {
+    "promptGuidelines": [
+     "one",
+     ""
+    ]
+   },
+   "out": {}
+  },
+  {
+   "input": {
+    "promptGuidelines": [
+     "one",
+     2
+    ]
+   },
+   "out": {}
+  },
+  {
+   "input": {
+    "promptGuidelines": "one"
+   },
+   "out": {}
+  },
+  {
+   "input": {
+    "promptSnippet": "s",
+    "promptGuidelines": [
+     "g"
+    ],
+    "extra": true
+   },
+   "out": {
+    "promptSnippet": "s",
+    "promptGuidelines": [
+     "g"
+    ]
+   }
+  }
+ ]
+}

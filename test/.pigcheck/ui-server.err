@@ -1,0 +1,26 @@
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 51916)
+Traceback (most recent call last):
+  File "/Users/danielbooth/.local/share/mise/installs/python/3.14.8/lib/python3.14/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/danielbooth/.local/share/mise/installs/python/3.14.8/lib/python3.14/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/danielbooth/.local/share/mise/installs/python/3.14.8/lib/python3.14/socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "/Users/danielbooth/.local/share/mise/installs/python/3.14.8/lib/python3.14/http/server.py", line 500, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/danielbooth/.local/share/mise/installs/python/3.14.8/lib/python3.14/http/server.py", line 488, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/ui-server.py", line 74, in do_POST
+    self.wfile.write(chunk({"content": (" " if i else "") + word}))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/danielbooth/.local/share/mise/installs/python/3.14.8/lib/python3.14/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+BrokenPipeError: [Errno 32] Broken pipe
+----------------------------------------

@@ -1,0 +1,3 @@
+[{"tool":"web_search","args":{"query":"release notes"}},
+ {"tool":"fetch_content","args":{"url":"https://8.8.8.8/article"}},
+ {"text":"bs none done"}]

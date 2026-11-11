@@ -1,0 +1,155 @@
+===== narrow startup =====
+slo-manage, slo-optimize,
+synth-check-status, synth-investigate-check,
+synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp)
+~/projects/work/danielboothcloud/pi-aio/go/a
+io
+    Extension shortcut conflict: 'ctrl+p' is
+built-in shortcut for app.session.togglePath
+and
+/Users/danielbooth/projects/work/danielbooth
+cloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielbooth
+cloud/pi-aio/go/aio.
+  path (temp)
+~/projects/work/danielboothcloud/pi-aio/go/a
+io
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielbooth
+cloud/pi-aio/go/aio conflicts with built-in
+shortcut. Skipping.
+
+
+╭─ ● Default · 0% ─────────── $0.000 – m1 ─╮
+│                                          │
+╰─ main * ─────────────────────── ui-work ─╯
+===== bash ran =====
+slo-manage, slo-optimize,
+synth-check-status, synth-investigate-check,
+synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp)
+~/projects/work/danielboothcloud/pi-aio/go/a
+io
+    Extension shortcut conflict: 'ctrl+p' is
+built-in shortcut for app.session.togglePath
+and
+/Users/danielbooth/projects/work/danielbooth
+cloud/pi-aio/go/aio. Using
+/Users/danielbooth/projects/work/danielbooth
+cloud/pi-aio/go/aio.
+  path (temp)
+~/projects/work/danielboothcloud/pi-aio/go/a
+io
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielbooth
+cloud/pi-aio/go/aio conflicts with built-in
+shortcut. Skipping.
+
+
+╭─ ● Default · 0% ─────────── $0.000 – m1 ─╮
+│                                          │
+╰─ main * ─────────────────────── ui-work ─╯
+===== narrow queue rows =====
+/Users/danielbooth/projects/work/danielbooth
+cloud/pi-aio/go/aio conflicts with built-in
+shortcut. Skipping.
+
+
+ first prompt
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to
+ keep the agent
+
+ Steering: queued one
+ Steering: queued two
+ ↳ Option+Up to edit all queued messages
+
+ ⠦ Working
+
+╭─ ● Default · 0% · 4s ────── $0.000 – m1 ─╮
+│                                          │
+├──────────────────────────────────────────┤
+│ queue · 2 pending messages · Enter sends │
+│ 1 queued one · steer                     │
+│ 2 queued two · steer                     │
+╰─ main * · ui check session ──── ui-work ─╯
+===== after empty enter (interrupt, send next) =====
+shortcut. Skipping.
+
+
+ first prompt
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to
+ keep the agent
+
+ Operation aborted
+
+
+ queued one
+
+
+
+ queued two
+
+
+ q1 answered
+
+╭─ ● Default · 0% · 0s ────── $0.000 – m1 ─╮
+│                                          │
+╰─ main * · ui check session ──── ui-work ─╯
+===== end =====
+shortcut. Skipping.
+
+
+ first prompt
+
+
+ hello from the fixture
+
+
+ second prompt slow
+
+
+ slow streaming answer with many words to
+ keep the agent
+
+ Operation aborted
+
+
+ queued one
+
+
+
+ queued two
+
+
+ q1 answered
+
+╭─ ● Default · 0% · 18s ───── $0.000 – m1 ─╮
+│                                          │
+╰─ main * · ui check session ──── ui-work ─╯

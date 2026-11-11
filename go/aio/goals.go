@@ -8,6 +8,7 @@ package aio
 // renders as a plain-text card, and the status has no theme tone.
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"time"
@@ -68,7 +69,35 @@ func (h goalHost) Branch() []json.RawMessage { return sessionBranch(h.ctx) }
 func (h goalHost) HasModel() bool            { return h.ctx.Model() != "" }
 
 func (h goalHost) Complete(systemPrompt, prompt string) (map[string]any, error) {
-	return completeOnce(h.ctx, systemPrompt, prompt)
+	return completeOnce(context.Background(), h.ctx, systemPrompt, prompt)
+}
+
+// reviewHost is goalHost whose review completion aborts with the goal_done
+// tool call, as goals/index.ts passes the tool's signal to the review.
+type reviewHost struct {
+	goalHost
+	abort context.Context
+}
+
+func (h reviewHost) Complete(systemPrompt, prompt string) (map[string]any, error) {
+	return completeOnce(h.abort, h.ctx, systemPrompt, prompt)
+}
+
+// abortScope is a context.Context cancelled when the request of ctx is
+// cancelled. sdk.Context reports cancellation through Done but is not a
+// context.Context. Call the returned cancel when the work ends.
+func abortScope(ctx sdk.Context) (context.Context, context.CancelFunc) {
+	scope, cancel := context.WithCancel(context.Background())
+	if done := ctx.Done(); done != nil {
+		go func() {
+			select {
+			case <-done:
+				cancel()
+			case <-scope.Done():
+			}
+		}()
+	}
+	return scope, cancel
 }
 
 func (h goalHost) Exec(command string, args []string) (string, int, error) {
@@ -95,12 +124,14 @@ func sessionBranch(ctx sdk.Context) []json.RawMessage {
 
 // completeOnce runs one isolated completion on the session model. A model
 // failure comes back as an assistant message with stopReason "error".
-func completeOnce(ctx sdk.Context, systemPrompt, prompt string) (map[string]any, error) {
-	return completeWith(ctx, ctx.ModelProvider(), ctx.Model(), systemPrompt, prompt)
+func completeOnce(abort context.Context, ctx sdk.Context, systemPrompt, prompt string) (map[string]any, error) {
+	return completeWith(abort, ctx, ctx.ModelProvider(), ctx.Model(), systemPrompt, prompt)
 }
 
-// completeWith runs one isolated completion on the given model.
-func completeWith(ctx sdk.Context, provider, id, systemPrompt, prompt string) (map[string]any, error) {
+// completeWith runs one isolated completion on the given model. Cancelling
+// abort aborts the provider request, and the result is the provider's
+// message with stopReason "aborted" (Pi's options.signal).
+func completeWith(abort context.Context, ctx sdk.Context, provider, id, systemPrompt, prompt string) (map[string]any, error) {
 	registry := ctx.ModelRegistry()
 	model, err := registry.Find(provider, id)
 	if err != nil {
@@ -109,7 +140,7 @@ func completeWith(ctx sdk.Context, provider, id, systemPrompt, prompt string) (m
 	if model == nil {
 		return nil, errNoModel
 	}
-	return registry.Complete(model, map[string]any{
+	return registry.CompleteContext(abort, model, map[string]any{
 		"systemPrompt": systemPrompt,
 		"messages": []any{map[string]any{
 			"role": "user", "content": prompt, "timestamp": time.Now().UnixMilli(),
@@ -174,7 +205,9 @@ func registerGoals(e *sdk.Extension) {
 			},
 		},
 		Execute: func(ctx sdk.Context, params map[string]any) (any, error) {
-			out, err := m.Done(goalHost{ctx}, str(params, "summary"),
+			abort, cancel := abortScope(ctx)
+			defer cancel()
+			out, err := m.Done(reviewHost{goalHost{ctx}, abort}, str(params, "summary"),
 				func() bool { return ctx.Err() != nil },
 				func(update string) { _ = ctx.OnUpdate(sdk.ToolResult{Content: update, Details: map[string]any{}}) })
 			if err != nil {

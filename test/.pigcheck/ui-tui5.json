@@ -1,0 +1,6 @@
+{"argv": ["/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pigfork/pig", "-ne", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/fixture-provider.ts", "--model", "fixture/m1", "--no-session"],
+ "env": {}, "cols": 100, "rows": 30,
+ "steps": [{"wait": "╭", "timeout": 200}, {"sleep": 2},
+  {"send": "first prompt\r"}, {"wait": "hello from", "timeout": 30}, {"sleep": 1.5},
+  {"send": "\u001b"}, {"send": "\u001b"}, {"sleep": 2}, {"screen": "double esc with doubleEscapeAction none"},
+  {"send": "/rewind\r"}, {"sleep": 2}, {"screen": "/rewind still works"}]}

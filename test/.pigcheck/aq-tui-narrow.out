@@ -1,0 +1,95 @@
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.prefix, expected /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/venv, got /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work/../venv
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.exec_prefix, expected /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/venv, got /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq-work/../venv
+===== stacked preview at 60 cols =====
+    Extension shortcut conflict: 'ctrl+p' is built-in
+shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/tes
+t/.pigcheck/gocopy/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/tes
+t/.pigcheck/gocopy/aio.
+────────────────────────────────────────────────────────────
+
+  Layout
+
+ Which layout?
+
+❯ 1. Code
+     Code sample
+  2. List
+     Markdown list
+  3. Type something.
+
+┌──────────────────────────────────────────┐
+│   const answer = 42;                     │
+└──────────────────────────────────────────┘
+
+Notes: press n to add notes
+
+────────────────────────────────────────────────────────────
+
+ Enter to select · ↑/↓/j/k to navigate · n to add notes · E…
+
+
+
+===== second option =====
+    Extension shortcut conflict: 'ctrl+p' is built-in
+shortcut for app.session.togglePath and
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/tes
+t/.pigcheck/gocopy/aio. Using
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/tes
+t/.pigcheck/gocopy/aio.
+────────────────────────────────────────────────────────────
+
+  Layout
+
+ Which layout?
+
+  1. Code
+     Code sample
+❯ 2. List
+     Markdown list
+  3. Type something.
+
+┌──────────────────────────────────────────┐
+│ Plan                                     │
+│                                          │
+│ - one                                    │
+│ - two                                    │
+└──────────────────────────────────────────┘
+
+Notes: press n to add notes
+
+────────────────────────────────────────────────────────────
+
+ Enter to select · ↑/↓/j/k to navigate · n to add notes · E…
+===== done =====
+y/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/tes
+t/.pigcheck/gocopy/aio conflicts with built-in shortcut.
+Skipping.
+
+
+ go
+
+
+
+ ask_user_question questions=[{"question":"Which
+ layout?","header":"Layout","options":[{"label":"Code","des
+ cription"...
+ User has answered your questions: "Which layout?"="List".
+ selected preview: ## Plan
+
+ - one
+ - **two**. You can now continue with the user's answers in
+ mind.
+
+
+ aq done
+
+────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/aq...
+↑20 ↓4 0.0%/128k (auto)                         (fixture) m1
+effort:off ● Default
