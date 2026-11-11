@@ -579,10 +579,20 @@ generated `dist/` tree without changing the package contract.
   "hidden" notice is also sent when the overlay hides itself.
   Group 10 (browser-search) is ported in `go/internal/browsersearch`. It owns
   `web_search` (registered at session start only when `aio.browserSearch`
-  selects a provider) and `fetch_content`. Camofox runs the embedded
-  `Readability.js` in the page, as TypeScript does. The CloakBrowser
-  fallback starts the same Node worker (`browser-search/cloak-worker.mjs`),
-  so a missing Node or worker fails one URL, never the load. Host names
+  selects a provider) and `fetch_content`. Its fetch chain deliberately
+  differs from TypeScript, which stays the native-Pi implementation. The
+  Camofox container runs only when `BROWSER_SEARCH_CAMOFOX_BASE` (or
+  `CAMOFOX_BASE`) is set. Then a local Camoufox worker runs: Python,
+  embedded from `worker/camoufox_worker.py` and started once with
+  `uv run --script` (PEP 723, `camoufox==0.5.9`). It evaluates the
+  embedded `Readability.js` as the container path does and blocks private
+  addresses with the Go SSRF rule list. Last, a plain HTTP fetch
+  (readeck go-readability v2, html-to-markdown) re-validates every
+  redirect and adds a warning notice and result text. There is no
+  CloakBrowser Node worker.
+  Missing Python, uv, or camoufox never prevents loading; the first start
+  downloads the Camoufox browser. `session_shutdown` stops the worker.
+  The real-browser test is opt-in (`AIO_CAMOUFOX_E2E=1`). Host names
   come from a port of the WHATWG URL host parser (`golang.org/x/net/idna`).
   Group 11 (frame, status-line, queue, session-nav, ui) is ported in
   `go/internal/{frame,statusline,queue,sessionnav,ui}`. As in `index.ts`,

@@ -1,0 +1,230 @@
+{
+ "policy": {
+  "schemes": [
+   "http",
+   "https"
+  ],
+  "blockedIPv4": [
+   "127.0.0.0/8",
+   "169.254.0.0/16",
+   "10.0.0.0/8",
+   "172.16.0.0/12",
+   "192.168.0.0/16",
+   "0.0.0.0/8",
+   "100.64.0.0/10",
+   "192.0.0.0/24",
+   "192.0.2.0/24",
+   "198.51.100.0/24",
+   "203.0.113.0/24",
+   "224.0.0.0/4",
+   "240.0.0.0/4"
+  ],
+  "blockedIPv6Patterns": [
+   "^::$",
+   "^::1$",
+   "(?i)^fe80:",
+   "(?i)^fc",
+   "(?i)^fd",
+   "(?i)^ff"
+  ],
+  "blockedHostnames": [
+   "instance-data.pai.googleapis.com",
+   "instance-data.pai.googleapis.com.",
+   "metadata.google.internal",
+   "metadata.google.internal."
+  ],
+  "localhostNames": [
+   "localhost",
+   "localhost."
+  ],
+  "blockedSuffixes": [
+   ".internal",
+   ".local",
+   ".lan"
+  ]
+ },
+ "hostCases": [
+  {
+   "host": "8.8.8.8",
+   "valid": true
+  },
+  {
+   "host": "93.184.216.34",
+   "valid": true
+  },
+  {
+   "host": "127.0.0.1",
+   "valid": false,
+   "reason": "Blocked IP: 127.0.0.1"
+  },
+  {
+   "host": "127.255.0.9",
+   "valid": false,
+   "reason": "Blocked IP: 127.255.0.9"
+  },
+  {
+   "host": "10.1.2.3",
+   "valid": false,
+   "reason": "Blocked IP: 10.1.2.3"
+  },
+  {
+   "host": "172.16.0.1",
+   "valid": false,
+   "reason": "Blocked IP: 172.16.0.1"
+  },
+  {
+   "host": "172.31.255.255",
+   "valid": false,
+   "reason": "Blocked IP: 172.31.255.255"
+  },
+  {
+   "host": "172.32.0.1",
+   "valid": true
+  },
+  {
+   "host": "192.168.1.1",
+   "valid": false,
+   "reason": "Blocked IP: 192.168.1.1"
+  },
+  {
+   "host": "169.254.169.254",
+   "valid": false,
+   "reason": "Blocked IP: 169.254.169.254"
+  },
+  {
+   "host": "100.64.0.1",
+   "valid": false,
+   "reason": "Blocked IP: 100.64.0.1"
+  },
+  {
+   "host": "100.128.0.1",
+   "valid": true
+  },
+  {
+   "host": "0.0.0.0",
+   "valid": false,
+   "reason": "Blocked IP: 0.0.0.0"
+  },
+  {
+   "host": "224.0.0.1",
+   "valid": false,
+   "reason": "Blocked IP: 224.0.0.1"
+  },
+  {
+   "host": "255.255.255.255",
+   "valid": false,
+   "reason": "Blocked IP: 255.255.255.255"
+  },
+  {
+   "host": "192.0.0.8",
+   "valid": false,
+   "reason": "Blocked IP: 192.0.0.8"
+  },
+  {
+   "host": "192.0.2.5",
+   "valid": false,
+   "reason": "Blocked IP: 192.0.2.5"
+  },
+  {
+   "host": "198.51.100.1",
+   "valid": false,
+   "reason": "Blocked IP: 198.51.100.1"
+  },
+  {
+   "host": "203.0.113.9",
+   "valid": false,
+   "reason": "Blocked IP: 203.0.113.9"
+  },
+  {
+   "host": "[::1]",
+   "valid": false,
+   "reason": "Blocked IPv6: ::1"
+  },
+  {
+   "host": "[::]",
+   "valid": false,
+   "reason": "Blocked IPv6: ::"
+  },
+  {
+   "host": "[fe80::1]",
+   "valid": false,
+   "reason": "Blocked IPv6: fe80::1"
+  },
+  {
+   "host": "[fd12::1]",
+   "valid": false,
+   "reason": "Blocked IPv6: fd12::1"
+  },
+  {
+   "host": "[fc00::1]",
+   "valid": false,
+   "reason": "Blocked IPv6: fc00::1"
+  },
+  {
+   "host": "[ff02::1]",
+   "valid": false,
+   "reason": "Blocked IPv6: ff02::1"
+  },
+  {
+   "host": "[2606:4700::1111]",
+   "valid": true
+  },
+  {
+   "host": "[::ffff:7f00:1]",
+   "valid": false,
+   "reason": "Blocked IPv6: ::ffff:7f00:1"
+  },
+  {
+   "host": "[::ffff:808:808]",
+   "valid": true
+  },
+  {
+   "host": "[::ffff:a00:1]",
+   "valid": false,
+   "reason": "Blocked IPv6: ::ffff:a00:1"
+  },
+  {
+   "host": "localhost",
+   "valid": false,
+   "reason": "Blocked hostname: localhost"
+  },
+  {
+   "host": "localhost.",
+   "valid": false,
+   "reason": "Blocked hostname: localhost"
+  },
+  {
+   "host": "metadata.google.internal",
+   "valid": false,
+   "reason": "Blocked hostname: cloud metadata endpoint"
+  },
+  {
+   "host": "instance-data.pai.googleapis.com",
+   "valid": false,
+   "reason": "Blocked hostname: cloud metadata endpoint"
+  },
+  {
+   "host": "printer.local",
+   "valid": false,
+   "reason": "Blocked TLD: printer.local"
+  },
+  {
+   "host": "nas.lan",
+   "valid": false,
+   "reason": "Blocked TLD: nas.lan"
+  },
+  {
+   "host": "db.internal",
+   "valid": false,
+   "reason": "Blocked TLD: db.internal"
+  },
+  {
+   "host": "example.com",
+   "valid": true
+  },
+  {
+   "host": "internal.example.com",
+   "valid": true
+  }
+ ]
+}

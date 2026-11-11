@@ -1,0 +1,204 @@
+===== start =====
+
+    ▄▄▄▄  ▄▄▄▄    v0.7.0+1.5.0
+   ▄▀▀▀▀▄▄▀▀▀▀▄   escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  Press ctrl+o to show full startup help and loaded resources.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  PiG can explain its own features and look up its docs. Ask it how to use or extend PiG.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs, import-dashboards,
+investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status, slo-investigate, slo-manage,
+slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'ctrl+p' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts with
+built-in shortcut. Skipping.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts with
+built-in shortcut. Skipping.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+╭─ ● Default · 0% ─────────────────────────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                                      │
+╰─ feature/pig * ─────────────────────────────────────────────────────────────────────────────────────────── bs2-work ─╯
+===== first result =====
+slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'ctrl+p' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts with
+built-in shortcut. Skipping.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts with
+built-in shortcut. Skipping.
+
+
+ go
+
+
+
+ fetch_content url="http://8.8.8.8/bs2/article"
+ ## Local release notes
+
+ # Local release notes
+
+
+ Version 2 adds offline search. The index is built locally and stays on the machine, so queries remain private.
+ The fetch chain tries the local Camoufox browser first and then a plain HTTP request. See the chain notes.
+ Upgrading needs no configuration change; existing settings keep working after the upgrade.
+
+
+
+
+ fetch_content urls=["http://8.8.8.8/bs2/article","http://8.8.8.8/bs2/other"] format="text"
+ ## Local release notes
+
+ Local release notes
+
+
+ Version 2 adds offline search. The index is built locally and stays on the machine, so queries remain private.
+ The fetch chain tries the local Camoufox browser first and then a plain HTTP request. See the chain notes.
+ Upgrading needs no configuration change; existing settings keep working after the upgrade.
+
+
+ ... (11 more lines, ctrl+o to expand)
+
+
+ bs2 done
+
+╭─ ● Default · 0% · 26s ───────────────────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                                      │
+╰─ feature/pig * ─────────────────────────────────────────────────────────────────────────────────────────── bs2-work ─╯
+===== after run =====
+slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'ctrl+p' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts with
+built-in shortcut. Skipping.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts with
+built-in shortcut. Skipping.
+
+
+ go
+
+
+
+ fetch_content url="http://8.8.8.8/bs2/article"
+ ## Local release notes
+
+ # Local release notes
+
+
+ Version 2 adds offline search. The index is built locally and stays on the machine, so queries remain private.
+ The fetch chain tries the local Camoufox browser first and then a plain HTTP request. See the chain notes.
+ Upgrading needs no configuration change; existing settings keep working after the upgrade.
+
+
+
+
+ fetch_content urls=["http://8.8.8.8/bs2/article","http://8.8.8.8/bs2/other"] format="text"
+ ## Local release notes
+
+ Local release notes
+
+
+ Version 2 adds offline search. The index is built locally and stays on the machine, so queries remain private.
+ The fetch chain tries the local Camoufox browser first and then a plain HTTP request. See the chain notes.
+ Upgrading needs no configuration change; existing settings keep working after the upgrade.
+
+
+ ... (11 more lines, ctrl+o to expand)
+
+
+ bs2 done
+
+╭─ ● Default · 0% · 27s ───────────────────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                                      │
+╰─ feature/pig * ─────────────────────────────────────────────────────────────────────────────────────────── bs2-work ─╯
+===== expanded =====
+ fetch_content
+   url: http://8.8.8.8/bs2/article
+ ## Local release notes
+
+ # Local release notes
+
+
+ Version 2 adds offline search. The index is built locally and stays on the machine, so queries remain private.
+ The fetch chain tries the local Camoufox browser first and then a plain HTTP request. See the chain notes.
+ Upgrading needs no configuration change; existing settings keep working after the upgrade.
+
+
+
+
+ fetch_content
+   urls: [
+       "http://8.8.8.8/bs2/article",
+       "http://8.8.8.8/bs2/other"
+     ]
+   format: text
+ ## Local release notes
+
+ Local release notes
+
+
+ Version 2 adds offline search. The index is built locally and stays on the machine, so queries remain private.
+ The fetch chain tries the local Camoufox browser first and then a plain HTTP request. See the chain notes.
+ Upgrading needs no configuration change; existing settings keep working after the upgrade.
+
+
+ ---
+
+ ## Other local page
+
+ Other local page
+
+
+ Version 2 adds offline search. The index is built locally and stays on the machine, so queries remain private.
+ The fetch chain tries the local Camoufox browser first and then a plain HTTP request. See the chain notes.
+ Upgrading needs no configuration change; existing settings keep working after the upgrade.
+
+
+
+ bs2 done
+
+ Tool output: expanded
+
+╭─ ● Default · 0% · 28s ───────────────────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                                      │
+╰─ feature/pig * ─────────────────────────────────────────────────────────────────────────────────────────── bs2-work ─╯

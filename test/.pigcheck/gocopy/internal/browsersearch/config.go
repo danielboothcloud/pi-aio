@@ -2,7 +2,8 @@ package browsersearch
 
 // Runtime configuration (port of browser-search/config.ts and
 // cloak-settings.ts): the environment constants and the aio.browserSearch
-// section of Pi settings.
+// section of Pi settings, plus the Go-only settings of the local Camoufox
+// worker and the plain HTTP fallback.
 
 import (
 	"fmt"
@@ -28,14 +29,49 @@ type Env struct {
 	CamofoxAutoRestart bool   `json:"camofoxAutoRestart"`
 	CamofoxRestartCmd  string `json:"camofoxRestartCmd"`
 	Debug              bool   `json:"debug"`
-	CloakMaxChars      int    `json:"cloakMaxChars"`
-	SearxngTimeoutMs   int    `json:"searxngTimeoutMs"`
-	ExaTimeoutMs       int    `json:"exaTimeoutMs"`
-	CamofoxTimeoutMs   int    `json:"camofoxTimeoutMs"`
-	MaxInlineContent   int    `json:"maxInlineContent"`
-	// NodeBinary is BROWSER_SEARCH_NODE_BINARY ("" when unset).
-	NodeBinary string `json:"-"`
+	// CloakMaxChars is BROWSER_SEARCH_CLOAK_MAX_CHARS. TypeScript caps the
+	// CloakBrowser content with it; Go caps the Camoufox worker and HTTP
+	// fallback content, the tiers that replace CloakBrowser.
+	CloakMaxChars    int `json:"cloakMaxChars"`
+	SearxngTimeoutMs int `json:"searxngTimeoutMs"`
+	ExaTimeoutMs     int `json:"exaTimeoutMs"`
+	CamofoxTimeoutMs int `json:"camofoxTimeoutMs"`
+	MaxInlineContent int `json:"maxInlineContent"`
+
+	// The fields below are Go-only (the Go fetch chain diverges from
+	// TypeScript), so they stay out of the golden JSON.
+
+	// CamofoxExplicit is true when BROWSER_SEARCH_CAMOFOX_BASE or
+	// CAMOFOX_BASE is set to a non-blank value. Only then does the
+	// container tier run; otherwise localhost:9377 is never contacted.
+	CamofoxExplicit bool `json:"-"`
+	// UvBinary is BROWSER_SEARCH_UV ("" means uv on PATH).
+	UvBinary string `json:"-"`
+	// PythonBinary is BROWSER_SEARCH_PYTHON ("" lets uv choose); uv runs
+	// the worker on this interpreter.
+	PythonBinary string `json:"-"`
+	// CamoufoxHeadless is BROWSER_SEARCH_CAMOUFOX_HEADLESS (default true;
+	// 0, false, or no shows the browser window).
+	CamoufoxHeadless bool `json:"-"`
+	// CamoufoxStartupTimeoutMs bounds the worker start (uv install, first
+	// browser download, launch): BROWSER_SEARCH_CAMOUFOX_STARTUP_TIMEOUT_MS.
+	CamoufoxStartupTimeoutMs int `json:"-"`
+	// CamoufoxPageTimeoutMs is the per-URL navigation budget:
+	// BROWSER_SEARCH_CAMOUFOX_PAGE_TIMEOUT_MS.
+	CamoufoxPageTimeoutMs int `json:"-"`
+	// CamoufoxProxy is BROWSER_SEARCH_CAMOUFOX_PROXY: an optional proxy
+	// server URL for the local browser ("" for none).
+	CamoufoxProxy string `json:"-"`
+	// CamoufoxWorkerDir is BROWSER_SEARCH_CAMOUFOX_WORKER_DIR: where Go
+	// writes the worker files ("" for <user cache>/aio/browser-search).
+	CamoufoxWorkerDir string `json:"-"`
+	// HTTPTimeoutMs and HTTPMaxBytes bound the plain HTTP fallback:
+	// BROWSER_SEARCH_HTTP_TIMEOUT_MS and BROWSER_SEARCH_HTTP_MAX_BYTES.
+	HTTPTimeoutMs int `json:"-"`
+	HTTPMaxBytes  int `json:"-"`
 }
+
+var disabledRE = regexp.MustCompile(`(?i)^(0|false|no|off)$`)
 
 // LookupEnv is os.LookupEnv.
 type LookupEnv func(string) (string, bool)
@@ -165,7 +201,30 @@ func LoadEnv(lookup LookupEnv) Env {
 	e.CamofoxTimeoutMs = positiveInteger(v, ok, 30_000)
 	v, ok = lookup("BROWSER_SEARCH_MAX_INLINE_CONTENT")
 	e.MaxInlineContent = positiveInteger(v, ok, 40_000)
-	e.NodeBinary, _ = lookup("BROWSER_SEARCH_NODE_BINARY")
+	for _, key := range []string{"BROWSER_SEARCH_CAMOFOX_BASE", "CAMOFOX_BASE"} {
+		if v, ok := lookup(key); ok {
+			e.CamofoxExplicit = jsstr.Trim(v) != ""
+			break
+		}
+	}
+	v, _ = lookup("BROWSER_SEARCH_UV")
+	e.UvBinary = jsstr.Trim(v)
+	v, _ = lookup("BROWSER_SEARCH_PYTHON")
+	e.PythonBinary = jsstr.Trim(v)
+	v, _ = lookup("BROWSER_SEARCH_CAMOUFOX_HEADLESS")
+	e.CamoufoxHeadless = !disabledRE.MatchString(jsstr.Trim(v))
+	v, ok = lookup("BROWSER_SEARCH_CAMOUFOX_STARTUP_TIMEOUT_MS")
+	e.CamoufoxStartupTimeoutMs = positiveInteger(v, ok, 1_800_000)
+	v, ok = lookup("BROWSER_SEARCH_CAMOUFOX_PAGE_TIMEOUT_MS")
+	e.CamoufoxPageTimeoutMs = positiveInteger(v, ok, 30_000)
+	v, _ = lookup("BROWSER_SEARCH_CAMOUFOX_PROXY")
+	e.CamoufoxProxy = jsstr.Trim(v)
+	v, _ = lookup("BROWSER_SEARCH_CAMOUFOX_WORKER_DIR")
+	e.CamoufoxWorkerDir = jsstr.Trim(v)
+	v, ok = lookup("BROWSER_SEARCH_HTTP_TIMEOUT_MS")
+	e.HTTPTimeoutMs = positiveInteger(v, ok, 20_000)
+	v, ok = lookup("BROWSER_SEARCH_HTTP_MAX_BYTES")
+	e.HTTPMaxBytes = positiveInteger(v, ok, 5<<20)
 	return e
 }
 

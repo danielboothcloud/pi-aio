@@ -4,14 +4,18 @@
 // It drives the real modules: config (the env constants and the
 // aio.browserSearch settings merge and load), url-validation (with the DNS
 // table in dns-stub.mjs), challenges, the SearXNG and Exa adapters and the
-// Camofox client against a local scripted HTTP server, cloakFetch with
-// browser-search/test-fixture-cloak-worker.mjs, fetchSingleUrl, and
+// Camofox client against a local scripted HTTP server, fetchSingleUrl, and
 // registerBrowserSearch through a harness (tool metadata, session_start
 // registration, and tool executes with injected and real backends). Nothing
-// leaves 127.0.0.1: the scripted server answers every backend call, and the
-// CloakBrowser worker is the fixture (BROWSER_SEARCH_NODE_BINARY points at a
-// wrapper that runs it). Server URLs are written with @@PORT@@, paths with
-// @@ROOT@@ and @@REPO@@.
+// leaves 127.0.0.1: the scripted server answers every backend call.
+// Server URLs are written with @@PORT@@, paths with @@ROOT@@ and @@REPO@@.
+//
+// The Go port replaces the CloakBrowser fallback with a local Camoufox
+// worker and a plain HTTP fallback (a deliberate divergence), so no case
+// that reaches cloakFetch is recorded: the fetchSingleUrl and real tool
+// execute inputs stop at Camofox, and a case that reaches CloakBrowser
+// fails the generator. BROWSER_SEARCH_NODE_BINARY still points at the
+// fixture worker, so a mistaken case never starts a real browser.
 import { createHash } from "node:crypto";
 import { chmodSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
@@ -140,7 +144,6 @@ const challenges = await import(mod("challenges.ts"));
 const searxng = await import(mod("searxng.ts"));
 const exa = await import(mod("exa.ts"));
 const camofox = await import(mod("camofox.ts"));
-const cloak = await import(mod("cloak.ts"));
 const index = await import(mod("index.ts"));
 
 function errorOf(error: unknown): { name: string; message: string } {
@@ -655,49 +658,12 @@ for (const input of camofoxInputs) {
 	camofoxCases.push({ ...clone(input), ...result });
 }
 // ---------------------------------------------------------------------------
-// cloak.ts with the fixture worker
-// ---------------------------------------------------------------------------
-
-const cloakInputs: Array<{ name: string; url: string; format?: string; maxOutputBytes?: number; timeoutMs?: number }> = [
-	{ name: "ok-markdown", url: "https://8.8.8.8/ok", format: "markdown" },
-	{ name: "ok-default-format", url: "https://8.8.8.8/ok" },
-	{ name: "ok-html", url: "https://8.8.8.8/ok", format: "html" },
-	{ name: "worker-error", url: "https://8.8.8.8/error" },
-	{ name: "malformed", url: "https://8.8.8.8/malformed" },
-	{ name: "shape", url: "https://8.8.8.8/shape" },
-	{ name: "oversize", url: "https://8.8.8.8/oversize", maxOutputBytes: 1024 },
-	{ name: "hang-timeout", url: "https://8.8.8.8/hang", timeoutMs: 500 },
-	{ name: "exited-descendant", url: "https://8.8.8.8/exited-descendant" },
-	{ name: "blocked", url: "http://127.0.0.1/private" },
-	{ name: "blocked-dns", url: "https://rebind.test/x" },
-	{ name: "missing-node", url: "https://8.8.8.8/ok" },
-];
-const cloakCases: Array<Record<string, unknown>> = [];
-for (const input of cloakInputs) {
-	const deps = {
-		nodeBinary: input.name === "missing-node" ? "/nonexistent/aio-node" : process.execPath,
-		workerPath: fixtureWorker,
-		timeoutMs: input.timeoutMs ?? 5_000,
-		killGraceMs: 50,
-		...(input.maxOutputBytes ? { maxOutputBytes: input.maxOutputBytes } : {}),
-	};
-	const opts: Record<string, unknown> = { url: input.url };
-	if (input.format) opts.format = input.format;
-	const entry: Record<string, unknown> = { ...input };
-	try {
-		entry.out = clone(await cloak.cloakFetch(opts, deps));
-	} catch (error) {
-		entry.error = errorOf(error);
-	}
-	cloakCases.push(entry);
-}
-
-// ---------------------------------------------------------------------------
-// index.ts fetchSingleUrl: Camofox, then the CloakBrowser fixture worker
+// index.ts fetchSingleUrl: Camofox successes and blocked URLs. Cases that
+// fall through to the CloakBrowser fixture worker are not inputs (the Go
+// chain differs there): challenge, empty, and failing Camofox pages.
 // ---------------------------------------------------------------------------
 
 const snapshotObj = json({ snapshot: "- heading \"Docs\"", refs: { e1: "link" }, count: 2, nested: [1.5, null, true] });
-const challengeArticle = article({ title: "Just a moment...", text: "Checking your browser before accessing", excerpt: null, length: 30 });
 const fetchInputs: Array<{ name: string; url: string; format: string; replies: Reply[] }> = [
 	{ name: "blocked-ip", url: "http://127.0.0.1/private", format: "markdown", replies: [] },
 	{ name: "blocked-scheme", url: "file:///etc/passwd", format: "markdown", replies: [] },
@@ -706,24 +672,21 @@ const fetchInputs: Array<{ name: string; url: string; format: string; replies: R
 	{ name: "text", url: "https://public.test/article", format: "text", replies: [okHealth, tab, okArticle, closed] },
 	{ name: "no-title", url: "https://8.8.8.8/a", format: "markdown", replies: [okHealth, tab, article({ title: null, text: "Body only", excerpt: null, length: 9 }), closed] },
 	{ name: "no-title-text", url: "https://8.8.8.8/a", format: "text", replies: [okHealth, tab, article({ title: "", text: "Body only", length: 9 }), closed] },
-	{ name: "challenge-cloak", url: "https://8.8.8.8/challenge", format: "markdown", replies: [okHealth, tab, challengeArticle, closed] },
-	{ name: "challenge-cloak-error", url: "https://8.8.8.8/error", format: "text", replies: [okHealth, tab, challengeArticle, closed] },
 	{ name: "snapshot", url: "https://8.8.8.8/spa", format: "markdown", replies: [okHealth, tab, nullArticle, nullArticle, snapshotObj, closed] },
 	{ name: "snapshot-string", url: "https://8.8.8.8/spa", format: "text", replies: [okHealth, tab, nullArticle, nullArticle, { body: "  page text  ", contentType: "text/plain" }, closed] },
-	{ name: "snapshot-blank", url: "https://8.8.8.8/shape", format: "markdown", replies: [okHealth, tab, nullArticle, nullArticle, { body: "   ", contentType: "text/plain" }, closed] },
-	{ name: "snapshot-empty", url: "https://8.8.8.8/malformed", format: "markdown", replies: [okHealth, tab, nullArticle, nullArticle, { body: "", contentType: "text/plain" }, closed] },
-	{ name: "snapshot-challenge", url: "https://8.8.8.8/ok", format: "markdown", replies: [okHealth, tab, nullArticle, nullArticle, json({ html: "<script src='/cdn-cgi/x'></script>" }), closed] },
-	{ name: "tab-error", url: "https://8.8.8.8/error", format: "markdown", replies: [okHealth, json({ error: "no browser" }, 500)] },
 	{ name: "html", url: "https://8.8.8.8/page", format: "html", replies: [okHealth, tab, json({ result: "<html><body><p>Hello</p></body></html>" }), closed] },
 	{ name: "html-object", url: "https://8.8.8.8/page", format: "html", replies: [okHealth, tab, json({ other: "<b>x</b>" }), closed] },
 	{ name: "html-null", url: "https://8.8.8.8/ok", format: "html", replies: [okHealth, tab, json({ result: null }), closed] },
-	{ name: "html-empty", url: "https://8.8.8.8/ok", format: "html", replies: [okHealth, tab, json({ result: "   " }), closed] },
-	{ name: "html-challenge", url: "https://8.8.8.8/ok", format: "html", replies: [okHealth, tab, json({ result: "<p>Attention Required! Cloudflare</p>" }), closed] },
-	{ name: "html-error", url: "https://8.8.8.8/shape", format: "html", replies: [okHealth, json({}, 500)] },
 ];
+// A result that came from, or failed in, the CloakBrowser worker.
+function reachedCloak(result: Record<string, unknown>): boolean {
+	const text = JSON.stringify({ out: result.out, error: result.error });
+	return text.includes('"tier":"cloak"') || text.includes("CloakBrowser");
+}
 const fetchCases: Array<Record<string, unknown>> = [];
 for (const input of fetchInputs) {
 	const result = await scripted(input.replies, () => index.fetchSingleUrl(input.url, input.format));
+	if (reachedCloak(result)) throw new Error(`fetch case ${input.name} reaches CloakBrowser, which the Go port does not have`);
 	fetchCases.push({ ...clone(input), ...result });
 }
 
@@ -883,9 +846,8 @@ const execInputs: ExecCase[] = [
 	{ name: "real-exa-missing-key", tool: "web_search", provider: "exa", params: { query: "q" }, real: { config: { provider: "exa", exa: { apiKeyEnv: "NOPE_KEY" } } }, replies: [] },
 	{ name: "real-searxng-error", tool: "web_search", provider: "searxng", params: { queries: ["q1", "q2"] }, real: { config: { provider: "searxng" } }, replies: [json({}, 502), { body: "x", contentType: "text/plain" }] },
 	{ name: "real-fetch", tool: "fetch_content", params: { url: "https://8.8.8.8/article" }, real: { config: {} }, replies: [okHealth, tab, okArticle, closed] },
-	{ name: "real-fetch-many", tool: "fetch_content", params: { urls: ["https://8.8.8.8/article", "http://127.0.0.1/x", "https://8.8.8.8/error"], format: "text" }, real: { config: {} }, replies: [okHealth, tab, okArticle, closed, okHealth, json({}, 500)] },
+	{ name: "real-fetch-many", tool: "fetch_content", params: { urls: ["https://8.8.8.8/article", "http://127.0.0.1/x"], format: "text" }, real: { config: {} }, replies: [okHealth, tab, okArticle, closed] },
 	{ name: "real-fetch-html", tool: "fetch_content", params: { url: "https://8.8.8.8/page", format: "html" }, real: { config: {} }, replies: [okHealth, tab, json({ result: "<p>Hi</p>" }), closed] },
-	{ name: "real-fetch-cloak", tool: "fetch_content", params: { url: "https://8.8.8.8/challenge" }, real: { config: {} }, replies: [okHealth, tab, challengeArticle, closed] },
 	{ name: "real-fetch-blocked", tool: "fetch_content", params: { url: "http://localhost/x" }, real: { config: {} }, replies: [] },
 ];
 const execCases: Array<Record<string, unknown>> = [];
@@ -920,6 +882,7 @@ for (const input of execInputs) {
 		const r = await tool.execute("call-1", clone(input.params), undefined, (u) => updates.push(clone(u)));
 		return { text: r.content[0].text, details: r.details };
 	});
+	if (input.real && reachedCloak(result)) throw new Error(`${input.name} reaches CloakBrowser, which the Go port does not have`);
 	execCases.push({ ...clone(input), ...result, updates, searchCalls, fetchCalls });
 }
 
@@ -945,7 +908,6 @@ const golden = {
 	searxngCases: placeholders(searxngCases),
 	exaCases: placeholders(exaCases),
 	camofoxCases: placeholders(camofoxCases),
-	cloakCases: placeholders(cloakCases),
 	fetchCases: placeholders(fetchCases),
 	registrations,
 	sessionCases: placeholders(sessionCases),

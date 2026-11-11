@@ -2,7 +2,10 @@ package browsersearch
 
 // Tool definitions and executes (port of browser-search/index.ts
 // registerBrowserSearch): web_search (registered only when a provider is
-// configured) and fetch_content (always registered).
+// configured) and fetch_content (always registered). The tool metadata is
+// the TypeScript text. Go-only: the fetch progress names the Go tier chain,
+// and an HTTP fallback result adds its warning to the text, the details,
+// and one notice per URL and call.
 
 import (
 	"context"
@@ -252,7 +255,7 @@ func formatFetchedSources(results []FetchResult, maxInline int) string {
 			continue
 		}
 		text, _ := truncateForInline(r.Content, limit)
-		sections[i] = "### " + headerOf(r) + sourceLine(r, "\n\n") + "\n\n" + text
+		sections[i] = "### " + headerOf(r) + sourceLine(r, "\n\n") + "\n\n" + warningLine(r) + text
 	}
 	return "\n\n## In-page content\n\n" + strings.Join(sections, "\n\n---\n\n")
 }
@@ -370,6 +373,7 @@ func (rt *Runtime) WebSearchTool(provider string, search SearchFn, fetchURL Fetc
 			opts.NumResults = ptr(5)
 		}
 		includeContent := params["includeContent"] == true
+		ctx, notices := rt.toolContext(ctx, onUpdate)
 		var perQuery []queryResult
 		for index, query := range queries {
 			if err := aborted(ctx); err != nil {
@@ -413,6 +417,7 @@ func (rt *Runtime) WebSearchTool(provider string, search SearchFn, fetchURL Fetc
 						}
 						r = failedFetch(hit.URL, "markdown", errMessage(err))
 					}
+					notices.result(r)
 					fetched = append(fetched, r)
 				}
 			}
@@ -440,6 +445,15 @@ func (rt *Runtime) WebSearchTool(provider string, search SearchFn, fetchURL Fetc
 			d := map[string]any{"query": r.query, "resultCount": r.resultCount, "fetched": len(r.fetched)}
 			if r.err != nil && *r.err != "" {
 				d["error"] = *r.err
+			}
+			var warnings []any
+			for _, f := range r.fetched {
+				if f.Warning != nil {
+					warnings = append(warnings, *f.Warning)
+				}
+			}
+			if len(warnings) > 0 {
+				d["warnings"] = warnings
 			}
 			queryDetails[i] = d
 		}
@@ -472,6 +486,9 @@ func fetchDetails(r FetchResult, truncated bool) map[string]any {
 	if r.ChallengeResolved != nil {
 		d["challengeResolved"] = *r.ChallengeResolved
 	}
+	if r.Warning != nil {
+		d["warning"] = *r.Warning
+	}
 	return d
 }
 
@@ -495,8 +512,9 @@ func (rt *Runtime) FetchContentTool(fetchURL FetchFn) Tool {
 		if f, ok := params["format"].(string); ok {
 			format = f
 		}
+		ctx, notices := rt.toolContext(ctx, onUpdate)
 		if onUpdate != nil {
-			onUpdate(Update{Text: fmt.Sprintf("Fetching %d URL(s) via Camofox → CloakBrowser…", len(urls)), Details: map[string]any{"phase": "fetch", "urlCount": len(urls)}})
+			onUpdate(Update{Text: fmt.Sprintf("Fetching %d URL(s) via %s…", len(urls), rt.chainLabel()), Details: map[string]any{"phase": "fetch", "urlCount": len(urls)}})
 		}
 		results := make([]FetchResult, 0, len(urls))
 		for index, url := range urls {
@@ -513,6 +531,7 @@ func (rt *Runtime) FetchContentTool(fetchURL FetchFn) Tool {
 				}
 				r = failedFetch(url, format, errMessage(err))
 			}
+			notices.result(r)
 			results = append(results, r)
 		}
 		var successful []FetchResult
@@ -535,7 +554,7 @@ func (rt *Runtime) FetchContentTool(fetchURL FetchFn) Tool {
 				text = "(no content extracted)"
 			}
 			return Result{
-				Text:    "## " + headerOf(r) + sourceLine(r, "\n") + "\n\n" + text,
+				Text:    warningLine(r) + "## " + headerOf(r) + sourceLine(r, "\n") + "\n\n" + text,
 				Details: fetchDetails(r, r.Truncated || truncated),
 			}, nil
 		}
@@ -548,7 +567,7 @@ func (rt *Runtime) FetchContentTool(fetchURL FetchFn) Tool {
 				sections[i] = "## " + r.URL + "\n\nError: " + errorText(r)
 			} else {
 				text, _ := truncateForInline(r.Content, perURL)
-				sections[i] = "## " + headerOf(r) + sourceLine(r, "\n\n") + "\n\n" + text
+				sections[i] = "## " + headerOf(r) + sourceLine(r, "\n\n") + "\n\n" + warningLine(r) + text
 			}
 			anyTruncated = anyTruncated || r.Truncated
 			d := fetchDetails(r, r.Truncated)

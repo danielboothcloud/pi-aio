@@ -1,0 +1,2 @@
+[browser-search] Camoufox failed for http://8.8.8.8/bs2/article: uv was not found (/nonexistent/uv); install uv or set BROWSER_SEARCH_UV. Used the plain HTTP fallback.
+[browser-search] Camoufox failed for http://8.8.8.8/bs2/slow: uv was not found (/nonexistent/uv); install uv or set BROWSER_SEARCH_UV. Used the plain HTTP fallback.

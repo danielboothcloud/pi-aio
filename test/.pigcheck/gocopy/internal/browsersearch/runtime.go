@@ -28,14 +28,27 @@ type Runtime struct {
 	// RunRestart runs the Camofox restart command (exec in a shell).
 	RunRestart func(ctx context.Context, command string) error
 	Stderr     io.Writer
-	Cloak      CloakDeps
 	// ReadabilitySource is the in-page Readability.js source.
 	ReadabilitySource string
+
+	// Worker is the local Camoufox tier (NewRuntime sets a CamoufoxWorker).
+	Worker BrowserWorker
+	// WorkerDir is where the worker files are written ("" for
+	// Env.CamoufoxWorkerDir, else the user cache folder).
+	WorkerDir string
+	// Policy is the worker's SSRF policy (nil for DefaultBrowserPolicy).
+	Policy *BrowserPolicy
+	// Validate checks every URL the HTTP fallback requests, redirects
+	// included (nil for ValidateURLWithDNS with Resolver).
+	Validate func(ctx context.Context, url string) Validation
+	// FallbackTransport carries the HTTP fallback requests (nil for a
+	// clone of http.DefaultTransport, which honors the proxy environment).
+	FallbackTransport http.RoundTripper
 }
 
 // NewRuntime returns the production runtime for env.
 func NewRuntime(env Env) *Runtime {
-	return &Runtime{
+	rt := &Runtime{
 		Env:               env,
 		Getenv:            os.LookupEnv,
 		HTTP:              &http.Client{},
@@ -45,6 +58,24 @@ func NewRuntime(env Env) *Runtime {
 		Stderr:            os.Stderr,
 		ReadabilitySource: ReadabilitySource,
 	}
+	rt.Worker = NewCamoufoxWorker(rt.workerOptions)
+	return rt
+}
+
+// Shutdown stops the local Camoufox worker (session_shutdown). The next
+// browser fetch starts a new one.
+func (rt *Runtime) Shutdown() {
+	if rt.Worker != nil {
+		rt.Worker.Shutdown()
+	}
+}
+
+// validate is the URL check of the fallback tiers.
+func (rt *Runtime) validate(ctx context.Context, target string) Validation {
+	if rt.Validate != nil {
+		return rt.Validate(ctx, target)
+	}
+	return ValidateURLWithDNS(ctx, rt.Resolver, target)
 }
 
 // Error is a named JavaScript error (SearxngError, ExaError, CamofoxError,

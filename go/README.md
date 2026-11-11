@@ -64,6 +64,48 @@ To type-check the `aio/` package locally, add a temporary `replace` for
 `github.com/MichaelKinsy/PiG/extensions/sdk` that points to the staged SDK
 (`pig diagnose` shows its path). Do not commit the `replace`.
 
+## Camoufox worker
+
+browser-search fetches pages with a local Camoufox browser
+(`internal/browsersearch/worker/camoufox_worker.py`). Go embeds the file,
+writes it to a cache folder, and starts it once with
+`uv run --script`. The file has PEP 723 metadata (`camoufox==0.5.9`, which
+brings Playwright), so uv builds its environment. No repository virtual
+environment is needed. The worker keeps the browser open. Go and the
+worker exchange one JSON object per line over stdin and stdout. Go sends
+its SSRF rule list in the first message. The worker blocks each browser
+request to a private, loopback, link-local, or metadata address.
+`session_shutdown` stops the worker and the browser. When the extension
+exits, the worker reads end-of-file and closes the browser.
+
+Environment variables:
+
+- `BROWSER_SEARCH_UV` (`uv` on `PATH`): the uv binary.
+- `BROWSER_SEARCH_PYTHON` (uv chooses): the Python interpreter that uv
+  uses (`uv run --python`).
+- `BROWSER_SEARCH_CAMOUFOX_HEADLESS` (`true`): set `0`, `false`, or `no`
+  to show the browser window.
+- `BROWSER_SEARCH_CAMOUFOX_STARTUP_TIMEOUT_MS` (`1800000`): the time limit
+  for the start, which includes the first-use downloads. A cancelled tool
+  call does not stop the start.
+- `BROWSER_SEARCH_CAMOUFOX_PAGE_TIMEOUT_MS` (`30000`): the navigation time
+  limit for each URL. Go stops the worker 20 seconds after this limit.
+- `BROWSER_SEARCH_CAMOUFOX_PROXY` (none): a proxy server URL for the
+  browser.
+- `BROWSER_SEARCH_CAMOUFOX_WORKER_DIR` (`<user cache>/aio/browser-search`):
+  the folder for the worker files.
+- `BROWSER_SEARCH_HTTP_TIMEOUT_MS` (`20000`) and
+  `BROWSER_SEARCH_HTTP_MAX_BYTES` (`5242880`): the limits of the HTTP
+  fallback. It uses the proxy environment (`HTTP_PROXY`, `NO_PROXY`).
+- `BROWSER_SEARCH_CLOAK_MAX_CHARS` (`100000`): the content limit of the
+  Camoufox and HTTP tiers.
+- `BROWSER_SEARCH_CAMOFOX_BASE`: set it to use the Camofox container
+  before the local worker.
+
+The first fetch shows "Downloading the Camoufox browser" as progress and
+as a notice. To run the real worker test, use
+`AIO_CAMOUFOX_E2E=1 go test -run CamoufoxEndToEnd ./internal/browsersearch`.
+
 ## Parity rule
 
 The TypeScript feature is the reference until its Go port replaces it.
@@ -93,7 +135,7 @@ without harm.
 | 7 | rtk, hypa, user-bash, ast-grep, nvim, tuicr, init | 4220 | Done, with the gaps below. Golden parity: init (24 prompts), rtk and user-bash (16 commands, 12 editor texts), ast-grep (18 inputs, 12 summaries, 20 process outcomes, 3 results including truncation), nvim with the shared `toolpaths` package (45 command runs, 16 tool inputs, launcher argv), tuicr (7 fake worlds, 42 picker choices), hypa (18 configs, 14 timeout injections, binary resolution, command builders, image sniffing, 12 tool runs including UTF-16 truncation). |
 | 8 | pretty-tools, diff-tools, copy-widget | 11012 | Done, with the gaps below. Golden parity: jsdiff (289 line diffs, 1156 patches, 625 word diffs from the npm `diff` package), xxHash32 (469 hashes from `xxhash-wasm`), and diff-tools (30 `parseDiff` and 8 patch parses, 108 separator labels, 37 cascading replaces, 19 `replaceForPatch` cases, 20 Cursor argument sets, 6 `apply_patch` fixture scenarios with rollback, 8 encodings, 8 conflict files, 9 hashline files and 25 anchor edits, 36 mutation previews, 7 edit-guard calls, 5 config folders, a fixture git repository and 5 git parses, 16 tool executes, 156 tool-card renders, 160 split and unified renders, 12 review hunks, 3 preset renders, and 80 approval overlay and select cases with key sequences). The approval overlay replaces the permission-modes `ctx.Select` preview in the TUI. pretty-tools (13 background steps, icons and languages, 84 background fills, 52 grep-guard commands, 11 find globs, the rtk tool-routing helpers (7 truncations, 5 line limits, 6 exit checks), 12 autocomplete cases with a mock finder, 4 tool registrations, 15 lifecycle steps, 44 tool executes with scripted rtk runs and built-in tools, and 516 tool-card renders at 4 widths, collapsed, expanded, and error). copy-widget (43 Markdown samples through the real marked-based `parse.ts`, 8 labels, 84 preview renders of the pi-tui `Markdown` component, 14 picker scenarios with 63 key frames and 119 renders, and 11 `/pick` and `ctrl+p` flows with clipboard results). |
 | 9 | ask-user-question | 5260 | Done, with the gaps below. Golden parity: rpiv-config (108 config loads over 8 fixture HOME folders and 9 `XDG_CONFIG_HOME` values, 16 guidance checks), tool metadata and schema (3 guidance configs), 6 sanitize and 12 validation cases, 8 answer segments, 7 response envelopes, 8 item lists, 27 collapse keys, 49 layout and 8 box cases, pi-tui `Input` (10 key scripts, 76 steps, 380 renders), 16 reducer cases, 21 questionnaire scenarios (172 key frames with actions and state, 573 renders at 2 to 5 terminal sizes from 160x50 to 12x10), 16 RPC dialog walks, 4 reconciles, and 24 tool executes through a mock host (64 overlay frames, events, terminal-input listener, collapse, notices). A Go test covers PiG's key routing (the overlay gets a key before the terminal-input listeners). |
-| 10 | browser-search | 3377 | Done, with the gaps below. Golden parity: 21 environment sets and the main environment, 20 settings merges, 14 settings loads (7 folders, trusted and untrusted, V8 parse-error texts), 98 URL validations (WHATWG host parsing, IPv4 and IPv6 forms, IDNA), 13 DNS checks with a fixed resolver table, 26 challenge detections, 13 challenge-content checks, 19 SearXNG and 22 Exa searches against a local scripted server (requests, bodies, timeouts, odd JSON), 26 Camofox flows (requests, auth headers, sleeps, snapshot fallback, tab clean-up), 12 CloakBrowser worker runs with `test-fixture-cloak-worker.mjs` (crash output, timeout, output cap, descendants, missing Node), 21 `fetchSingleUrl` cases, tool registrations, 7 session-start and 4 dependency cases, and 36 tool executes with updates. The embedded `Readability.js` is checked against `@mozilla/readability`. |
+| 10 | browser-search | 3377 | Done, with a deliberate divergence and the gaps below. Golden parity: 21 environment sets and the main environment, 20 settings merges, 14 settings loads (7 folders, trusted and untrusted, V8 parse-error texts), 98 URL validations (WHATWG host parsing, IPv4 and IPv6 forms, IDNA), 13 DNS checks with a fixed resolver table, 26 challenge detections, 13 challenge-content checks, 19 SearXNG and 22 Exa searches against a local scripted server (requests, bodies, timeouts, odd JSON), 26 Camofox flows (requests, auth headers, sleeps, snapshot fallback, tab clean-up), 12 `fetchSingleUrl` cases that end at the Camofox container, tool registrations, 7 session-start and 4 dependency cases, and 35 tool executes with updates. The embedded `Readability.js` is checked against `@mozilla/readability`. The fetch chain after the container is Go-only: a local Camoufox worker and a plain HTTP fallback replace CloakBrowser (see "Camoufox worker"). Go tests cover the worker protocol and lifecycle with a fake worker, the HTTP fallback against local servers, and the notices. The SSRF rule list is shared through `testdata/browser-policy.json`, which the Python unit tests read. An opt-in test (`AIO_CAMOUFOX_E2E=1`) runs the real worker against local pages. |
 | 11 | frame, status-line, queue, session-nav, ui | 5468 | Done, with the gaps below. Golden parity: frame (26 style specs, 98 format cases, 4 usage totals, 188 frame renders at 19 widths from 0 to 120, 24 border rules, 180 editor renders over 10 scripted base editors with autocomplete rows and viewport rules, 9 protocol steps, 7 git parses and 4 real `git` runs in a fixture repository, 37 Codex parse and route cases, 10 retry delays, 7 account ids, 11 quota collector runs over a mocked fetch, 8 registrar steps), status-line (49 settings loads, 90 row renders, 15 stats cases, 40 usage mappings, 11 environment templates, 7 `auth.json` reads, 9 fetches over a mocked fetch, 16 display cases), queue (19 mirror steps, 4 controller scenarios with 28 steps, 36 widget renders, 3 registrar runs, 6 restores, 2 editor key scripts with 28 steps through a real pi-tui editor, 70 shell editor renders), session-nav (30 text cases, 8 checkpoint trees, 21 session cases, 7 tail reads, 49 layout cases, 7 rewind scripts with 120 renders, 7 resume scripts with 72 renders, 10 settings loads, 11 launch argv cases, 4 registrar runs with double-Esc timing), ui (10 image spans, 13 viewport screens). Checked in the PiG fork in TUI, RPC, and JSON mode. |
 | 12 | yaml-hooks | 6606 | Done, with the gaps below. Golden parity: 37 YAML values, 38 schema files (every validation error code), 2 override sets, 28 discoveries (trust, git worktree anchors, imports, cycles, depth cap, trust-anchor, global, and package boundaries, size caps), 1643 globs (a port of Node's `path.matchesGlob`), 11 condition sets, 22 redactions, stdin, UTF-8, and env helpers, 13 real bash runs (exit 2 blocking, timeout, truncation, allowlist, spawn failure), session state and 10 lineage reads, 10 runtime scenarios (dispatch, idle changes, async queues, budgets, debug logs), 5 scenarios through the real `registerYamlHooks` (lifecycle, UI actions, confirm, prompt context, `/hooks-*` commands), and 20 diagnostics renders. Unit tests cover dispatch queueing, async lanes, and the recursion guard. |
 
@@ -260,16 +302,40 @@ These gaps close when the related feature is ported:
 - **ask-user-question:** Agent-prompt event ids come from a counter in
   `go/aio`. yaml-hooks has its own counter, and Node producers have theirs.
 
-- **browser-search:** The CloakBrowser fallback starts the TypeScript
-  Node worker (`browser-search/cloak-worker.mjs`), found above the
-  extension's source directory. The worker runs `cloak-runtime.ts`, so the
-  Node-side extraction (linkedom, turndown, Readability) and the challenge
-  wait are the TypeScript code. Go has no port of `readability.ts`, and
-  `go-readability` and `html-to-markdown` are not used. The worker needs
-  Node and the repository's `node_modules`. Without the worker file, each
-  fallback fails with a Go error text.
-- **browser-search:** The worker's Node is `BROWSER_SEARCH_NODE_BINARY`,
-  else `node` on `PATH`. TypeScript uses its own `process.execPath`.
+- **browser-search:** The fetch chain differs from TypeScript on purpose.
+  Go tries the Camofox container only when `BROWSER_SEARCH_CAMOFOX_BASE`
+  or `CAMOFOX_BASE` is set. Without it, Go never contacts
+  `localhost:9377`. Then Go tries the local Camoufox worker, and then a
+  plain HTTP fetch. TypeScript tries the container (default
+  `localhost:9377`) and then the CloakBrowser Node worker. The Go port
+  has no CloakBrowser worker and ignores `BROWSER_SEARCH_NODE_BINARY`.
+  The result tiers are `camofox`, `camoufox`, and `http`.
+- **browser-search:** The Camoufox tier needs Python 3.10 or later and
+  `uv`. The first start installs the Python packages and downloads the
+  Camoufox browser (several hundred MB). A missing `uv`, Python, or
+  `camoufox` package never stops the extension from loading. The fetch
+  then uses the HTTP fallback.
+- **browser-search:** When the HTTP fallback gives the result, the tool
+  shows a warning notice once for each URL in a call. The result text and
+  the details also contain the warning. In JSON and print mode the notice
+  goes to the extension stderr. PiG keeps the stderr of a Go extension in
+  a temporary log only, so the notice is not visible there
+  (`PIG-LIMITS.md`, limit 8). The result text still contains it.
+- **browser-search:** The HTTP fallback extracts with
+  `codeberg.org/readeck/go-readability/v2` and `html-to-markdown` v2. Its
+  markdown keeps links. The browser tiers return the Readability text, as
+  TypeScript does.
+- **browser-search:** Playwright does not send redirect hops through route
+  handlers. The worker checks each hop after the browser sends it. A hop
+  to a blocked address fails the fetch, and no page content reaches the
+  model, but the browser has sent that request. A URL that the worker
+  blocks does not go to the HTTP fallback. The HTTP fallback checks
+  each redirect target before it follows it. As in TypeScript, the
+  browser resolves DNS again, so a DNS answer that changes after the
+  check is not caught.
+- **browser-search:** The tool descriptions are the TypeScript texts,
+  which name Camofox and CloakBrowser. The fetch progress names the Go
+  chain.
 - **browser-search:** Host names come from a Go port of the WHATWG URL
   host parser. Domain mapping uses `golang.org/x/net/idna` (UTS #46). Rare
   IDNA cases can differ from Node's parser. This module needs
@@ -277,8 +343,8 @@ These gaps close when the related feature is ported:
 - **browser-search:** DNS uses the Go resolver. A missing host gives
   Node's `getaddrinfo ENOTFOUND <host>` text; other DNS errors use the Go
   text. An IPv4-mapped IPv6 answer is checked as IPv4.
-- **browser-search:** `JSON.parse` error texts (settings files, the
-  worker result line) follow V8 for the common errors. Rare forms can
+- **browser-search:** `JSON.parse` error texts (settings files) follow
+  V8 for the common errors. Rare forms can
   differ. A fetch that fails after the response headers gives `terminated`.
 - **browser-search:** Tool details are Go maps, so their keys are in Go
   map order. The values are the same.

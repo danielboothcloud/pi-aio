@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -28,14 +27,12 @@ import (
 type goldenFile map[string]json.RawMessage
 
 type env struct {
-	t       *testing.T
-	golden  goldenFile
-	root    string
-	port    string
-	node    string
-	nodeVer string
-	server  *scriptServer
-	repo    string
+	t      *testing.T
+	golden goldenFile
+	root   string
+	port   string
+	server *scriptServer
+	repo   string
 }
 
 var (
@@ -45,19 +42,11 @@ var (
 
 func setup(t *testing.T) *env {
 	t.Helper()
-	node, err := exec.LookPath("node")
-	if err != nil {
-		t.Skip("node is not installed: the CloakBrowser fixture worker needs it")
-	}
-	out, err := exec.Command(node, "-p", "process.versions.node").Output()
-	if err != nil {
-		t.Fatal(err)
-	}
 	root := t.TempDir()
 	srv := newScriptServer()
 	t.Cleanup(srv.Close)
 	repo, _ := filepath.Abs(filepath.Join("..", "..", ".."))
-	e := &env{t: t, root: root, node: node, nodeVer: strings.TrimSpace(string(out)), server: srv, repo: repo}
+	e := &env{t: t, root: root, server: srv, repo: repo}
 	e.port = srv.port
 	data, err := os.ReadFile(filepath.Join("testdata", "golden.json"))
 	if err != nil {
@@ -67,13 +56,7 @@ func setup(t *testing.T) *env {
 	text = strings.ReplaceAll(text, "@@PORT@@", e.port)
 	text = strings.ReplaceAll(text, "@@ROOT@@", root)
 	text = strings.ReplaceAll(text, "@@REPO@@", repo)
-	text = strings.ReplaceAll(text, "@@NODE@@", e.nodeVer)
 	if err := json.Unmarshal([]byte(text), &e.golden); err != nil {
-		t.Fatal(err)
-	}
-	wrapper := filepath.Join(root, "node-wrapper.sh")
-	worker := filepath.Join(repo, "browser-search", "test-fixture-cloak-worker.mjs")
-	if err := os.WriteFile(wrapper, []byte(fmt.Sprintf("#!/bin/sh\nexec %q %q\n", node, worker)), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	return e
@@ -137,8 +120,28 @@ func (e *env) runtime(sleeps *[]int) *Runtime {
 		return aborted(ctx)
 	}
 	rt.Stderr = io.Discard
-	rt.Cloak = CloakDeps{WorkerPath: filepath.Join(e.repo, "browser-search", "cloak-worker.mjs")}
+	// The golden cases stop at the Camofox container (TypeScript's next
+	// tier, CloakBrowser, is not in the Go port). The Go-only tiers must
+	// never run here: they fail the test and never reach a network.
+	rt.Worker = &forbiddenWorker{t: e.t}
+	rt.FallbackTransport = forbiddenTransport{t: e.t}
 	return rt
+}
+
+type forbiddenWorker struct{ t *testing.T }
+
+func (w *forbiddenWorker) Fetch(_ context.Context, req WorkerRequest, _ func(Progress)) (WorkerResponse, error) {
+	w.t.Errorf("golden case reached the Camoufox worker for %s", req.URL)
+	return WorkerResponse{}, fmt.Errorf("worker disabled")
+}
+
+func (w *forbiddenWorker) Shutdown() {}
+
+type forbiddenTransport struct{ t *testing.T }
+
+func (f forbiddenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	f.t.Errorf("golden case reached the HTTP fallback for %s", req.URL)
+	return nil, fmt.Errorf("network disabled")
 }
 
 // ---------------------------------------------------------------------------
@@ -424,40 +427,6 @@ func TestCamofox(t *testing.T) {
 	}
 }
 
-func TestCloak(t *testing.T) {
-	e := setup(t)
-	var sleeps []int
-	rt := e.runtime(&sleeps)
-	worker := filepath.Join(e.repo, "browser-search", "test-fixture-cloak-worker.mjs")
-	cases := section[[]struct {
-		Name, URL, Format         string
-		MaxOutputBytes, TimeoutMs int
-		Out                       json.RawMessage
-		Error                     *struct{ Message string }
-	}](t, e.golden, "cloakCases")
-	for _, c := range cases {
-		node := e.node
-		if c.Name == "missing-node" {
-			node = "/nonexistent/aio-node"
-		}
-		rt.Cloak = CloakDeps{NodeBinary: node, WorkerPath: worker, TimeoutMs: c.TimeoutMs, KillGraceMs: 50, MaxOutputBytes: c.MaxOutputBytes}
-		if rt.Cloak.TimeoutMs == 0 {
-			rt.Cloak.TimeoutMs = 5_000
-		}
-		got, err := rt.CloakFetch(context.Background(), CloakRequest{URL: c.URL, Format: c.Format})
-		switch {
-		case c.Error != nil && err == nil:
-			t.Errorf("%s: no error, want %q", c.Name, c.Error.Message)
-		case c.Error != nil && err.Error() != c.Error.Message:
-			t.Errorf("%s: error\n got %q\nwant %q", c.Name, err.Error(), c.Error.Message)
-		case c.Error == nil && err != nil:
-			t.Errorf("%s: unexpected error %v", c.Name, err)
-		case c.Error == nil:
-			jsonEqual(t, c.Name, got, c.Out)
-		}
-	}
-}
-
 func TestFetchSingleURL(t *testing.T) {
 	e := setup(t)
 	var sleeps []int
@@ -674,8 +643,10 @@ func TestToolExecutes(t *testing.T) {
 			t.Errorf("%s: %d updates, want %d", c.Name, len(updates), len(c.Updates))
 		} else {
 			for i, u := range updates {
-				if u.Text != c.Updates[i].Content[0].Text {
-					t.Errorf("%s update %d: %q want %q", c.Name, i, u.Text, c.Updates[i].Content[0].Text)
+				// Go names its own tier chain in the fetch progress.
+				want := strings.ReplaceAll(c.Updates[i].Content[0].Text, "via Camofox → CloakBrowser…", "via "+rt.chainLabel()+"…")
+				if u.Text != want {
+					t.Errorf("%s update %d: %q want %q", c.Name, i, u.Text, want)
 				}
 				jsonEqual(t, fmt.Sprintf("%s update %d details", c.Name, i), u.Details, c.Updates[i].Details)
 			}
@@ -709,17 +680,6 @@ func TestCancellation(t *testing.T) {
 	tool := rt.FetchContentTool(func(context.Context, string, string) (FetchResult, error) { calls++; return FetchResult{}, nil })
 	if _, err := tool.Execute(ctx, map[string]any{"url": "https://8.8.8.8/a"}, nil); err != ErrAborted || calls != 0 {
 		t.Fatalf("fetch_content: %v calls=%d", err, calls)
-	}
-	// Cancellation reaps an unresponsive CloakBrowser worker.
-	rt.Cloak = CloakDeps{NodeBinary: e.node, WorkerPath: filepath.Join(e.repo, "browser-search", "test-fixture-cloak-worker.mjs"), KillGraceMs: 50}
-	ctx2, cancel2 := context.WithCancel(context.Background())
-	time.AfterFunc(300*time.Millisecond, cancel2)
-	start := time.Now()
-	if _, err := rt.CloakFetch(ctx2, CloakRequest{URL: "https://8.8.8.8/hang"}); err != ErrAborted {
-		t.Fatalf("cloak: got %v, want abort", err)
-	}
-	if time.Since(start) > 3*time.Second {
-		t.Fatalf("cloak abort took %v", time.Since(start))
 	}
 }
 

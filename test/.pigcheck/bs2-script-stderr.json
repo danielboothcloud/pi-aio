@@ -1,0 +1,3 @@
+[{"tool":"fetch_content","args":{"url":"http://8.8.8.8/bs2/article"}},
+ {"tool":"fetch_content","args":{"url":"http://8.8.8.8/bs2/slow"}},
+ {"text":"bs2 done"}]

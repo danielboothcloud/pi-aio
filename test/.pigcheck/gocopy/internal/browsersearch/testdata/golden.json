@@ -5441,120 +5441,6 @@
    "sleeps": []
   }
  ],
- "cloakCases": [
-  {
-   "name": "ok-markdown",
-   "url": "https://8.8.8.8/ok",
-   "format": "markdown",
-   "out": {
-    "url": "https://8.8.8.8/ok",
-    "format": "markdown",
-    "tier": "cloak",
-    "content": "Node @@NODE@@; Bun none",
-    "chars": 30,
-    "truncated": false
-   }
-  },
-  {
-   "name": "ok-default-format",
-   "url": "https://8.8.8.8/ok",
-   "out": {
-    "url": "https://8.8.8.8/ok",
-    "format": "text",
-    "tier": "cloak",
-    "content": "Node @@NODE@@; Bun none",
-    "chars": 30,
-    "truncated": false
-   }
-  },
-  {
-   "name": "ok-html",
-   "url": "https://8.8.8.8/ok",
-   "format": "html",
-   "out": {
-    "url": "https://8.8.8.8/ok",
-    "format": "html",
-    "tier": "cloak",
-    "content": "Node @@NODE@@; Bun none",
-    "chars": 30,
-    "truncated": false
-   }
-  },
-  {
-   "name": "worker-error",
-   "url": "https://8.8.8.8/error",
-   "error": {
-    "name": "Error",
-    "message": "Cannot verify latest CloakBrowser (no stale fallback)"
-   }
-  },
-  {
-   "name": "malformed",
-   "url": "https://8.8.8.8/malformed",
-   "error": {
-    "name": "Error",
-    "message": "Invalid CloakBrowser worker response: SyntaxError: Unexpected token 'o', \"not-json\" is not valid JSON"
-   }
-  },
-  {
-   "name": "shape",
-   "url": "https://8.8.8.8/shape",
-   "error": {
-    "name": "Error",
-    "message": "Invalid CloakBrowser worker response: Error: invalid result shape"
-   }
-  },
-  {
-   "name": "oversize",
-   "url": "https://8.8.8.8/oversize",
-   "maxOutputBytes": 1024,
-   "error": {
-    "name": "Error",
-    "message": "CloakBrowser worker exceeded its output limit"
-   }
-  },
-  {
-   "name": "hang-timeout",
-   "url": "https://8.8.8.8/hang",
-   "timeoutMs": 500,
-   "error": {
-    "name": "Error",
-    "message": "CloakBrowser Node worker timed out"
-   }
-  },
-  {
-   "name": "exited-descendant",
-   "url": "https://8.8.8.8/exited-descendant",
-   "error": {
-    "name": "Error",
-    "message": "Invalid CloakBrowser worker response: Error: missing result"
-   }
-  },
-  {
-   "name": "blocked",
-   "url": "http://127.0.0.1/private",
-   "error": {
-    "name": "Error",
-    "message": "URL blocked: Blocked IP: 127.0.0.1"
-   }
-  },
-  {
-   "name": "blocked-dns",
-   "url": "https://rebind.test/x",
-   "error": {
-    "name": "Error",
-    "message": "URL blocked: DNS resolved to blocked IP: 10.0.0.5"
-   }
-  },
-  {
-   "name": "missing-node",
-   "url": "https://8.8.8.8/ok",
-   "error": {
-    "name": "Error",
-    "message": "Could not start CloakBrowser Node worker: spawn /nonexistent/aio-node ENOENT"
-   }
-  }
- ],
  "fetchCases": [
   {
    "name": "blocked-ip",
@@ -5864,141 +5750,6 @@
    ]
   },
   {
-   "name": "challenge-cloak",
-   "url": "https://8.8.8.8/challenge",
-   "format": "markdown",
-   "replies": [
-    {
-     "status": 200,
-     "body": "{\"browserRunning\":true}"
-    },
-    {
-     "status": 200,
-     "body": "{\"tabId\":\"tab-1\",\"url\":\"x\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"result\":\"{\\\"title\\\":\\\"Just a moment...\\\",\\\"text\\\":\\\"Checking your browser before accessing\\\",\\\"excerpt\\\":null,\\\"length\\\":30}\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"closed\":true}"
-    }
-   ],
-   "out": {
-    "url": "https://8.8.8.8/challenge",
-    "format": "markdown",
-    "tier": "cloak",
-    "content": "Node @@NODE@@; Bun none",
-    "chars": 30,
-    "truncated": false
-   },
-   "requests": [
-    {
-     "method": "GET",
-     "url": "/cf/health",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"sessionKey\":\"default\",\"url\":\"https://8.8.8.8/challenge\"}"
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs/tab-1/evaluate",
-     "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer cf-key"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"expression\":\"@@READABILITY@@; var a = new Readability(document.cloneNode(true)).parse();JSON.stringify({title: a?.title || null, text: a?.textContent || null, excerpt: a?.excerpt || null, length: a?.length || 0})\"}"
-    },
-    {
-     "method": "DELETE",
-     "url": "/cf/tabs/tab-1",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\"}"
-    }
-   ],
-   "sleeps": [
-    2000
-   ]
-  },
-  {
-   "name": "challenge-cloak-error",
-   "url": "https://8.8.8.8/error",
-   "format": "text",
-   "replies": [
-    {
-     "status": 200,
-     "body": "{\"browserRunning\":true}"
-    },
-    {
-     "status": 200,
-     "body": "{\"tabId\":\"tab-1\",\"url\":\"x\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"result\":\"{\\\"title\\\":\\\"Just a moment...\\\",\\\"text\\\":\\\"Checking your browser before accessing\\\",\\\"excerpt\\\":null,\\\"length\\\":30}\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"closed\":true}"
-    }
-   ],
-   "out": {
-    "url": "https://8.8.8.8/error",
-    "content": "",
-    "format": "text",
-    "chars": 0,
-    "truncated": false,
-    "tier": "none",
-    "error": "Camofox failed: Camofox returned an anti-bot challenge. CloakBrowser failed: Cannot verify latest CloakBrowser (no stale fallback)"
-   },
-   "requests": [
-    {
-     "method": "GET",
-     "url": "/cf/health",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"sessionKey\":\"default\",\"url\":\"https://8.8.8.8/error\"}"
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs/tab-1/evaluate",
-     "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer cf-key"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"expression\":\"@@READABILITY@@; var a = new Readability(document.cloneNode(true)).parse();JSON.stringify({title: a?.title || null, text: a?.textContent || null, excerpt: a?.excerpt || null, length: a?.length || 0})\"}"
-    },
-    {
-     "method": "DELETE",
-     "url": "/cf/tabs/tab-1",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\"}"
-    }
-   ],
-   "sleeps": [
-    2000
-   ]
-  },
-  {
    "name": "snapshot",
    "url": "https://8.8.8.8/spa",
    "format": "markdown",
@@ -6179,322 +5930,6 @@
     2000,
     1500
    ]
-  },
-  {
-   "name": "snapshot-blank",
-   "url": "https://8.8.8.8/shape",
-   "format": "markdown",
-   "replies": [
-    {
-     "status": 200,
-     "body": "{\"browserRunning\":true}"
-    },
-    {
-     "status": 200,
-     "body": "{\"tabId\":\"tab-1\",\"url\":\"x\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"result\":\"{\\\"title\\\":null,\\\"text\\\":null,\\\"excerpt\\\":null,\\\"length\\\":0}\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"result\":\"{\\\"title\\\":null,\\\"text\\\":null,\\\"excerpt\\\":null,\\\"length\\\":0}\"}"
-    },
-    {
-     "body": "   ",
-     "contentType": "text/plain"
-    },
-    {
-     "status": 200,
-     "body": "{\"closed\":true}"
-    }
-   ],
-   "out": {
-    "url": "https://8.8.8.8/shape",
-    "content": "",
-    "format": "markdown",
-    "chars": 0,
-    "truncated": false,
-    "tier": "none",
-    "error": "Camofox failed: Camofox snapshot was empty. CloakBrowser failed: Invalid CloakBrowser worker response: Error: invalid result shape"
-   },
-   "requests": [
-    {
-     "method": "GET",
-     "url": "/cf/health",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"sessionKey\":\"default\",\"url\":\"https://8.8.8.8/shape\"}"
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs/tab-1/evaluate",
-     "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer cf-key"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"expression\":\"@@READABILITY@@; var a = new Readability(document.cloneNode(true)).parse();JSON.stringify({title: a?.title || null, text: a?.textContent || null, excerpt: a?.excerpt || null, length: a?.length || 0})\"}"
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs/tab-1/evaluate",
-     "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer cf-key"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"expression\":\"@@READABILITY@@; var a = new Readability(document.cloneNode(true)).parse();JSON.stringify({title: a?.title || null, text: a?.textContent || null, excerpt: a?.excerpt || null, length: a?.length || 0})\"}"
-    },
-    {
-     "method": "GET",
-     "url": "/cf/tabs/tab-1/snapshot?userId=pi-bot",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "DELETE",
-     "url": "/cf/tabs/tab-1",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\"}"
-    }
-   ],
-   "sleeps": [
-    2000,
-    1500
-   ]
-  },
-  {
-   "name": "snapshot-empty",
-   "url": "https://8.8.8.8/malformed",
-   "format": "markdown",
-   "replies": [
-    {
-     "status": 200,
-     "body": "{\"browserRunning\":true}"
-    },
-    {
-     "status": 200,
-     "body": "{\"tabId\":\"tab-1\",\"url\":\"x\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"result\":\"{\\\"title\\\":null,\\\"text\\\":null,\\\"excerpt\\\":null,\\\"length\\\":0}\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"result\":\"{\\\"title\\\":null,\\\"text\\\":null,\\\"excerpt\\\":null,\\\"length\\\":0}\"}"
-    },
-    {
-     "body": "",
-     "contentType": "text/plain"
-    },
-    {
-     "status": 200,
-     "body": "{\"closed\":true}"
-    }
-   ],
-   "out": {
-    "url": "https://8.8.8.8/malformed",
-    "content": "",
-    "format": "markdown",
-    "chars": 0,
-    "truncated": false,
-    "tier": "none",
-    "error": "Camofox failed: Camofox returned no usable content. CloakBrowser failed: Invalid CloakBrowser worker response: SyntaxError: Unexpected token 'o', \"not-json\" is not valid JSON"
-   },
-   "requests": [
-    {
-     "method": "GET",
-     "url": "/cf/health",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"sessionKey\":\"default\",\"url\":\"https://8.8.8.8/malformed\"}"
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs/tab-1/evaluate",
-     "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer cf-key"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"expression\":\"@@READABILITY@@; var a = new Readability(document.cloneNode(true)).parse();JSON.stringify({title: a?.title || null, text: a?.textContent || null, excerpt: a?.excerpt || null, length: a?.length || 0})\"}"
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs/tab-1/evaluate",
-     "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer cf-key"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"expression\":\"@@READABILITY@@; var a = new Readability(document.cloneNode(true)).parse();JSON.stringify({title: a?.title || null, text: a?.textContent || null, excerpt: a?.excerpt || null, length: a?.length || 0})\"}"
-    },
-    {
-     "method": "GET",
-     "url": "/cf/tabs/tab-1/snapshot?userId=pi-bot",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "DELETE",
-     "url": "/cf/tabs/tab-1",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\"}"
-    }
-   ],
-   "sleeps": [
-    2000,
-    1500
-   ]
-  },
-  {
-   "name": "snapshot-challenge",
-   "url": "https://8.8.8.8/ok",
-   "format": "markdown",
-   "replies": [
-    {
-     "status": 200,
-     "body": "{\"browserRunning\":true}"
-    },
-    {
-     "status": 200,
-     "body": "{\"tabId\":\"tab-1\",\"url\":\"x\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"result\":\"{\\\"title\\\":null,\\\"text\\\":null,\\\"excerpt\\\":null,\\\"length\\\":0}\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"result\":\"{\\\"title\\\":null,\\\"text\\\":null,\\\"excerpt\\\":null,\\\"length\\\":0}\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"html\":\"<script src='/cdn-cgi/x'></script>\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"closed\":true}"
-    }
-   ],
-   "out": {
-    "url": "https://8.8.8.8/ok",
-    "format": "markdown",
-    "tier": "cloak",
-    "content": "Node @@NODE@@; Bun none",
-    "chars": 30,
-    "truncated": false
-   },
-   "requests": [
-    {
-     "method": "GET",
-     "url": "/cf/health",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"sessionKey\":\"default\",\"url\":\"https://8.8.8.8/ok\"}"
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs/tab-1/evaluate",
-     "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer cf-key"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"expression\":\"@@READABILITY@@; var a = new Readability(document.cloneNode(true)).parse();JSON.stringify({title: a?.title || null, text: a?.textContent || null, excerpt: a?.excerpt || null, length: a?.length || 0})\"}"
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs/tab-1/evaluate",
-     "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer cf-key"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"expression\":\"@@READABILITY@@; var a = new Readability(document.cloneNode(true)).parse();JSON.stringify({title: a?.title || null, text: a?.textContent || null, excerpt: a?.excerpt || null, length: a?.length || 0})\"}"
-    },
-    {
-     "method": "GET",
-     "url": "/cf/tabs/tab-1/snapshot?userId=pi-bot",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "DELETE",
-     "url": "/cf/tabs/tab-1",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\"}"
-    }
-   ],
-   "sleeps": [
-    2000,
-    1500
-   ]
-  },
-  {
-   "name": "tab-error",
-   "url": "https://8.8.8.8/error",
-   "format": "markdown",
-   "replies": [
-    {
-     "status": 200,
-     "body": "{\"browserRunning\":true}"
-    },
-    {
-     "status": 500,
-     "body": "{\"error\":\"no browser\"}"
-    }
-   ],
-   "out": {
-    "url": "https://8.8.8.8/error",
-    "content": "",
-    "format": "markdown",
-    "chars": 0,
-    "truncated": false,
-    "tier": "none",
-    "error": "Camofox failed: POST /tabs → 500 Internal Server Error: {\"error\":\"no browser\"}. CloakBrowser failed: Cannot verify latest CloakBrowser (no stale fallback)"
-   },
-   "requests": [
-    {
-     "method": "GET",
-     "url": "/cf/health",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"sessionKey\":\"default\",\"url\":\"https://8.8.8.8/error\"}"
-    }
-   ],
-   "sleeps": []
   },
   {
    "name": "html",
@@ -6696,181 +6131,6 @@
    "sleeps": [
     1000
    ]
-  },
-  {
-   "name": "html-empty",
-   "url": "https://8.8.8.8/ok",
-   "format": "html",
-   "replies": [
-    {
-     "status": 200,
-     "body": "{\"browserRunning\":true}"
-    },
-    {
-     "status": 200,
-     "body": "{\"tabId\":\"tab-1\",\"url\":\"x\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"result\":\"   \"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"closed\":true}"
-    }
-   ],
-   "out": {
-    "url": "https://8.8.8.8/ok",
-    "format": "html",
-    "tier": "cloak",
-    "content": "Node @@NODE@@; Bun none",
-    "chars": 30,
-    "truncated": false
-   },
-   "requests": [
-    {
-     "method": "GET",
-     "url": "/cf/health",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"sessionKey\":\"default\",\"url\":\"https://8.8.8.8/ok\"}"
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs/tab-1/evaluate",
-     "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer cf-key"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"expression\":\"document.documentElement?.outerHTML || ''\"}"
-    },
-    {
-     "method": "DELETE",
-     "url": "/cf/tabs/tab-1",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\"}"
-    }
-   ],
-   "sleeps": [
-    1000
-   ]
-  },
-  {
-   "name": "html-challenge",
-   "url": "https://8.8.8.8/ok",
-   "format": "html",
-   "replies": [
-    {
-     "status": 200,
-     "body": "{\"browserRunning\":true}"
-    },
-    {
-     "status": 200,
-     "body": "{\"tabId\":\"tab-1\",\"url\":\"x\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"result\":\"<p>Attention Required! Cloudflare</p>\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"closed\":true}"
-    }
-   ],
-   "out": {
-    "url": "https://8.8.8.8/ok",
-    "format": "html",
-    "tier": "cloak",
-    "content": "Node @@NODE@@; Bun none",
-    "chars": 30,
-    "truncated": false
-   },
-   "requests": [
-    {
-     "method": "GET",
-     "url": "/cf/health",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"sessionKey\":\"default\",\"url\":\"https://8.8.8.8/ok\"}"
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs/tab-1/evaluate",
-     "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer cf-key"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"expression\":\"document.documentElement?.outerHTML || ''\"}"
-    },
-    {
-     "method": "DELETE",
-     "url": "/cf/tabs/tab-1",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\"}"
-    }
-   ],
-   "sleeps": [
-    1000
-   ]
-  },
-  {
-   "name": "html-error",
-   "url": "https://8.8.8.8/shape",
-   "format": "html",
-   "replies": [
-    {
-     "status": 200,
-     "body": "{\"browserRunning\":true}"
-    },
-    {
-     "status": 500,
-     "body": "{}"
-    }
-   ],
-   "out": {
-    "url": "https://8.8.8.8/shape",
-    "content": "",
-    "format": "html",
-    "chars": 0,
-    "truncated": false,
-    "tier": "none",
-    "error": "Camofox failed: POST /tabs → 500 Internal Server Error: {}. CloakBrowser failed: Invalid CloakBrowser worker response: Error: invalid result shape"
-   },
-   "requests": [
-    {
-     "method": "GET",
-     "url": "/cf/health",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"sessionKey\":\"default\",\"url\":\"https://8.8.8.8/shape\"}"
-    }
-   ],
-   "sleeps": []
   }
  ],
  "registrations": [
@@ -9815,8 +9075,7 @@
    "params": {
     "urls": [
      "https://8.8.8.8/article",
-     "http://127.0.0.1/x",
-     "https://8.8.8.8/error"
+     "http://127.0.0.1/x"
     ],
     "format": "text"
    },
@@ -9839,20 +9098,12 @@
     {
      "status": 200,
      "body": "{\"closed\":true}"
-    },
-    {
-     "status": 200,
-     "body": "{\"browserRunning\":true}"
-    },
-    {
-     "status": 500,
-     "body": "{}"
     }
    ],
    "out": {
-    "text": "## Mock article\n\nMock article\n\nReadable body\n\n---\n\n## http://127.0.0.1/x\n\nError: URL blocked: Blocked IP: 127.0.0.1\n\n---\n\n## https://8.8.8.8/error\n\nError: Camofox failed: POST /tabs → 500 Internal Server Error: {}. CloakBrowser failed: Cannot verify latest CloakBrowser (no stale fallback)",
+    "text": "## Mock article\n\nMock article\n\nReadable body\n\n---\n\n## http://127.0.0.1/x\n\nError: URL blocked: Blocked IP: 127.0.0.1",
     "details": {
-     "urlCount": 3,
+     "urlCount": 2,
      "successful": 1,
      "truncated": false,
      "results": [
@@ -9871,14 +9122,6 @@
        "chars": 0,
        "truncated": false,
        "error": "URL blocked: Blocked IP: 127.0.0.1"
-      },
-      {
-       "url": "https://8.8.8.8/error",
-       "tier": "none",
-       "format": "text",
-       "chars": 0,
-       "truncated": false,
-       "error": "Camofox failed: POST /tabs → 500 Internal Server Error: {}. CloakBrowser failed: Cannot verify latest CloakBrowser (no stale fallback)"
       }
      ]
     }
@@ -9914,20 +9157,6 @@
       "content-type": "application/json"
      },
      "body": "{\"userId\":\"pi-bot\"}"
-    },
-    {
-     "method": "GET",
-     "url": "/cf/health",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"sessionKey\":\"default\",\"url\":\"https://8.8.8.8/error\"}"
     }
    ],
    "sleeps": [
@@ -9938,19 +9167,19 @@
      "content": [
       {
        "type": "text",
-       "text": "Fetching 3 URL(s) via Camofox → CloakBrowser…"
+       "text": "Fetching 2 URL(s) via Camofox → CloakBrowser…"
       }
      ],
      "details": {
       "phase": "fetch",
-      "urlCount": 3
+      "urlCount": 2
      }
     },
     {
      "content": [
       {
        "type": "text",
-       "text": "Fetching (1/3) https://8.8.8.8/article"
+       "text": "Fetching (1/2) https://8.8.8.8/article"
       }
      ],
      "details": {
@@ -9963,26 +9192,13 @@
      "content": [
       {
        "type": "text",
-       "text": "Fetching (2/3) http://127.0.0.1/x"
+       "text": "Fetching (2/2) http://127.0.0.1/x"
       }
      ],
      "details": {
       "phase": "fetch",
       "url": "http://127.0.0.1/x",
       "index": 1
-     }
-    },
-    {
-     "content": [
-      {
-       "type": "text",
-       "text": "Fetching (3/3) https://8.8.8.8/error"
-      }
-     ],
-     "details": {
-      "phase": "fetch",
-      "url": "https://8.8.8.8/error",
-      "index": 2
      }
     }
    ],
@@ -10086,109 +9302,6 @@
      "details": {
       "phase": "fetch",
       "url": "https://8.8.8.8/page",
-      "index": 0
-     }
-    }
-   ],
-   "searchCalls": [],
-   "fetchCalls": []
-  },
-  {
-   "name": "real-fetch-cloak",
-   "tool": "fetch_content",
-   "params": {
-    "url": "https://8.8.8.8/challenge"
-   },
-   "real": {
-    "config": {}
-   },
-   "replies": [
-    {
-     "status": 200,
-     "body": "{\"browserRunning\":true}"
-    },
-    {
-     "status": 200,
-     "body": "{\"tabId\":\"tab-1\",\"url\":\"x\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"result\":\"{\\\"title\\\":\\\"Just a moment...\\\",\\\"text\\\":\\\"Checking your browser before accessing\\\",\\\"excerpt\\\":null,\\\"length\\\":30}\"}"
-    },
-    {
-     "status": 200,
-     "body": "{\"closed\":true}"
-    }
-   ],
-   "out": {
-    "text": "## https://8.8.8.8/challenge\n\nNode @@NODE@@; Bun none",
-    "details": {
-     "url": "https://8.8.8.8/challenge",
-     "tier": "cloak",
-     "format": "markdown",
-     "chars": 30,
-     "truncated": false
-    }
-   },
-   "requests": [
-    {
-     "method": "GET",
-     "url": "/cf/health",
-     "headers": {},
-     "body": ""
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"sessionKey\":\"default\",\"url\":\"https://8.8.8.8/challenge\"}"
-    },
-    {
-     "method": "POST",
-     "url": "/cf/tabs/tab-1/evaluate",
-     "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer cf-key"
-     },
-     "body": "{\"userId\":\"pi-bot\",\"expression\":\"@@READABILITY@@; var a = new Readability(document.cloneNode(true)).parse();JSON.stringify({title: a?.title || null, text: a?.textContent || null, excerpt: a?.excerpt || null, length: a?.length || 0})\"}"
-    },
-    {
-     "method": "DELETE",
-     "url": "/cf/tabs/tab-1",
-     "headers": {
-      "content-type": "application/json"
-     },
-     "body": "{\"userId\":\"pi-bot\"}"
-    }
-   ],
-   "sleeps": [
-    2000
-   ],
-   "updates": [
-    {
-     "content": [
-      {
-       "type": "text",
-       "text": "Fetching 1 URL(s) via Camofox → CloakBrowser…"
-      }
-     ],
-     "details": {
-      "phase": "fetch",
-      "urlCount": 1
-     }
-    },
-    {
-     "content": [
-      {
-       "type": "text",
-       "text": "Fetching (1/1) https://8.8.8.8/challenge"
-      }
-     ],
-     "details": {
-      "phase": "fetch",
-      "url": "https://8.8.8.8/challenge",
       "index": 0
      }
     }

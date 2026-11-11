@@ -56,6 +56,11 @@ var blockedHostnames = map[string]bool{
 	"instance-data.pai.googleapis.com.": true,
 }
 
+var localhostNames = map[string]bool{"localhost": true, "localhost.": true}
+
+// blockedSuffixes are the private top-level domains validateUrl refuses.
+var blockedSuffixes = []string{".internal", ".local", ".lan"}
+
 var blockedIPv6 = []*regexp.Regexp{
 	regexp.MustCompile(`^::$`),
 	regexp.MustCompile(`^::1$`),
@@ -149,7 +154,7 @@ func ValidateURL(raw string) Validation {
 	if blockedHostnames[hostname] {
 		return blocked("Blocked hostname: cloud metadata endpoint")
 	}
-	if hostname == "localhost" || hostname == "localhost." {
+	if localhostNames[hostname] {
 		return blocked("Blocked hostname: localhost")
 	}
 	if ipv4RE.MatchString(hostname) {
@@ -165,8 +170,10 @@ func ValidateURL(raw string) Validation {
 		}
 		return Validation{Valid: true}
 	}
-	if strings.HasSuffix(hostname, ".internal") || strings.HasSuffix(hostname, ".local") || strings.HasSuffix(hostname, ".lan") {
-		return blocked("Blocked TLD: " + hostname)
+	for _, suffix := range blockedSuffixes {
+		if strings.HasSuffix(hostname, suffix) {
+			return blocked("Blocked TLD: " + hostname)
+		}
 	}
 	return Validation{Valid: true}
 }

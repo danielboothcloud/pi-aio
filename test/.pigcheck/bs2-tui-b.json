@@ -1,0 +1,4 @@
+{"argv": ["/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/pigfork/pig", "--no-session", "-ne", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/fixture-provider.ts", "--model", "fixture/m1"], "env": {}, "cols": 120, "rows": 50,
+ "steps": [{"wait": "fixture", "timeout": 60}, {"sleep": 2}, {"screen": "start"}, {"send": "go\r"},
+  {"wait": "plain HTTP fallback", "timeout": 120}, {"sleep": 0.5}, {"screen": "first result"},
+  {"wait": "bs2 done", "timeout": 120}, {"sleep": 1}, {"screen": "after run"}, {"send": "\u000f"}, {"sleep": 1}, {"screen": "expanded"}, {"send": "\u0004"}, {"sleep": 2}]}

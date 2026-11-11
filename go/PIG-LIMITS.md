@@ -27,6 +27,7 @@ its path. With `PIG_HOME=~/.config/pi`, the path is
 | `sendUserMessage` drops `expandPromptTemplates` | The host bridge has no such option | Commands run through the base editor's host `onSubmit` |
 | `ctx.Abort` is not Pi's TUI abort | The host keeps the queued messages and waits until idle | The queue sends the host's interrupt key through the base editor |
 | JSON-only event bus, private editor factories | SDK design | The frame protocol is package state; no selector frames |
+| Go extension stderr is not shown | PiG divergence D56 | Notices that must be seen also go into the tool result |
 
 ## 1. No call to suspend the host TUI
 
@@ -179,6 +180,22 @@ The SDK also has no hook into the host's selector components.
 **Workaround:** The Go features share the frame protocol as package state
 (`go/internal/frame/protocol.go`). The frame wraps only this extension's
 editor. `frame/menus.ts` (selector frames) is not ported.
+
+## 8. Go extension stderr is not shown
+
+**Problem:** PiG writes the stderr of a Go extension process to a
+temporary log (`pig-packed-*.log` in the temporary folder). It keeps the
+log only when a failure report refers to it. In JSON and print mode a Go
+extension therefore has no visible channel for a notice: `ctx.Notify`
+needs a UI, and stderr is not shown. Node extensions write to the
+terminal.
+
+**Workaround:** browser-search writes its fallback notice to stderr in
+JSON and print mode and also puts the warning in
+the tool result text and details.
+
+**Check:** Run `pig --mode json` with a Go extension that writes to
+stderr. Look for the line on pig's stderr.
 
 ## Rules that come from these limits
 
