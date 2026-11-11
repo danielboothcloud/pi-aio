@@ -1,0 +1,3 @@
+created 01a1ca70-fde1-7578-a21c-1c7722cd5d31
+{"session_id":"01a1ca70-fde1-7578-a21c-1c7722cd5d31","event":"tool.after.bash","cwd":"/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/yh","changes":[],"tool_name":"bash","tool_args":{"command":"/Users/danielbooth/.local/bin/hypa -c \"echo tui-run\""}}
+deleted 01a1ca70-fde1-7578-a21c-1c7722cd5d31

@@ -1,0 +1,123 @@
+===== hooks-status =====
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio
+    Extension shortcut 'shift+tab' from
+/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio conflicts with built-in
+shortcut. Skipping.
+
+
+
+ [INFO] Hook status
+ Hooks status for /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/yh
+ Active summary: 6 hooks (3 global, 3 project)
+ Global config:
+ /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/agent-yh/hook/hooks.yaml
+ Project config:
+ /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/yh/.pig/hook/hooks.yaml
+ Trust store:
+ /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/agent-yh/trusted-projects.json
+ Project trusted: yes
+ Hook log:
+ /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/agent-yh/logs/aio-yaml-hooks.ndjson
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/yh (feature/pig)
+0.0%/128k (auto)                                                                                  (fixture) m1
+effort:off ▶ Auto
+===== confirm dialog =====
+ /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/yh/.pig/hook/hooks.yaml
+ Trust store:
+ /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/agent-yh/trusted-projects.json
+ Project trusted: yes
+ Hook log:
+ /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/agent-yh/logs/aio-yaml-hooks.ndjson
+
+
+
+ run it
+
+
+
+ $ echo tui-run
+
+ tui-run
+
+ Took 0.3s
+
+
+ Warning: bash finished
+
+
+ read hooklog.txt
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Read file?
+ A hook asks before every read.
+
+ → Yes
+   No
+
+ ↑↓ navigate  enter select  escape/ctrl+c cancel
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/yh (feature/pig)
+↑20 ↓4 0.0%/128k (auto)                                                                           (fixture) m1
+hooked effort:off ▶ Auto
+===== after run =====
+ [INFO] Hook status
+ Hooks status for /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/yh
+ Active summary: 6 hooks (3 global, 3 project)
+ Global config:
+ /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/agent-yh/hook/hooks.yaml
+ Project config:
+ /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/yh/.pig/hook/hooks.yaml
+ Trust store:
+ /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/agent-yh/trusted-projects.json
+ Project trusted: yes
+ Hook log:
+ /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/agent-yh/logs/aio-yaml-hooks.ndjson
+
+
+
+ run it
+
+
+
+ $ echo tui-run
+
+ tui-run
+
+ Took 0.3s
+
+
+ Warning: bash finished
+
+
+ read hooklog.txt
+
+
+ tui done
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/projects/work/danielboothcloud/pi-aio/test/.pigcheck/yh (feature/pig)
+↑30 ↓6 0.0%/128k (auto)                                                                           (fixture) m1
+hooked effort:off ▶ Auto

@@ -1,0 +1,13 @@
+hooks:
+  - id: created
+    event: session.created
+    actions:
+      - bash: 'echo "created $PI_SESSION_ID" >> "$PI_PROJECT_DIR/hooklog.txt"'
+  - id: deleted
+    event: session.deleted
+    actions:
+      - bash: 'echo "deleted $PI_SESSION_ID" >> "$PI_PROJECT_DIR/hooklog.txt"'
+  - id: ask
+    event: tool.before.read
+    actions:
+      - confirm: {title: "Read file?", message: "A hook asks before every read."}

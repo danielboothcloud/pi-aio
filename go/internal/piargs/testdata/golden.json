@@ -1,0 +1,1010 @@
+{
+ "cases": [
+  {
+   "args": [],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": []
+   }
+  },
+  {
+   "args": [
+    "hello",
+    "world"
+   ],
+   "result": {
+    "messages": [
+     "hello",
+     "world"
+    ],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": []
+   }
+  },
+  {
+   "args": [
+    "--recipe",
+    "work"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [
+     {
+      "name": "recipe",
+      "value": "work"
+     }
+    ],
+    "diagnostics": []
+   }
+  },
+  {
+   "args": [
+    "--recipe=work",
+    "-p",
+    "hi"
+   ],
+   "result": {
+    "messages": [
+     "hi"
+    ],
+    "fileArgs": [],
+    "unknownFlags": [
+     {
+      "name": "recipe",
+      "value": "work"
+     }
+    ],
+    "diagnostics": [],
+    "print": true
+   }
+  },
+  {
+   "args": [
+    "--recipe",
+    "--continue"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [
+     {
+      "name": "recipe",
+      "value": true
+     }
+    ],
+    "diagnostics": [],
+    "continue": true
+   }
+  },
+  {
+   "args": [
+    "-c"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "continue": true
+   }
+  },
+  {
+   "args": [
+    "--continue",
+    "--recipe",
+    "x",
+    "prompt"
+   ],
+   "result": {
+    "messages": [
+     "prompt"
+    ],
+    "fileArgs": [],
+    "unknownFlags": [
+     {
+      "name": "recipe",
+      "value": "x"
+     }
+    ],
+    "diagnostics": [],
+    "continue": true
+   }
+  },
+  {
+   "args": [
+    "-r"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "resume": true
+   }
+  },
+  {
+   "args": [
+    "--session",
+    "/tmp/s.jsonl",
+    "--session-id",
+    "abc"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "session": "/tmp/s.jsonl",
+    "sessionId": "abc"
+   }
+  },
+  {
+   "args": [
+    "--session-dir",
+    "~/s",
+    "-c"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "sessionDir": "~/s",
+    "continue": true
+   }
+  },
+  {
+   "args": [
+    "--fork",
+    "f.jsonl",
+    "--name",
+    "n"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "fork": "f.jsonl",
+    "name": "n"
+   }
+  },
+  {
+   "args": [
+    "-n"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "error",
+      "message": "--name requires a value"
+     }
+    ]
+   }
+  },
+  {
+   "args": [
+    "--no-session",
+    "-p"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "noSession": true,
+    "print": true
+   }
+  },
+  {
+   "args": [
+    "-p",
+    "---literal"
+   ],
+   "result": {
+    "messages": [
+     "---literal"
+    ],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "print": true
+   }
+  },
+  {
+   "args": [
+    "-p",
+    "-x"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "error",
+      "message": "Unknown option: -x"
+     }
+    ],
+    "print": true
+   }
+  },
+  {
+   "args": [
+    "-p",
+    "@file.md",
+    "msg"
+   ],
+   "result": {
+    "messages": [
+     "msg"
+    ],
+    "fileArgs": [
+     "file.md"
+    ],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "print": true
+   }
+  },
+  {
+   "args": [
+    "--print",
+    "msg",
+    "--mode",
+    "json"
+   ],
+   "result": {
+    "messages": [
+     "msg"
+    ],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "print": true,
+    "mode": "json"
+   }
+  },
+  {
+   "args": [
+    "--mode",
+    "bogus"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "error",
+      "message": "Invalid mode \"bogus\". Valid values: text, json, rpc"
+     }
+    ]
+   }
+  },
+  {
+   "args": [
+    "--mode"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "error",
+      "message": "--mode requires text, json, or rpc"
+     }
+    ]
+   }
+  },
+  {
+   "args": [
+    "--mode",
+    "-p"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "error",
+      "message": "--mode requires text, json, or rpc"
+     }
+    ],
+    "print": true
+   }
+  },
+  {
+   "args": [
+    "--models",
+    "a/*, b ,,c"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "models": [
+     "a/*",
+     "b",
+     "c"
+    ]
+   }
+  },
+  {
+   "args": [
+    "--models",
+    ",,"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": []
+   }
+  },
+  {
+   "args": [
+    "-ne",
+    "-e",
+    "./x.ts",
+    "--extension",
+    "npm:y"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "noExtensions": true,
+    "extensions": [
+     "./x.ts",
+     "npm:y"
+    ]
+   }
+  },
+  {
+   "args": [
+    "-e",
+    "builtin:mcp",
+    "-e",
+    "git:github.com/a/b",
+    "-e",
+    "../rel/ext"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "extensions": [
+     "builtin:mcp",
+     "git:github.com/a/b",
+     "../rel/ext"
+    ]
+   }
+  },
+  {
+   "args": [
+    "--no-extensions",
+    "--no-mcp",
+    "--no-skills",
+    "-np",
+    "--no-themes",
+    "-nc"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "noExtensions": true,
+    "noMcp": true,
+    "noSkills": true,
+    "noPromptTemplates": true,
+    "noThemes": true,
+    "noContextFiles": true
+   }
+  },
+  {
+   "args": [
+    "--thinking",
+    "high",
+    "--thinking",
+    "bogus"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "warning",
+      "message": "Invalid thinking level \"bogus\". Valid values: off, minimal, low, medium, high, xhigh, max"
+     }
+    ],
+    "thinking": "high"
+   }
+  },
+  {
+   "args": [
+    "--model",
+    "anthropic/x",
+    "--provider",
+    "p",
+    "--api-key",
+    "k"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "model": "anthropic/x",
+    "provider": "p",
+    "apiKey": "k"
+   }
+  },
+  {
+   "args": [
+    "--system-prompt",
+    "s",
+    "--append-system-prompt",
+    "a",
+    "--append-system-prompt",
+    "b"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "systemPrompt": "s",
+    "appendSystemPrompt": [
+     "a",
+     "b"
+    ]
+   }
+  },
+  {
+   "args": [
+    "--exclude-tools",
+    "bash,read",
+    "-xt",
+    "write"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "excludeTools": [
+     "write"
+    ]
+   }
+  },
+  {
+   "args": [
+    "--tools",
+    "read,bash"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "tools": [
+     "read",
+     "bash"
+    ]
+   }
+  },
+  {
+   "args": [
+    "-t",
+    "read, write"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "tools": [
+     "read",
+     "write"
+    ]
+   }
+  },
+  {
+   "args": [
+    "--no-tools",
+    "-nbt"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "noTools": true,
+    "noBuiltinTools": true
+   }
+  },
+  {
+   "args": [
+    "--skill",
+    "s",
+    "--prompt-template",
+    "t",
+    "--theme",
+    "th",
+    "--use-theme",
+    "dark"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "skills": [
+     "s"
+    ],
+    "promptTemplates": [
+     "t"
+    ],
+    "themes": [
+     "th"
+    ],
+    "useTheme": "dark"
+   }
+  },
+  {
+   "args": [
+    "--use-theme",
+    "-x"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "error",
+      "message": "--use-theme requires a theme name"
+     },
+     {
+      "type": "error",
+      "message": "Unknown option: -x"
+     }
+    ]
+   }
+  },
+  {
+   "args": [
+    "--use-theme"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "error",
+      "message": "--use-theme requires a theme name"
+     }
+    ]
+   }
+  },
+  {
+   "args": [
+    "--list-models"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "listModels": true
+   }
+  },
+  {
+   "args": [
+    "--list-models",
+    "sonnet"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "listModels": "sonnet"
+   }
+  },
+  {
+   "args": [
+    "--list-models",
+    "-p"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "listModels": true,
+    "print": true
+   }
+  },
+  {
+   "args": [
+    "--list-models",
+    "@f"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [
+     "f"
+    ],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "listModels": true
+   }
+  },
+  {
+   "args": [
+    "--tui-mode",
+    "fullscreen"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "tuiMode": "fullscreen"
+   }
+  },
+  {
+   "args": [
+    "--tui-mode",
+    "bad"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "error",
+      "message": "Invalid TUI mode \"bad\". Valid values: regular, fullscreen"
+     }
+    ]
+   }
+  },
+  {
+   "args": [
+    "--tui-mode"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "error",
+      "message": "--tui-mode requires regular or fullscreen"
+     }
+    ]
+   }
+  },
+  {
+   "args": [
+    "--tui-mode",
+    "-x"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "error",
+      "message": "--tui-mode requires regular or fullscreen"
+     },
+     {
+      "type": "error",
+      "message": "Unknown option: -x"
+     }
+    ]
+   }
+  },
+  {
+   "args": [
+    "--verbose",
+    "--offline",
+    "-a",
+    "--no-approve",
+    "-na"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "verbose": true,
+    "offline": true,
+    "projectTrustOverride": false
+   }
+  },
+  {
+   "args": [
+    "--approve"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "projectTrustOverride": true
+   }
+  },
+  {
+   "args": [
+    "--help",
+    "-v"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "help": true,
+    "version": true
+   }
+  },
+  {
+   "args": [
+    "--export",
+    "out.html"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "export": "out.html"
+   }
+  },
+  {
+   "args": [
+    "--permission-mode",
+    "auto",
+    "--unknown",
+    "--other=val",
+    "--flag",
+    "@file"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [
+     "file"
+    ],
+    "unknownFlags": [
+     {
+      "name": "permission-mode",
+      "value": "auto"
+     },
+     {
+      "name": "unknown",
+      "value": true
+     },
+     {
+      "name": "other",
+      "value": "val"
+     },
+     {
+      "name": "flag",
+      "value": true
+     }
+    ],
+    "diagnostics": []
+   }
+  },
+  {
+   "args": [
+    "--dup",
+    "a",
+    "--x",
+    "--dup=b"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [
+     {
+      "name": "dup",
+      "value": "b"
+     },
+     {
+      "name": "x",
+      "value": true
+     }
+    ],
+    "diagnostics": []
+   }
+  },
+  {
+   "args": [
+    "--piglet",
+    "work",
+    "--no-stdin",
+    "msg"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [
+     {
+      "name": "piglet",
+      "value": "work"
+     },
+     {
+      "name": "no-stdin",
+      "value": "msg"
+     }
+    ],
+    "diagnostics": []
+   }
+  },
+  {
+   "args": [
+    "-x",
+    "-yz",
+    "@a",
+    "@b",
+    "plain"
+   ],
+   "result": {
+    "messages": [
+     "plain"
+    ],
+    "fileArgs": [
+     "a",
+     "b"
+    ],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "error",
+      "message": "Unknown option: -x"
+     },
+     {
+      "type": "error",
+      "message": "Unknown option: -yz"
+     }
+    ]
+   }
+  },
+  {
+   "args": [
+    "--",
+    "--recipe",
+    "x",
+    "@f",
+    "-c"
+   ],
+   "result": {
+    "messages": [
+     "--recipe",
+     "x",
+     "-c"
+    ],
+    "fileArgs": [
+     "f"
+    ],
+    "unknownFlags": [],
+    "diagnostics": []
+   }
+  },
+  {
+   "args": [
+    "msg",
+    "--",
+    "@x"
+   ],
+   "result": {
+    "messages": [
+     "msg"
+    ],
+    "fileArgs": [
+     "x"
+    ],
+    "unknownFlags": [],
+    "diagnostics": []
+   }
+  },
+  {
+   "args": [
+    "--session"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [
+     {
+      "name": "session",
+      "value": true
+     }
+    ],
+    "diagnostics": []
+   }
+  },
+  {
+   "args": [
+    "--models"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [
+     {
+      "name": "models",
+      "value": true
+     }
+    ],
+    "diagnostics": []
+   }
+  },
+  {
+   "args": [
+    "-e"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [
+     {
+      "type": "error",
+      "message": "Unknown option: -e"
+     }
+    ]
+   }
+  },
+  {
+   "args": [
+    "--mode",
+    "rpc",
+    "--no-session",
+    "-ne",
+    "-e",
+    "go/aio",
+    "--models",
+    "foo",
+    "--no-approve"
+   ],
+   "result": {
+    "messages": [],
+    "fileArgs": [],
+    "unknownFlags": [],
+    "diagnostics": [],
+    "mode": "rpc",
+    "noSession": true,
+    "noExtensions": true,
+    "extensions": [
+     "go/aio"
+    ],
+    "models": [
+     "foo"
+    ],
+    "projectTrustOverride": false
+   }
+  }
+ ]
+}

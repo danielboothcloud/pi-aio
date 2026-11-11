@@ -13,7 +13,6 @@
       "mcpServers": {},
       "extensions": [
         "npm:@upstash/context7-pi",
-        "npm:pi-lens",
         "npm:@gotgenes/pi-anthropic-auth"
       ],
       "blocklist": {}

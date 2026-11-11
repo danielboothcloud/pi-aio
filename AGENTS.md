@@ -541,7 +541,30 @@ generated `dist/` tree without changing the package contract.
   blocklist and starting mode to the other Go features through package
   state; the Node launcher keeps the bridge, and `AIO_PIG_EXTENSION`
   makes the launcher inject `go/aio` instead of `index.ts`), then
-  styles, effort, notifications, and session-naming. Feature files in
+  styles, effort, notifications, and session-naming. Group 5 (goals,
+  btw) is ported: the goal loop runs only on `agent_before_settle`, the
+  goal review and `/btw` share one isolated completion helper
+  (`completeWith` in `go/aio/goals.go`) and the btw branch digest, and a
+  `/btw` question runs on its own goroutine (a replaced question cannot
+  cancel its host call; the late result is discarded). Group 6
+  (subagents) is ported: children run `$PIG_HARNESS_BINARY`, the parent's
+  `-ne`/`-e` flags come from pig's argv in `PIG_HARNESS_ARGV_FILE` (read
+  with `go/internal/piargs`, the Go port of Pi's `parseArgs`), the runner
+  serializes `OnUpdate` callbacks per run (TS runs them on one thread), and
+  the inspector is an `sdk.RemoteComponent` overlay. Its golden generator
+  runs real runner scenarios with `subagents/test-fixture-child.mjs`; the
+  builtin agent files are embedded copies that a Go test compares with
+  `subagents/agents`. Group 12 (yaml-hooks) is ported in
+  `go/internal/yamlhooks` and registers last (`OrderYamlHooks`). It
+  reuses `go/internal/toolpaths`, ports Node's `path.matchesGlob`
+  (minimatch with regexp2), and keeps every `PI_YAML_HOOKS_*` name and
+  validation code. Its golden generator drives the real `registerYamlHooks`
+  with an injected `executeBash` and runs real harmless bash hooks.
+  Shared Go packages: `go/internal/chrome` (port of
+  `ui/chrome.ts`), `go/internal/tuiwidth` (copy of the SDK's internal
+  pi-tui width code, because internal packages cannot import the SDK), and
+  `go/internal/jsstr` (JavaScript string and JSON helpers). YAML parsing
+  uses `go.yaml.in/yaml/v3`. Feature files in
   `go/aio` self-register with `addRegistrar(Order…)` from `init()`;
   `test:go` runs every `go/internal/*/testdata/gen-golden.ts --check`.
   Go notifications write terminal sequences to `/dev/tty`, never stdout

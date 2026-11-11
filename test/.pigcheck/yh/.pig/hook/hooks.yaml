@@ -1,0 +1,15 @@
+hooks:
+  - id: prompt-context
+    event: user.prompt.submit
+    actions:
+      - bash: 'echo "HOOKCTX-42 for: $(cat | head -c 200)"'
+  - id: guard
+    event: tool.before.bash
+    actions:
+      - bash: 'if grep -q forbidden; then echo "blocked by yaml hook" >&2; exit 2; fi'
+  - id: after-bash
+    event: tool.after.bash
+    actions:
+      - bash: 'cat >> "$PI_PROJECT_DIR/hooklog.txt"; echo >> "$PI_PROJECT_DIR/hooklog.txt"'
+      - notify: {text: "bash finished", level: warning}
+      - setStatus: hooked

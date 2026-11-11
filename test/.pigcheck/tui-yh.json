@@ -1,0 +1,6 @@
+{"argv": ["pig", "--no-session", "-ne", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/fixture-provider.ts", "--model", "fixture/m1"],
+ "env": {"FIXTURE_PORT": "65096", "PIG_CODING_AGENT_DIR": "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/agent-yh"}, "cols": 110, "rows": 40,
+ "steps": [{"wait": "fixture", "timeout": 60}, {"sleep": 1.5},
+  {"send": "/hooks-status"}, {"sleep": 0.5}, {"send": "\r"}, {"wait": "Hook status", "timeout": 15}, {"sleep": 1}, {"screen": "hooks-status"},
+  {"send": "run it\r"}, {"wait": "Read file?", "timeout": 30}, {"sleep": 1}, {"screen": "confirm dialog"},
+  {"send": "\r"}, {"wait": "tui done", "timeout": 30}, {"sleep": 1.5}, {"screen": "after run"}]}

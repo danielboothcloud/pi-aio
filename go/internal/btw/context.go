@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/danielboothcloud/pi-aio/go/internal/jsstr"
 )
 
 // Budgets (all enforced here, not at call sites).
@@ -157,7 +159,7 @@ func jsString(raw json.RawMessage, fallback string) string {
 	case string:
 		return x
 	case float64:
-		return jsNumber(x)
+		return jsstr.NumberJS(x)
 	case bool:
 		if x {
 			return "true"

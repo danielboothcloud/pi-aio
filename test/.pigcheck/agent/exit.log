@@ -1,0 +1,5 @@
+2026-11-11T10:03:46.874Z pid=42921 ppid=42918 received SIGTERM
+2026-11-11T10:04:20.221Z pid=42921 ppid=42918 session started 2026-11-11T10:03:31Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T10:04:31.530Z pid=48502 ppid=48498 received SIGTERM
+2026-11-11T10:04:58.842Z pid=48502 ppid=48498 session started 2026-11-11T10:04:20Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T10:05:10.632Z pid=53453 ppid=53417 received SIGTERM
