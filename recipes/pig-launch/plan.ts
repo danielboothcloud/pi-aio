@@ -95,6 +95,24 @@ export interface PigLaunch {
 	recipeName?: string;
 }
 
+/**
+ * The arguments for `env` that start `launch` from `base`: `-u NAME` for
+ * removed variables, `NAME=value` for added or changed ones, then the
+ * command and its arguments. A shell runs `env <these>`; `env` replaces
+ * itself with pig, so no launcher process stays alive.
+ */
+export function execEnvArgs(base: Env, launch: PigLaunch): string[] {
+	const unset: string[] = [];
+	const set: string[] = [];
+	for (const [key, value] of Object.entries(base)) {
+		if (value !== undefined && launch.env[key] === undefined) unset.push("-u", key);
+	}
+	for (const [key, value] of Object.entries(launch.env)) {
+		if (value !== undefined && base[key] !== value) set.push(`${key}=${value}`);
+	}
+	return [...unset, ...set, launch.command, ...launch.args];
+}
+
 function isPathLike(value: string): boolean {
 	return /[/\\]/.test(value) || /\.ya?ml$/i.test(value);
 }

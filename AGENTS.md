@@ -31,6 +31,8 @@ diff rendering, shell rewriting, and structural search.
 - `npm run test:node` — run the fast local suites through `tsx --test`.
 - `npm run test:diff` — run `diff-tools/**/*.test.ts` with
   `vitest.diff.config.ts`.
+- `npm run test:go` — check the Go port golden data, then `go vet` and
+  `go test` on `go/internal/...` (skipped when `go` is not installed).
 - `npm run test:upstream` — run `ask-user-question/**/*.upstream.test.ts` with
   the isolated test HOME from `test/setup.ts`.
 - `npx tsx --test path/to/file.test.ts` — run one Node test file.
@@ -111,8 +113,8 @@ generated `dist/` tree without changing the package contract.
   misfires) and every relaunch path (factory, `--continue`, `/resume`)
   stands down: restart-scoped keys are reported as not applied and
   everything else applies in-session. Parity comes from the
-  `bin/aio-pig.mjs` launcher (used in place of `pig`, e.g. a fish
-  function): it runs the SAME bridge before pig starts — `continue.ts`,
+  `bin/aio-pig.mjs` launcher (used in place of `pig` through the shipped
+  `bin/pig.fish` function): it runs the SAME bridge before pig starts — `continue.ts`,
   trust prompt, `loadRecipes`, `decideRelaunch` via `pig-launch/plan.ts` —
   and starts pig once with the relaunch args/env plus
   `AIO_PIG_LAUNCHER=1`, exiting with pig's status. Pi's package is absent
@@ -125,8 +127,16 @@ generated `dist/` tree without changing the package contract.
   runtime Pi imports. Launcher-only: `--piglet <name>` aliases
   `--recipe` when that recipe exists (paths/real Piglets pass through),
   pig subcommands pass through, `AIO_PIG_BINARY` picks the binary,
-  `AIO_PIG_DRY_RUN=1` prints the plan, and any planning error starts pig
-  unchanged. Inside launcher-started pig, a still-relaunching decision
+  `AIO_PIG_DRY_RUN=1` prints the plan, `AIO_PIG_EXTENSION` replaces the
+  injected AIO entry (e.g. the Go port), and any planning error starts pig
+  unchanged. `--aio-print-exec=tty|pipe` (first argument; the shell's real
+  stdout state, because the shell captures the launcher's stdout) prints
+  NUL-separated `env` arguments (`execEnvArgs`: `-u` removals, then
+  assignments, then pig and its args) and exits; `bin/pig.fish` runs
+  `command env $plan`, so env replaces itself with pig and no Node
+  launcher stays alive. The fish function falls back to plain `pig` when
+  node, the launcher, or the plan is missing; `AIO_PIG_LAUNCHER_PATH`
+  points it at a dev checkout. Inside launcher-started pig, a still-relaunching decision
   becomes a "launcher did not apply" note (never a spawn); the native
   picker and `/resume` get a `pig --session <file>` restart hint; the
   launcher's trust question is not repeated (`AIO_PIG_TRUST_ASKED`).
@@ -512,6 +522,38 @@ generated `dist/` tree without changing the package contract.
   get a command context. `doubleEscapeAction: "none"` (global, or trusted
   project settings) keeps double-Esc inert. Native `/tree`, `/fork` and
   `pi --resume` remain available. TUI-only; intercepts clear on shutdown.
+- `go/` is the staged Go port for PiG (see `go/README.md` for the status
+  table). One module; `go/aio` is the PiG factory (identity `aio`, load
+  with `pig -ne -e go/aio`); `go/internal/<feature>` mirrors a TypeScript
+  feature and never imports the SDK, so `npm run test:go` runs without PiG.
+  The TypeScript feature stays the reference: each port ships golden data
+  generated from TS (`testdata/gen-golden.ts`, `--check` in `test:go` fails
+  on drift), Go tests that reproduce it, and a real `pig` check. Pi cannot
+  load Go, so do not delete a TS feature before the user confirms parity.
+  Ported so far: blocklist (regex rules use `regexp2` in ECMAScript mode;
+  RE2 would skip lookahead rules and weaken the hard blocklist) and
+  permission-modes (its golden generator drives the real TS `tool_call`
+  gate, todo tool, and mode contexts through a harness; fixed patterns use
+  RE2 with an explicit JS `\s` class; prompts are `ctx.Select` until
+  diff-tools is ported; known gaps are listed in `go/README.md`), and the
+  in-session part of recipes (registers FIRST in `go/aio`, as in
+  `index.ts`; shares the TS trust store and config tiers; publishes its
+  blocklist and starting mode to the other Go features through package
+  state; the Node launcher keeps the bridge, and `AIO_PIG_EXTENSION`
+  makes the launcher inject `go/aio` instead of `index.ts`), then
+  styles, effort, notifications, and session-naming. Feature files in
+  `go/aio` self-register with `addRegistrar(Order…)` from `init()`;
+  `test:go` runs every `go/internal/*/testdata/gen-golden.ts --check`.
+  Go notifications write terminal sequences to `/dev/tty`, never stdout
+  (the PiG wire). Never hold a feature mutex across a host call that
+  re-enters the extension (`SetThinkingLevel` → `thinking_level_select`
+  deadlocked effort once). Group 7 (init, rtk, user-bash, ast-grep,
+  nvim, tuicr, hypa) is ported; `go/internal/toolpaths` is the shared port
+  of `yaml-hooks/tool-paths.ts`. PiG 0.7.0 panics when a Go editor
+  component overrides any method, so the Go user-bash editor is opt-in
+  (`AIO_GO_USER_BASH_EDITOR=1`); the Go SDK cannot suspend the host TUI, so
+  Go `/tuicr` opens tuicr in a pane and `/tuicr done` loads the comments. `go/` is
+  not in the npm `files` allowlist; PiG loads it from the git checkout.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

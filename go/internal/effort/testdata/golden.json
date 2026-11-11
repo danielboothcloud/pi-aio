@@ -1,0 +1,3199 @@
+{
+ "targets": [
+  {
+   "raw": "",
+   "target": {
+    "kind": "status"
+   }
+  },
+  {
+   "raw": "  STATUS ",
+   "target": {
+    "kind": "status"
+   }
+  },
+  {
+   "raw": "show",
+   "target": {
+    "kind": "status"
+   }
+  },
+  {
+   "raw": "ultracode",
+   "target": {
+    "kind": "ultracode"
+   }
+  },
+  {
+   "raw": "Ultra-Code",
+   "target": {
+    "kind": "ultracode"
+   }
+  },
+  {
+   "raw": "off",
+   "target": {
+    "kind": "level",
+    "level": "off"
+   }
+  },
+  {
+   "raw": "0",
+   "target": {
+    "kind": "level",
+    "level": "off"
+   }
+  },
+  {
+   "raw": "false",
+   "target": {
+    "kind": "level",
+    "level": "off"
+   }
+  },
+  {
+   "raw": "none",
+   "target": {
+    "kind": "level",
+    "level": "off"
+   }
+  },
+  {
+   "raw": "min",
+   "target": {
+    "kind": "level",
+    "level": "minimal"
+   }
+  },
+  {
+   "raw": "lo",
+   "target": {
+    "kind": "level",
+    "level": "low"
+   }
+  },
+  {
+   "raw": "med",
+   "target": {
+    "kind": "level",
+    "level": "medium"
+   }
+  },
+  {
+   "raw": "normal",
+   "target": {
+    "kind": "level",
+    "level": "medium"
+   }
+  },
+  {
+   "raw": "default",
+   "target": {
+    "kind": "level",
+    "level": "medium"
+   }
+  },
+  {
+   "raw": "hi",
+   "target": {
+    "kind": "level",
+    "level": "high"
+   }
+  },
+  {
+   "raw": "x-high",
+   "target": {
+    "kind": "level",
+    "level": "xhigh"
+   }
+  },
+  {
+   "raw": "extra",
+   "target": {
+    "kind": "level",
+    "level": "xhigh"
+   }
+  },
+  {
+   "raw": "xhigh",
+   "target": {
+    "kind": "level",
+    "level": "xhigh"
+   }
+  },
+  {
+   "raw": "max",
+   "target": {
+    "kind": "level",
+    "level": "max"
+   }
+  },
+  {
+   "raw": "thinking high",
+   "target": {
+    "kind": "level",
+    "level": "high"
+   }
+  },
+  {
+   "raw": "effort=low",
+   "target": {
+    "kind": "level",
+    "level": "low"
+   }
+  },
+  {
+   "raw": "level: max",
+   "target": {
+    "kind": "level",
+    "level": "max"
+   }
+  },
+  {
+   "raw": "think, minimal",
+   "target": {
+    "kind": "level",
+    "level": "minimal"
+   }
+  },
+  {
+   "raw": "high low",
+   "target": {
+    "kind": "level",
+    "level": "low"
+   }
+  },
+  {
+   "raw": "bogus",
+   "target": {
+    "kind": "invalid",
+    "value": "bogus"
+   }
+  },
+  {
+   "raw": " Weird Value ",
+   "target": {
+    "kind": "invalid",
+    "value": "Weird Value"
+   }
+  },
+  {
+   "raw": "effort",
+   "target": {
+    "kind": "invalid",
+    "value": "effort"
+   }
+  },
+  {
+   "raw": "thinking=",
+   "target": {
+    "kind": "invalid",
+    "value": "thinking="
+   }
+  },
+  {
+   "raw": "turbo",
+   "target": {
+    "kind": "invalid",
+    "value": "turbo"
+   }
+  },
+  {
+   "raw": " high ",
+   "target": {
+    "kind": "level",
+    "level": "high"
+   }
+  }
+ ],
+ "models": [
+  {
+   "name": "none"
+  },
+  {
+   "name": "plain",
+   "model": {
+    "reasoning": false
+   }
+  },
+  {
+   "name": "reasoning",
+   "model": {
+    "reasoning": true
+   }
+  },
+  {
+   "name": "mapped",
+   "model": {
+    "reasoning": true,
+    "thinkingLevelMap": {
+     "xhigh": "high",
+     "max": null,
+     "off": "none",
+     "low": "minimal"
+    }
+   }
+  }
+ ],
+ "resolved": [
+  {
+   "model": "none",
+   "level": "off",
+   "value": null
+  },
+  {
+   "model": "none",
+   "level": "minimal",
+   "value": null
+  },
+  {
+   "model": "none",
+   "level": "low",
+   "value": null
+  },
+  {
+   "model": "none",
+   "level": "medium",
+   "value": null
+  },
+  {
+   "model": "none",
+   "level": "high",
+   "value": null
+  },
+  {
+   "model": "none",
+   "level": "xhigh",
+   "value": null
+  },
+  {
+   "model": "none",
+   "level": "max",
+   "value": null
+  },
+  {
+   "model": "plain",
+   "level": "off",
+   "value": null
+  },
+  {
+   "model": "plain",
+   "level": "minimal",
+   "value": null
+  },
+  {
+   "model": "plain",
+   "level": "low",
+   "value": null
+  },
+  {
+   "model": "plain",
+   "level": "medium",
+   "value": null
+  },
+  {
+   "model": "plain",
+   "level": "high",
+   "value": null
+  },
+  {
+   "model": "plain",
+   "level": "xhigh",
+   "value": null
+  },
+  {
+   "model": "plain",
+   "level": "max",
+   "value": null
+  },
+  {
+   "model": "reasoning",
+   "level": "off",
+   "value": null
+  },
+  {
+   "model": "reasoning",
+   "level": "minimal",
+   "value": "minimal"
+  },
+  {
+   "model": "reasoning",
+   "level": "low",
+   "value": "low"
+  },
+  {
+   "model": "reasoning",
+   "level": "medium",
+   "value": "medium"
+  },
+  {
+   "model": "reasoning",
+   "level": "high",
+   "value": "high"
+  },
+  {
+   "model": "reasoning",
+   "level": "xhigh",
+   "value": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "level": "max",
+   "value": "max"
+  },
+  {
+   "model": "mapped",
+   "level": "off",
+   "value": "none"
+  },
+  {
+   "model": "mapped",
+   "level": "minimal",
+   "value": "minimal"
+  },
+  {
+   "model": "mapped",
+   "level": "low",
+   "value": "minimal"
+  },
+  {
+   "model": "mapped",
+   "level": "medium",
+   "value": "medium"
+  },
+  {
+   "model": "mapped",
+   "level": "high",
+   "value": "high"
+  },
+  {
+   "model": "mapped",
+   "level": "xhigh",
+   "value": "high"
+  },
+  {
+   "model": "mapped",
+   "level": "max",
+   "value": null
+  }
+ ],
+ "overrides": [
+  {
+   "model": "none",
+   "desired": "off",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "none",
+   "desired": "off",
+   "payload": {
+    "reasoning_effort": "off"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "off"
+   }
+  },
+  {
+   "model": "none",
+   "desired": "off",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "none",
+   "desired": "off",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "none",
+   "desired": "off",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "none",
+   "desired": "minimal",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "none",
+   "desired": "minimal",
+   "payload": {
+    "reasoning_effort": "minimal"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "minimal"
+   }
+  },
+  {
+   "model": "none",
+   "desired": "minimal",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "none",
+   "desired": "minimal",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "none",
+   "desired": "minimal",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "none",
+   "desired": "low",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "none",
+   "desired": "low",
+   "payload": {
+    "reasoning_effort": "low"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "low"
+   }
+  },
+  {
+   "model": "none",
+   "desired": "low",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "none",
+   "desired": "low",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "none",
+   "desired": "low",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "none",
+   "desired": "medium",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "none",
+   "desired": "medium",
+   "payload": {
+    "reasoning_effort": "medium"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "medium"
+   }
+  },
+  {
+   "model": "none",
+   "desired": "medium",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "none",
+   "desired": "medium",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "none",
+   "desired": "medium",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "none",
+   "desired": "high",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "none",
+   "desired": "high",
+   "payload": {
+    "reasoning_effort": "high"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high"
+   }
+  },
+  {
+   "model": "none",
+   "desired": "high",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "none",
+   "desired": "high",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "none",
+   "desired": "high",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "none",
+   "desired": "xhigh",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "none",
+   "desired": "xhigh",
+   "payload": {
+    "reasoning_effort": "xhigh"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "xhigh"
+   }
+  },
+  {
+   "model": "none",
+   "desired": "xhigh",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "none",
+   "desired": "xhigh",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "none",
+   "desired": "xhigh",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "none",
+   "desired": "max",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "none",
+   "desired": "max",
+   "payload": {
+    "reasoning_effort": "max"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "max"
+   }
+  },
+  {
+   "model": "none",
+   "desired": "max",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "none",
+   "desired": "max",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "none",
+   "desired": "max",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "none",
+   "desired": null,
+   "payload": {
+    "reasoning_effort": "high"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high"
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "off",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "off",
+   "payload": {
+    "reasoning_effort": "off"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "off"
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "off",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "off",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "plain",
+   "desired": "off",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "plain",
+   "desired": "minimal",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "minimal",
+   "payload": {
+    "reasoning_effort": "minimal"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "minimal"
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "minimal",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "minimal",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "plain",
+   "desired": "minimal",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "plain",
+   "desired": "low",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "low",
+   "payload": {
+    "reasoning_effort": "low"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "low"
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "low",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "low",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "plain",
+   "desired": "low",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "plain",
+   "desired": "medium",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "medium",
+   "payload": {
+    "reasoning_effort": "medium"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "medium"
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "medium",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "medium",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "plain",
+   "desired": "medium",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "plain",
+   "desired": "high",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "high",
+   "payload": {
+    "reasoning_effort": "high"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high"
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "high",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "high",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "plain",
+   "desired": "high",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "plain",
+   "desired": "xhigh",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "xhigh",
+   "payload": {
+    "reasoning_effort": "xhigh"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "xhigh"
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "xhigh",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "xhigh",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "plain",
+   "desired": "xhigh",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "plain",
+   "desired": "max",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "max",
+   "payload": {
+    "reasoning_effort": "max"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "max"
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "max",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "plain",
+   "desired": "max",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "plain",
+   "desired": "max",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "plain",
+   "desired": null,
+   "payload": {
+    "reasoning_effort": "high"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high"
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "off",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "off",
+   "payload": {
+    "reasoning_effort": "off"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "off"
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "off",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "off",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "reasoning",
+   "desired": "off",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "reasoning",
+   "desired": "minimal",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": true,
+   "result": {
+    "reasoning_effort": "minimal",
+    "x": 1
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "minimal",
+   "payload": {
+    "reasoning_effort": "minimal"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "minimal"
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "minimal",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "minimal",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "reasoning",
+   "desired": "minimal",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "reasoning",
+   "desired": "low",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": true,
+   "result": {
+    "reasoning_effort": "low",
+    "x": 1
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "low",
+   "payload": {
+    "reasoning_effort": "low"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "low"
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "low",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "low",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "reasoning",
+   "desired": "low",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "reasoning",
+   "desired": "medium",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": true,
+   "result": {
+    "reasoning_effort": "medium",
+    "x": 1
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "medium",
+   "payload": {
+    "reasoning_effort": "medium"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "medium"
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "medium",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "medium",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "reasoning",
+   "desired": "medium",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "reasoning",
+   "desired": "high",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "high",
+   "payload": {
+    "reasoning_effort": "high"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high"
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "high",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "high",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "reasoning",
+   "desired": "high",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "reasoning",
+   "desired": "xhigh",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": true,
+   "result": {
+    "reasoning_effort": "xhigh",
+    "x": 1
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "xhigh",
+   "payload": {
+    "reasoning_effort": "xhigh"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "xhigh"
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "xhigh",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "xhigh",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "reasoning",
+   "desired": "xhigh",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "reasoning",
+   "desired": "max",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": true,
+   "result": {
+    "reasoning_effort": "max",
+    "x": 1
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "max",
+   "payload": {
+    "reasoning_effort": "max"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "max"
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "max",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "reasoning",
+   "desired": "max",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "reasoning",
+   "desired": "max",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "reasoning",
+   "desired": null,
+   "payload": {
+    "reasoning_effort": "high"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high"
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "off",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": true,
+   "result": {
+    "reasoning_effort": "none",
+    "x": 1
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "off",
+   "payload": {
+    "reasoning_effort": "off"
+   },
+   "changed": true,
+   "result": {
+    "reasoning_effort": "none"
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "off",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "off",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "mapped",
+   "desired": "off",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "mapped",
+   "desired": "minimal",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": true,
+   "result": {
+    "reasoning_effort": "minimal",
+    "x": 1
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "minimal",
+   "payload": {
+    "reasoning_effort": "minimal"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "minimal"
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "minimal",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "minimal",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "mapped",
+   "desired": "minimal",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "mapped",
+   "desired": "low",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": true,
+   "result": {
+    "reasoning_effort": "minimal",
+    "x": 1
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "low",
+   "payload": {
+    "reasoning_effort": "low"
+   },
+   "changed": true,
+   "result": {
+    "reasoning_effort": "minimal"
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "low",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "low",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "mapped",
+   "desired": "low",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "mapped",
+   "desired": "medium",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": true,
+   "result": {
+    "reasoning_effort": "medium",
+    "x": 1
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "medium",
+   "payload": {
+    "reasoning_effort": "medium"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "medium"
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "medium",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "medium",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "mapped",
+   "desired": "medium",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "mapped",
+   "desired": "high",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "high",
+   "payload": {
+    "reasoning_effort": "high"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high"
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "high",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "high",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "mapped",
+   "desired": "high",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "mapped",
+   "desired": "xhigh",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "xhigh",
+   "payload": {
+    "reasoning_effort": "xhigh"
+   },
+   "changed": true,
+   "result": {
+    "reasoning_effort": "high"
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "xhigh",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "xhigh",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "mapped",
+   "desired": "xhigh",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "mapped",
+   "desired": "max",
+   "payload": {
+    "reasoning_effort": "high",
+    "x": 1
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high",
+    "x": 1
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "max",
+   "payload": {
+    "reasoning_effort": "max"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "max"
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "max",
+   "payload": {
+    "reasoning": {
+     "effort": "high"
+    }
+   },
+   "changed": false,
+   "result": {
+    "reasoning": {
+     "effort": "high"
+    }
+   }
+  },
+  {
+   "model": "mapped",
+   "desired": "max",
+   "payload": null,
+   "changed": false,
+   "result": null
+  },
+  {
+   "model": "mapped",
+   "desired": "max",
+   "payload": "text",
+   "changed": false,
+   "result": "text"
+  },
+  {
+   "model": "mapped",
+   "desired": null,
+   "payload": {
+    "reasoning_effort": "high"
+   },
+   "changed": false,
+   "result": {
+    "reasoning_effort": "high"
+   }
+  }
+ ],
+ "effective": [
+  {
+   "model": "none",
+   "requested": "off",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "none",
+   "requested": "off",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "none",
+   "requested": "off",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "none",
+   "requested": "off",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "none",
+   "requested": "off",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "none",
+   "requested": "off",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "none",
+   "requested": "off",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "none",
+   "requested": "minimal",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "none",
+   "requested": "minimal",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "none",
+   "requested": "minimal",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "none",
+   "requested": "minimal",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "none",
+   "requested": "minimal",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "none",
+   "requested": "minimal",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "none",
+   "requested": "minimal",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "none",
+   "requested": "low",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "none",
+   "requested": "low",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "none",
+   "requested": "low",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "none",
+   "requested": "low",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "none",
+   "requested": "low",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "none",
+   "requested": "low",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "none",
+   "requested": "low",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "none",
+   "requested": "medium",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "none",
+   "requested": "medium",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "none",
+   "requested": "medium",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "none",
+   "requested": "medium",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "none",
+   "requested": "medium",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "none",
+   "requested": "medium",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "none",
+   "requested": "medium",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "none",
+   "requested": "high",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "none",
+   "requested": "high",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "none",
+   "requested": "high",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "none",
+   "requested": "high",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "none",
+   "requested": "high",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "none",
+   "requested": "high",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "none",
+   "requested": "high",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "none",
+   "requested": "xhigh",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "none",
+   "requested": "xhigh",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "none",
+   "requested": "xhigh",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "none",
+   "requested": "xhigh",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "none",
+   "requested": "xhigh",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "none",
+   "requested": "xhigh",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "none",
+   "requested": "xhigh",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "none",
+   "requested": "max",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "none",
+   "requested": "max",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "none",
+   "requested": "max",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "none",
+   "requested": "max",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "none",
+   "requested": "max",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "none",
+   "requested": "max",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "none",
+   "requested": "max",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "plain",
+   "requested": "off",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "plain",
+   "requested": "off",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "plain",
+   "requested": "off",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "plain",
+   "requested": "off",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "plain",
+   "requested": "off",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "plain",
+   "requested": "off",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "plain",
+   "requested": "off",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "plain",
+   "requested": "minimal",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "plain",
+   "requested": "minimal",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "plain",
+   "requested": "minimal",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "plain",
+   "requested": "minimal",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "plain",
+   "requested": "minimal",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "plain",
+   "requested": "minimal",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "plain",
+   "requested": "minimal",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "plain",
+   "requested": "low",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "plain",
+   "requested": "low",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "plain",
+   "requested": "low",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "plain",
+   "requested": "low",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "plain",
+   "requested": "low",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "plain",
+   "requested": "low",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "plain",
+   "requested": "low",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "plain",
+   "requested": "medium",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "plain",
+   "requested": "medium",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "plain",
+   "requested": "medium",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "plain",
+   "requested": "medium",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "plain",
+   "requested": "medium",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "plain",
+   "requested": "medium",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "plain",
+   "requested": "medium",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "plain",
+   "requested": "high",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "plain",
+   "requested": "high",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "plain",
+   "requested": "high",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "plain",
+   "requested": "high",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "plain",
+   "requested": "high",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "plain",
+   "requested": "high",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "plain",
+   "requested": "high",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "plain",
+   "requested": "xhigh",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "plain",
+   "requested": "xhigh",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "plain",
+   "requested": "xhigh",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "plain",
+   "requested": "xhigh",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "plain",
+   "requested": "xhigh",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "plain",
+   "requested": "xhigh",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "plain",
+   "requested": "xhigh",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "plain",
+   "requested": "max",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "plain",
+   "requested": "max",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "plain",
+   "requested": "max",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "plain",
+   "requested": "max",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "plain",
+   "requested": "max",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "plain",
+   "requested": "max",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "plain",
+   "requested": "max",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "reasoning",
+   "requested": "off",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "reasoning",
+   "requested": "off",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "reasoning",
+   "requested": "off",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "reasoning",
+   "requested": "off",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "reasoning",
+   "requested": "off",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "reasoning",
+   "requested": "off",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "requested": "off",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "reasoning",
+   "requested": "minimal",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "reasoning",
+   "requested": "minimal",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "reasoning",
+   "requested": "minimal",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "reasoning",
+   "requested": "minimal",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "reasoning",
+   "requested": "minimal",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "reasoning",
+   "requested": "minimal",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "requested": "minimal",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "reasoning",
+   "requested": "low",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "reasoning",
+   "requested": "low",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "reasoning",
+   "requested": "low",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "reasoning",
+   "requested": "low",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "reasoning",
+   "requested": "low",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "reasoning",
+   "requested": "low",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "requested": "low",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "reasoning",
+   "requested": "medium",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "reasoning",
+   "requested": "medium",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "reasoning",
+   "requested": "medium",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "reasoning",
+   "requested": "medium",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "reasoning",
+   "requested": "medium",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "reasoning",
+   "requested": "medium",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "requested": "medium",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "reasoning",
+   "requested": "high",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "reasoning",
+   "requested": "high",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "reasoning",
+   "requested": "high",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "reasoning",
+   "requested": "high",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "reasoning",
+   "requested": "high",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "reasoning",
+   "requested": "high",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "requested": "high",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "reasoning",
+   "requested": "xhigh",
+   "clamped": "off",
+   "result": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "requested": "xhigh",
+   "clamped": "minimal",
+   "result": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "requested": "xhigh",
+   "clamped": "low",
+   "result": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "requested": "xhigh",
+   "clamped": "medium",
+   "result": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "requested": "xhigh",
+   "clamped": "high",
+   "result": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "requested": "xhigh",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "requested": "xhigh",
+   "clamped": "max",
+   "result": "xhigh"
+  },
+  {
+   "model": "reasoning",
+   "requested": "max",
+   "clamped": "off",
+   "result": "max"
+  },
+  {
+   "model": "reasoning",
+   "requested": "max",
+   "clamped": "minimal",
+   "result": "max"
+  },
+  {
+   "model": "reasoning",
+   "requested": "max",
+   "clamped": "low",
+   "result": "max"
+  },
+  {
+   "model": "reasoning",
+   "requested": "max",
+   "clamped": "medium",
+   "result": "max"
+  },
+  {
+   "model": "reasoning",
+   "requested": "max",
+   "clamped": "high",
+   "result": "max"
+  },
+  {
+   "model": "reasoning",
+   "requested": "max",
+   "clamped": "xhigh",
+   "result": "max"
+  },
+  {
+   "model": "reasoning",
+   "requested": "max",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "mapped",
+   "requested": "off",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "mapped",
+   "requested": "off",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "mapped",
+   "requested": "off",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "mapped",
+   "requested": "off",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "mapped",
+   "requested": "off",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "mapped",
+   "requested": "off",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "off",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "mapped",
+   "requested": "minimal",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "mapped",
+   "requested": "minimal",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "mapped",
+   "requested": "minimal",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "mapped",
+   "requested": "minimal",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "mapped",
+   "requested": "minimal",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "mapped",
+   "requested": "minimal",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "minimal",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "mapped",
+   "requested": "low",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "mapped",
+   "requested": "low",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "mapped",
+   "requested": "low",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "mapped",
+   "requested": "low",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "mapped",
+   "requested": "low",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "mapped",
+   "requested": "low",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "low",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "mapped",
+   "requested": "medium",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "mapped",
+   "requested": "medium",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "mapped",
+   "requested": "medium",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "mapped",
+   "requested": "medium",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "mapped",
+   "requested": "medium",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "mapped",
+   "requested": "medium",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "medium",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "mapped",
+   "requested": "high",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "mapped",
+   "requested": "high",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "mapped",
+   "requested": "high",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "mapped",
+   "requested": "high",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "mapped",
+   "requested": "high",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "mapped",
+   "requested": "high",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "high",
+   "clamped": "max",
+   "result": "max"
+  },
+  {
+   "model": "mapped",
+   "requested": "xhigh",
+   "clamped": "off",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "xhigh",
+   "clamped": "minimal",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "xhigh",
+   "clamped": "low",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "xhigh",
+   "clamped": "medium",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "xhigh",
+   "clamped": "high",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "xhigh",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "xhigh",
+   "clamped": "max",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "max",
+   "clamped": "off",
+   "result": "off"
+  },
+  {
+   "model": "mapped",
+   "requested": "max",
+   "clamped": "minimal",
+   "result": "minimal"
+  },
+  {
+   "model": "mapped",
+   "requested": "max",
+   "clamped": "low",
+   "result": "low"
+  },
+  {
+   "model": "mapped",
+   "requested": "max",
+   "clamped": "medium",
+   "result": "medium"
+  },
+  {
+   "model": "mapped",
+   "requested": "max",
+   "clamped": "high",
+   "result": "high"
+  },
+  {
+   "model": "mapped",
+   "requested": "max",
+   "clamped": "xhigh",
+   "result": "xhigh"
+  },
+  {
+   "model": "mapped",
+   "requested": "max",
+   "clamped": "max",
+   "result": "max"
+  }
+ ],
+ "completions": [
+  {
+   "prefix": "",
+   "items": [
+    {
+     "value": "off",
+     "label": "off",
+     "description": "Disable model thinking effort"
+    },
+    {
+     "value": "minimal",
+     "label": "minimal",
+     "description": "Minimal effort"
+    },
+    {
+     "value": "low",
+     "label": "low",
+     "description": "Low effort"
+    },
+    {
+     "value": "medium",
+     "label": "medium",
+     "description": "Medium effort"
+    },
+    {
+     "value": "high",
+     "label": "high",
+     "description": "High effort"
+    },
+    {
+     "value": "xhigh",
+     "label": "xhigh",
+     "description": "Extra high effort"
+    },
+    {
+     "value": "max",
+     "label": "max",
+     "description": "Maximum native effort"
+    },
+    {
+     "value": "ultracode",
+     "label": "ultracode",
+     "description": "Extra high effort + dynamic_workflow router"
+    },
+    {
+     "value": "status",
+     "label": "status",
+     "description": "Show current effort"
+    },
+    {
+     "value": "none",
+     "label": "none",
+     "description": "Alias for off"
+    },
+    {
+     "value": "ultra-code",
+     "label": "ultra-code",
+     "description": "Alias for ultracode"
+    }
+   ]
+  },
+  {
+   "prefix": "x",
+   "items": [
+    {
+     "value": "xhigh",
+     "label": "xhigh",
+     "description": "Extra high effort"
+    }
+   ]
+  },
+  {
+   "prefix": "U",
+   "items": [
+    {
+     "value": "ultracode",
+     "label": "ultracode",
+     "description": "Extra high effort + dynamic_workflow router"
+    },
+    {
+     "value": "ultra-code",
+     "label": "ultra-code",
+     "description": "Alias for ultracode"
+    }
+   ]
+  },
+  {
+   "prefix": " st ",
+   "items": [
+    {
+     "value": "status",
+     "label": "status",
+     "description": "Show current effort"
+    }
+   ]
+  },
+  {
+   "prefix": "n",
+   "items": [
+    {
+     "value": "none",
+     "label": "none",
+     "description": "Alias for off"
+    }
+   ]
+  },
+  {
+   "prefix": "zz",
+   "items": []
+  }
+ ]
+}

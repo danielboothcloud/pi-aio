@@ -1,0 +1,1035 @@
+{
+ "normalized": [
+  {
+   "params": {
+    "pattern": "console.log($A)"
+   },
+   "input": {
+    "command": "run",
+    "pattern": "console.log($A)",
+    "paths": [
+     "."
+    ],
+    "globs": [],
+    "json": "compact",
+    "maxResults": 200,
+    "timeoutMs": 30000,
+    "includeRaw": false
+   },
+   "args": [
+    "run",
+    "--json=compact",
+    "--pattern",
+    "console.log($A)",
+    "."
+   ],
+   "command": "/bin/ast-grep run --json=compact --pattern 'console.log($A)' ."
+  },
+  {
+   "params": {
+    "kind": "call_expression",
+    "language": "ts",
+    "paths": [
+     "@src",
+     " lib "
+    ],
+    "globs": [
+     "!**/*.test.ts",
+     "*.ts"
+    ],
+    "context": 2,
+    "strictness": "ast",
+    "selector": "x"
+   },
+   "input": {
+    "command": "run",
+    "kind": "call_expression",
+    "language": "ts",
+    "paths": [
+     "src",
+     "lib"
+    ],
+    "globs": [
+     "!**/*.test.ts",
+     "*.ts"
+    ],
+    "selector": "x",
+    "strictness": "ast",
+    "context": 2,
+    "json": "compact",
+    "maxResults": 200,
+    "timeoutMs": 30000,
+    "includeRaw": false
+   },
+   "args": [
+    "run",
+    "--json=compact",
+    "--globs",
+    "!**/*.test.ts",
+    "--globs",
+    "*.ts",
+    "--kind",
+    "call_expression",
+    "--lang",
+    "ts",
+    "--selector",
+    "x",
+    "--strictness",
+    "ast",
+    "--context",
+    "2",
+    "src",
+    "lib"
+   ],
+   "command": "/bin/ast-grep run --json=compact --globs '!**/*.test.ts' --globs '*.ts' --kind call_expression --lang ts --selector x --strictness ast --context 2 src lib"
+  },
+  {
+   "params": {
+    "command": "scan",
+    "rule": "@rules/a.yml",
+    "config": " sgconfig.yml "
+   },
+   "input": {
+    "command": "scan",
+    "paths": [
+     "."
+    ],
+    "globs": [],
+    "config": "sgconfig.yml",
+    "rule": "rules/a.yml",
+    "json": "compact",
+    "maxResults": 200,
+    "timeoutMs": 30000,
+    "includeRaw": false
+   },
+   "args": [
+    "--config",
+    "sgconfig.yml",
+    "scan",
+    "--json=compact",
+    "--rule",
+    "rules/a.yml",
+    "."
+   ],
+   "command": "/bin/ast-grep --config sgconfig.yml scan --json=compact --rule rules/a.yml ."
+  },
+  {
+   "params": {
+    "command": "scan",
+    "inlineRules": "id: x\nrule:\n  pattern: $A",
+    "json": "stream",
+    "maxResults": 3,
+    "timeoutMs": 5000,
+    "includeRaw": true
+   },
+   "input": {
+    "command": "scan",
+    "paths": [
+     "."
+    ],
+    "globs": [],
+    "inlineRules": "id: x\nrule:\n  pattern: $A",
+    "json": "stream",
+    "maxResults": 3,
+    "timeoutMs": 5000,
+    "includeRaw": true
+   },
+   "args": [
+    "scan",
+    "--json=stream",
+    "--inline-rules",
+    "id: x\nrule:\n  pattern: $A",
+    "."
+   ],
+   "command": "/bin/ast-grep scan --json=stream --inline-rules 'id: x\nrule:\n  pattern: $A' ."
+  },
+  {
+   "params": {
+    "pattern": "a",
+    "before": 1,
+    "after": 2
+   },
+   "input": {
+    "command": "run",
+    "pattern": "a",
+    "paths": [
+     "."
+    ],
+    "globs": [],
+    "before": 1,
+    "after": 2,
+    "json": "compact",
+    "maxResults": 200,
+    "timeoutMs": 30000,
+    "includeRaw": false
+   },
+   "args": [
+    "run",
+    "--json=compact",
+    "--pattern",
+    "a",
+    "--before",
+    "1",
+    "--after",
+    "2",
+    "."
+   ],
+   "command": "/bin/ast-grep run --json=compact --pattern a --before 1 --after 2 ."
+  },
+  {
+   "params": {},
+   "error": "command=run requires either pattern or kind."
+  },
+  {
+   "params": {
+    "pattern": "a",
+    "kind": "b"
+   },
+   "error": "command=run accepts pattern or kind, not both."
+  },
+  {
+   "params": {
+    "pattern": "a",
+    "rule": "r"
+   },
+   "error": "rule and inlineRules are only valid with command=scan."
+  },
+  {
+   "params": {
+    "command": "scan",
+    "pattern": "a"
+   },
+   "error": "pattern, kind, language, selector, strictness, context, before, and after are only valid with command=run."
+  },
+  {
+   "params": {
+    "command": "scan",
+    "context": 1
+   },
+   "error": "pattern, kind, language, selector, strictness, context, before, and after are only valid with command=run."
+  },
+  {
+   "params": {
+    "pattern": "a",
+    "context": 1,
+    "before": 1
+   },
+   "error": "context is mutually exclusive with before/after."
+  },
+  {
+   "params": {
+    "pattern": "   "
+   },
+   "error": "pattern must not be empty when provided."
+  },
+  {
+   "params": {
+    "pattern": "a",
+    "config": "@"
+   },
+   "error": "config must not be empty after stripping a leading @."
+  },
+  {
+   "params": {
+    "pattern": "a",
+    "paths": [
+     "ok",
+     "  "
+    ]
+   },
+   "error": "paths[1] must not be empty when provided."
+  },
+  {
+   "params": {
+    "pattern": "a",
+    "paths": [
+     "@ "
+    ]
+   },
+   "error": "paths[0] must not be empty after stripping a leading @."
+  },
+  {
+   "params": {
+    "pattern": "a",
+    "globs": [
+     "x",
+     " "
+    ]
+   },
+   "error": "globs[1] must not be empty when provided."
+  },
+  {
+   "params": {
+    "pattern": "a b",
+    "paths": []
+   },
+   "input": {
+    "command": "run",
+    "pattern": "a b",
+    "paths": [
+     "."
+    ],
+    "globs": [],
+    "json": "compact",
+    "maxResults": 200,
+    "timeoutMs": 30000,
+    "includeRaw": false
+   },
+   "args": [
+    "run",
+    "--json=compact",
+    "--pattern",
+    "a b",
+    "."
+   ],
+   "command": "/bin/ast-grep run --json=compact --pattern 'a b' ."
+  },
+  {
+   "params": {
+    "pattern": "it's $X"
+   },
+   "input": {
+    "command": "run",
+    "pattern": "it's $X",
+    "paths": [
+     "."
+    ],
+    "globs": [],
+    "json": "compact",
+    "maxResults": 200,
+    "timeoutMs": 30000,
+    "includeRaw": false
+   },
+   "args": [
+    "run",
+    "--json=compact",
+    "--pattern",
+    "it's $X",
+    "."
+   ],
+   "command": "/bin/ast-grep run --json=compact --pattern 'it'\"'\"'s $X' ."
+  }
+ ],
+ "summaries": [
+  {
+   "maxResults": 0,
+   "matches": [],
+   "text": "ast_grep run found 0 matches.",
+   "shownCount": 0
+  },
+  {
+   "maxResults": 1,
+   "matches": [],
+   "text": "ast_grep run found 0 matches.",
+   "shownCount": 0
+  },
+  {
+   "maxResults": 200,
+   "matches": [],
+   "text": "ast_grep run found 0 matches.",
+   "shownCount": 0
+  },
+  {
+   "maxResults": 0,
+   "matches": [
+    {
+     "file": "src/a.ts",
+     "range": {
+      "start": {
+       "line": 4,
+       "column": 2
+      }
+     },
+     "text": "console.log(x)"
+    }
+   ],
+   "text": "ast_grep run found 1 match.",
+   "shownCount": 0
+  },
+  {
+   "maxResults": 1,
+   "matches": [
+    {
+     "file": "src/a.ts",
+     "range": {
+      "start": {
+       "line": 4,
+       "column": 2
+      }
+     },
+     "text": "console.log(x)"
+    }
+   ],
+   "text": "ast_grep run found 1 match.\nShowing 1.\n1. src/a.ts:5:3\n   code: console.log(x)",
+   "shownCount": 1
+  },
+  {
+   "maxResults": 200,
+   "matches": [
+    {
+     "file": "src/a.ts",
+     "range": {
+      "start": {
+       "line": 4,
+       "column": 2
+      }
+     },
+     "text": "console.log(x)"
+    }
+   ],
+   "text": "ast_grep run found 1 match.\nShowing 1.\n1. src/a.ts:5:3\n   code: console.log(x)",
+   "shownCount": 1
+  },
+  {
+   "maxResults": 0,
+   "matches": [
+    {
+     "file": "src/a.ts",
+     "range": {
+      "start": {
+       "line": 4,
+       "column": 2
+      }
+     },
+     "text": "console.log(x)",
+     "language": "TypeScript",
+     "lines": "  console.log(\n   x)  ",
+     "metaVariables": {
+      "single": {
+       "A": {
+        "text": "x\n y"
+       },
+       "B": {
+        "text": "b"
+       },
+       "C": {},
+       "D": {
+        "text": "d"
+       },
+       "E": {
+        "text": "e"
+       },
+       "F": {
+        "text": "f"
+       }
+      }
+     }
+    }
+   ],
+   "text": "ast_grep run found 1 match.",
+   "shownCount": 0
+  },
+  {
+   "maxResults": 1,
+   "matches": [
+    {
+     "file": "src/a.ts",
+     "range": {
+      "start": {
+       "line": 4,
+       "column": 2
+      }
+     },
+     "text": "console.log(x)",
+     "language": "TypeScript",
+     "lines": "  console.log(\n   x)  ",
+     "metaVariables": {
+      "single": {
+       "A": {
+        "text": "x\n y"
+       },
+       "B": {
+        "text": "b"
+       },
+       "C": {},
+       "D": {
+        "text": "d"
+       },
+       "E": {
+        "text": "e"
+       },
+       "F": {
+        "text": "f"
+       }
+      }
+     }
+    }
+   ],
+   "text": "ast_grep run found 1 match.\nShowing 1.\n1. src/a.ts:5:3 (TypeScript)\n   code: console.log( x)\n   metavars: $A=x y, $B=b, $C=, $D=d, $E=e, +1 more",
+   "shownCount": 1
+  },
+  {
+   "maxResults": 200,
+   "matches": [
+    {
+     "file": "src/a.ts",
+     "range": {
+      "start": {
+       "line": 4,
+       "column": 2
+      }
+     },
+     "text": "console.log(x)",
+     "language": "TypeScript",
+     "lines": "  console.log(\n   x)  ",
+     "metaVariables": {
+      "single": {
+       "A": {
+        "text": "x\n y"
+       },
+       "B": {
+        "text": "b"
+       },
+       "C": {},
+       "D": {
+        "text": "d"
+       },
+       "E": {
+        "text": "e"
+       },
+       "F": {
+        "text": "f"
+       }
+      }
+     }
+    }
+   ],
+   "text": "ast_grep run found 1 match.\nShowing 1.\n1. src/a.ts:5:3 (TypeScript)\n   code: console.log( x)\n   metavars: $A=x y, $B=b, $C=, $D=d, $E=e, +1 more",
+   "shownCount": 1
+  },
+  {
+   "maxResults": 0,
+   "matches": [
+    {
+     "file": "src/a.ts",
+     "range": {
+      "start": {
+       "line": 4,
+       "column": 2
+      }
+     },
+     "text": "console.log(x)",
+     "ruleId": "no-log",
+     "severity": "warning",
+     "message": "  avoid\nconsole  "
+    },
+    {
+     "text": "console.log(x)",
+     "ruleId": "r2"
+    },
+    {
+     "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+     "file": "src/a.ts",
+     "range": {
+      "start": {
+       "line": 4,
+       "column": 2
+      }
+     },
+     "text": "console.log(x)",
+     "lines": "日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本"
+    }
+   ],
+   "text": "ast_grep run found 4 matches.",
+   "shownCount": 0
+  },
+  {
+   "maxResults": 1,
+   "matches": [
+    {
+     "file": "src/a.ts",
+     "range": {
+      "start": {
+       "line": 4,
+       "column": 2
+      }
+     },
+     "text": "console.log(x)",
+     "ruleId": "no-log",
+     "severity": "warning",
+     "message": "  avoid\nconsole  "
+    },
+    {
+     "text": "console.log(x)",
+     "ruleId": "r2"
+    },
+    {
+     "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+     "file": "src/a.ts",
+     "range": {
+      "start": {
+       "line": 4,
+       "column": 2
+      }
+     },
+     "text": "console.log(x)",
+     "lines": "日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本"
+    }
+   ],
+   "text": "ast_grep run found 4 matches.\nShowing 1; 3 omitted by maxResults=1.\n1. src/a.ts:5:3 [no-log/warning]\n   message: avoid console\n   code: console.log(x)",
+   "shownCount": 1
+  },
+  {
+   "maxResults": 200,
+   "matches": [
+    {
+     "file": "src/a.ts",
+     "range": {
+      "start": {
+       "line": 4,
+       "column": 2
+      }
+     },
+     "text": "console.log(x)",
+     "ruleId": "no-log",
+     "severity": "warning",
+     "message": "  avoid\nconsole  "
+    },
+    {
+     "text": "console.log(x)",
+     "ruleId": "r2"
+    },
+    {
+     "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+     "file": "src/a.ts",
+     "range": {
+      "start": {
+       "line": 4,
+       "column": 2
+      }
+     },
+     "text": "console.log(x)",
+     "lines": "日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本"
+    }
+   ],
+   "text": "ast_grep run found 4 matches.\nShowing 4.\n1. src/a.ts:5:3 [no-log/warning]\n   message: avoid console\n   code: console.log(x)\n2. <unknown> [r2]\n   code: console.log(x)\n3. <unknown>\n   code: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [truncated]\n4. src/a.ts:5:3\n   code: 日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本日本... [truncated]",
+   "shownCount": 4
+  }
+ ],
+ "parses": [
+  {
+   "stdout": "",
+   "mode": "compact",
+   "matches": []
+  },
+  {
+   "stdout": "[]",
+   "mode": "compact",
+   "matches": []
+  },
+  {
+   "stdout": "{\"a\":1}",
+   "mode": "compact",
+   "matches": [
+    {
+     "a": 1
+    }
+   ]
+  },
+  {
+   "stdout": "[1,2]",
+   "mode": "compact",
+   "matches": [
+    1,
+    2
+   ]
+  },
+  {
+   "stdout": "5",
+   "mode": "compact",
+   "error": "ast-grep compact JSON output could not be parsed"
+  },
+  {
+   "stdout": "{bad",
+   "mode": "compact",
+   "error": "ast-grep compact JSON output could not be parsed"
+  },
+  {
+   "stdout": "{\"a\":1}\n\n{\"b\":2}\r\n[{\"c\":3}]",
+   "mode": "stream",
+   "matches": [
+    {
+     "a": 1
+    },
+    {
+     "b": 2
+    },
+    {
+     "c": 3
+    }
+   ]
+  },
+  {
+   "stdout": "{\"a\":1}\nnope",
+   "mode": "stream",
+   "error": "ast-grep stream JSON line could not be parsed"
+  },
+  {
+   "stdout": "",
+   "mode": "stream",
+   "matches": []
+  }
+ ],
+ "outcomes": [
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 0,
+    "signal": null,
+    "stdout": "",
+    "stderr": "",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 0,
+   "success": true,
+   "failure": "ast-grep failed with exit code 0.\nSTDERR:\n<empty stderr>\nSTDOUT:\n<empty stdout>"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 0,
+    "signal": null,
+    "stdout": "",
+    "stderr": "",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 1,
+   "success": true,
+   "failure": "ast-grep failed with exit code 0.\nSTDERR:\n<empty stderr>\nSTDOUT:\n<empty stdout>"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 1,
+    "signal": null,
+    "stdout": "[]",
+    "stderr": "",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 0,
+   "success": true,
+   "failure": "ast-grep failed with exit code 1.\nSTDERR:\n<empty stderr>\nSTDOUT:\n[]"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 1,
+    "signal": null,
+    "stdout": "[]",
+    "stderr": "",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 1,
+   "success": false,
+   "failure": "ast-grep failed with exit code 1.\nSTDERR:\n<empty stderr>\nSTDOUT:\n[]"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 1,
+    "signal": null,
+    "stdout": "",
+    "stderr": "",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 0,
+   "success": true,
+   "failure": "ast-grep failed with exit code 1.\nSTDERR:\n<empty stderr>\nSTDOUT:\n<empty stdout>"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 1,
+    "signal": null,
+    "stdout": "",
+    "stderr": "",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 1,
+   "success": false,
+   "failure": "ast-grep failed with exit code 1.\nSTDERR:\n<empty stderr>\nSTDOUT:\n<empty stdout>"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 1,
+    "signal": null,
+    "stdout": "[]",
+    "stderr": "boom",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 0,
+   "success": false,
+   "failure": "ast-grep failed with exit code 1.\nSTDERR:\nboom\nSTDOUT:\n[]"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 1,
+    "signal": null,
+    "stdout": "[]",
+    "stderr": "boom",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 1,
+   "success": false,
+   "failure": "ast-grep failed with exit code 1.\nSTDERR:\nboom\nSTDOUT:\n[]"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 2,
+    "signal": null,
+    "stdout": "",
+    "stderr": "bad pattern",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 0,
+   "success": false,
+   "failure": "ast-grep failed with exit code 2.\nSTDERR:\nbad pattern\nSTDOUT:\n<empty stdout>"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 2,
+    "signal": null,
+    "stdout": "",
+    "stderr": "bad pattern",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 1,
+   "success": false,
+   "failure": "ast-grep failed with exit code 2.\nSTDERR:\nbad pattern\nSTDOUT:\n<empty stdout>"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": null,
+    "signal": "SIGTERM",
+    "stdout": "x",
+    "stderr": "",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 0,
+   "success": false,
+   "failure": "ast-grep failed with exit code null (SIGTERM).\nSTDERR:\n<empty stderr>\nSTDOUT:\nx"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": null,
+    "signal": "SIGTERM",
+    "stdout": "x",
+    "stderr": "",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 1,
+   "success": false,
+   "failure": "ast-grep failed with exit code null (SIGTERM).\nSTDERR:\n<empty stderr>\nSTDOUT:\nx"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 0,
+    "signal": null,
+    "stdout": "",
+    "stderr": "",
+    "timedOut": true,
+    "aborted": false
+   },
+   "matches": 0,
+   "success": false,
+   "failure": "ast-grep timed out."
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 0,
+    "signal": null,
+    "stdout": "",
+    "stderr": "",
+    "timedOut": true,
+    "aborted": false
+   },
+   "matches": 1,
+   "success": false,
+   "failure": "ast-grep timed out."
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 0,
+    "signal": null,
+    "stdout": "",
+    "stderr": "",
+    "timedOut": false,
+    "aborted": true
+   },
+   "matches": 0,
+   "success": false,
+   "failure": "ast-grep was cancelled."
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 0,
+    "signal": null,
+    "stdout": "",
+    "stderr": "",
+    "timedOut": false,
+    "aborted": true
+   },
+   "matches": 1,
+   "success": false,
+   "failure": "ast-grep was cancelled."
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 3,
+    "signal": null,
+    "stdout": "",
+    "stderr": "e\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\n",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 0,
+   "success": false,
+   "failure": "ast-grep failed with exit code 3.\nSTDERR:\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\n[stderr truncated]\nSTDOUT:\n<empty stdout>"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 3,
+    "signal": null,
+    "stdout": "",
+    "stderr": "e\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\n",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 1,
+   "success": false,
+   "failure": "ast-grep failed with exit code 3.\nSTDERR:\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\ne\n[stderr truncated]\nSTDOUT:\n<empty stdout>"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 1,
+    "signal": null,
+    "stdout": "[{}]",
+    "stderr": "",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 0,
+   "success": false,
+   "failure": "ast-grep failed with exit code 1.\nSTDERR:\n<empty stderr>\nSTDOUT:\n[{}]"
+  },
+  {
+   "process": {
+    "command": "ast-grep",
+    "args": [],
+    "cwd": "/w",
+    "code": 1,
+    "signal": null,
+    "stdout": "[{}]",
+    "stderr": "",
+    "timedOut": false,
+    "aborted": false
+   },
+   "matches": 1,
+   "success": false,
+   "failure": "ast-grep failed with exit code 1.\nSTDERR:\n<empty stderr>\nSTDOUT:\n[{}]"
+  }
+ ],
+ "results": [
+  {
+   "name": "small",
+   "params": {
+    "pattern": "x"
+   },
+   "matches": 1,
+   "text": "ast_grep run found 1 match.\nShowing 1.\n1. src/a.ts:5:3\n   code: console.log(x)",
+   "shownCount": 1,
+   "truncated": false
+  },
+  {
+   "name": "raw",
+   "params": {
+    "pattern": "x",
+    "includeRaw": true
+   },
+   "matches": 0,
+   "text": "ast_grep run found 0 matches.\n\nRaw ast-grep JSON:\n[]",
+   "shownCount": 0,
+   "truncated": false
+  },
+  {
+   "name": "big",
+   "params": {
+    "pattern": "x",
+    "maxResults": 1000
+   },
+   "matches": 2500,
+   "text": "ast_grep run found 2500 matches.\nShowing 1000; 1500 omitted by maxResults=1000.\n1. f0.ts:1:1\n   code: call(0)\n2. f1.ts:2:1\n   code: call(1)\n3. f2.ts:3:1\n   code: call(2)\n4. f3.ts:4:1\n   code: call(3)\n5. f4.ts:5:1\n   code: call(4)\n6. f5.ts:6:1\n   code: call(5)\n7. f6.ts:7:1\n   code: call(6)\n8. f7.ts:8:1\n   code: call(7)\n9. f8.ts:9:1\n   code: call(8)\n10. f9.ts:10:1\n   code: call(9)\n11. f10.ts:11:1\n   code: call(10)\n12. f11.ts:12:1\n   code: call(11)\n13. f12.ts:13:1\n   code: call(12)\n14. f13.ts:14:1\n   code: call(13)\n15. f14.ts:15:1\n   code: call(14)\n16. f15.ts:16:1\n   code: call(15)\n17. f16.ts:17:1\n   code: call(16)\n18. f17.ts:18:1\n   code: call(17)\n19. f18.ts:19:1\n   code: call(18)\n20. f19.ts:20:1\n   code: call(19)\n21. f20.ts:21:1\n   code: call(20)\n22. f21.ts:22:1\n   code: call(21)\n23. f22.ts:23:1\n   code: call(22)\n24. f23.ts:24:1\n   code: call(23)\n25. f24.ts:25:1\n   code: call(24)\n26. f25.ts:26:1\n   code: call(25)\n27. f26.ts:27:1\n   code: call(26)\n28. f27.ts:28:1\n   code: call(27)\n29. f28.ts:29:1\n   code: call(28)\n30. f29.ts:30:1\n   code: call(29)\n31. f30.ts:31:1\n   code: call(30)\n32. f31.ts:32:1\n   code: call(31)\n33. f32.ts:33:1\n   code: call(32)\n34. f33.ts:34:1\n   code: call(33)\n35. f34.ts:35:1\n   code: call(34)\n36. f35.ts:36:1\n   code: call(35)\n37. f36.ts:37:1\n   code: call(36)\n38. f37.ts:38:1\n   code: call(37)\n39. f38.ts:39:1\n   code: call(38)\n40. f39.ts:40:1\n   code: call(39)\n41. f40.ts:41:1\n   code: call(40)\n42. f41.ts:42:1\n   code: call(41)\n43. f42.ts:43:1\n   code: call(42)\n44. f43.ts:44:1\n   code: call(43)\n45. f44.ts:45:1\n   code: call(44)\n46. f45.ts:46:1\n   code: call(45)\n47. f46.ts:47:1\n   code: call(46)\n48. f47.ts:48:1\n   code: call(47)\n49. f48.ts:49:1\n   code: call(48)\n50. f49.ts:50:1\n   code: call(49)\n51. f50.ts:51:1\n   code: call(50)\n52. f51.ts:52:1\n   code: call(51)\n53. f52.ts:53:1\n   code: call(52)\n54. f53.ts:54:1\n   code: call(53)\n55. f54.ts:55:1\n   code: call(54)\n56. f55.ts:56:1\n   code: call(55)\n57. f56.ts:57:1\n   code: call(56)\n58. f57.ts:58:1\n   code: call(57)\n59. f58.ts:59:1\n   code: call(58)\n60. f59.ts:60:1\n   code: call(59)\n61. f60.ts:61:1\n   code: call(60)\n62. f61.ts:62:1\n   code: call(61)\n63. f62.ts:63:1\n   code: call(62)\n64. f63.ts:64:1\n   code: call(63)\n65. f64.ts:65:1\n   code: call(64)\n66. f65.ts:66:1\n   code: call(65)\n67. f66.ts:67:1\n   code: call(66)\n68. f67.ts:68:1\n   code: call(67)\n69. f68.ts:69:1\n   code: call(68)\n70. f69.ts:70:1\n   code: call(69)\n71. f70.ts:71:1\n   code: call(70)\n72. f71.ts:72:1\n   code: call(71)\n73. f72.ts:73:1\n   code: call(72)\n74. f73.ts:74:1\n   code: call(73)\n75. f74.ts:75:1\n   code: call(74)\n76. f75.ts:76:1\n   code: call(75)\n77. f76.ts:77:1\n   code: call(76)\n78. f77.ts:78:1\n   code: call(77)\n79. f78.ts:79:1\n   code: call(78)\n80. f79.ts:80:1\n   code: call(79)\n81. f80.ts:81:1\n   code: call(80)\n82. f81.ts:82:1\n   code: call(81)\n83. f82.ts:83:1\n   code: call(82)\n84. f83.ts:84:1\n   code: call(83)\n85. f84.ts:85:1\n   code: call(84)\n86. f85.ts:86:1\n   code: call(85)\n87. f86.ts:87:1\n   code: call(86)\n88. f87.ts:88:1\n   code: call(87)\n89. f88.ts:89:1\n   code: call(88)\n90. f89.ts:90:1\n   code: call(89)\n91. f90.ts:91:1\n   code: call(90)\n92. f91.ts:92:1\n   code: call(91)\n93. f92.ts:93:1\n   code: call(92)\n94. f93.ts:94:1\n   code: call(93)\n95. f94.ts:95:1\n   code: call(94)\n96. f95.ts:96:1\n   code: call(95)\n97. f96.ts:97:1\n   code: call(96)\n98. f97.ts:98:1\n   code: call(97)\n99. f98.ts:99:1\n   code: call(98)\n100. f99.ts:100:1\n   code: call(99)\n101. f100.ts:101:1\n   code: call(100)\n102. f101.ts:102:1\n   code: call(101)\n103. f102.ts:103:1\n   code: call(102)\n104. f103.ts:104:1\n   code: call(103)\n105. f104.ts:105:1\n   code: call(104)\n106. f105.ts:106:1\n   code: call(105)\n107. f106.ts:107:1\n   code: call(106)\n108. f107.ts:108:1\n   code: call(107)\n109. f108.ts:109:1\n   code: call(108)\n110. f109.ts:110:1\n   code: call(109)\n111. f110.ts:111:1\n   code: call(110)\n112. f111.ts:112:1\n   code: call(111)\n113. f112.ts:113:1\n   code: call(112)\n114. f113.ts:114:1\n   code: call(113)\n115. f114.ts:115:1\n   code: call(114)\n116. f115.ts:116:1\n   code: call(115)\n117. f116.ts:117:1\n   code: call(116)\n118. f117.ts:118:1\n   code: call(117)\n119. f118.ts:119:1\n   code: call(118)\n120. f119.ts:120:1\n   code: call(119)\n121. f120.ts:121:1\n   code: call(120)\n122. f121.ts:122:1\n   code: call(121)\n123. f122.ts:123:1\n   code: call(122)\n124. f123.ts:124:1\n   code: call(123)\n125. f124.ts:125:1\n   code: call(124)\n126. f125.ts:126:1\n   code: call(125)\n127. f126.ts:127:1\n   code: call(126)\n128. f127.ts:128:1\n   code: call(127)\n129. f128.ts:129:1\n   code: call(128)\n130. f129.ts:130:1\n   code: call(129)\n131. f130.ts:131:1\n   code: call(130)\n132. f131.ts:132:1\n   code: call(131)\n133. f132.ts:133:1\n   code: call(132)\n134. f133.ts:134:1\n   code: call(133)\n135. f134.ts:135:1\n   code: call(134)\n136. f135.ts:136:1\n   code: call(135)\n137. f136.ts:137:1\n   code: call(136)\n138. f137.ts:138:1\n   code: call(137)\n139. f138.ts:139:1\n   code: call(138)\n140. f139.ts:140:1\n   code: call(139)\n141. f140.ts:141:1\n   code: call(140)\n142. f141.ts:142:1\n   code: call(141)\n143. f142.ts:143:1\n   code: call(142)\n144. f143.ts:144:1\n   code: call(143)\n145. f144.ts:145:1\n   code: call(144)\n146. f145.ts:146:1\n   code: call(145)\n147. f146.ts:147:1\n   code: call(146)\n148. f147.ts:148:1\n   code: call(147)\n149. f148.ts:149:1\n   code: call(148)\n150. f149.ts:150:1\n   code: call(149)\n151. f150.ts:151:1\n   code: call(150)\n152. f151.ts:152:1\n   code: call(151)\n153. f152.ts:153:1\n   code: call(152)\n154. f153.ts:154:1\n   code: call(153)\n155. f154.ts:155:1\n   code: call(154)\n156. f155.ts:156:1\n   code: call(155)\n157. f156.ts:157:1\n   code: call(156)\n158. f157.ts:158:1\n   code: call(157)\n159. f158.ts:159:1\n   code: call(158)\n160. f159.ts:160:1\n   code: call(159)\n161. f160.ts:161:1\n   code: call(160)\n162. f161.ts:162:1\n   code: call(161)\n163. f162.ts:163:1\n   code: call(162)\n164. f163.ts:164:1\n   code: call(163)\n165. f164.ts:165:1\n   code: call(164)\n166. f165.ts:166:1\n   code: call(165)\n167. f166.ts:167:1\n   code: call(166)\n168. f167.ts:168:1\n   code: call(167)\n169. f168.ts:169:1\n   code: call(168)\n170. f169.ts:170:1\n   code: call(169)\n171. f170.ts:171:1\n   code: call(170)\n172. f171.ts:172:1\n   code: call(171)\n173. f172.ts:173:1\n   code: call(172)\n174. f173.ts:174:1\n   code: call(173)\n175. f174.ts:175:1\n   code: call(174)\n176. f175.ts:176:1\n   code: call(175)\n177. f176.ts:177:1\n   code: call(176)\n178. f177.ts:178:1\n   code: call(177)\n179. f178.ts:179:1\n   code: call(178)\n180. f179.ts:180:1\n   code: call(179)\n181. f180.ts:181:1\n   code: call(180)\n182. f181.ts:182:1\n   code: call(181)\n183. f182.ts:183:1\n   code: call(182)\n184. f183.ts:184:1\n   code: call(183)\n185. f184.ts:185:1\n   code: call(184)\n186. f185.ts:186:1\n   code: call(185)\n187. f186.ts:187:1\n   code: call(186)\n188. f187.ts:188:1\n   code: call(187)\n189. f188.ts:189:1\n   code: call(188)\n190. f189.ts:190:1\n   code: call(189)\n191. f190.ts:191:1\n   code: call(190)\n192. f191.ts:192:1\n   code: call(191)\n193. f192.ts:193:1\n   code: call(192)\n194. f193.ts:194:1\n   code: call(193)\n195. f194.ts:195:1\n   code: call(194)\n196. f195.ts:196:1\n   code: call(195)\n197. f196.ts:197:1\n   code: call(196)\n198. f197.ts:198:1\n   code: call(197)\n199. f198.ts:199:1\n   code: call(198)\n200. f199.ts:200:1\n   code: call(199)\n201. f200.ts:201:1\n   code: call(200)\n202. f201.ts:202:1\n   code: call(201)\n203. f202.ts:203:1\n   code: call(202)\n204. f203.ts:204:1\n   code: call(203)\n205. f204.ts:205:1\n   code: call(204)\n206. f205.ts:206:1\n   code: call(205)\n207. f206.ts:207:1\n   code: call(206)\n208. f207.ts:208:1\n   code: call(207)\n209. f208.ts:209:1\n   code: call(208)\n210. f209.ts:210:1\n   code: call(209)\n211. f210.ts:211:1\n   code: call(210)\n212. f211.ts:212:1\n   code: call(211)\n213. f212.ts:213:1\n   code: call(212)\n214. f213.ts:214:1\n   code: call(213)\n215. f214.ts:215:1\n   code: call(214)\n216. f215.ts:216:1\n   code: call(215)\n217. f216.ts:217:1\n   code: call(216)\n218. f217.ts:218:1\n   code: call(217)\n219. f218.ts:219:1\n   code: call(218)\n220. f219.ts:220:1\n   code: call(219)\n221. f220.ts:221:1\n   code: call(220)\n222. f221.ts:222:1\n   code: call(221)\n223. f222.ts:223:1\n   code: call(222)\n224. f223.ts:224:1\n   code: call(223)\n225. f224.ts:225:1\n   code: call(224)\n226. f225.ts:226:1\n   code: call(225)\n227. f226.ts:227:1\n   code: call(226)\n228. f227.ts:228:1\n   code: call(227)\n229. f228.ts:229:1\n   code: call(228)\n230. f229.ts:230:1\n   code: call(229)\n231. f230.ts:231:1\n   code: call(230)\n232. f231.ts:232:1\n   code: call(231)\n233. f232.ts:233:1\n   code: call(232)\n234. f233.ts:234:1\n   code: call(233)\n235. f234.ts:235:1\n   code: call(234)\n236. f235.ts:236:1\n   code: call(235)\n237. f236.ts:237:1\n   code: call(236)\n238. f237.ts:238:1\n   code: call(237)\n239. f238.ts:239:1\n   code: call(238)\n240. f239.ts:240:1\n   code: call(239)\n241. f240.ts:241:1\n   code: call(240)\n242. f241.ts:242:1\n   code: call(241)\n243. f242.ts:243:1\n   code: call(242)\n244. f243.ts:244:1\n   code: call(243)\n245. f244.ts:245:1\n   code: call(244)\n246. f245.ts:246:1\n   code: call(245)\n247. f246.ts:247:1\n   code: call(246)\n248. f247.ts:248:1\n   code: call(247)\n249. f248.ts:249:1\n   code: call(248)\n250. f249.ts:250:1\n   code: call(249)\n251. f250.ts:251:1\n   code: call(250)\n252. f251.ts:252:1\n   code: call(251)\n253. f252.ts:253:1\n   code: call(252)\n254. f253.ts:254:1\n   code: call(253)\n255. f254.ts:255:1\n   code: call(254)\n256. f255.ts:256:1\n   code: call(255)\n257. f256.ts:257:1\n   code: call(256)\n258. f257.ts:258:1\n   code: call(257)\n259. f258.ts:259:1\n   code: call(258)\n260. f259.ts:260:1\n   code: call(259)\n261. f260.ts:261:1\n   code: call(260)\n262. f261.ts:262:1\n   code: call(261)\n263. f262.ts:263:1\n   code: call(262)\n264. f263.ts:264:1\n   code: call(263)\n265. f264.ts:265:1\n   code: call(264)\n266. f265.ts:266:1\n   code: call(265)\n267. f266.ts:267:1\n   code: call(266)\n268. f267.ts:268:1\n   code: call(267)\n269. f268.ts:269:1\n   code: call(268)\n270. f269.ts:270:1\n   code: call(269)\n271. f270.ts:271:1\n   code: call(270)\n272. f271.ts:272:1\n   code: call(271)\n273. f272.ts:273:1\n   code: call(272)\n274. f273.ts:274:1\n   code: call(273)\n275. f274.ts:275:1\n   code: call(274)\n276. f275.ts:276:1\n   code: call(275)\n277. f276.ts:277:1\n   code: call(276)\n278. f277.ts:278:1\n   code: call(277)\n279. f278.ts:279:1\n   code: call(278)\n280. f279.ts:280:1\n   code: call(279)\n281. f280.ts:281:1\n   code: call(280)\n282. f281.ts:282:1\n   code: call(281)\n283. f282.ts:283:1\n   code: call(282)\n284. f283.ts:284:1\n   code: call(283)\n285. f284.ts:285:1\n   code: call(284)\n286. f285.ts:286:1\n   code: call(285)\n287. f286.ts:287:1\n   code: call(286)\n288. f287.ts:288:1\n   code: call(287)\n289. f288.ts:289:1\n   code: call(288)\n290. f289.ts:290:1\n   code: call(289)\n291. f290.ts:291:1\n   code: call(290)\n292. f291.ts:292:1\n   code: call(291)\n293. f292.ts:293:1\n   code: call(292)\n294. f293.ts:294:1\n   code: call(293)\n295. f294.ts:295:1\n   code: call(294)\n296. f295.ts:296:1\n   code: call(295)\n297. f296.ts:297:1\n   code: call(296)\n298. f297.ts:298:1\n   code: call(297)\n299. f298.ts:299:1\n   code: call(298)\n300. f299.ts:300:1\n   code: call(299)\n301. f300.ts:301:1\n   code: call(300)\n302. f301.ts:302:1\n   code: call(301)\n303. f302.ts:303:1\n   code: call(302)\n304. f303.ts:304:1\n   code: call(303)\n305. f304.ts:305:1\n   code: call(304)\n306. f305.ts:306:1\n   code: call(305)\n307. f306.ts:307:1\n   code: call(306)\n308. f307.ts:308:1\n   code: call(307)\n309. f308.ts:309:1\n   code: call(308)\n310. f309.ts:310:1\n   code: call(309)\n311. f310.ts:311:1\n   code: call(310)\n312. f311.ts:312:1\n   code: call(311)\n313. f312.ts:313:1\n   code: call(312)\n314. f313.ts:314:1\n   code: call(313)\n315. f314.ts:315:1\n   code: call(314)\n316. f315.ts:316:1\n   code: call(315)\n317. f316.ts:317:1\n   code: call(316)\n318. f317.ts:318:1\n   code: call(317)\n319. f318.ts:319:1\n   code: call(318)\n320. f319.ts:320:1\n   code: call(319)\n321. f320.ts:321:1\n   code: call(320)\n322. f321.ts:322:1\n   code: call(321)\n323. f322.ts:323:1\n   code: call(322)\n324. f323.ts:324:1\n   code: call(323)\n325. f324.ts:325:1\n   code: call(324)\n326. f325.ts:326:1\n   code: call(325)\n327. f326.ts:327:1\n   code: call(326)\n328. f327.ts:328:1\n   code: call(327)\n329. f328.ts:329:1\n   code: call(328)\n330. f329.ts:330:1\n   code: call(329)\n331. f330.ts:331:1\n   code: call(330)\n332. f331.ts:332:1\n   code: call(331)\n333. f332.ts:333:1\n   code: call(332)\n334. f333.ts:334:1\n   code: call(333)\n335. f334.ts:335:1\n   code: call(334)\n336. f335.ts:336:1\n   code: call(335)\n337. f336.ts:337:1\n   code: call(336)\n338. f337.ts:338:1\n   code: call(337)\n339. f338.ts:339:1\n   code: call(338)\n340. f339.ts:340:1\n   code: call(339)\n341. f340.ts:341:1\n   code: call(340)\n342. f341.ts:342:1\n   code: call(341)\n343. f342.ts:343:1\n   code: call(342)\n344. f343.ts:344:1\n   code: call(343)\n345. f344.ts:345:1\n   code: call(344)\n346. f345.ts:346:1\n   code: call(345)\n347. f346.ts:347:1\n   code: call(346)\n348. f347.ts:348:1\n   code: call(347)\n349. f348.ts:349:1\n   code: call(348)\n350. f349.ts:350:1\n   code: call(349)\n351. f350.ts:351:1\n   code: call(350)\n352. f351.ts:352:1\n   code: call(351)\n353. f352.ts:353:1\n   code: call(352)\n354. f353.ts:354:1\n   code: call(353)\n355. f354.ts:355:1\n   code: call(354)\n356. f355.ts:356:1\n   code: call(355)\n357. f356.ts:357:1\n   code: call(356)\n358. f357.ts:358:1\n   code: call(357)\n359. f358.ts:359:1\n   code: call(358)\n360. f359.ts:360:1\n   code: call(359)\n361. f360.ts:361:1\n   code: call(360)\n362. f361.ts:362:1\n   code: call(361)\n363. f362.ts:363:1\n   code: call(362)\n364. f363.ts:364:1\n   code: call(363)\n365. f364.ts:365:1\n   code: call(364)\n366. f365.ts:366:1\n   code: call(365)\n367. f366.ts:367:1\n   code: call(366)\n368. f367.ts:368:1\n   code: call(367)\n369. f368.ts:369:1\n   code: call(368)\n370. f369.ts:370:1\n   code: call(369)\n371. f370.ts:371:1\n   code: call(370)\n372. f371.ts:372:1\n   code: call(371)\n373. f372.ts:373:1\n   code: call(372)\n374. f373.ts:374:1\n   code: call(373)\n375. f374.ts:375:1\n   code: call(374)\n376. f375.ts:376:1\n   code: call(375)\n377. f376.ts:377:1\n   code: call(376)\n378. f377.ts:378:1\n   code: call(377)\n379. f378.ts:379:1\n   code: call(378)\n380. f379.ts:380:1\n   code: call(379)\n381. f380.ts:381:1\n   code: call(380)\n382. f381.ts:382:1\n   code: call(381)\n383. f382.ts:383:1\n   code: call(382)\n384. f383.ts:384:1\n   code: call(383)\n385. f384.ts:385:1\n   code: call(384)\n386. f385.ts:386:1\n   code: call(385)\n387. f386.ts:387:1\n   code: call(386)\n388. f387.ts:388:1\n   code: call(387)\n389. f388.ts:389:1\n   code: call(388)\n390. f389.ts:390:1\n   code: call(389)\n391. f390.ts:391:1\n   code: call(390)\n392. f391.ts:392:1\n   code: call(391)\n393. f392.ts:393:1\n   code: call(392)\n394. f393.ts:394:1\n   code: call(393)\n395. f394.ts:395:1\n   code: call(394)\n396. f395.ts:396:1\n   code: call(395)\n397. f396.ts:397:1\n   code: call(396)\n398. f397.ts:398:1\n   code: call(397)\n399. f398.ts:399:1\n   code: call(398)\n400. f399.ts:400:1\n   code: call(399)\n401. f400.ts:401:1\n   code: call(400)\n402. f401.ts:402:1\n   code: call(401)\n403. f402.ts:403:1\n   code: call(402)\n404. f403.ts:404:1\n   code: call(403)\n405. f404.ts:405:1\n   code: call(404)\n406. f405.ts:406:1\n   code: call(405)\n407. f406.ts:407:1\n   code: call(406)\n408. f407.ts:408:1\n   code: call(407)\n409. f408.ts:409:1\n   code: call(408)\n410. f409.ts:410:1\n   code: call(409)\n411. f410.ts:411:1\n   code: call(410)\n412. f411.ts:412:1\n   code: call(411)\n413. f412.ts:413:1\n   code: call(412)\n414. f413.ts:414:1\n   code: call(413)\n415. f414.ts:415:1\n   code: call(414)\n416. f415.ts:416:1\n   code: call(415)\n417. f416.ts:417:1\n   code: call(416)\n418. f417.ts:418:1\n   code: call(417)\n419. f418.ts:419:1\n   code: call(418)\n420. f419.ts:420:1\n   code: call(419)\n421. f420.ts:421:1\n   code: call(420)\n422. f421.ts:422:1\n   code: call(421)\n423. f422.ts:423:1\n   code: call(422)\n424. f423.ts:424:1\n   code: call(423)\n425. f424.ts:425:1\n   code: call(424)\n426. f425.ts:426:1\n   code: call(425)\n427. f426.ts:427:1\n   code: call(426)\n428. f427.ts:428:1\n   code: call(427)\n429. f428.ts:429:1\n   code: call(428)\n430. f429.ts:430:1\n   code: call(429)\n431. f430.ts:431:1\n   code: call(430)\n432. f431.ts:432:1\n   code: call(431)\n433. f432.ts:433:1\n   code: call(432)\n434. f433.ts:434:1\n   code: call(433)\n435. f434.ts:435:1\n   code: call(434)\n436. f435.ts:436:1\n   code: call(435)\n437. f436.ts:437:1\n   code: call(436)\n438. f437.ts:438:1\n   code: call(437)\n439. f438.ts:439:1\n   code: call(438)\n440. f439.ts:440:1\n   code: call(439)\n441. f440.ts:441:1\n   code: call(440)\n442. f441.ts:442:1\n   code: call(441)\n443. f442.ts:443:1\n   code: call(442)\n444. f443.ts:444:1\n   code: call(443)\n445. f444.ts:445:1\n   code: call(444)\n446. f445.ts:446:1\n   code: call(445)\n447. f446.ts:447:1\n   code: call(446)\n448. f447.ts:448:1\n   code: call(447)\n449. f448.ts:449:1\n   code: call(448)\n450. f449.ts:450:1\n   code: call(449)\n451. f450.ts:451:1\n   code: call(450)\n452. f451.ts:452:1\n   code: call(451)\n453. f452.ts:453:1\n   code: call(452)\n454. f453.ts:454:1\n   code: call(453)\n455. f454.ts:455:1\n   code: call(454)\n456. f455.ts:456:1\n   code: call(455)\n457. f456.ts:457:1\n   code: call(456)\n458. f457.ts:458:1\n   code: call(457)\n459. f458.ts:459:1\n   code: call(458)\n460. f459.ts:460:1\n   code: call(459)\n461. f460.ts:461:1\n   code: call(460)\n462. f461.ts:462:1\n   code: call(461)\n463. f462.ts:463:1\n   code: call(462)\n464. f463.ts:464:1\n   code: call(463)\n465. f464.ts:465:1\n   code: call(464)\n466. f465.ts:466:1\n   code: call(465)\n467. f466.ts:467:1\n   code: call(466)\n468. f467.ts:468:1\n   code: call(467)\n469. f468.ts:469:1\n   code: call(468)\n470. f469.ts:470:1\n   code: call(469)\n471. f470.ts:471:1\n   code: call(470)\n472. f471.ts:472:1\n   code: call(471)\n473. f472.ts:473:1\n   code: call(472)\n474. f473.ts:474:1\n   code: call(473)\n475. f474.ts:475:1\n   code: call(474)\n476. f475.ts:476:1\n   code: call(475)\n477. f476.ts:477:1\n   code: call(476)\n478. f477.ts:478:1\n   code: call(477)\n479. f478.ts:479:1\n   code: call(478)\n480. f479.ts:480:1\n   code: call(479)\n481. f480.ts:481:1\n   code: call(480)\n482. f481.ts:482:1\n   code: call(481)\n483. f482.ts:483:1\n   code: call(482)\n484. f483.ts:484:1\n   code: call(483)\n485. f484.ts:485:1\n   code: call(484)\n486. f485.ts:486:1\n   code: call(485)\n487. f486.ts:487:1\n   code: call(486)\n488. f487.ts:488:1\n   code: call(487)\n489. f488.ts:489:1\n   code: call(488)\n490. f489.ts:490:1\n   code: call(489)\n491. f490.ts:491:1\n   code: call(490)\n492. f491.ts:492:1\n   code: call(491)\n493. f492.ts:493:1\n   code: call(492)\n494. f493.ts:494:1\n   code: call(493)\n495. f494.ts:495:1\n   code: call(494)\n496. f495.ts:496:1\n   code: call(495)\n497. f496.ts:497:1\n   code: call(496)\n498. f497.ts:498:1\n   code: call(497)\n499. f498.ts:499:1\n   code: call(498)\n500. f499.ts:500:1\n   code: call(499)\n501. f500.ts:501:1\n   code: call(500)\n502. f501.ts:502:1\n   code: call(501)\n503. f502.ts:503:1\n   code: call(502)\n504. f503.ts:504:1\n   code: call(503)\n505. f504.ts:505:1\n   code: call(504)\n506. f505.ts:506:1\n   code: call(505)\n507. f506.ts:507:1\n   code: call(506)\n508. f507.ts:508:1\n   code: call(507)\n509. f508.ts:509:1\n   code: call(508)\n510. f509.ts:510:1\n   code: call(509)\n511. f510.ts:511:1\n   code: call(510)\n512. f511.ts:512:1\n   code: call(511)\n513. f512.ts:513:1\n   code: call(512)\n514. f513.ts:514:1\n   code: call(513)\n515. f514.ts:515:1\n   code: call(514)\n516. f515.ts:516:1\n   code: call(515)\n517. f516.ts:517:1\n   code: call(516)\n518. f517.ts:518:1\n   code: call(517)\n519. f518.ts:519:1\n   code: call(518)\n520. f519.ts:520:1\n   code: call(519)\n521. f520.ts:521:1\n   code: call(520)\n522. f521.ts:522:1\n   code: call(521)\n523. f522.ts:523:1\n   code: call(522)\n524. f523.ts:524:1\n   code: call(523)\n525. f524.ts:525:1\n   code: call(524)\n526. f525.ts:526:1\n   code: call(525)\n527. f526.ts:527:1\n   code: call(526)\n528. f527.ts:528:1\n   code: call(527)\n529. f528.ts:529:1\n   code: call(528)\n530. f529.ts:530:1\n   code: call(529)\n531. f530.ts:531:1\n   code: call(530)\n532. f531.ts:532:1\n   code: call(531)\n533. f532.ts:533:1\n   code: call(532)\n534. f533.ts:534:1\n   code: call(533)\n535. f534.ts:535:1\n   code: call(534)\n536. f535.ts:536:1\n   code: call(535)\n537. f536.ts:537:1\n   code: call(536)\n538. f537.ts:538:1\n   code: call(537)\n539. f538.ts:539:1\n   code: call(538)\n540. f539.ts:540:1\n   code: call(539)\n541. f540.ts:541:1\n   code: call(540)\n542. f541.ts:542:1\n   code: call(541)\n543. f542.ts:543:1\n   code: call(542)\n544. f543.ts:544:1\n   code: call(543)\n545. f544.ts:545:1\n   code: call(544)\n546. f545.ts:546:1\n   code: call(545)\n547. f546.ts:547:1\n   code: call(546)\n548. f547.ts:548:1\n   code: call(547)\n549. f548.ts:549:1\n   code: call(548)\n550. f549.ts:550:1\n   code: call(549)\n551. f550.ts:551:1\n   code: call(550)\n552. f551.ts:552:1\n   code: call(551)\n553. f552.ts:553:1\n   code: call(552)\n554. f553.ts:554:1\n   code: call(553)\n555. f554.ts:555:1\n   code: call(554)\n556. f555.ts:556:1\n   code: call(555)\n557. f556.ts:557:1\n   code: call(556)\n558. f557.ts:558:1\n   code: call(557)\n559. f558.ts:559:1\n   code: call(558)\n560. f559.ts:560:1\n   code: call(559)\n561. f560.ts:561:1\n   code: call(560)\n562. f561.ts:562:1\n   code: call(561)\n563. f562.ts:563:1\n   code: call(562)\n564. f563.ts:564:1\n   code: call(563)\n565. f564.ts:565:1\n   code: call(564)\n566. f565.ts:566:1\n   code: call(565)\n567. f566.ts:567:1\n   code: call(566)\n568. f567.ts:568:1\n   code: call(567)\n569. f568.ts:569:1\n   code: call(568)\n570. f569.ts:570:1\n   code: call(569)\n571. f570.ts:571:1\n   code: call(570)\n572. f571.ts:572:1\n   code: call(571)\n573. f572.ts:573:1\n   code: call(572)\n574. f573.ts:574:1\n   code: call(573)\n575. f574.ts:575:1\n   code: call(574)\n576. f575.ts:576:1\n   code: call(575)\n577. f576.ts:577:1\n   code: call(576)\n578. f577.ts:578:1\n   code: call(577)\n579. f578.ts:579:1\n   code: call(578)\n580. f579.ts:580:1\n   code: call(579)\n581. f580.ts:581:1\n   code: call(580)\n582. f581.ts:582:1\n   code: call(581)\n583. f582.ts:583:1\n   code: call(582)\n584. f583.ts:584:1\n   code: call(583)\n585. f584.ts:585:1\n   code: call(584)\n586. f585.ts:586:1\n   code: call(585)\n587. f586.ts:587:1\n   code: call(586)\n588. f587.ts:588:1\n   code: call(587)\n589. f588.ts:589:1\n   code: call(588)\n590. f589.ts:590:1\n   code: call(589)\n591. f590.ts:591:1\n   code: call(590)\n592. f591.ts:592:1\n   code: call(591)\n593. f592.ts:593:1\n   code: call(592)\n594. f593.ts:594:1\n   code: call(593)\n595. f594.ts:595:1\n   code: call(594)\n596. f595.ts:596:1\n   code: call(595)\n597. f596.ts:597:1\n   code: call(596)\n598. f597.ts:598:1\n   code: call(597)\n599. f598.ts:599:1\n   code: call(598)\n600. f599.ts:600:1\n   code: call(599)\n601. f600.ts:601:1\n   code: call(600)\n602. f601.ts:602:1\n   code: call(601)\n603. f602.ts:603:1\n   code: call(602)\n604. f603.ts:604:1\n   code: call(603)\n605. f604.ts:605:1\n   code: call(604)\n606. f605.ts:606:1\n   code: call(605)\n607. f606.ts:607:1\n   code: call(606)\n608. f607.ts:608:1\n   code: call(607)\n609. f608.ts:609:1\n   code: call(608)\n610. f609.ts:610:1\n   code: call(609)\n611. f610.ts:611:1\n   code: call(610)\n612. f611.ts:612:1\n   code: call(611)\n613. f612.ts:613:1\n   code: call(612)\n614. f613.ts:614:1\n   code: call(613)\n615. f614.ts:615:1\n   code: call(614)\n616. f615.ts:616:1\n   code: call(615)\n617. f616.ts:617:1\n   code: call(616)\n618. f617.ts:618:1\n   code: call(617)\n619. f618.ts:619:1\n   code: call(618)\n620. f619.ts:620:1\n   code: call(619)\n621. f620.ts:621:1\n   code: call(620)\n622. f621.ts:622:1\n   code: call(621)\n623. f622.ts:623:1\n   code: call(622)\n624. f623.ts:624:1\n   code: call(623)\n625. f624.ts:625:1\n   code: call(624)\n626. f625.ts:626:1\n   code: call(625)\n627. f626.ts:627:1\n   code: call(626)\n628. f627.ts:628:1\n   code: call(627)\n629. f628.ts:629:1\n   code: call(628)\n630. f629.ts:630:1\n   code: call(629)\n631. f630.ts:631:1\n   code: call(630)\n632. f631.ts:632:1\n   code: call(631)\n633. f632.ts:633:1\n   code: call(632)\n634. f633.ts:634:1\n   code: call(633)\n635. f634.ts:635:1\n   code: call(634)\n636. f635.ts:636:1\n   code: call(635)\n637. f636.ts:637:1\n   code: call(636)\n638. f637.ts:638:1\n   code: call(637)\n639. f638.ts:639:1\n   code: call(638)\n640. f639.ts:640:1\n   code: call(639)\n641. f640.ts:641:1\n   code: call(640)\n642. f641.ts:642:1\n   code: call(641)\n643. f642.ts:643:1\n   code: call(642)\n644. f643.ts:644:1\n   code: call(643)\n645. f644.ts:645:1\n   code: call(644)\n646. f645.ts:646:1\n   code: call(645)\n647. f646.ts:647:1\n   code: call(646)\n648. f647.ts:648:1\n   code: call(647)\n649. f648.ts:649:1\n   code: call(648)\n650. f649.ts:650:1\n   code: call(649)\n651. f650.ts:651:1\n   code: call(650)\n652. f651.ts:652:1\n   code: call(651)\n653. f652.ts:653:1\n   code: call(652)\n654. f653.ts:654:1\n   code: call(653)\n655. f654.ts:655:1\n   code: call(654)\n656. f655.ts:656:1\n   code: call(655)\n657. f656.ts:657:1\n   code: call(656)\n658. f657.ts:658:1\n   code: call(657)\n659. f658.ts:659:1\n   code: call(658)\n660. f659.ts:660:1\n   code: call(659)\n661. f660.ts:661:1\n   code: call(660)\n662. f661.ts:662:1\n   code: call(661)\n663. f662.ts:663:1\n   code: call(662)\n664. f663.ts:664:1\n   code: call(663)\n665. f664.ts:665:1\n   code: call(664)\n666. f665.ts:666:1\n   code: call(665)\n667. f666.ts:667:1\n   code: call(666)\n668. f667.ts:668:1\n   code: call(667)\n669. f668.ts:669:1\n   code: call(668)\n670. f669.ts:670:1\n   code: call(669)\n671. f670.ts:671:1\n   code: call(670)\n672. f671.ts:672:1\n   code: call(671)\n673. f672.ts:673:1\n   code: call(672)\n674. f673.ts:674:1\n   code: call(673)\n675. f674.ts:675:1\n   code: call(674)\n676. f675.ts:676:1\n   code: call(675)\n677. f676.ts:677:1\n   code: call(676)\n678. f677.ts:678:1\n   code: call(677)\n679. f678.ts:679:1\n   code: call(678)\n680. f679.ts:680:1\n   code: call(679)\n681. f680.ts:681:1\n   code: call(680)\n682. f681.ts:682:1\n   code: call(681)\n683. f682.ts:683:1\n   code: call(682)\n684. f683.ts:684:1\n   code: call(683)\n685. f684.ts:685:1\n   code: call(684)\n686. f685.ts:686:1\n   code: call(685)\n687. f686.ts:687:1\n   code: call(686)\n688. f687.ts:688:1\n   code: call(687)\n689. f688.ts:689:1\n   code: call(688)\n690. f689.ts:690:1\n   code: call(689)\n691. f690.ts:691:1\n   code: call(690)\n692. f691.ts:692:1\n   code: call(691)\n693. f692.ts:693:1\n   code: call(692)\n694. f693.ts:694:1\n   code: call(693)\n695. f694.ts:695:1\n   code: call(694)\n696. f695.ts:696:1\n   code: call(695)\n697. f696.ts:697:1\n   code: call(696)\n698. f697.ts:698:1\n   code: call(697)\n699. f698.ts:699:1\n   code: call(698)\n700. f699.ts:700:1\n   code: call(699)\n701. f700.ts:701:1\n   code: call(700)\n702. f701.ts:702:1\n   code: call(701)\n703. f702.ts:703:1\n   code: call(702)\n704. f703.ts:704:1\n   code: call(703)\n705. f704.ts:705:1\n   code: call(704)\n706. f705.ts:706:1\n   code: call(705)\n707. f706.ts:707:1\n   code: call(706)\n708. f707.ts:708:1\n   code: call(707)\n709. f708.ts:709:1\n   code: call(708)\n710. f709.ts:710:1\n   code: call(709)\n711. f710.ts:711:1\n   code: call(710)\n712. f711.ts:712:1\n   code: call(711)\n713. f712.ts:713:1\n   code: call(712)\n714. f713.ts:714:1\n   code: call(713)\n715. f714.ts:715:1\n   code: call(714)\n716. f715.ts:716:1\n   code: call(715)\n717. f716.ts:717:1\n   code: call(716)\n718. f717.ts:718:1\n   code: call(717)\n719. f718.ts:719:1\n   code: call(718)\n720. f719.ts:720:1\n   code: call(719)\n721. f720.ts:721:1\n   code: call(720)\n722. f721.ts:722:1\n   code: call(721)\n723. f722.ts:723:1\n   code: call(722)\n724. f723.ts:724:1\n   code: call(723)\n725. f724.ts:725:1\n   code: call(724)\n726. f725.ts:726:1\n   code: call(725)\n727. f726.ts:727:1\n   code: call(726)\n728. f727.ts:728:1\n   code: call(727)\n729. f728.ts:729:1\n   code: call(728)\n730. f729.ts:730:1\n   code: call(729)\n731. f730.ts:731:1\n   code: call(730)\n732. f731.ts:732:1\n   code: call(731)\n733. f732.ts:733:1\n   code: call(732)\n734. f733.ts:734:1\n   code: call(733)\n735. f734.ts:735:1\n   code: call(734)\n736. f735.ts:736:1\n   code: call(735)\n737. f736.ts:737:1\n   code: call(736)\n738. f737.ts:738:1\n   code: call(737)\n739. f738.ts:739:1\n   code: call(738)\n740. f739.ts:740:1\n   code: call(739)\n741. f740.ts:741:1\n   code: call(740)\n742. f741.ts:742:1\n   code: call(741)\n743. f742.ts:743:1\n   code: call(742)\n744. f743.ts:744:1\n   code: call(743)\n745. f744.ts:745:1\n   code: call(744)\n746. f745.ts:746:1\n   code: call(745)\n747. f746.ts:747:1\n   code: call(746)\n748. f747.ts:748:1\n   code: call(747)\n749. f748.ts:749:1\n   code: call(748)\n750. f749.ts:750:1\n   code: call(749)\n751. f750.ts:751:1\n   code: call(750)\n752. f751.ts:752:1\n   code: call(751)\n753. f752.ts:753:1\n   code: call(752)\n754. f753.ts:754:1\n   code: call(753)\n755. f754.ts:755:1\n   code: call(754)\n756. f755.ts:756:1\n   code: call(755)\n757. f756.ts:757:1\n   code: call(756)\n758. f757.ts:758:1\n   code: call(757)\n759. f758.ts:759:1\n   code: call(758)\n760. f759.ts:760:1\n   code: call(759)\n761. f760.ts:761:1\n   code: call(760)\n762. f761.ts:762:1\n   code: call(761)\n763. f762.ts:763:1\n   code: call(762)\n764. f763.ts:764:1\n   code: call(763)\n765. f764.ts:765:1\n   code: call(764)\n766. f765.ts:766:1\n   code: call(765)\n767. f766.ts:767:1\n   code: call(766)\n768. f767.ts:768:1\n   code: call(767)\n769. f768.ts:769:1\n   code: call(768)\n770. f769.ts:770:1\n   code: call(769)\n771. f770.ts:771:1\n   code: call(770)\n772. f771.ts:772:1\n   code: call(771)\n773. f772.ts:773:1\n   code: call(772)\n774. f773.ts:774:1\n   code: call(773)\n775. f774.ts:775:1\n   code: call(774)\n776. f775.ts:776:1\n   code: call(775)\n777. f776.ts:777:1\n   code: call(776)\n778. f777.ts:778:1\n   code: call(777)\n779. f778.ts:779:1\n   code: call(778)\n780. f779.ts:780:1\n   code: call(779)\n781. f780.ts:781:1\n   code: call(780)\n782. f781.ts:782:1\n   code: call(781)\n783. f782.ts:783:1\n   code: call(782)\n784. f783.ts:784:1\n   code: call(783)\n785. f784.ts:785:1\n   code: call(784)\n786. f785.ts:786:1\n   code: call(785)\n787. f786.ts:787:1\n   code: call(786)\n788. f787.ts:788:1\n   code: call(787)\n789. f788.ts:789:1\n   code: call(788)\n790. f789.ts:790:1\n   code: call(789)\n791. f790.ts:791:1\n   code: call(790)\n792. f791.ts:792:1\n   code: call(791)\n793. f792.ts:793:1\n   code: call(792)\n794. f793.ts:794:1\n   code: call(793)\n795. f794.ts:795:1\n   code: call(794)\n796. f795.ts:796:1\n   code: call(795)\n797. f796.ts:797:1\n   code: call(796)\n798. f797.ts:798:1\n   code: call(797)\n799. f798.ts:799:1\n   code: call(798)\n800. f799.ts:800:1\n   code: call(799)\n801. f800.ts:801:1\n   code: call(800)\n802. f801.ts:802:1\n   code: call(801)\n803. f802.ts:803:1\n   code: call(802)\n804. f803.ts:804:1\n   code: call(803)\n805. f804.ts:805:1\n   code: call(804)\n806. f805.ts:806:1\n   code: call(805)\n807. f806.ts:807:1\n   code: call(806)\n808. f807.ts:808:1\n   code: call(807)\n809. f808.ts:809:1\n   code: call(808)\n810. f809.ts:810:1\n   code: call(809)\n811. f810.ts:811:1\n   code: call(810)\n812. f811.ts:812:1\n   code: call(811)\n813. f812.ts:813:1\n   code: call(812)\n814. f813.ts:814:1\n   code: call(813)\n815. f814.ts:815:1\n   code: call(814)\n816. f815.ts:816:1\n   code: call(815)\n817. f816.ts:817:1\n   code: call(816)\n818. f817.ts:818:1\n   code: call(817)\n819. f818.ts:819:1\n   code: call(818)\n820. f819.ts:820:1\n   code: call(819)\n821. f820.ts:821:1\n   code: call(820)\n822. f821.ts:822:1\n   code: call(821)\n823. f822.ts:823:1\n   code: call(822)\n824. f823.ts:824:1\n   code: call(823)\n825. f824.ts:825:1\n   code: call(824)\n826. f825.ts:826:1\n   code: call(825)\n827. f826.ts:827:1\n   code: call(826)\n828. f827.ts:828:1\n   code: call(827)\n829. f828.ts:829:1\n   code: call(828)\n830. f829.ts:830:1\n   code: call(829)\n831. f830.ts:831:1\n   code: call(830)\n832. f831.ts:832:1\n   code: call(831)\n833. f832.ts:833:1\n   code: call(832)\n834. f833.ts:834:1\n   code: call(833)\n835. f834.ts:835:1\n   code: call(834)\n836. f835.ts:836:1\n   code: call(835)\n837. f836.ts:837:1\n   code: call(836)\n838. f837.ts:838:1\n   code: call(837)\n839. f838.ts:839:1\n   code: call(838)\n840. f839.ts:840:1\n   code: call(839)\n841. f840.ts:841:1\n   code: call(840)\n842. f841.ts:842:1\n   code: call(841)\n843. f842.ts:843:1\n   code: call(842)\n844. f843.ts:844:1\n   code: call(843)\n845. f844.ts:845:1\n   code: call(844)\n846. f845.ts:846:1\n   code: call(845)\n847. f846.ts:847:1\n   code: call(846)\n848. f847.ts:848:1\n   code: call(847)\n849. f848.ts:849:1\n   code: call(848)\n850. f849.ts:850:1\n   code: call(849)\n851. f850.ts:851:1\n   code: call(850)\n852. f851.ts:852:1\n   code: call(851)\n853. f852.ts:853:1\n   code: call(852)\n854. f853.ts:854:1\n   code: call(853)\n855. f854.ts:855:1\n   code: call(854)\n856. f855.ts:856:1\n   code: call(855)\n857. f856.ts:857:1\n   code: call(856)\n858. f857.ts:858:1\n   code: call(857)\n859. f858.ts:859:1\n   code: call(858)\n860. f859.ts:860:1\n   code: call(859)\n861. f860.ts:861:1\n   code: call(860)\n862. f861.ts:862:1\n   code: call(861)\n863. f862.ts:863:1\n   code: call(862)\n864. f863.ts:864:1\n   code: call(863)\n865. f864.ts:865:1\n   code: call(864)\n866. f865.ts:866:1\n   code: call(865)\n867. f866.ts:867:1\n   code: call(866)\n868. f867.ts:868:1\n   code: call(867)\n869. f868.ts:869:1\n   code: call(868)\n870. f869.ts:870:1\n   code: call(869)\n871. f870.ts:871:1\n   code: call(870)\n872. f871.ts:872:1\n   code: call(871)\n873. f872.ts:873:1\n   code: call(872)\n874. f873.ts:874:1\n   code: call(873)\n875. f874.ts:875:1\n   code: call(874)\n876. f875.ts:876:1\n   code: call(875)\n877. f876.ts:877:1\n   code: call(876)\n878. f877.ts:878:1\n   code: call(877)\n879. f878.ts:879:1\n   code: call(878)\n880. f879.ts:880:1\n   code: call(879)\n881. f880.ts:881:1\n   code: call(880)\n882. f881.ts:882:1\n   code: call(881)\n883. f882.ts:883:1\n   code: call(882)\n884. f883.ts:884:1\n   code: call(883)\n885. f884.ts:885:1\n   code: call(884)\n886. f885.ts:886:1\n   code: call(885)\n887. f886.ts:887:1\n   code: call(886)\n888. f887.ts:888:1\n   code: call(887)\n889. f888.ts:889:1\n   code: call(888)\n890. f889.ts:890:1\n   code: call(889)\n891. f890.ts:891:1\n   code: call(890)\n892. f891.ts:892:1\n   code: call(891)\n893. f892.ts:893:1\n   code: call(892)\n894. f893.ts:894:1\n   code: call(893)\n895. f894.ts:895:1\n   code: call(894)\n896. f895.ts:896:1\n   code: call(895)\n897. f896.ts:897:1\n   code: call(896)\n898. f897.ts:898:1\n   code: call(897)\n899. f898.ts:899:1\n   code: call(898)\n900. f899.ts:900:1\n   code: call(899)\n901. f900.ts:901:1\n   code: call(900)\n902. f901.ts:902:1\n   code: call(901)\n903. f902.ts:903:1\n   code: call(902)\n904. f903.ts:904:1\n   code: call(903)\n905. f904.ts:905:1\n   code: call(904)\n906. f905.ts:906:1\n   code: call(905)\n907. f906.ts:907:1\n   code: call(906)\n908. f907.ts:908:1\n   code: call(907)\n909. f908.ts:909:1\n   code: call(908)\n910. f909.ts:910:1\n   code: call(909)\n911. f910.ts:911:1\n   code: call(910)\n912. f911.ts:912:1\n   code: call(911)\n913. f912.ts:913:1\n   code: call(912)\n914. f913.ts:914:1\n   code: call(913)\n915. f914.ts:915:1\n   code: call(914)\n916. f915.ts:916:1\n   code: call(915)\n917. f916.ts:917:1\n   code: call(916)\n918. f917.ts:918:1\n   code: call(917)\n919. f918.ts:919:1\n   code: call(918)\n920. f919.ts:920:1\n   code: call(919)\n921. f920.ts:921:1\n   code: call(920)\n922. f921.ts:922:1\n   code: call(921)\n923. f922.ts:923:1\n   code: call(922)\n924. f923.ts:924:1\n   code: call(923)\n925. f924.ts:925:1\n   code: call(924)\n926. f925.ts:926:1\n   code: call(925)\n927. f926.ts:927:1\n   code: call(926)\n928. f927.ts:928:1\n   code: call(927)\n929. f928.ts:929:1\n   code: call(928)\n930. f929.ts:930:1\n   code: call(929)\n931. f930.ts:931:1\n   code: call(930)\n932. f931.ts:932:1\n   code: call(931)\n933. f932.ts:933:1\n   code: call(932)\n934. f933.ts:934:1\n   code: call(933)\n935. f934.ts:935:1\n   code: call(934)\n936. f935.ts:936:1\n   code: call(935)\n937. f936.ts:937:1\n   code: call(936)\n938. f937.ts:938:1\n   code: call(937)\n939. f938.ts:939:1\n   code: call(938)\n940. f939.ts:940:1\n   code: call(939)\n941. f940.ts:941:1\n   code: call(940)\n942. f941.ts:942:1\n   code: call(941)\n943. f942.ts:943:1\n   code: call(942)\n944. f943.ts:944:1\n   code: call(943)\n945. f944.ts:945:1\n   code: call(944)\n946. f945.ts:946:1\n   code: call(945)\n947. f946.ts:947:1\n   code: call(946)\n948. f947.ts:948:1\n   code: call(947)\n949. f948.ts:949:1\n   code: call(948)\n950. f949.ts:950:1\n   code: call(949)\n951. f950.ts:951:1\n   code: call(950)\n952. f951.ts:952:1\n   code: call(951)\n953. f952.ts:953:1\n   code: call(952)\n954. f953.ts:954:1\n   code: call(953)\n955. f954.ts:955:1\n   code: call(954)\n956. f955.ts:956:1\n   code: call(955)\n957. f956.ts:957:1\n   code: call(956)\n958. f957.ts:958:1\n   code: call(957)\n959. f958.ts:959:1\n   code: call(958)\n960. f959.ts:960:1\n   code: call(959)\n961. f960.ts:961:1\n   code: call(960)\n962. f961.ts:962:1\n   code: call(961)\n963. f962.ts:963:1\n   code: call(962)\n964. f963.ts:964:1\n   code: call(963)\n965. f964.ts:965:1\n   code: call(964)\n966. f965.ts:966:1\n   code: call(965)\n967. f966.ts:967:1\n   code: call(966)\n968. f967.ts:968:1\n   code: call(967)\n969. f968.ts:969:1\n   code: call(968)\n970. f969.ts:970:1\n   code: call(969)\n971. f970.ts:971:1\n   code: call(970)\n972. f971.ts:972:1\n   code: call(971)\n973. f972.ts:973:1\n   code: call(972)\n974. f973.ts:974:1\n   code: call(973)\n975. f974.ts:975:1\n   code: call(974)\n976. f975.ts:976:1\n   code: call(975)\n977. f976.ts:977:1\n   code: call(976)\n978. f977.ts:978:1\n   code: call(977)\n979. f978.ts:979:1\n   code: call(978)\n980. f979.ts:980:1\n   code: call(979)\n981. f980.ts:981:1\n   code: call(980)\n982. f981.ts:982:1\n   code: call(981)\n983. f982.ts:983:1\n   code: call(982)\n984. f983.ts:984:1\n   code: call(983)\n985. f984.ts:985:1\n   code: call(984)\n986. f985.ts:986:1\n   code: call(985)\n987. f986.ts:987:1\n   code: call(986)\n988. f987.ts:988:1\n   code: call(987)\n989. f988.ts:989:1\n   code: call(988)\n990. f989.ts:990:1\n   code: call(989)\n991. f990.ts:991:1\n   code: call(990)\n992. f991.ts:992:1\n   code: call(991)\n993. f992.ts:993:1\n   code: call(992)\n994. f993.ts:994:1\n   code: call(993)\n995. f994.ts:995:1\n   code: call(994)\n996. f995.ts:996:1\n   code: call(995)\n997. f996.ts:997:1\n   code: call(996)\n998. f997.ts:998:1\n   code: call(997)\n999. f998.ts:999:1\n   code: call(998)\n\n[Output truncated: showing 2000 of 2002 lines (36.7KB of 36.8KB). Full output saved to: @@PATH@@]",
+   "shownCount": 1000,
+   "truncated": true
+  }
+ ]
+}

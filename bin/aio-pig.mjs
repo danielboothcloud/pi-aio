@@ -5,12 +5,20 @@
 // an extension set or model scope (`--recipe`, a `.pi-recipe` default,
 // `--continue` into a recipe session) must be resolved before pig starts.
 // This launcher does that with AIO's own recipe code (loaded through jiti;
-// Pi's package is replaced by recipes/pig-launch/pi-shim.ts) and then runs
-// pig once, with inherited stdio, and exits with pig's exit status.
+// Pi's package is replaced by recipes/pig-launch/pi-shim.ts).
 //
-// Use it in place of `pig`, e.g. in fish:
-//   function pig; node <aio>/bin/aio-pig.mjs $argv; end
+// Two modes:
+//   - exec plan (preferred): `aio-pig.mjs --aio-print-exec=tty|pipe <args>`
+//     prints NUL-separated arguments for `env` and exits. The shell runs
+//     `env <them>`, and env replaces itself with pig, so no Node launcher
+//     stays alive. `tty`/`pipe` is the shell's real stdout state (the
+//     shell captures this process's stdout). See bin/pig.fish.
+//   - spawn: `aio-pig.mjs <args>` runs pig as a child with inherited stdio
+//     and exits with pig's exit status. The launcher stays alive meanwhile.
+//
 // Environment: AIO_PIG_BINARY selects the pig executable (default `pig`);
+// AIO_PIG_EXTENSION selects the AIO extension that a recipe relaunch loads
+// (default this package's index.ts; set <repo>/go/aio for the Go port);
 // AIO_PIG_DRY_RUN=1 prints the planned command as JSON instead of running it.
 // Any planning failure starts pig unchanged: the launcher never blocks pig.
 
@@ -20,32 +28,44 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const pigBinary = process.env.AIO_PIG_BINARY?.trim() || "pig";
-const args = process.argv.slice(2);
+const EXEC_FLAG = "--aio-print-exec=";
 
-async function plan() {
+let args = process.argv.slice(2);
+let execMode;
+if (args[0]?.startsWith(EXEC_FLAG)) {
+	execMode = args[0].slice(EXEC_FLAG.length);
+	args = args.slice(1);
+}
+const stdoutIsTTY = execMode === undefined ? process.stdout.isTTY === true : execMode === "tty";
+
+async function load() {
 	const { createJiti } = await import("jiti");
 	const jiti = createJiti(import.meta.url, {
 		alias: {
 			"@earendil-works/pi-coding-agent": join(root, "recipes", "pig-launch", "pi-shim.ts"),
 		},
 	});
-	const { planPigLaunch } = await jiti.import(join(root, "recipes", "pig-launch", "plan.ts"));
+	const plan = await jiti.import(join(root, "recipes", "pig-launch", "plan.ts"));
 	const { promptRecipeTrust } = await jiti.import(join(root, "recipes", "trust.ts"));
-	return planPigLaunch({
+	return { ...plan, promptRecipeTrust };
+}
+
+let launch = { command: pigBinary, args, env: { ...process.env } };
+let execEnvArgs;
+try {
+	const mod = await load();
+	execEnvArgs = mod.execEnvArgs;
+	launch = await mod.planPigLaunch({
 		args,
 		env: { ...process.env },
 		cwd: process.cwd(),
 		pigBinary,
 		stdinIsTTY: process.stdin.isTTY === true,
-		stdoutIsTTY: process.stdout.isTTY === true,
-		promptTrust: promptRecipeTrust,
+		stdoutIsTTY,
+		promptTrust: mod.promptRecipeTrust,
+		aioExtensionPath: process.env.AIO_PIG_EXTENSION?.trim() || undefined,
 		stderr: (line) => process.stderr.write(`${line}\n`),
 	});
-}
-
-let launch = { command: pigBinary, args, env: process.env };
-try {
-	launch = await plan();
 } catch (error) {
 	const message = error instanceof Error ? error.message : String(error);
 	process.stderr.write(`aio-pig: recipe launch skipped (${message}); starting pig unchanged\n`);
@@ -56,6 +76,13 @@ if (process.env.AIO_PIG_DRY_RUN === "1") {
 		Object.entries(launch.env).filter(([key]) => key.startsWith("AIO_")),
 	);
 	process.stdout.write(`${JSON.stringify({ command: launch.command, args: launch.args, env }, null, 2)}\n`);
+	process.exit(0);
+}
+
+if (execMode !== undefined) {
+	// A planning failure still prints a plan: plain pig with the same args.
+	const words = execEnvArgs ? execEnvArgs(process.env, launch) : [launch.command, ...launch.args];
+	process.stdout.write(words.map((word) => `${word}\0`).join(""));
 	process.exit(0);
 }
 

@@ -108,6 +108,7 @@
 		"recipes/**/*.ts",
 		"!recipes/**/*.test.ts",
 		"bin/aio-pig.mjs",
+		"bin/pig.fish",
 		"session-nav/**/*.ts",
 		"!session-nav/**/*.test.ts",
 		"pretty-tools/LICENSE",
@@ -153,10 +154,11 @@
 		"README.md"
 	],
 	"scripts": {
-		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
+		"test": "npm run test:node && npm run test:diff && npm run test:upstream && npm run test:go",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
 		"test:node": "tsx --test notifications/*.test.ts session-naming/*.test.ts ast-grep/*.test.ts btw/*.test.ts blocklist/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts effort/*.test.ts goals/*.test.ts tuicr/*.test.ts hypa/*.test.ts init/*.test.ts nvim/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts recipes/*.test.ts recipes/pig-launch/*.test.ts session-nav/*.test.ts rtk/*.test.ts status-line/*.test.ts styles/*.test.ts subagents/*.test.ts ui/*.test.ts user-bash/*.test.ts yaml-hooks/*.test.ts frame/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts ask-user-question/tool/sanitize-questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts",
+		"test:go": "if command -v go >/dev/null 2>&1; then for f in go/internal/*/testdata/gen-golden.ts; do tsx \"$f\" --check || exit 1; done && cd go && go vet ./internal/... && go test ./internal/...; else echo \"go not installed: Go port tests skipped\"; fi",
 		"postinstall": "node hypa/scripts/postinstall.js"
 	},
 	"pi": {

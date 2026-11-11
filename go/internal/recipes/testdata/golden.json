@@ -1,0 +1,2913 @@
+{
+ "fixtures": {
+  "agent/aio-recipes.json": "{\"defaultRecipe\":\"home\",\"recipes\":{\"home\":{\"description\":\"  Home setup  \",\"model\":\"anthropic/claude-x:high\",\"thinkingLevel\":\"LOW\",\"models\":[\"a/*\",\" \",3],\"mcpServers\":{\"docs\":{\"url\":\"https://d\"},\" \":{\"url\":\"x\"},\"bad\":1},\"extensions\":[\"npm:x\",\"\"],\"permissionMode\":\" Plan \",\"style\":\"humanised\",\"junk\":true},\"shared\":{\"description\":\"global shared\",\"mode\":\"auto\",\"style\":\"mentor\"},\"blocky\":{\"blocklist\":[\"rm -rf\",{\"pattern\":\"^git push\",\"regex\":true,\"match\":\"command\"}]},\"blockOff\":{\"blocklist\":{\"enabled\":false,\"entries\":[\"x\"]}},\"blockFileMode\":{\"blocklist\":{\"match\":\"command\",\"entries\":[\"vault\"]}},\"nullMode\":{\"permissionMode\":null,\"mode\":\"ask\",\"thinkingLevel\":\"huge\",\"style\":\"loud\"},\"notObject\":\"x\",\"\":{\"model\":\"m\"}}}",
+  "project/.pi/aio-recipes.json": "{\"defaultRecipe\":\"proj\",\"recipes\":{\"proj\":{\"model\":\"openai/gpt\"},\"shared\":{\"description\":\"project shared\"}}}",
+  "project/.pi-recipe": "{\"defaultRecipe\":\"dir\",\"recipes\":{\"dir\":{\"models\":[\"openai-codex/*\"],\"extensions\":[\"npm:pi-lens\"]},\"shared\":{\"style\":\"off\"}}}",
+  "project/.pi-recipe.json": "{\"recipes\":{\"ignored\":{}}}",
+  "baddefault/.pi-recipe": "{\"defaultRecipe\":\"home\",\"recipes\":{\"local\":{}}}",
+  "onlyjson/.pi-recipe.json": "{\"defaultRecipe\":\"j\",\"recipes\":{\"j\":{\"model\":\"x\"}}}",
+  "broken/.pi-recipe": "{ not json",
+  "arrayrecipes/.pi-recipe": "{\"defaultRecipe\":\"0\",\"recipes\":[{\"model\":\"first\"}]}",
+  "empty/.keep": ""
+ },
+ "loads": [
+  {
+   "dir": "project",
+   "projectTrusted": false,
+   "directoryTrusted": false,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/project/.pi-recipe"
+   }
+  },
+  {
+   "dir": "project",
+   "projectTrusted": true,
+   "directoryTrusted": false,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "project",
+      "baseDir": "@@ROOT@@/project/.pi",
+      "config": {
+       "mcpServers": {},
+       "description": "project shared"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     },
+     "proj": {
+      "name": "proj",
+      "source": "project",
+      "baseDir": "@@ROOT@@/project/.pi",
+      "config": {
+       "mcpServers": {},
+       "model": "openai/gpt"
+      }
+     }
+    },
+    "defaultRecipe": "proj",
+    "defaultSource": "project",
+    "directoryFile": "@@ROOT@@/project/.pi-recipe"
+   }
+  },
+  {
+   "dir": "project",
+   "projectTrusted": false,
+   "directoryTrusted": true,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "directory",
+      "baseDir": "@@ROOT@@/project",
+      "config": {
+       "mcpServers": {},
+       "style": "none"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     },
+     "dir": {
+      "name": "dir",
+      "source": "directory",
+      "baseDir": "@@ROOT@@/project",
+      "config": {
+       "mcpServers": {},
+       "models": [
+        "openai-codex/*"
+       ],
+       "extensions": [
+        "npm:pi-lens"
+       ]
+      }
+     }
+    },
+    "defaultRecipe": "dir",
+    "defaultSource": "directory",
+    "directoryFile": "@@ROOT@@/project/.pi-recipe"
+   }
+  },
+  {
+   "dir": "project",
+   "projectTrusted": true,
+   "directoryTrusted": true,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "directory",
+      "baseDir": "@@ROOT@@/project",
+      "config": {
+       "mcpServers": {},
+       "style": "none"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     },
+     "proj": {
+      "name": "proj",
+      "source": "project",
+      "baseDir": "@@ROOT@@/project/.pi",
+      "config": {
+       "mcpServers": {},
+       "model": "openai/gpt"
+      }
+     },
+     "dir": {
+      "name": "dir",
+      "source": "directory",
+      "baseDir": "@@ROOT@@/project",
+      "config": {
+       "mcpServers": {},
+       "models": [
+        "openai-codex/*"
+       ],
+       "extensions": [
+        "npm:pi-lens"
+       ]
+      }
+     }
+    },
+    "defaultRecipe": "dir",
+    "defaultSource": "directory",
+    "directoryFile": "@@ROOT@@/project/.pi-recipe"
+   }
+  },
+  {
+   "dir": "baddefault",
+   "projectTrusted": false,
+   "directoryTrusted": false,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/baddefault/.pi-recipe"
+   }
+  },
+  {
+   "dir": "baddefault",
+   "projectTrusted": true,
+   "directoryTrusted": false,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/baddefault/.pi-recipe"
+   }
+  },
+  {
+   "dir": "baddefault",
+   "projectTrusted": false,
+   "directoryTrusted": true,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     },
+     "local": {
+      "name": "local",
+      "source": "directory",
+      "baseDir": "@@ROOT@@/baddefault",
+      "config": {
+       "mcpServers": {}
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/baddefault/.pi-recipe"
+   }
+  },
+  {
+   "dir": "baddefault",
+   "projectTrusted": true,
+   "directoryTrusted": true,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     },
+     "local": {
+      "name": "local",
+      "source": "directory",
+      "baseDir": "@@ROOT@@/baddefault",
+      "config": {
+       "mcpServers": {}
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/baddefault/.pi-recipe"
+   }
+  },
+  {
+   "dir": "onlyjson",
+   "projectTrusted": false,
+   "directoryTrusted": false,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/onlyjson/.pi-recipe.json"
+   }
+  },
+  {
+   "dir": "onlyjson",
+   "projectTrusted": true,
+   "directoryTrusted": false,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/onlyjson/.pi-recipe.json"
+   }
+  },
+  {
+   "dir": "onlyjson",
+   "projectTrusted": false,
+   "directoryTrusted": true,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     },
+     "j": {
+      "name": "j",
+      "source": "directory",
+      "baseDir": "@@ROOT@@/onlyjson",
+      "config": {
+       "mcpServers": {},
+       "model": "x"
+      }
+     }
+    },
+    "defaultRecipe": "j",
+    "defaultSource": "directory",
+    "directoryFile": "@@ROOT@@/onlyjson/.pi-recipe.json"
+   }
+  },
+  {
+   "dir": "onlyjson",
+   "projectTrusted": true,
+   "directoryTrusted": true,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     },
+     "j": {
+      "name": "j",
+      "source": "directory",
+      "baseDir": "@@ROOT@@/onlyjson",
+      "config": {
+       "mcpServers": {},
+       "model": "x"
+      }
+     }
+    },
+    "defaultRecipe": "j",
+    "defaultSource": "directory",
+    "directoryFile": "@@ROOT@@/onlyjson/.pi-recipe.json"
+   }
+  },
+  {
+   "dir": "broken",
+   "projectTrusted": false,
+   "directoryTrusted": false,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/broken/.pi-recipe"
+   }
+  },
+  {
+   "dir": "broken",
+   "projectTrusted": true,
+   "directoryTrusted": false,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/broken/.pi-recipe"
+   }
+  },
+  {
+   "dir": "broken",
+   "projectTrusted": false,
+   "directoryTrusted": true,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/broken/.pi-recipe"
+   }
+  },
+  {
+   "dir": "broken",
+   "projectTrusted": true,
+   "directoryTrusted": true,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/broken/.pi-recipe"
+   }
+  },
+  {
+   "dir": "arrayrecipes",
+   "projectTrusted": false,
+   "directoryTrusted": false,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/arrayrecipes/.pi-recipe"
+   }
+  },
+  {
+   "dir": "arrayrecipes",
+   "projectTrusted": true,
+   "directoryTrusted": false,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": "@@ROOT@@/arrayrecipes/.pi-recipe"
+   }
+  },
+  {
+   "dir": "arrayrecipes",
+   "projectTrusted": false,
+   "directoryTrusted": true,
+   "result": {
+    "recipes": {
+     "0": {
+      "name": "0",
+      "source": "directory",
+      "baseDir": "@@ROOT@@/arrayrecipes",
+      "config": {
+       "mcpServers": {},
+       "model": "first"
+      }
+     },
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "0",
+    "defaultSource": "directory",
+    "directoryFile": "@@ROOT@@/arrayrecipes/.pi-recipe"
+   }
+  },
+  {
+   "dir": "arrayrecipes",
+   "projectTrusted": true,
+   "directoryTrusted": true,
+   "result": {
+    "recipes": {
+     "0": {
+      "name": "0",
+      "source": "directory",
+      "baseDir": "@@ROOT@@/arrayrecipes",
+      "config": {
+       "mcpServers": {},
+       "model": "first"
+      }
+     },
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "0",
+    "defaultSource": "directory",
+    "directoryFile": "@@ROOT@@/arrayrecipes/.pi-recipe"
+   }
+  },
+  {
+   "dir": "empty",
+   "projectTrusted": false,
+   "directoryTrusted": false,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": ""
+   }
+  },
+  {
+   "dir": "empty",
+   "projectTrusted": true,
+   "directoryTrusted": false,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": ""
+   }
+  },
+  {
+   "dir": "empty",
+   "projectTrusted": false,
+   "directoryTrusted": true,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": ""
+   }
+  },
+  {
+   "dir": "empty",
+   "projectTrusted": true,
+   "directoryTrusted": true,
+   "result": {
+    "recipes": {
+     "home": {
+      "name": "home",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {
+        "docs": {
+         "url": "https://d"
+        }
+       },
+       "description": "Home setup",
+       "model": "anthropic/claude-x:high",
+       "thinkingLevel": "low",
+       "models": [
+        "a/*"
+       ],
+       "extensions": [
+        "npm:x"
+       ],
+       "permissionMode": "plan",
+       "style": "ste"
+      }
+     },
+     "shared": {
+      "name": "shared",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "description": "global shared",
+       "permissionMode": "auto",
+       "style": "tutor"
+      }
+     },
+     "blocky": {
+      "name": "blocky",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "rm -rf",
+         "regex": false,
+         "reason": "",
+         "command": false
+        },
+        {
+         "pattern": "^git push",
+         "regex": true,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "blockOff": {
+      "name": "blockOff",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {}
+      }
+     },
+     "blockFileMode": {
+      "name": "blockFileMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "blocklist": [
+        {
+         "pattern": "vault",
+         "regex": false,
+         "reason": "",
+         "command": true
+        }
+       ]
+      }
+     },
+     "nullMode": {
+      "name": "nullMode",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "permissionMode": "ask"
+      }
+     },
+     "": {
+      "name": "",
+      "source": "global",
+      "baseDir": "@@ROOT@@/agent",
+      "config": {
+       "mcpServers": {},
+       "model": "m"
+      }
+     }
+    },
+    "defaultRecipe": "home",
+    "defaultSource": "global",
+    "directoryFile": ""
+   }
+  }
+ ],
+ "specs": [
+  {
+   "spec": "anthropic/claude:high",
+   "result": {
+    "model": "anthropic/claude",
+    "thinking": "high"
+   }
+  },
+  {
+   "spec": "hf:zai-org/GLM-5.3",
+   "result": {
+    "model": "hf:zai-org/GLM-5.3"
+   }
+  },
+  {
+   "spec": "hf:zai/GLM:XHIGH",
+   "result": {
+    "model": "hf:zai/GLM",
+    "thinking": "xhigh"
+   }
+  },
+  {
+   "spec": "m: max ",
+   "result": {
+    "model": "m",
+    "thinking": "max"
+   }
+  },
+  {
+   "spec": ":high",
+   "result": {
+    "model": ":high"
+   }
+  },
+  {
+   "spec": "plain",
+   "result": {
+    "model": "plain"
+   }
+  },
+  {
+   "spec": "a:b:off",
+   "result": {
+    "model": "a:b",
+    "thinking": "off"
+   }
+  }
+ ],
+ "branches": [
+  {
+   "entries": [],
+   "result": {
+    "present": false
+   }
+  },
+  {
+   "entries": [
+    {
+     "type": "custom",
+     "customType": "recipe-state",
+     "data": {
+      "name": " work "
+     }
+    }
+   ],
+   "result": {
+    "name": "work",
+    "present": true
+   }
+  },
+  {
+   "entries": [
+    {
+     "type": "custom",
+     "customType": "recipe-state",
+     "data": {
+      "name": "a"
+     }
+    },
+    {
+     "type": "custom",
+     "customType": "recipe-state",
+     "data": {
+      "name": null
+     }
+    }
+   ],
+   "result": {
+    "present": true
+   }
+  },
+  {
+   "entries": [
+    {
+     "type": "custom",
+     "customType": "recipe-state",
+     "data": {
+      "name": "a"
+     }
+    },
+    {
+     "type": "message"
+    },
+    {
+     "type": "custom",
+     "customType": "other"
+    }
+   ],
+   "result": {
+    "name": "a",
+    "present": true
+   }
+  },
+  {
+   "entries": [
+    {
+     "type": "custom",
+     "customType": "recipe-state"
+    }
+   ],
+   "result": {
+    "present": true
+   }
+  }
+ ],
+ "trustStates": [
+  {
+   "path": "project/.pi-recipe",
+   "state": "trusted",
+   "hash": "35f74dcef118af92b5a259d7a24af4e339ff57ca50bebedb37cb07a408a1d6be"
+  },
+  {
+   "path": "onlyjson/.pi-recipe.json",
+   "state": "denied",
+   "hash": "ffe4b458cba6cf376e19eb3e8cd4a6293a6210261bae11e4a79f67b44a2d6fff"
+  },
+  {
+   "path": "broken/.pi-recipe",
+   "state": "unknown",
+   "hash": "0228f717792ffbc02f7fa058c934c10d7e91d0de743e365ebd78bfebf019254e"
+  }
+ ],
+ "descriptions": [
+  {
+   "path": "project/.pi-recipe",
+   "lines": [
+    "default recipe: dir",
+    "dir: models openai-codex/* · extensions npm:pi-lens",
+    "shared: no settings"
+   ]
+  },
+  {
+   "path": "broken/.pi-recipe",
+   "lines": [
+    "(not valid JSON — it will be ignored until fixed)"
+   ]
+  },
+  {
+   "path": "baddefault/.pi-recipe",
+   "lines": [
+    "default recipe: home (not defined in this file — ignored)",
+    "local: no settings"
+   ]
+  }
+ ],
+ "trustStore": "{\n  \"version\": 1,\n  \"files\": {\n    \"@@ROOT@@/project/.pi-recipe\": {\n      \"sha256\": \"35f74dcef118af92b5a259d7a24af4e339ff57ca50bebedb37cb07a408a1d6be\",\n      \"trusted\": true,\n      \"decidedAt\": \"@@TIME@@\"\n    },\n    \"@@ROOT@@/onlyjson/.pi-recipe.json\": {\n      \"sha256\": \"ffe4b458cba6cf376e19eb3e8cd4a6293a6210261bae11e4a79f67b44a2d6fff\",\n      \"trusted\": false,\n      \"decidedAt\": \"@@TIME@@\"\n    }\n  }\n}\n"
+}

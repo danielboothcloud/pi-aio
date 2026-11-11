@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { SessionManager as PiSessionManager, parseArgs } from "@earendil-works/pi-coding-agent";
 import { RECIPES_FILE_ENV, RECIPE_STATE_ENTRY } from "../config.ts";
 import { RECIPE_TRUST_FILE_ENV, recordRecipeFileTrust, type TrustChoice } from "../trust.ts";
-import { PIG_LAUNCHER_ENV, PIG_TRUST_ASKED_ENV, aliasPigletToRecipe, planPigLaunch, type PigLaunchOptions } from "./plan.ts";
+import { PIG_LAUNCHER_ENV, PIG_TRUST_ASKED_ENV, aliasPigletToRecipe, execEnvArgs, planPigLaunch, type PigLaunchOptions } from "./plan.ts";
 import { SessionManager, pigAgentDir, pigSessionDirEnv } from "./pi-shim.ts";
 
 const repo = resolve(fileURLToPath(new URL("../..", import.meta.url)));
@@ -242,4 +242,72 @@ test("bin/aio-pig.mjs plans through the shim (no Pi package) and passes the exit
 	const missing = runLauncher(["status"], { AIO_PIG_BINARY: join(root, "no-such-pig") });
 	assert.equal(missing.status, 127);
 	assert.match(missing.stderr, /could not start/);
+});
+
+test("execEnvArgs sets added/changed variables, unsets removed ones, and keeps args intact", () => {
+	const launch = {
+		command: "/bin/pig",
+		args: ["-p", "two words", "", "line\nbreak"],
+		env: { KEEP: "1", CHANGED: "new", ADDED: "x=y" },
+	};
+	assert.deepEqual(
+		execEnvArgs({ KEEP: "1", CHANGED: "old", GONE: "z" }, launch),
+		["-u", "GONE", "CHANGED=new", "ADDED=x=y", "/bin/pig", "-p", "two words", "", "line\nbreak"],
+	);
+	assert.deepEqual(execEnvArgs({ A: "1" }, { command: "pig", args: ["status"], env: { A: "1" } }), ["pig", "status"]);
+});
+
+test("--aio-print-exec prints a NUL-separated env plan and keeps the trust question on the terminal state given", () => {
+	writeDirectoryRecipe(true);
+	const out = runLauncher(["--aio-print-exec=pipe", "-p", "a b"]);
+	assert.equal(out.status, 0, out.stderr);
+	assert.ok(out.stdout.endsWith("\0"));
+	const words = out.stdout.slice(0, -1).split("\0");
+	assert.ok(words.includes("AIO_RECIPE_ACTIVE=repo"));
+	assert.ok(words.includes(`${PIG_LAUNCHER_ENV}=1`));
+	const command = words.indexOf("pig");
+	assert.ok(command > 0, "assignments come before the command");
+	assert.deepEqual(parseArgs(words.slice(command + 1)).messages, ["a b"]);
+	// A planning failure (here: a launcher copy without AIO next to it)
+	// still prints plain pig with the same args.
+	mkdirSync(join(root, "bin"), { recursive: true });
+	copyFileSync(join(repo, "bin", "aio-pig.mjs"), join(root, "bin", "aio-pig.mjs"));
+	const broken = spawnSync(process.execPath, [join(root, "bin", "aio-pig.mjs"), "--aio-print-exec=pipe", "x"], {
+		cwd: project, encoding: "utf8", env: ENV as NodeJS.ProcessEnv, timeout: 60_000,
+	});
+	assert.equal(broken.status, 0);
+	assert.match(broken.stderr, /starting pig unchanged/);
+	assert.equal(broken.stdout, "pig\0x\0");
+});
+
+const fish = spawnSync("fish", ["--version"], { encoding: "utf8" }).status === 0;
+
+test("bin/pig.fish runs pig through env with no launcher left alive", { skip: !fish && "fish not installed" }, () => {
+	writeDirectoryRecipe(true);
+	const fake = join(root, "fake-pig");
+	writeFileSync(fake, [
+		"#!/bin/sh",
+		'printf "args=%s|" "$@"; echo',
+		'echo "recipe=$AIO_RECIPE_ACTIVE launcher=$AIO_PIG_LAUNCHER"',
+		'echo "parent=$(ps -o comm= -p $PPID)"',
+		"exit 7",
+	].join("\n"), { mode: 0o755 });
+	const run = (env: Record<string, string>) => spawnSync("fish", ["--no-config", "-c", `source ${JSON.stringify(join(repo, "bin", "pig.fish"))}; pig --recipe work 'two words'`], {
+		cwd: project,
+		encoding: "utf8",
+		env: { ...ENV, [RECIPES_FILE_ENV]: globalRecipes, [RECIPE_TRUST_FILE_ENV]: trustFile, AIO_PIG_BINARY: fake, ...env } as NodeJS.ProcessEnv,
+		timeout: 60_000,
+	});
+	const launched = run({ AIO_PIG_LAUNCHER_PATH: join(repo, "bin", "aio-pig.mjs") });
+	assert.equal(launched.status, 7, launched.stderr);
+	assert.match(launched.stdout, /recipe=work launcher=1/);
+	assert.match(launched.stdout, /args=--models\|args=anthropic\/\*\|args=two words\|/);
+	assert.match(launched.stdout, /parent=\S*fish/, "env exec'd pig; no node launcher between fish and pig");
+	// Without the launcher file, plain pig runs from PATH, args unchanged.
+	const bin = join(root, "path-bin");
+	mkdirSync(bin, { recursive: true });
+	copyFileSync(fake, join(bin, "pig"));
+	const plain = run({ AIO_PIG_LAUNCHER_PATH: join(root, "nope.mjs"), PATH: `${bin}:${process.env.PATH}` });
+	assert.equal(plain.status, 7, plain.stderr);
+	assert.match(plain.stdout, /^args=--recipe\|args=work\|args=two words\|\nrecipe= launcher=\n/);
 });
