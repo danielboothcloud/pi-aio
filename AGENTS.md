@@ -559,7 +559,11 @@ generated `dist/` tree without changing the package contract.
   reuses `go/internal/toolpaths`, ports Node's `path.matchesGlob`
   (minimatch with regexp2), and keeps every `PI_YAML_HOOKS_*` name and
   validation code. Its golden generator drives the real `registerYamlHooks`
-  with an injected `executeBash` and runs real harmless bash hooks.
+  with an injected `executeBash` and runs real harmless bash hooks. Group 8
+  diff-tools is ported in `go/internal/difftools` (with `go/internal/jsdiff`
+  and `go/internal/xxhash32`). It owns `write`, `edit`, and `apply_patch`,
+  highlights through `sdk.HighlightCode`, and gives permission-modes its
+  approval overlay.
   Shared Go packages: `go/internal/chrome` (port of
   `ui/chrome.ts`), `go/internal/tuiwidth` (copy of the SDK's internal
   pi-tui width code, because internal packages cannot import the SDK), and

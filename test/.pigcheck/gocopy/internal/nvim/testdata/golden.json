@@ -1,0 +1,2140 @@
+{
+ "targets": [
+  {
+   "target": "a.ts",
+   "parsed": {
+    "path": "a.ts"
+   }
+  },
+  {
+   "target": "a.ts:42",
+   "parsed": {
+    "path": "a.ts",
+    "line": 42
+   }
+  },
+  {
+   "target": "a.ts:42:7",
+   "parsed": {
+    "path": "a.ts",
+    "line": 42,
+    "column": 7
+   }
+  },
+  {
+   "target": " a b.ts:3 ",
+   "parsed": {
+    "path": "a b.ts",
+    "line": 3
+   }
+  },
+  {
+   "target": "a.ts:0",
+   "parsed": {
+    "path": "a.ts"
+   }
+  },
+  {
+   "target": "a.ts:5:0",
+   "parsed": {
+    "path": "a.ts",
+    "line": 5
+   }
+  },
+  {
+   "target": "C:10:20",
+   "parsed": {
+    "path": "C",
+    "line": 10,
+    "column": 20
+   }
+  },
+  {
+   "target": "dir:x/a.ts:9",
+   "parsed": {
+    "path": "dir:x/a.ts",
+    "line": 9
+   }
+  },
+  {
+   "target": ":5",
+   "parsed": {
+    "path": ":5"
+   }
+  },
+  {
+   "target": "a.ts:",
+   "parsed": {
+    "path": "a.ts:"
+   }
+  },
+  {
+   "target": "a.ts:x",
+   "parsed": {
+    "path": "a.ts:x"
+   }
+  }
+ ],
+ "strips": [
+  {
+   "token": "@a.ts",
+   "result": "a.ts"
+  },
+  {
+   "token": "@\"a b.ts\"",
+   "result": "a b.ts"
+  },
+  {
+   "token": "a.ts",
+   "result": "a.ts"
+  },
+  {
+   "token": "  @x ",
+   "result": "x"
+  },
+  {
+   "token": "@\"",
+   "result": "\""
+  },
+  {
+   "token": "@@a",
+   "result": "@a"
+  }
+ ],
+ "splits": [
+  {
+   "args": "",
+   "result": []
+  },
+  {
+   "args": "a b.ts",
+   "result": [
+    "a b.ts"
+   ]
+  },
+  {
+   "args": "@a.ts:3 @b.ts",
+   "result": [
+    "@a.ts:3",
+    "@b.ts"
+   ]
+  },
+  {
+   "args": "  @a   @b  ",
+   "result": [
+    "@a",
+    "@b"
+   ]
+  },
+  {
+   "args": "x @y",
+   "result": [
+    "x",
+    "@y"
+   ]
+  }
+ ],
+ "commands": [
+  {
+   "request": {
+    "path": "/r/a.ts"
+   },
+   "args": [
+    "--",
+    "/r/a.ts"
+   ],
+   "command": "nvim -- /r/a.ts",
+   "title": "nvim a.ts"
+  },
+  {
+   "request": {
+    "path": "/r/a b.ts",
+    "line": 4
+   },
+   "args": [
+    "+4",
+    "--",
+    "/r/a b.ts"
+   ],
+   "command": "nvim +4 -- '/r/a b.ts'",
+   "title": "nvim a b.ts:4"
+  },
+  {
+   "request": {
+    "path": "/r/it's.ts",
+    "line": 2,
+    "column": 3,
+    "readOnly": true
+   },
+   "args": [
+    "-R",
+    "+2,3",
+    "--",
+    "/r/it's.ts"
+   ],
+   "command": "nvim -R +2,3 -- '/r/it'\\''s.ts'",
+   "title": "nvim it's.ts:2"
+  },
+  {
+   "request": {
+    "path": "/r/x.ts",
+    "column": 5
+   },
+   "args": [
+    "--",
+    "/r/x.ts"
+   ],
+   "command": "nvim -- /r/x.ts",
+   "title": "nvim x.ts"
+  }
+ ],
+ "runs": [
+  {
+   "env": {},
+   "succeed": "",
+   "args": "",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "",
+   "args": "help",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "",
+   "args": "-r",
+   "calls": [],
+   "notes": [
+    "warning:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "",
+   "args": "-r a.ts:3",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -R +3 -- /r/a.ts",
+     "--title",
+     "nvim a.ts:3",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -R +3 -- /r/a.ts\"\nend tell"
+    ]
+   ],
+   "notes": [
+    "info:no terminal launcher available; run this command yourself.\n  nvim -R +3 -- /r/a.ts"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "",
+   "args": "--read-only @a.ts @b.ts:4:2",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -R -- /r/a.ts",
+     "--title",
+     "nvim a.ts",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -R -- /r/a.ts\"\nend tell"
+    ],
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -R +4,2 -- /r/b.ts",
+     "--title",
+     "nvim b.ts:4",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -R +4,2 -- /r/b.ts\"\nend tell"
+    ]
+   ],
+   "notes": [
+    "info:no terminal launcher available; run this command yourself.\n  nvim -R -- /r/a.ts\nno terminal launcher available; run this command yourself.\n  nvim -R +4,2 -- /r/b.ts"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "",
+   "args": "@\"a b.ts\" @/abs/c.ts",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- '/r/\"a'",
+     "--title",
+     "nvim \"a",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -- '/r/\\\"a'\"\nend tell"
+    ],
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- '/r/b.ts\"'",
+     "--title",
+     "nvim b.ts\"",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -- '/r/b.ts\\\"'\"\nend tell"
+    ],
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- /abs/c.ts",
+     "--title",
+     "nvim c.ts",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -- /abs/c.ts\"\nend tell"
+    ]
+   ],
+   "notes": [
+    "info:no terminal launcher available; run this command yourself.\n  nvim -- '/r/\"a'\nno terminal launcher available; run this command yourself.\n  nvim -- '/r/b.ts\"'\nno terminal launcher available; run this command yourself.\n  nvim -- /abs/c.ts"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "",
+   "args": "src/with space.ts:12",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim +12 -- '/r/src/with space.ts'",
+     "--title",
+     "nvim with space.ts:12",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim +12 -- '/r/src/with space.ts'\"\nend tell"
+    ]
+   ],
+   "notes": [
+    "info:no terminal launcher available; run this command yourself.\n  nvim +12 -- '/r/src/with space.ts'"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "",
+   "args": "-h",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "",
+   "args": "@-r @x.ts",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- /r/-r",
+     "--title",
+     "nvim -r",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -- /r/-r\"\nend tell"
+    ],
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- /r/x.ts",
+     "--title",
+     "nvim x.ts",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -- /r/x.ts\"\nend tell"
+    ]
+   ],
+   "notes": [
+    "info:no terminal launcher available; run this command yourself.\n  nvim -- /r/-r\nno terminal launcher available; run this command yourself.\n  nvim -- /r/x.ts"
+   ]
+  },
+  {
+   "env": {
+    "OTTY_PANE_ID": "p1",
+    "TMUX": "t"
+   },
+   "succeed": "otty",
+   "args": "",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {
+    "OTTY_PANE_ID": "p1",
+    "TMUX": "t"
+   },
+   "succeed": "otty",
+   "args": "help",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {
+    "OTTY_PANE_ID": "p1",
+    "TMUX": "t"
+   },
+   "succeed": "otty",
+   "args": "-r",
+   "calls": [],
+   "notes": [
+    "warning:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {
+    "OTTY_PANE_ID": "p1",
+    "TMUX": "t"
+   },
+   "succeed": "otty",
+   "args": "-r a.ts:3",
+   "calls": [
+    [
+     "otty",
+     "pane",
+     "split",
+     "--direction",
+     "right",
+     "--size",
+     "50",
+     "--pane",
+     "p1",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -R +3 -- /r/a.ts",
+     "--title",
+     "nvim a.ts:3",
+     "--quiet"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/a.ts (read-only):3 in Neovim in a new Otty pane beside this session"
+   ]
+  },
+  {
+   "env": {
+    "OTTY_PANE_ID": "p1",
+    "TMUX": "t"
+   },
+   "succeed": "otty",
+   "args": "--read-only @a.ts @b.ts:4:2",
+   "calls": [
+    [
+     "otty",
+     "pane",
+     "split",
+     "--direction",
+     "right",
+     "--size",
+     "50",
+     "--pane",
+     "p1",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -R -- /r/a.ts",
+     "--title",
+     "nvim a.ts",
+     "--quiet"
+    ],
+    [
+     "otty",
+     "pane",
+     "split",
+     "--direction",
+     "right",
+     "--size",
+     "50",
+     "--pane",
+     "p1",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -R +4,2 -- /r/b.ts",
+     "--title",
+     "nvim b.ts:4",
+     "--quiet"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/a.ts (read-only) in Neovim in a new Otty pane beside this session\nOpened /r/b.ts (read-only):4 in Neovim in a new Otty pane beside this session"
+   ]
+  },
+  {
+   "env": {
+    "OTTY_PANE_ID": "p1",
+    "TMUX": "t"
+   },
+   "succeed": "otty",
+   "args": "@\"a b.ts\" @/abs/c.ts",
+   "calls": [
+    [
+     "otty",
+     "pane",
+     "split",
+     "--direction",
+     "right",
+     "--size",
+     "50",
+     "--pane",
+     "p1",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- '/r/\"a'",
+     "--title",
+     "nvim \"a",
+     "--quiet"
+    ],
+    [
+     "otty",
+     "pane",
+     "split",
+     "--direction",
+     "right",
+     "--size",
+     "50",
+     "--pane",
+     "p1",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- '/r/b.ts\"'",
+     "--title",
+     "nvim b.ts\"",
+     "--quiet"
+    ],
+    [
+     "otty",
+     "pane",
+     "split",
+     "--direction",
+     "right",
+     "--size",
+     "50",
+     "--pane",
+     "p1",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- /abs/c.ts",
+     "--title",
+     "nvim c.ts",
+     "--quiet"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/\"a in Neovim in a new Otty pane beside this session\nOpened /r/b.ts\" in Neovim in a new Otty pane beside this session\nOpened /abs/c.ts in Neovim in a new Otty pane beside this session"
+   ]
+  },
+  {
+   "env": {
+    "OTTY_PANE_ID": "p1",
+    "TMUX": "t"
+   },
+   "succeed": "otty",
+   "args": "src/with space.ts:12",
+   "calls": [
+    [
+     "otty",
+     "pane",
+     "split",
+     "--direction",
+     "right",
+     "--size",
+     "50",
+     "--pane",
+     "p1",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim +12 -- '/r/src/with space.ts'",
+     "--title",
+     "nvim with space.ts:12",
+     "--quiet"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/src/with space.ts:12 in Neovim in a new Otty pane beside this session"
+   ]
+  },
+  {
+   "env": {
+    "OTTY_PANE_ID": "p1",
+    "TMUX": "t"
+   },
+   "succeed": "otty",
+   "args": "-h",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {
+    "OTTY_PANE_ID": "p1",
+    "TMUX": "t"
+   },
+   "succeed": "otty",
+   "args": "@-r @x.ts",
+   "calls": [
+    [
+     "otty",
+     "pane",
+     "split",
+     "--direction",
+     "right",
+     "--size",
+     "50",
+     "--pane",
+     "p1",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- /r/-r",
+     "--title",
+     "nvim -r",
+     "--quiet"
+    ],
+    [
+     "otty",
+     "pane",
+     "split",
+     "--direction",
+     "right",
+     "--size",
+     "50",
+     "--pane",
+     "p1",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- /r/x.ts",
+     "--title",
+     "nvim x.ts",
+     "--quiet"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/-r in Neovim in a new Otty pane beside this session\nOpened /r/x.ts in Neovim in a new Otty pane beside this session"
+   ]
+  },
+  {
+   "env": {
+    "TMUX": "t"
+   },
+   "succeed": "tmux",
+   "args": "",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {
+    "TMUX": "t"
+   },
+   "succeed": "tmux",
+   "args": "help",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {
+    "TMUX": "t"
+   },
+   "succeed": "tmux",
+   "args": "-r",
+   "calls": [],
+   "notes": [
+    "warning:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {
+    "TMUX": "t"
+   },
+   "succeed": "tmux",
+   "args": "-r a.ts:3",
+   "calls": [
+    [
+     "tmux",
+     "new-window",
+     "-c",
+     "/r",
+     "nvim -R +3 -- /r/a.ts"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/a.ts (read-only):3 in Neovim in a new tmux window"
+   ]
+  },
+  {
+   "env": {
+    "TMUX": "t"
+   },
+   "succeed": "tmux",
+   "args": "--read-only @a.ts @b.ts:4:2",
+   "calls": [
+    [
+     "tmux",
+     "new-window",
+     "-c",
+     "/r",
+     "nvim -R -- /r/a.ts"
+    ],
+    [
+     "tmux",
+     "new-window",
+     "-c",
+     "/r",
+     "nvim -R +4,2 -- /r/b.ts"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/a.ts (read-only) in Neovim in a new tmux window\nOpened /r/b.ts (read-only):4 in Neovim in a new tmux window"
+   ]
+  },
+  {
+   "env": {
+    "TMUX": "t"
+   },
+   "succeed": "tmux",
+   "args": "@\"a b.ts\" @/abs/c.ts",
+   "calls": [
+    [
+     "tmux",
+     "new-window",
+     "-c",
+     "/r",
+     "nvim -- '/r/\"a'"
+    ],
+    [
+     "tmux",
+     "new-window",
+     "-c",
+     "/r",
+     "nvim -- '/r/b.ts\"'"
+    ],
+    [
+     "tmux",
+     "new-window",
+     "-c",
+     "/r",
+     "nvim -- /abs/c.ts"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/\"a in Neovim in a new tmux window\nOpened /r/b.ts\" in Neovim in a new tmux window\nOpened /abs/c.ts in Neovim in a new tmux window"
+   ]
+  },
+  {
+   "env": {
+    "TMUX": "t"
+   },
+   "succeed": "tmux",
+   "args": "src/with space.ts:12",
+   "calls": [
+    [
+     "tmux",
+     "new-window",
+     "-c",
+     "/r",
+     "nvim +12 -- '/r/src/with space.ts'"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/src/with space.ts:12 in Neovim in a new tmux window"
+   ]
+  },
+  {
+   "env": {
+    "TMUX": "t"
+   },
+   "succeed": "tmux",
+   "args": "-h",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {
+    "TMUX": "t"
+   },
+   "succeed": "tmux",
+   "args": "@-r @x.ts",
+   "calls": [
+    [
+     "tmux",
+     "new-window",
+     "-c",
+     "/r",
+     "nvim -- /r/-r"
+    ],
+    [
+     "tmux",
+     "new-window",
+     "-c",
+     "/r",
+     "nvim -- /r/x.ts"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/-r in Neovim in a new tmux window\nOpened /r/x.ts in Neovim in a new tmux window"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "otty",
+   "args": "",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "otty",
+   "args": "help",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "otty",
+   "args": "-r",
+   "calls": [],
+   "notes": [
+    "warning:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "otty",
+   "args": "-r a.ts:3",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -R +3 -- /r/a.ts",
+     "--title",
+     "nvim a.ts:3",
+     "--quiet"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/a.ts (read-only):3 in Neovim in a new Otty tab"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "otty",
+   "args": "--read-only @a.ts @b.ts:4:2",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -R -- /r/a.ts",
+     "--title",
+     "nvim a.ts",
+     "--quiet"
+    ],
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -R +4,2 -- /r/b.ts",
+     "--title",
+     "nvim b.ts:4",
+     "--quiet"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/a.ts (read-only) in Neovim in a new Otty tab\nOpened /r/b.ts (read-only):4 in Neovim in a new Otty tab"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "otty",
+   "args": "@\"a b.ts\" @/abs/c.ts",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- '/r/\"a'",
+     "--title",
+     "nvim \"a",
+     "--quiet"
+    ],
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- '/r/b.ts\"'",
+     "--title",
+     "nvim b.ts\"",
+     "--quiet"
+    ],
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- /abs/c.ts",
+     "--title",
+     "nvim c.ts",
+     "--quiet"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/\"a in Neovim in a new Otty tab\nOpened /r/b.ts\" in Neovim in a new Otty tab\nOpened /abs/c.ts in Neovim in a new Otty tab"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "otty",
+   "args": "src/with space.ts:12",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim +12 -- '/r/src/with space.ts'",
+     "--title",
+     "nvim with space.ts:12",
+     "--quiet"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/src/with space.ts:12 in Neovim in a new Otty tab"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "otty",
+   "args": "-h",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "otty",
+   "args": "@-r @x.ts",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- /r/-r",
+     "--title",
+     "nvim -r",
+     "--quiet"
+    ],
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- /r/x.ts",
+     "--title",
+     "nvim x.ts",
+     "--quiet"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/-r in Neovim in a new Otty tab\nOpened /r/x.ts in Neovim in a new Otty tab"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "osascript",
+   "args": "",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "osascript",
+   "args": "help",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "osascript",
+   "args": "-r",
+   "calls": [],
+   "notes": [
+    "warning:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "osascript",
+   "args": "-r a.ts:3",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -R +3 -- /r/a.ts",
+     "--title",
+     "nvim a.ts:3",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -R +3 -- /r/a.ts\"\nend tell"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/a.ts (read-only):3 in Neovim in a new terminal window"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "osascript",
+   "args": "--read-only @a.ts @b.ts:4:2",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -R -- /r/a.ts",
+     "--title",
+     "nvim a.ts",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -R -- /r/a.ts\"\nend tell"
+    ],
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -R +4,2 -- /r/b.ts",
+     "--title",
+     "nvim b.ts:4",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -R +4,2 -- /r/b.ts\"\nend tell"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/a.ts (read-only) in Neovim in a new terminal window\nOpened /r/b.ts (read-only):4 in Neovim in a new terminal window"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "osascript",
+   "args": "@\"a b.ts\" @/abs/c.ts",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- '/r/\"a'",
+     "--title",
+     "nvim \"a",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -- '/r/\\\"a'\"\nend tell"
+    ],
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- '/r/b.ts\"'",
+     "--title",
+     "nvim b.ts\"",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -- '/r/b.ts\\\"'\"\nend tell"
+    ],
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- /abs/c.ts",
+     "--title",
+     "nvim c.ts",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -- /abs/c.ts\"\nend tell"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/\"a in Neovim in a new terminal window\nOpened /r/b.ts\" in Neovim in a new terminal window\nOpened /abs/c.ts in Neovim in a new terminal window"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "osascript",
+   "args": "src/with space.ts:12",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim +12 -- '/r/src/with space.ts'",
+     "--title",
+     "nvim with space.ts:12",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim +12 -- '/r/src/with space.ts'\"\nend tell"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/src/with space.ts:12 in Neovim in a new terminal window"
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "osascript",
+   "args": "-h",
+   "calls": [],
+   "notes": [
+    "info:/nvim <path>[:line[:col]] — open a file in Neovim in a new Otty pane beside this session.\n  /nvim src/index.ts          open at the top\n  /nvim src/index.ts:42       open with the cursor on line 42\n  /nvim src/index.ts:42:7     line 42, column 7\n  /nvim -r src/index.ts:42    read-only view\n  /nvim @src/index.ts         @-references work too (pi's @-file completion)\n  /nvim @a.ts:3 @b.ts         several files — one pane each\nTyping /nvim suggests files this session read or edited first, then project files.\nLauncher: Otty pane split (anchored to this session) → tmux → Otty tab → Terminal.app → the printed command."
+   ]
+  },
+  {
+   "env": {},
+   "succeed": "osascript",
+   "args": "@-r @x.ts",
+   "calls": [
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- /r/-r",
+     "--title",
+     "nvim -r",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -- /r/-r\"\nend tell"
+    ],
+    [
+     "otty",
+     "tab",
+     "new",
+     "--cwd",
+     "/r",
+     "--command",
+     "exec nvim -- /r/x.ts",
+     "--title",
+     "nvim x.ts",
+     "--quiet"
+    ],
+    [
+     "osascript",
+     "-e",
+     "tell application \"Terminal\"\n\tactivate\n\tdo script \"cd /r && nvim -- /r/x.ts\"\nend tell"
+    ]
+   ],
+   "notes": [
+    "info:Opened /r/-r in Neovim in a new terminal window\nOpened /r/x.ts in Neovim in a new terminal window"
+   ]
+  }
+ ],
+ "tools": [
+  {
+   "tool": "read",
+   "input": {
+    "path": "a.ts"
+   },
+   "isError": false,
+   "result": {
+    "paths": [
+     "a.ts"
+    ],
+    "edited": false
+   },
+   "changes": [],
+   "structured": []
+  },
+  {
+   "tool": "read",
+   "input": {
+    "file_path": "b.ts"
+   },
+   "isError": false,
+   "result": {
+    "paths": [
+     "b.ts"
+    ],
+    "edited": false
+   },
+   "changes": [],
+   "structured": []
+  },
+  {
+   "tool": "read",
+   "input": {
+    "path": ""
+   },
+   "isError": false,
+   "result": {
+    "paths": [],
+    "edited": false
+   },
+   "changes": [],
+   "structured": []
+  },
+  {
+   "tool": "read",
+   "input": {
+    "path": "a.ts"
+   },
+   "isError": true,
+   "result": {
+    "paths": [],
+    "edited": false
+   },
+   "changes": [],
+   "structured": []
+  },
+  {
+   "tool": "write",
+   "input": {
+    "path": "w.ts"
+   },
+   "isError": false,
+   "result": {
+    "paths": [
+     "w.ts"
+    ],
+    "edited": true
+   },
+   "changes": [
+    {
+     "operation": "modify",
+     "path": "w.ts"
+    }
+   ],
+   "structured": []
+  },
+  {
+   "tool": "edit",
+   "input": {
+    "path": "e.ts",
+    "edits": [
+     {
+      "oldText": "a"
+     },
+     {
+      "path": "f.ts"
+     },
+     {
+      "oldText": "b"
+     }
+    ]
+   },
+   "isError": false,
+   "result": {
+    "paths": [
+     "e.ts",
+     "f.ts"
+    ],
+    "edited": true
+   },
+   "changes": [
+    {
+     "operation": "modify",
+     "path": "e.ts"
+    },
+    {
+     "operation": "modify",
+     "path": "f.ts"
+    }
+   ],
+   "structured": []
+  },
+  {
+   "tool": "edit",
+   "input": {
+    "file_path": "x",
+    "fromPath": "y"
+   },
+   "isError": false,
+   "result": {
+    "paths": [
+     "y",
+     "x"
+    ],
+    "edited": true
+   },
+   "changes": [
+    {
+     "operation": "rename",
+     "fromPath": "y",
+     "toPath": "x"
+    }
+   ],
+   "structured": []
+  },
+  {
+   "tool": "edit",
+   "input": {
+    "path": "x",
+    "move": "z"
+   },
+   "isError": false,
+   "result": {
+    "paths": [
+     "x",
+     "z"
+    ],
+    "edited": true
+   },
+   "changes": [
+    {
+     "operation": "rename",
+     "fromPath": "x",
+     "toPath": "z"
+    }
+   ],
+   "structured": []
+  },
+  {
+   "tool": "write",
+   "input": {
+    "path": "c",
+    "op": "create"
+   },
+   "isError": false,
+   "result": {
+    "paths": [
+     "c"
+    ],
+    "edited": true
+   },
+   "changes": [
+    {
+     "operation": "create",
+     "path": "c"
+    }
+   ],
+   "structured": []
+  },
+  {
+   "tool": "apply_patch",
+   "input": {
+    "changes": [
+     {
+      "path": "a",
+      "action": "add"
+     },
+     {
+      "path": "b",
+      "action": "delete"
+     },
+     {
+      "path": "c",
+      "action": "move",
+      "fromPath": "d"
+     },
+     {
+      "movePath": "e"
+     },
+     {
+      "path": "f"
+     },
+     "junk"
+    ]
+   },
+   "isError": false,
+   "result": {
+    "paths": [
+     "a",
+     "b",
+     "d",
+     "c",
+     "e",
+     "f"
+    ],
+    "edited": true
+   },
+   "changes": [],
+   "structured": [
+    {
+     "operation": "create",
+     "path": "a"
+    },
+    {
+     "operation": "delete",
+     "path": "b"
+    },
+    {
+     "operation": "rename",
+     "fromPath": "d",
+     "toPath": "c"
+    },
+    {
+     "operation": "modify",
+     "path": "e"
+    },
+    {
+     "operation": "modify",
+     "path": "f"
+    }
+   ]
+  },
+  {
+   "tool": "apply_patch",
+   "input": {
+    "patch": "*** Begin Patch\n*** Add File: n.ts\n+x\n*** Update File: u.ts\n*** Move to: v.ts\n*** Update File: w.ts\n@@\n*** Delete File: d.ts\n*** End Patch"
+   },
+   "isError": false,
+   "result": {
+    "paths": [
+     "n.ts",
+     "u.ts",
+     "v.ts",
+     "w.ts",
+     "d.ts"
+    ],
+    "edited": true
+   },
+   "changes": [
+    {
+     "operation": "create",
+     "path": "n.ts"
+    },
+    {
+     "operation": "rename",
+     "fromPath": "u.ts",
+     "toPath": "v.ts"
+    },
+    {
+     "operation": "modify",
+     "path": "w.ts"
+    },
+    {
+     "operation": "delete",
+     "path": "d.ts"
+    }
+   ],
+   "structured": []
+  },
+  {
+   "tool": "patch",
+   "input": {
+    "input": "*** Update File: p.ts\n"
+   },
+   "isError": false,
+   "result": {
+    "paths": [
+     "p.ts"
+    ],
+    "edited": true
+   },
+   "changes": [
+    {
+     "operation": "modify",
+     "path": "p.ts"
+    }
+   ],
+   "structured": []
+  },
+  {
+   "tool": "bash",
+   "input": {
+    "command": "rm -rf a b && git mv c d; cp -r e f || touch 'g h' \"i\" && mkdir -p j -- -k && git rm --cached l && echo x"
+   },
+   "isError": false,
+   "result": {
+    "paths": [
+     "a",
+     "b",
+     "c",
+     "d",
+     "f",
+     "g h",
+     "i",
+     "j",
+     "-k",
+     "l"
+    ],
+    "edited": true
+   },
+   "changes": [
+    {
+     "operation": "delete",
+     "path": "a"
+    },
+    {
+     "operation": "delete",
+     "path": "b"
+    },
+    {
+     "operation": "rename",
+     "fromPath": "c",
+     "toPath": "d"
+    },
+    {
+     "operation": "create",
+     "path": "f"
+    },
+    {
+     "operation": "create",
+     "path": "g h"
+    },
+    {
+     "operation": "create",
+     "path": "i"
+    },
+    {
+     "operation": "create",
+     "path": "j"
+    },
+    {
+     "operation": "create",
+     "path": "-k"
+    },
+    {
+     "operation": "delete",
+     "path": "l"
+    }
+   ],
+   "structured": []
+  },
+  {
+   "tool": "bash",
+   "input": {
+    "command": "mv only"
+   },
+   "isError": false,
+   "result": {
+    "paths": [],
+    "edited": false
+   },
+   "changes": [],
+   "structured": []
+  },
+  {
+   "tool": "bash",
+   "input": {
+    "cmd": "touch a\\ b"
+   },
+   "isError": false,
+   "result": {
+    "paths": [
+     "a b"
+    ],
+    "edited": true
+   },
+   "changes": [
+    {
+     "operation": "create",
+     "path": "a b"
+    }
+   ],
+   "structured": []
+  },
+  {
+   "tool": "grep",
+   "input": {
+    "pattern": "x"
+   },
+   "isError": false,
+   "result": {
+    "paths": [],
+    "edited": false
+   },
+   "changes": [],
+   "structured": []
+  }
+ ],
+ "touches": [
+  {
+   "paths": [
+    "/r/a"
+   ],
+   "edited": false,
+   "now": 1,
+   "entries": [
+    {
+     "path": "/r/a",
+     "edited": false,
+     "touchedAt": 1
+    }
+   ]
+  },
+  {
+   "paths": [
+    "/r/b",
+    "/r/c"
+   ],
+   "edited": true,
+   "now": 2,
+   "entries": [
+    {
+     "path": "/r/b",
+     "edited": true,
+     "touchedAt": 2
+    },
+    {
+     "path": "/r/c",
+     "edited": true,
+     "touchedAt": 2
+    },
+    {
+     "path": "/r/a",
+     "edited": false,
+     "touchedAt": 1
+    }
+   ]
+  },
+  {
+   "paths": [
+    "/r/a"
+   ],
+   "edited": true,
+   "now": 3,
+   "entries": [
+    {
+     "path": "/r/a",
+     "edited": true,
+     "touchedAt": 3
+    },
+    {
+     "path": "/r/b",
+     "edited": true,
+     "touchedAt": 2
+    },
+    {
+     "path": "/r/c",
+     "edited": true,
+     "touchedAt": 2
+    }
+   ]
+  },
+  {
+   "paths": [
+    "/r/c",
+    "/r/c"
+   ],
+   "edited": false,
+   "now": 4,
+   "entries": [
+    {
+     "path": "/r/c",
+     "edited": true,
+     "touchedAt": 4
+    },
+    {
+     "path": "/r/c",
+     "edited": true,
+     "touchedAt": 4
+    },
+    {
+     "path": "/r/a",
+     "edited": true,
+     "touchedAt": 3
+    },
+    {
+     "path": "/r/b",
+     "edited": true,
+     "touchedAt": 2
+    }
+   ]
+  },
+  {
+   "paths": [
+    "/r/f0",
+    "/r/f1",
+    "/r/f2",
+    "/r/f3",
+    "/r/f4",
+    "/r/f5",
+    "/r/f6",
+    "/r/f7",
+    "/r/f8",
+    "/r/f9",
+    "/r/f10",
+    "/r/f11",
+    "/r/f12",
+    "/r/f13",
+    "/r/f14",
+    "/r/f15",
+    "/r/f16",
+    "/r/f17",
+    "/r/f18",
+    "/r/f19",
+    "/r/f20",
+    "/r/f21",
+    "/r/f22",
+    "/r/f23",
+    "/r/f24",
+    "/r/f25",
+    "/r/f26",
+    "/r/f27",
+    "/r/f28",
+    "/r/f29",
+    "/r/f30",
+    "/r/f31",
+    "/r/f32",
+    "/r/f33",
+    "/r/f34",
+    "/r/f35",
+    "/r/f36",
+    "/r/f37",
+    "/r/f38",
+    "/r/f39",
+    "/r/f40",
+    "/r/f41",
+    "/r/f42",
+    "/r/f43",
+    "/r/f44"
+   ],
+   "edited": false,
+   "now": 5,
+   "entries": [
+    {
+     "path": "/r/f0",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f1",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f2",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f3",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f4",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f5",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f6",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f7",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f8",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f9",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f10",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f11",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f12",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f13",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f14",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f15",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f16",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f17",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f18",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f19",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f20",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f21",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f22",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f23",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f24",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f25",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f26",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f27",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f28",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f29",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f30",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f31",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f32",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f33",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f34",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f35",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f36",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f37",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f38",
+     "edited": false,
+     "touchedAt": 5
+    },
+    {
+     "path": "/r/f39",
+     "edited": false,
+     "touchedAt": 5
+    }
+   ]
+  }
+ ],
+ "completions": [
+  {
+   "prefix": "",
+   "items": [
+    {
+     "value": "@src/a.ts",
+     "label": "src/a.ts",
+     "description": "edited this session"
+    },
+    {
+     "value": "@b.ts",
+     "label": "b.ts",
+     "description": "read this session"
+    },
+    {
+     "value": "@/other/x.ts",
+     "label": "/other/x.ts",
+     "description": "read this session"
+    }
+   ]
+  },
+  {
+   "prefix": "@src",
+   "items": [
+    {
+     "value": "@src/a.ts",
+     "label": "src/a.ts",
+     "description": "edited this session"
+    }
+   ]
+  },
+  {
+   "prefix": "B.TS",
+   "items": [
+    {
+     "value": "@b.ts",
+     "label": "b.ts",
+     "description": "read this session"
+    }
+   ]
+  },
+  {
+   "prefix": "x",
+   "items": [
+    {
+     "value": "@/other/x.ts",
+     "label": "/other/x.ts",
+     "description": "read this session"
+    }
+   ]
+  },
+  {
+   "prefix": "@",
+   "items": [
+    {
+     "value": "@src/a.ts",
+     "label": "src/a.ts",
+     "description": "edited this session"
+    },
+    {
+     "value": "@b.ts",
+     "label": "b.ts",
+     "description": "read this session"
+    },
+    {
+     "value": "@/other/x.ts",
+     "label": "/other/x.ts",
+     "description": "read this session"
+    }
+   ]
+  },
+  {
+   "prefix": "zzz",
+   "items": []
+  }
+ ]
+}

@@ -17,6 +17,9 @@ native Pi. Pi cannot load Go extensions.
   PiG.
 
 PiG resolves the SDK requirement (`v0.0.0`) to its staged SDK at build time.
+The extension needs a `pig` whose SDK has `Context.SetSharedEnv` (PiG
+divergence D234, after 0.7.0). Under PiG 0.7.0 the build fails in
+`aio/permissionmodes.go`.
 Third-party modules (for example `regexp2`) are downloaded through
 `GOPROXY` when PiG builds the extension.
 
@@ -79,7 +82,7 @@ without harm.
 | 5 | goals, btw | 1905 | Done, with the gaps below. Golden parity: goals (8 branch reads, 12 argument parses, 6 completion sets, 16 review parses, 7 one-line texts, 16 status cases, 5 descriptions, 5 prompts, 9 latest-entry reads, 7 workspace snapshots, and 18 scenarios with 191 steps through the real `registerGoals`), btw (88 digests, 11 prompts, 11 sanitize cases, 10 outcomes, 70 box and card renders, 8 snapshots, 4 command scenarios). |
 | 6 | subagents | 4288 | Done, with the gaps below. Golden parity: agent discovery (3 trees, 16 invalid files, embedded builtins checked against `subagents/agents`), child extension launch (7 argv cases, 3 enforce cases), activity (23 events, 420 formats, durations, argument summaries), transcripts (6 event scripts with budgets, clipping, sanitizing), history restore (19 branch entries, 50-run cap), 8 saved transcripts, 7 spawn specs, run results and progress, 16 widget renders, 40 transcript renders, 10 inspector scripts (72 frames with keys), and 11 real runner scenarios with `subagents/test-fixture-child.mjs` (retry, timeout, quota, settle reaping, spawn failure). Manual resume has a Go test. Shared packages: `chrome` (port of `ui/chrome.ts`, 900 renders), `piargs` (Pi's `parseArgs`, 57 argv cases), `tuiwidth` (copy of the SDK's pi-tui width code), `jsstr` (JavaScript string helpers, moved from btw). |
 | 7 | rtk, hypa, user-bash, ast-grep, nvim, tuicr, init | 4220 | Done, with the gaps below. Golden parity: init (24 prompts), rtk and user-bash (16 commands, 12 editor texts), ast-grep (18 inputs, 12 summaries, 20 process outcomes, 3 results including truncation), nvim with the shared `toolpaths` package (45 command runs, 16 tool inputs, launcher argv), tuicr (7 fake worlds, 42 picker choices), hypa (18 configs, 14 timeout injections, binary resolution, command builders, image sniffing, 12 tool runs including UTF-16 truncation). |
-| 8 | pretty-tools, diff-tools, copy-widget | 11012 | Not started. Needs a replacement for Shiki highlighting. |
+| 8 | pretty-tools, diff-tools, copy-widget | 11012 | diff-tools is done, with the gaps below. pretty-tools and copy-widget are next. Golden parity: jsdiff (289 line diffs, 1156 patches, 625 word diffs from the npm `diff` package), xxHash32 (469 hashes from `xxhash-wasm`), and diff-tools (30 `parseDiff` and 8 patch parses, 108 separator labels, 37 cascading replaces, 19 `replaceForPatch` cases, 20 Cursor argument sets, 6 `apply_patch` fixture scenarios with rollback, 8 encodings, 8 conflict files, 9 hashline files and 25 anchor edits, 36 mutation previews, 7 edit-guard calls, 5 config folders, a fixture git repository and 5 git parses, 16 tool executes, 156 tool-card renders, 160 split and unified renders, 12 review hunks, 3 preset renders, and 80 approval overlay and select cases with key sequences). The approval overlay replaces the permission-modes `ctx.Select` preview in the TUI. |
 | 9 | ask-user-question | 5260 | Not started. Vendored upstream code. |
 | 10 | browser-search | 3377 | Not started. Needs replacements for Readability and linkedom. |
 | 11 | frame, status-line, queue, session-nav, ui | 5468 | Not started. TUI surfaces. |
@@ -92,15 +95,11 @@ Some gaps come from limits of PiG 0.7.0 and its Go SDK. See
 
 These gaps close when the related feature is ported:
 
-- **permission-modes:** The approval prompt uses `ctx.Select` with the same
-  option labels. The preview lists the edit's old and new text, or the start
-  of the written content. The TypeScript version shows a real file diff in an
-  overlay (diff-tools).
+- **permission-modes:** The approval prompts emit no agent-prompt event
+  (notifications). The TUI uses the diff-tools overlay. RPC uses `ctx.Select`
+  with the same plain diff preview as TypeScript.
 - **permission-modes:** The mode shows as the `modes` footer status. There
   is no frame pill (frame) and no AIO UI-state event (notifications).
-- **permission-modes:** The Cursor bridge switch
-  (`PI_CURSOR_EXPOSE_BUILTIN_TOOLS`) is not set, because a Go process cannot
-  change a Node provider's environment.
 - **permission-modes:** Relative paths resolve against the session cwd only.
   The Go process's own working directory is not the host's tool base.
 
@@ -172,6 +171,26 @@ These gaps close when the related feature is ported:
 - **yaml-hooks:** As in TypeScript, `/hooks-trust` does not clear the
   cached discovery result. The new trust applies after a change to a
   watched hooks path or after `/hooks-reload`.
+- **diff-tools:** Highlighting uses the host's highlight.js port
+  (`sdk.HighlightCode`), not Shiki. The Shiki themes (`DIFF_THEME`,
+  `shikiTheme`, preset themes) have no effect. A language that highlight.js
+  does not know gets the `mdCodeBlock` color, not plain text.
+- **diff-tools:** Renderers are synchronous. A card shows its final diff at
+  once, without the "rendering diff…" placeholder.
+- **diff-tools:** A card row wider than the card is wrapped by PiG's Go
+  wrap port. It splits a long run of spaces differently from pi-tui 1.2.0
+  (CJK lines and the narrow edit header). The text before the wrap matches.
+- **diff-tools:** File-system error texts are rebuilt in Node's format
+  (`ENOENT: no such file or directory, open '<path>'`) for the common
+  codes. Other errors use the Go text. A file that is not valid UTF-8 keeps
+  its bytes; Node replaces them with U+FFFD.
+- **diff-tools:** Relative tool paths resolve against the extension's
+  process directory (pig's working directory), as `process.cwd()` does.
+  Approval previews and the edit guard resolve them against the session
+  cwd.
+- **diff-tools:** There is no hunk-review overlay to port. The TypeScript
+  review helpers (`review/git.ts`, `renderReviewHunkPreview`) and hashline
+  have no caller there; the Go port keeps them as tested library code.
 
 
 

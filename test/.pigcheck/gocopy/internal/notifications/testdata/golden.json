@@ -1,0 +1,1359 @@
+{
+ "clean": [
+  {
+   "text": "plain",
+   "max": 160,
+   "result": "plain"
+  },
+  {
+   "text": "plain",
+   "max": 5,
+   "result": "plain"
+  },
+  {
+   "text": "plain",
+   "max": 100,
+   "result": "plain"
+  },
+  {
+   "text": "  a\n\tb  ",
+   "max": 160,
+   "result": "a b"
+  },
+  {
+   "text": "  a\n\tb  ",
+   "max": 5,
+   "result": "a b"
+  },
+  {
+   "text": "  a\n\tb  ",
+   "max": 100,
+   "result": "a b"
+  },
+  {
+   "text": "\u001b[31mred\u001b[0m",
+   "max": 160,
+   "result": "red"
+  },
+  {
+   "text": "\u001b[31mred\u001b[0m",
+   "max": 5,
+   "result": "red"
+  },
+  {
+   "text": "\u001b[31mred\u001b[0m",
+   "max": 100,
+   "result": "red"
+  },
+  {
+   "text": "\u001b]8;;http://x\u0007link\u001b]8;;\u0007",
+   "max": 160,
+   "result": "link"
+  },
+  {
+   "text": "\u001b]8;;http://x\u0007link\u001b]8;;\u0007",
+   "max": 5,
+   "result": "link"
+  },
+  {
+   "text": "\u001b]8;;http://x\u0007link\u001b]8;;\u0007",
+   "max": 100,
+   "result": "link"
+  },
+  {
+   "text": "semi;colon",
+   "max": 160,
+   "result": "semi colon"
+  },
+  {
+   "text": "semi;colon",
+   "max": 5,
+   "result": "semi "
+  },
+  {
+   "text": "semi;colon",
+   "max": 100,
+   "result": "semi colon"
+  },
+  {
+   "text": "2Jcsi8",
+   "max": 160,
+   "result": "csi8"
+  },
+  {
+   "text": "2Jcsi8",
+   "max": 5,
+   "result": "csi8"
+  },
+  {
+   "text": "2Jcsi8",
+   "max": 100,
+   "result": "csi8"
+  },
+  {
+   "text": "\u0000ctrl",
+   "max": 160,
+   "result": "ctrl"
+  },
+  {
+   "text": "\u0000ctrl",
+   "max": 5,
+   "result": "ctrl"
+  },
+  {
+   "text": "\u0000ctrl",
+   "max": 100,
+   "result": "ctrl"
+  },
+  {
+   "text": "日本語のテキスト",
+   "max": 160,
+   "result": "日本語のテキスト"
+  },
+  {
+   "text": "日本語のテキスト",
+   "max": 5,
+   "result": "日本語のテ"
+  },
+  {
+   "text": "日本語のテキスト",
+   "max": 100,
+   "result": "日本語のテキスト"
+  },
+  {
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "max": 160,
+   "result": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  {
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "max": 5,
+   "result": "xxxxx"
+  },
+  {
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "max": 100,
+   "result": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  {
+   "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+   "max": 160,
+   "result": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+  },
+  {
+   "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+   "max": 5,
+   "result": "😀😀\ud83d"
+  },
+  {
+   "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+   "max": 100,
+   "result": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+  },
+  {
+   "text": "a b c",
+   "max": 160,
+   "result": "a b c"
+  },
+  {
+   "text": "a b c",
+   "max": 5,
+   "result": "a b c"
+  },
+  {
+   "text": "a b c",
+   "max": 100,
+   "result": "a b c"
+  }
+ ],
+ "normalized": [
+  {
+   "value": null,
+   "result": {
+    "enabled": true,
+    "focusSkip": true,
+    "minSeconds": 0,
+    "sound": "Glass",
+    "preview": false,
+    "categories": {
+     "core": true,
+     "goal": true,
+     "background": true,
+     "critical": true
+    }
+   }
+  },
+  {
+   "value": [],
+   "result": {
+    "enabled": true,
+    "focusSkip": true,
+    "minSeconds": 0,
+    "sound": "Glass",
+    "preview": false,
+    "categories": {
+     "core": true,
+     "goal": true,
+     "background": true,
+     "critical": true
+    }
+   }
+  },
+  {
+   "value": "x",
+   "result": {
+    "enabled": true,
+    "focusSkip": true,
+    "minSeconds": 0,
+    "sound": "Glass",
+    "preview": false,
+    "categories": {
+     "core": true,
+     "goal": true,
+     "background": true,
+     "critical": true
+    }
+   }
+  },
+  {
+   "value": {},
+   "result": {
+    "enabled": true,
+    "focusSkip": true,
+    "minSeconds": 0,
+    "sound": "Glass",
+    "preview": false,
+    "categories": {
+     "core": true,
+     "goal": true,
+     "background": true,
+     "critical": true
+    }
+   }
+  },
+  {
+   "value": {
+    "enabled": false,
+    "focusSkip": false,
+    "preview": true,
+    "minSeconds": 30,
+    "sound": "Ping",
+    "categories": {
+     "goal": false,
+     "core": "x"
+    }
+   },
+   "result": {
+    "enabled": false,
+    "focusSkip": false,
+    "minSeconds": 30,
+    "sound": "Ping",
+    "preview": true,
+    "categories": {
+     "core": true,
+     "goal": false,
+     "background": true,
+     "critical": true
+    }
+   }
+  },
+  {
+   "value": {
+    "minSeconds": -1,
+    "sound": "bad;sound"
+   },
+   "result": {
+    "enabled": true,
+    "focusSkip": true,
+    "minSeconds": 0,
+    "sound": "Glass",
+    "preview": false,
+    "categories": {
+     "core": true,
+     "goal": true,
+     "background": true,
+     "critical": true
+    }
+   }
+  },
+  {
+   "value": {
+    "minSeconds": 86401
+   },
+   "result": {
+    "enabled": true,
+    "focusSkip": true,
+    "minSeconds": 0,
+    "sound": "Glass",
+    "preview": false,
+    "categories": {
+     "core": true,
+     "goal": true,
+     "background": true,
+     "critical": true
+    }
+   }
+  },
+  {
+   "value": {
+    "minSeconds": 1.5,
+    "sound": "a b-c_d"
+   },
+   "result": {
+    "enabled": true,
+    "focusSkip": true,
+    "minSeconds": 1.5,
+    "sound": "a b-c_d",
+    "preview": false,
+    "categories": {
+     "core": true,
+     "goal": true,
+     "background": true,
+     "critical": true
+    }
+   }
+  },
+  {
+   "value": {
+    "sound": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   "result": {
+    "enabled": true,
+    "focusSkip": true,
+    "minSeconds": 0,
+    "sound": "Glass",
+    "preview": false,
+    "categories": {
+     "core": true,
+     "goal": true,
+     "background": true,
+     "critical": true
+    }
+   }
+  }
+ ],
+ "defaults": {
+  "enabled": true,
+  "focusSkip": true,
+  "minSeconds": 0,
+  "sound": "Glass",
+  "preview": false,
+  "categories": {
+   "core": true,
+   "goal": true,
+   "background": true,
+   "critical": true
+  }
+ },
+ "backendCases": [
+  {
+   "name": "mac-native",
+   "platform": "darwin",
+   "env": {
+    "TERM_PROGRAM": "ghostty"
+   },
+   "fails": [],
+   "nameBefore": "auto (terminal-notifier → terminal fallback)",
+   "nameAfter": "terminal-notifier",
+   "focused": true,
+   "calls": [
+    [
+     "osascript",
+     "-e",
+     "tell application \"System Events\" to get bundle identifier of first process whose frontmost is true"
+    ],
+    [
+     "terminal-notifier",
+     "-help"
+    ],
+    [
+     "terminal-notifier",
+     "-title",
+     "Pi · T x",
+     "-subtitle",
+     "sub",
+     "-message",
+     " body!",
+     "-group",
+     "g",
+     "-sound",
+     "Glass",
+     "-activate",
+     "com.mitchellh.ghostty"
+    ],
+    [
+     "terminal-notifier",
+     "-title",
+     "Pi · T x",
+     "-subtitle",
+     "sub",
+     "-message",
+     " body!",
+     "-group",
+     "g",
+     "-activate",
+     "com.mitchellh.ghostty"
+    ]
+   ],
+   "writes": []
+  },
+  {
+   "name": "mac-no-notifier",
+   "platform": "darwin",
+   "env": {
+    "TERM_PROGRAM": "iTerm.app"
+   },
+   "fails": [
+    "terminal-notifier"
+   ],
+   "nameBefore": "auto (terminal-notifier → terminal fallback)",
+   "nameAfter": "OSC 777",
+   "focused": false,
+   "calls": [
+    [
+     "osascript",
+     "-e",
+     "tell application \"System Events\" to get bundle identifier of first process whose frontmost is true"
+    ],
+    [
+     "terminal-notifier",
+     "-help"
+    ],
+    [
+     "afplay",
+     "/System/Library/Sounds/Glass.aiff"
+    ]
+   ],
+   "writes": [
+    "\u001b]777;notify;Pi · T x;sub — body!\u0007",
+    "\u001b]777;notify;Pi · T x;sub — body!\u0007"
+   ]
+  },
+  {
+   "name": "mac-no-sound",
+   "platform": "darwin",
+   "env": {},
+   "fails": [
+    "terminal-notifier",
+    "afplay"
+   ],
+   "nameBefore": "auto (terminal-notifier → terminal fallback)",
+   "nameAfter": "OSC 777",
+   "focused": false,
+   "calls": [
+    [
+     "terminal-notifier",
+     "-help"
+    ],
+    [
+     "afplay",
+     "/System/Library/Sounds/Glass.aiff"
+    ]
+   ],
+   "writes": [
+    "\u001b]777;notify;Pi · T x;sub — body!\u0007",
+    "\u0007",
+    "\u001b]777;notify;Pi · T x;sub — body!\u0007"
+   ]
+  },
+  {
+   "name": "linux",
+   "platform": "linux",
+   "env": {
+    "TERM_PROGRAM": "WezTerm"
+   },
+   "fails": [],
+   "nameBefore": "OSC 777",
+   "nameAfter": "OSC 777",
+   "focused": false,
+   "calls": [],
+   "writes": [
+    "\u001b]777;notify;Pi · T x;sub — body!\u0007",
+    "\u0007",
+    "\u001b]777;notify;Pi · T x;sub — body!\u0007"
+   ]
+  },
+  {
+   "name": "kitty-tmux",
+   "platform": "linux",
+   "env": {
+    "KITTY_WINDOW_ID": "1",
+    "TMUX": "x"
+   },
+   "fails": [],
+   "nameBefore": "OSC 99",
+   "nameAfter": "OSC 99",
+   "focused": false,
+   "calls": [],
+   "writes": [
+    "\u001bPtmux;\u001b\u001b]99;i=aio:d=0;Pi · T x\u001b\u001b\\\u001b\u001b]99;i=aio:p=body;sub — body!\u001b\u001b\\\u001b\\",
+    "\u0007",
+    "\u001bPtmux;\u001b\u001b]99;i=aio:d=0;Pi · T x\u001b\u001b\\\u001b\u001b]99;i=aio:p=body;sub — body!\u001b\u001b\\\u001b\\"
+   ]
+  },
+  {
+   "name": "ssh",
+   "platform": "darwin",
+   "env": {
+    "SSH_TTY": "/dev/ttys1",
+    "__CFBundleIdentifier": "bad bundle!"
+   },
+   "fails": [],
+   "nameBefore": "OSC 777",
+   "nameAfter": "OSC 777",
+   "focused": false,
+   "calls": [],
+   "writes": [
+    "\u001b]777;notify;Pi · T x;sub — body!\u0007",
+    "\u0007",
+    "\u001b]777;notify;Pi · T x;sub — body!\u0007"
+   ]
+  }
+ ],
+ "scenarios": {
+  "finished": [
+   {
+    "op": "start"
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "messageEnd",
+    "stop": "stop",
+    "text": "Done; all good"
+   },
+   {
+    "op": "settled",
+    "t": 1000
+   }
+  ],
+  "error": [
+   {
+    "op": "start"
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "messageEnd",
+    "stop": "error",
+    "text": "boom"
+   },
+   {
+    "op": "settled",
+    "t": 10
+   }
+  ],
+  "aborted": [
+   {
+    "op": "start"
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "messageEnd",
+    "stop": "aborted",
+    "text": "x"
+   },
+   {
+    "op": "settled",
+    "t": 10
+   },
+   {
+    "op": "agentStart",
+    "t": 20
+   },
+   {
+    "op": "settled",
+    "t": 30,
+    "aborted": true
+   }
+  ],
+  "tooShort": [
+   {
+    "op": "start",
+    "settings": {
+     "minSeconds": 5
+    }
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "settled",
+    "t": 4999
+   },
+   {
+    "op": "agentStart",
+    "t": 6000
+   },
+   {
+    "op": "settled",
+    "t": 11000
+   }
+  ],
+  "notTui": [
+   {
+    "op": "start",
+    "mode": "rpc"
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "settled",
+    "t": 10
+   }
+  ],
+  "disabled": [
+   {
+    "op": "start",
+    "settings": {
+     "enabled": false
+    }
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "settled",
+    "t": 10
+   },
+   {
+    "op": "command",
+    "args": "test"
+   }
+  ],
+  "coreOff": [
+   {
+    "op": "start",
+    "settings": {
+     "categories": {
+      "core": false
+     }
+    }
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "settled",
+    "t": 10
+   },
+   {
+    "op": "signal",
+    "s": {
+     "category": "goal",
+     "id": "g1",
+     "title": "Goal",
+     "body": "done",
+     "replacesCompletion": true
+    }
+   }
+  ],
+  "focused": [
+   {
+    "op": "start",
+    "focused": true
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "settled",
+    "t": 10
+   },
+   {
+    "op": "command",
+    "args": "test"
+   }
+  ],
+  "preview": [
+   {
+    "op": "start",
+    "settings": {
+     "preview": true
+    }
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "messageEnd",
+    "stop": "stop",
+    "text": "the answer"
+   },
+   {
+    "op": "settled",
+    "t": 10
+   }
+  ],
+  "prompts": [
+   {
+    "op": "start"
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "prompt",
+    "p": {
+     "id": 1,
+     "kind": "select",
+     "title": "Approval needed",
+     "body": "waiting",
+     "preview": "rm x",
+     "active": true
+    }
+   },
+   {
+    "op": "prompt",
+    "p": {
+     "id": 1,
+     "kind": "select",
+     "title": "Approval needed",
+     "body": "waiting",
+     "active": true
+    }
+   },
+   {
+    "op": "prompt",
+    "p": {
+     "id": 1,
+     "active": false
+    }
+   },
+   {
+    "op": "prompt",
+    "p": {
+     "id": 2,
+     "kind": "select",
+     "title": "Other session",
+     "body": "x",
+     "active": true
+    },
+    "otherSession": true
+   },
+   {
+    "op": "settled",
+    "t": 10
+   }
+  ],
+  "signals": [
+   {
+    "op": "start"
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "signal",
+    "s": {
+     "category": "background",
+     "id": "a",
+     "title": "Subagent",
+     "body": "done"
+    }
+   },
+   {
+    "op": "signal",
+    "s": {
+     "category": "background",
+     "id": "a",
+     "title": "Subagent",
+     "body": "again"
+    }
+   },
+   {
+    "op": "signal",
+    "s": {
+     "category": "critical",
+     "id": "c",
+     "title": "Crit",
+     "body": "x",
+     "replacesCompletion": true
+    }
+   },
+   {
+    "op": "signal",
+    "s": {
+     "category": "goal",
+     "id": "z",
+     "title": "Other",
+     "body": "x"
+    },
+    "otherSession": true
+   },
+   {
+    "op": "settled",
+    "t": 10
+   },
+   {
+    "op": "agentStart",
+    "t": 20
+   },
+   {
+    "op": "settled",
+    "t": 30
+   }
+  ],
+  "goal": [
+   {
+    "op": "start"
+   },
+   {
+    "op": "goal",
+    "active": true
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "settled",
+    "t": 10
+   },
+   {
+    "op": "goal",
+    "active": false,
+    "quietSettle": true
+   },
+   {
+    "op": "agentStart",
+    "t": 20
+   },
+   {
+    "op": "goal",
+    "active": false,
+    "quietSettle": true
+   },
+   {
+    "op": "settled",
+    "t": 30
+   },
+   {
+    "op": "agentStart",
+    "t": 40
+   },
+   {
+    "op": "settled",
+    "t": 50
+   }
+  ],
+  "shutdown": [
+   {
+    "op": "start"
+   },
+   {
+    "op": "agentStart",
+    "t": 0
+   },
+   {
+    "op": "shutdown"
+   },
+   {
+    "op": "settled",
+    "t": 10
+   }
+  ],
+  "commands": [
+   {
+    "op": "start"
+   },
+   {
+    "op": "command",
+    "args": ""
+   },
+   {
+    "op": "command",
+    "args": "status"
+   },
+   {
+    "op": "command",
+    "args": "off"
+   },
+   {
+    "op": "command",
+    "args": "status"
+   },
+   {
+    "op": "command",
+    "args": "on"
+   },
+   {
+    "op": "command",
+    "args": "focus off"
+   },
+   {
+    "op": "command",
+    "args": "preview on"
+   },
+   {
+    "op": "command",
+    "args": "min 2.5"
+   },
+   {
+    "op": "command",
+    "args": "min 0x10"
+   },
+   {
+    "op": "command",
+    "args": "min -1"
+   },
+   {
+    "op": "command",
+    "args": "min 86401"
+   },
+   {
+    "op": "command",
+    "args": "sound Ping"
+   },
+   {
+    "op": "command",
+    "args": "sound bad;x"
+   },
+   {
+    "op": "command",
+    "args": "events goal off"
+   },
+   {
+    "op": "command",
+    "args": "events nope on"
+   },
+   {
+    "op": "command",
+    "args": "events core maybe"
+   },
+   {
+    "op": "command",
+    "args": "on extra"
+   },
+   {
+    "op": "command",
+    "args": "test"
+   },
+   {
+    "op": "command",
+    "args": "test 61"
+   },
+   {
+    "op": "command",
+    "args": "test x"
+   },
+   {
+    "op": "command",
+    "args": "test 1 2"
+   },
+   {
+    "op": "command",
+    "args": "bogus"
+   },
+   {
+    "op": "command",
+    "args": "status"
+   }
+  ]
+ },
+ "results": {
+  "finished": {
+   "sends": [
+    {
+     "title": "Pi · Finished",
+     "body": "The agent has finished and is ready for input.",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.core",
+     "sound": "Glass"
+    }
+   ],
+   "notices": [],
+   "saved": []
+  },
+  "error": {
+   "sends": [
+    {
+     "title": "Pi · Run failed",
+     "body": "The agent stopped with an error and needs your attention.",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.core",
+     "sound": "Glass"
+    }
+   ],
+   "notices": [],
+   "saved": []
+  },
+  "aborted": {
+   "sends": [],
+   "notices": [],
+   "saved": []
+  },
+  "tooShort": {
+   "sends": [
+    {
+     "title": "Pi · Finished",
+     "body": "The agent has finished and is ready for input.",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.core",
+     "sound": "Glass"
+    }
+   ],
+   "notices": [],
+   "saved": []
+  },
+  "notTui": {
+   "sends": [],
+   "notices": [],
+   "saved": []
+  },
+  "disabled": {
+   "sends": [
+    {
+     "title": "Pi · Test",
+     "body": "AIO desktop notification test.",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.core",
+     "sound": "Glass"
+    }
+   ],
+   "notices": [
+    [
+     "Test dispatched via fake; OS display is not confirmed. If nothing appears, check macOS notification permissions and Focus / Do Not Disturb.",
+     "info"
+    ]
+   ],
+   "saved": []
+  },
+  "coreOff": {
+   "sends": [
+    {
+     "title": "Pi · Goal",
+     "body": "done",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.goal",
+     "sound": "Glass"
+    }
+   ],
+   "notices": [],
+   "saved": []
+  },
+  "focused": {
+   "sends": [
+    {
+     "title": "Pi · Test",
+     "body": "AIO desktop notification test.",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.core",
+     "sound": "Glass"
+    }
+   ],
+   "notices": [
+    [
+     "Test dispatched via fake; OS display is not confirmed. If nothing appears, check macOS notification permissions and Focus / Do Not Disturb.",
+     "info"
+    ]
+   ],
+   "saved": []
+  },
+  "preview": {
+   "sends": [
+    {
+     "title": "Pi · Finished",
+     "body": "the answer",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.core",
+     "sound": "Glass"
+    }
+   ],
+   "notices": [],
+   "saved": []
+  },
+  "prompts": {
+   "sends": [
+    {
+     "title": "Pi · Approval needed",
+     "body": "waiting",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.prompt",
+     "sound": "Glass"
+    },
+    {
+     "title": "Pi · Finished",
+     "body": "The agent has finished and is ready for input.",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.core",
+     "sound": "Glass"
+    }
+   ],
+   "notices": [],
+   "saved": []
+  },
+  "signals": {
+   "sends": [
+    {
+     "title": "Pi · Subagent",
+     "body": "done",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.background",
+     "sound": "Glass"
+    },
+    {
+     "title": "Pi · Crit",
+     "body": "x",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.critical",
+     "sound": "Glass"
+    },
+    {
+     "title": "Pi · Finished",
+     "body": "The agent has finished and is ready for input.",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.core",
+     "sound": "Glass"
+    }
+   ],
+   "notices": [],
+   "saved": []
+  },
+  "goal": {
+   "sends": [
+    {
+     "title": "Pi · Finished",
+     "body": "The agent has finished and is ready for input.",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.core",
+     "sound": "Glass"
+    }
+   ],
+   "notices": [],
+   "saved": []
+  },
+  "shutdown": {
+   "sends": [],
+   "notices": [],
+   "saved": []
+  },
+  "commands": {
+   "sends": [
+    {
+     "title": "Pi · Test",
+     "body": "AIO desktop notification test.",
+     "subtitle": "My session",
+     "group": "aio.e8bc163c82eee187.core",
+     "sound": "Ping"
+    }
+   ],
+   "notices": [
+    [
+     "Notifications on · fake · focus-skip=true · min=0s · sound=Glass · preview=false · events=core,goal,background,critical",
+     "info"
+    ],
+    [
+     "Notifications on · fake · focus-skip=true · min=0s · sound=Glass · preview=false · events=core,goal,background,critical",
+     "info"
+    ],
+    [
+     "Notification settings saved.",
+     "info"
+    ],
+    [
+     "Notifications off · fake · focus-skip=true · min=0s · sound=Glass · preview=false · events=core,goal,background,critical",
+     "info"
+    ],
+    [
+     "Notification settings saved.",
+     "info"
+    ],
+    [
+     "Notification settings saved.",
+     "info"
+    ],
+    [
+     "Notification settings saved.",
+     "info"
+    ],
+    [
+     "Notification settings saved.",
+     "info"
+    ],
+    [
+     "Notification settings saved.",
+     "info"
+    ],
+    [
+     "Usage: /notify [status|on|off|test [seconds]|focus on/off|preview on/off|min <seconds>|sound <name/off>|events core/goal/background/critical on/off]",
+     "warning"
+    ],
+    [
+     "Usage: /notify [status|on|off|test [seconds]|focus on/off|preview on/off|min <seconds>|sound <name/off>|events core/goal/background/critical on/off]",
+     "warning"
+    ],
+    [
+     "Notification settings saved.",
+     "info"
+    ],
+    [
+     "Usage: /notify [status|on|off|test [seconds]|focus on/off|preview on/off|min <seconds>|sound <name/off>|events core/goal/background/critical on/off]",
+     "warning"
+    ],
+    [
+     "Notification settings saved.",
+     "info"
+    ],
+    [
+     "Usage: /notify [status|on|off|test [seconds]|focus on/off|preview on/off|min <seconds>|sound <name/off>|events core/goal/background/critical on/off]",
+     "warning"
+    ],
+    [
+     "Usage: /notify [status|on|off|test [seconds]|focus on/off|preview on/off|min <seconds>|sound <name/off>|events core/goal/background/critical on/off]",
+     "warning"
+    ],
+    [
+     "Usage: /notify [status|on|off|test [seconds]|focus on/off|preview on/off|min <seconds>|sound <name/off>|events core/goal/background/critical on/off]",
+     "warning"
+    ],
+    [
+     "Test dispatched via fake; OS display is not confirmed. If nothing appears, check macOS notification permissions and Focus / Do Not Disturb.",
+     "info"
+    ],
+    [
+     "Usage: /notify test [seconds] (0–60).",
+     "warning"
+    ],
+    [
+     "Usage: /notify test [seconds] (0–60).",
+     "warning"
+    ],
+    [
+     "Usage: /notify test [seconds] (0–60).",
+     "warning"
+    ],
+    [
+     "Usage: /notify [status|on|off|test [seconds]|focus on/off|preview on/off|min <seconds>|sound <name/off>|events core/goal/background/critical on/off]",
+     "warning"
+    ],
+    [
+     "Notifications on · fake · focus-skip=false · min=16s · sound=Ping · preview=true · events=core,background,critical",
+     "info"
+    ]
+   ],
+   "saved": [
+    {
+     "enabled": false,
+     "focusSkip": true,
+     "minSeconds": 0,
+     "sound": "Glass",
+     "preview": false,
+     "categories": {
+      "core": true,
+      "goal": true,
+      "background": true,
+      "critical": true
+     }
+    },
+    {
+     "enabled": true,
+     "focusSkip": true,
+     "minSeconds": 0,
+     "sound": "Glass",
+     "preview": false,
+     "categories": {
+      "core": true,
+      "goal": true,
+      "background": true,
+      "critical": true
+     }
+    },
+    {
+     "enabled": true,
+     "focusSkip": false,
+     "minSeconds": 0,
+     "sound": "Glass",
+     "preview": false,
+     "categories": {
+      "core": true,
+      "goal": true,
+      "background": true,
+      "critical": true
+     }
+    },
+    {
+     "enabled": true,
+     "focusSkip": false,
+     "minSeconds": 0,
+     "sound": "Glass",
+     "preview": true,
+     "categories": {
+      "core": true,
+      "goal": true,
+      "background": true,
+      "critical": true
+     }
+    },
+    {
+     "enabled": true,
+     "focusSkip": false,
+     "minSeconds": 2.5,
+     "sound": "Glass",
+     "preview": true,
+     "categories": {
+      "core": true,
+      "goal": true,
+      "background": true,
+      "critical": true
+     }
+    },
+    {
+     "enabled": true,
+     "focusSkip": false,
+     "minSeconds": 16,
+     "sound": "Glass",
+     "preview": true,
+     "categories": {
+      "core": true,
+      "goal": true,
+      "background": true,
+      "critical": true
+     }
+    },
+    {
+     "enabled": true,
+     "focusSkip": false,
+     "minSeconds": 16,
+     "sound": "Ping",
+     "preview": true,
+     "categories": {
+      "core": true,
+      "goal": true,
+      "background": true,
+      "critical": true
+     }
+    },
+    {
+     "enabled": true,
+     "focusSkip": false,
+     "minSeconds": 16,
+     "sound": "Ping",
+     "preview": true,
+     "categories": {
+      "core": true,
+      "goal": false,
+      "background": true,
+      "critical": true
+     }
+    }
+   ]
+  }
+ }
+}

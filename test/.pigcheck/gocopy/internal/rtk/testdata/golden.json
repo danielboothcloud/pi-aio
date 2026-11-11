@@ -1,0 +1,194 @@
+{
+ "rewrites": [
+  {
+   "command": "ls -la",
+   "sentToRtk": "ls -la",
+   "result": null
+  },
+  {
+   "command": "rtk git status",
+   "sentToRtk": null,
+   "result": null
+  },
+  {
+   "command": "  rtk",
+   "sentToRtk": null,
+   "result": null
+  },
+  {
+   "command": "rtkx foo",
+   "sentToRtk": "rtkx foo",
+   "result": null
+  },
+  {
+   "command": "RTK_DISABLED=1 git status",
+   "sentToRtk": "git status",
+   "result": "rtk git status"
+  },
+  {
+   "command": "env RTK_DISABLED=1 git log",
+   "sentToRtk": "git log",
+   "result": "rtk git log"
+  },
+  {
+   "command": "FOO=1 RTK_DISABLED=1 BAR=2 make",
+   "sentToRtk": "FOO=1 BAR=2 make",
+   "result": null
+  },
+  {
+   "command": "a && RTK_DISABLED=1 b",
+   "sentToRtk": "a && b",
+   "result": null
+  },
+  {
+   "command": "x | env RTK_DISABLED=1 y; RTK_DISABLED=1 z",
+   "sentToRtk": "x | y; z",
+   "result": null
+  },
+  {
+   "command": "echo RTK_DISABLED=1 x",
+   "sentToRtk": "echo RTK_DISABLED=1 x",
+   "result": null
+  },
+  {
+   "command": "RTK_DISABLED=1 rtk ls",
+   "sentToRtk": null,
+   "result": null
+  },
+  {
+   "command": "MYRTK_DISABLED=1 ls",
+   "sentToRtk": "MYRTK_DISABLED=1 ls",
+   "result": null
+  },
+  {
+   "command": "RTK_DISABLED=10 ls",
+   "sentToRtk": "RTK_DISABLED=10 ls",
+   "result": null
+  },
+  {
+   "command": "env FOO=1 ls",
+   "sentToRtk": "env FOO=1 ls",
+   "result": null
+  },
+  {
+   "command": "RTK_DISABLED=1\tls",
+   "sentToRtk": "ls",
+   "result": null
+  },
+  {
+   "command": "",
+   "sentToRtk": "",
+   "result": null
+  }
+ ],
+ "bash": [
+  {
+   "text": "",
+   "state": {
+    "active": false,
+    "hidden": false,
+    "command": ""
+   },
+   "spaced": null
+  },
+  {
+   "text": "ls",
+   "state": {
+    "active": false,
+    "hidden": false,
+    "command": ""
+   },
+   "spaced": null
+  },
+  {
+   "text": "!ls",
+   "state": {
+    "active": true,
+    "hidden": false,
+    "command": "ls"
+   },
+   "spaced": "! ls"
+  },
+  {
+   "text": "!!ls",
+   "state": {
+    "active": true,
+    "hidden": true,
+    "command": "ls"
+   },
+   "spaced": "!! ls"
+  },
+  {
+   "text": "  ! ls",
+   "state": {
+    "active": true,
+    "hidden": false,
+    "command": "ls"
+   },
+   "spaced": null
+  },
+  {
+   "text": "!",
+   "state": {
+    "active": true,
+    "hidden": false,
+    "command": ""
+   },
+   "spaced": null
+  },
+  {
+   "text": "!!",
+   "state": {
+    "active": true,
+    "hidden": true,
+    "command": ""
+   },
+   "spaced": null
+  },
+  {
+   "text": "! ",
+   "state": {
+    "active": true,
+    "hidden": false,
+    "command": ""
+   },
+   "spaced": null
+  },
+  {
+   "text": "!!  x",
+   "state": {
+    "active": true,
+    "hidden": true,
+    "command": "x"
+   },
+   "spaced": null
+  },
+  {
+   "text": "\t!git status",
+   "state": {
+    "active": true,
+    "hidden": false,
+    "command": "git status"
+   },
+   "spaced": "\t! git status"
+  },
+  {
+   "text": "x!y",
+   "state": {
+    "active": false,
+    "hidden": false,
+    "command": ""
+   },
+   "spaced": null
+  },
+  {
+   "text": "!!!a",
+   "state": {
+    "active": true,
+    "hidden": true,
+    "command": "!a"
+   },
+   "spaced": "!! !a"
+  }
+ ]
+}

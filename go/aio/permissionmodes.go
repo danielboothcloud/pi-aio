@@ -4,12 +4,13 @@ package aio
 // in go/internal/permissionmodes; this file connects it to the PiG host.
 //
 // Differences from TypeScript, until the related features are ported:
-//   - Approval prompts use ctx.Select with the same option labels. The
-//     TypeScript diff overlay belongs to diff-tools.
+//   - File-mutation approvals use the diff-tools overlay in the TUI
+//     (ApproveMutation in difftools.go) and ctx.Select elsewhere.
 //   - No frame pill or AIO UI-state event (frame, notifications); the mode
 //     shows as the "modes" footer status.
-//   - No Cursor bridge environment switch: a Go process cannot change a
-//     Node provider's environment.
+//   - The Cursor bridge switch goes through PiG's shared environment
+//     (ctx.SetSharedEnv, PiG divergence D234), which reaches the Node
+//     provider's process.env but not this process's environment.
 
 import (
 	"encoding/json"
@@ -33,6 +34,31 @@ type modesState struct {
 	planExecuting      bool
 	planTodos          []pm.TodoItem
 	allowedRoots       []string
+	cursorBridge       pm.CursorBridge
+}
+
+// applyBridge makes change in the environment the Node providers share and
+// records it once the host accepted it. The caller holds s.mu; the host call
+// sends no event back to this extension.
+func (s *modesState) applyBridge(ctx sdk.Context, change pm.BridgeChange) {
+	var err error
+	switch change {
+	case pm.BridgeKeep:
+		return
+	case pm.BridgeEnable:
+		err = ctx.SetSharedEnv(pm.CursorBridgeBuiltinsEnv, "1")
+	case pm.BridgeDisable:
+		err = ctx.UnsetSharedEnv(pm.CursorBridgeBuiltinsEnv)
+	}
+	if err == nil {
+		s.cursorBridge.Commit(change)
+	}
+}
+
+// syncCursorBridgeLocked is syncCursorPermissionBridge in index.ts. The
+// caller holds s.mu.
+func (s *modesState) syncCursorBridgeLocked(ctx sdk.Context) {
+	s.applyBridge(ctx, s.cursorBridge.Sync(ctx.ModelProvider(), s.mode))
 }
 
 // ctxUI adapts sdk.Context to the gate's UI interface.
@@ -118,6 +144,7 @@ func (s *modesState) setModeLocked(ctx sdk.Context, mode pm.Mode) {
 	if mode != pm.ModePlan && ctx.HasUI() {
 		_ = ctx.SetWidget(pm.PlanTodoWidget, nil)
 	}
+	s.syncCursorBridgeLocked(ctx)
 	s.updateStatus(ctx)
 	s.persist(ctx)
 }
@@ -162,11 +189,12 @@ func (s *modesState) restore(ctx sdk.Context) {
 		s.applyPassiveTools(ctx)
 	}
 	s.syncTodoWidget(ctx)
+	s.syncCursorBridgeLocked(ctx)
 	s.updateStatus(ctx)
 }
 
 func registerPermissionModes(e *sdk.Extension) {
-	s := &modesState{mode: pm.ModeDefault}
+	s := &modesState{mode: pm.ModeDefault, cursorBridge: pm.NewCursorBridge(os.LookupEnv(pm.CursorBridgeBuiltinsEnv))}
 	modesAccess = s
 
 	e.Flag("permission-mode", sdk.FlagOptions{
@@ -256,13 +284,14 @@ func registerPermissionModes(e *sdk.Extension) {
 
 	e.OnEvent("before_agent_start", func(ctx sdk.Context, _ map[string]any) (any, error) {
 		s.mu.Lock()
+		s.syncCursorBridgeLocked(ctx)
 		mode, executing, todos := s.mode, s.planExecuting, append([]pm.TodoItem{}, s.planTodos...)
+		bridge, set := s.cursorBridge.Value()
 		s.mu.Unlock()
 		content := ""
 		if executing && len(todos) > 0 {
 			content = pm.ExecutingContext(todos)
 		} else {
-			bridge, set := os.LookupEnv(pm.CursorBridgeBuiltinsEnv)
 			content = pm.ModeContext(mode, ctx.ModelProvider(), bridge, set)
 		}
 		return map[string]any{"message": map[string]any{"customType": pm.ContextType, "content": content, "display": false}}, nil
@@ -299,9 +328,10 @@ func registerPermissionModes(e *sdk.Extension) {
 		s.restore(ctx)
 		return nil, nil
 	})
-	e.OnSessionShutdown(func(sdk.Context, map[string]any) (any, error) {
+	e.OnSessionShutdown(func(ctx sdk.Context, _ map[string]any) (any, error) {
 		s.mu.Lock()
 		s.allowedRoots = nil
+		s.applyBridge(ctx, s.cursorBridge.Shutdown())
 		s.mu.Unlock()
 		return nil, nil
 	})

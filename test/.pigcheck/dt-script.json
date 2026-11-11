@@ -1,0 +1,5 @@
+[{"tool":"write","args":{"path":"/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/dt/w.txt","content":"new content\nline 2\n"}},
+ {"tool":"edit","args":{"path":"/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/dt/e.ts","edits":[{"oldText":"const b = 2;","newText":"const b = 20;"}]}},
+ {"tool":"apply_patch","args":{"changes":[{"path":"/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/dt/p.ts","action":"update","oldText":"two","newText":"TWO"},{"path":"/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/dt/n.md","action":"add","content":"# fresh"}]}},
+ {"tool":"edit","args":{"path":"/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/dt/e.ts","oldText":"missing text","newText":"x"}},
+ {"text":"tools done"}]

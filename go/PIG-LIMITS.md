@@ -16,7 +16,6 @@ its path. With `PIG_HOME=~/.config/pi`, the path is
 |---|---|---|
 | No call to suspend the host TUI | The SDK has no equivalent of Pi's `tui.stop()` | `/tuicr` opens tuicr in a pane, then `/tuicr done` loads the comments |
 | Crash on a custom Go editor | A bug in the `pig` host, not in the SDK API | The user-bash editor is off by default |
-| No access to the Node process environment | Each extension runs in a separate process | The Cursor bridge setting cannot be set from Go |
 | Request context ends when the handler returns | SDK design | Background work uses the context from `OnLoaded` |
 
 ## 1. No call to suspend the host TUI
@@ -78,30 +77,7 @@ does.
 
 **Report:** PiG records the crash. Run `/bug` in `pig` to report it.
 
-## 3. No access to the Node process environment
-
-**Problem:** PiG runs each extension in its own process. A Go extension
-cannot read or change the environment of a Node extension or a Node
-provider. In Pi, all extensions share one Node process and one
-`process.env`.
-
-**Effect:** permission-modes cannot set `PI_CURSOR_EXPOSE_BUILTIN_TOOLS`
-for the Cursor provider. In default mode, the Cursor bridge tools
-(`pi__edit`, `pi__write`, `pi__apply_patch`, `pi__bash`) are available
-only if the user sets the variable before `pig` starts.
-
-**Workaround:** The mode context reports that the bridge tools are not
-available when the variable is not set. This is the same text that
-TypeScript uses.
-
-**When PiG adds a shared channel:** Set the variable through that channel,
-or ask the Cursor provider for the bridge tools through the event bus.
-
-**Related:** The event bus (`pi.events`) is shared between processes.
-Use it for data that features must exchange, for example notification
-signals.
-
-## 4. Request context ends when the handler returns
+## 3. Request context ends when the handler returns
 
 **Problem:** Each handler gets an `sdk.Context` for one request. The SDK
 cancels that context when the handler returns. A host call through that
@@ -127,6 +103,13 @@ workaround.
 
 ## Rules that come from these limits
 
+- Set an environment value that a Node extension or Node provider reads
+  (for example `PI_CURSOR_EXPOSE_BUILTIN_TOOLS`) with `ctx.SetSharedEnv`
+  and `ctx.UnsetSharedEnv` (PiG divergence D234). The change does not
+  reach this process's own environment, so keep the value you set in
+  feature state. `os.LookupEnv` gives only the value pig inherited.
+- Use the event bus (`pi.events`) for data that features must exchange,
+  for example notification signals. It is shared between processes.
 - Read pig's argv from `PIG_HARNESS_ARGV_FILE` (a JSON string array of the
   arguments after the binary), with `piargs.HarnessArgv()`. PiG sets it in
   every extension cell; a Go extension's own `os.Args` is its runner. The

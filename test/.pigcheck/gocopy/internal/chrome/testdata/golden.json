@@ -1,0 +1,8776 @@
+{
+ "roleCodes": {
+  "accent": 36,
+  "success": 32,
+  "warning": 33,
+  "error": 31,
+  "muted": 90,
+  "dim": 2,
+  "text": 39,
+  "borderMuted": 94,
+  "toolTitle": 35,
+  "thinkingText": 95,
+  "toolOutput": 96,
+  "selectedBg": 44
+ },
+ "cases": [
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "label"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 0,
+   "out": "\u001b[54m\u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 0,
+   "out": "\u001b[54m\u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 1,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 1,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 1,
+   "out": " "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 1,
+   "out": "\u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 1,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 1,
+   "out": "s\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 1,
+   "out": "s\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 1,
+   "out": "s\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 1,
+   "out": "a\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 1,
+   "out": "a\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 1,
+   "out": "a\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 1,
+   "out": "w\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 1,
+   "out": "w\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 1,
+   "out": "w\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 1,
+   "out": "\u001b[31mr\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 1,
+   "out": "\u001b[31mr\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 1,
+   "out": "\u001b[31mr\u001b[0m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": ""
+   },
+   "width": 1,
+   "out": "\u001b[94m─\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 1,
+   "out": "\u001b[94m─\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 1,
+   "out": "\u001b[94m─\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 1,
+   "out": "\u001b[94m─\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "label"
+   },
+   "width": 1,
+   "out": "\u001b[94m─\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 1,
+   "out": "\u001b[94m─\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 1,
+   "out": "\u001b[94m─\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 1,
+   "out": "\u001b[94m─\u001b[0m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 1,
+   "out": "\u001b[94m─\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 1,
+   "out": "\u001b[94m─\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 1,
+   "out": "\u001b[94m─\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 1,
+   "out": "\u001b[94m─\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[54m\u001b[0m…\u001b[0m\u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 1,
+   "out": "\u001b[54m\u001b[0m…\u001b[0m\u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 3,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 3,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 3,
+   "out": "   "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  \u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 3,
+   "out": "\u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 3,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 3,
+   "out": "sh\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 3,
+   "out": "sho\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 3,
+   "out": "sho\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 3,
+   "out": "\u001b[2msh\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 3,
+   "out": "sho\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 3,
+   "out": "a \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 3,
+   "out": "a l\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 3,
+   "out": "a l\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 3,
+   "out": "\u001b[2ma \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 3,
+   "out": "a l\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 3,
+   "out": "wi\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 3,
+   "out": "wid\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 3,
+   "out": "wid\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 3,
+   "out": "\u001b[2mwi\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 3,
+   "out": "wid\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 3,
+   "out": "\u001b[31mre\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 3,
+   "out": "\u001b[31mred\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 3,
+   "out": "\u001b[31mred\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 3,
+   "out": "\u001b[2m\u001b[31mre\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 3,
+   "out": "\u001b[31mred\u001b[0m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": ""
+   },
+   "width": 3,
+   "out": "\u001b[94m───\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 3,
+   "out": "\u001b[94m───\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 3,
+   "out": "\u001b[94m───\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 3,
+   "out": "\u001b[94m───\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "label"
+   },
+   "width": 3,
+   "out": "\u001b[94m─ l\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 3,
+   "out": "\u001b[94m─ l\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 3,
+   "out": "\u001b[94m─ l\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 3,
+   "out": "\u001b[94m─ l\u001b[0m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 3,
+   "out": "\u001b[94m─ a\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 3,
+   "out": "\u001b[94m─ a\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 3,
+   "out": "\u001b[94m─ a\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 3,
+   "out": "\u001b[94m─ a\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 3,
+   "out": "\u001b[36m▎\u001b[39m \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 3,
+   "out": "\u001b[36m▎\u001b[39m \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker"
+   },
+   "width": 3,
+   "out": " \u001b[39m·\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 3,
+   "out": "\u001b[54m  \u001b[0m…\u001b[0m\u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 3,
+   "out": "\u001b[54m \u001b[33m›\u001b[0m…\u001b[0m\u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 3,
+   "out": "\u001b[39m·\u001b[39m \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 4,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 4,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 4,
+   "out": "    "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  \u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 4,
+   "out": "\u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 4,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 4,
+   "out": "sho\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 4,
+   "out": "shor\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 4,
+   "out": "shor\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  \u001b[2ms\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 4,
+   "out": "\u001b[2msho\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 4,
+   "out": "shor\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 4,
+   "out": "a l\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 4,
+   "out": "a lo\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 4,
+   "out": "a lo\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  \u001b[2ma\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 4,
+   "out": "\u001b[2ma l\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 4,
+   "out": "a lo\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 4,
+   "out": "wid\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 4,
+   "out": "wide\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 4,
+   "out": "wide\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  \u001b[2mw\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 4,
+   "out": "\u001b[2mwid\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 4,
+   "out": "wide\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 4,
+   "out": "\u001b[31mred\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 4,
+   "out": "\u001b[31mred\u001b[0m \u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 4,
+   "out": "\u001b[31mred\u001b[0m \u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  \u001b[2m\u001b[31mr\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 4,
+   "out": "\u001b[2m\u001b[31mred\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 4,
+   "out": "\u001b[31mred\u001b[0m \u001b[0m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": ""
+   },
+   "width": 4,
+   "out": "\u001b[94m────\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 4,
+   "out": "\u001b[94m────\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 4,
+   "out": "\u001b[94m────\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 4,
+   "out": "\u001b[94m────\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "label"
+   },
+   "width": 4,
+   "out": "\u001b[94m─ la\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 4,
+   "out": "\u001b[94m─ la\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 4,
+   "out": "\u001b[94m─ la\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 4,
+   "out": "\u001b[94m─ la\u001b[0m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 4,
+   "out": "\u001b[94m─ a \u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 4,
+   "out": "\u001b[94m─ a \u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 4,
+   "out": "\u001b[94m─ a \u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 4,
+   "out": "\u001b[94m─ a \u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 4,
+   "out": "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mS\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 4,
+   "out": "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mS\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  \u001b[33m◆\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker"
+   },
+   "width": 4,
+   "out": " \u001b[39m·\u001b[39m \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 4,
+   "out": "   \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 4,
+   "out": "\u001b[54m  \u001b[36m›\u001b[0m…\u001b[0m\u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 4,
+   "out": "\u001b[54m \u001b[33m›\u001b[39m \u001b[33m\u001b[1mx\u001b[22m\u001b[39m\u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 4,
+   "out": "\u001b[39m·\u001b[39m \u001b[39mp\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 5,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 5,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 5,
+   "out": "     "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  \u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 5,
+   "out": "\u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 5,
+   "out": "\u001b[94m│\u001b[39m   \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 5,
+   "out": "short"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 5,
+   "out": "short"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 5,
+   "out": "short"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  \u001b[2msh\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 5,
+   "out": "\u001b[2mshort\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 5,
+   "out": "\u001b[94m│\u001b[39m s\u001b[0m \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 5,
+   "out": "a lo\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 5,
+   "out": "a lon\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 5,
+   "out": "a lon\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  \u001b[2ma \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 5,
+   "out": "\u001b[2ma lo\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 5,
+   "out": "\u001b[94m│\u001b[39m a\u001b[0m \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 5,
+   "out": "wide\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 5,
+   "out": "wide \u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 5,
+   "out": "wide \u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  \u001b[2mwi\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 5,
+   "out": "\u001b[2mwide\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 5,
+   "out": "\u001b[94m│\u001b[39m w\u001b[0m \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 5,
+   "out": "\u001b[31mred\u001b[0m \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 5,
+   "out": "\u001b[31mred\u001b[0m t\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 5,
+   "out": "\u001b[31mred\u001b[0m t\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  \u001b[2m\u001b[31mre\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 5,
+   "out": "\u001b[2m\u001b[31mred\u001b[0m \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 5,
+   "out": "\u001b[94m│\u001b[39m \u001b[31mr\u001b[0m \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": ""
+   },
+   "width": 5,
+   "out": "\u001b[94m─────\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 5,
+   "out": "\u001b[94m╭───╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 5,
+   "out": "\u001b[94m├───┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 5,
+   "out": "\u001b[94m╰───╯\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "label"
+   },
+   "width": 5,
+   "out": "\u001b[94m─ lab\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 5,
+   "out": "\u001b[94m╭─ l\u001b[0m╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 5,
+   "out": "\u001b[94m├─ l\u001b[0m┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 5,
+   "out": "\u001b[94m╰─ l\u001b[0m╯\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 5,
+   "out": "\u001b[94m─ a m\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 5,
+   "out": "\u001b[94m╭─ a\u001b[0m╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 5,
+   "out": "\u001b[94m├─ a\u001b[0m┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 5,
+   "out": "\u001b[94m╰─ a\u001b[0m╯\u001b[39m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 5,
+   "out": "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mSU\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 5,
+   "out": "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mSU\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  \u001b[33m◆\u001b[39m \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker"
+   },
+   "width": 5,
+   "out": " \u001b[39m·\u001b[39m \u001b[39mw\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 5,
+   "out": "   \u001b[90m↳\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 5,
+   "out": "\u001b[54m  \u001b[36m›\u001b[39m \u001b[0m…\u001b[0m\u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 5,
+   "out": "\u001b[54m \u001b[33m›\u001b[39m \u001b[33m\u001b[1mx\u001b[22m\u001b[39m \u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 5,
+   "out": "\u001b[39m·\u001b[39m \u001b[39mpl\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 8,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 8,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 8,
+   "out": "        "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  \u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 8,
+   "out": "\u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 8,
+   "out": "\u001b[94m│\u001b[39m      \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 8,
+   "out": "short"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 8,
+   "out": "short"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 8,
+   "out": "short   "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  \u001b[2mshort\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 8,
+   "out": "\u001b[2mshort\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 8,
+   "out": "\u001b[94m│\u001b[39m shor\u001b[0m \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 8,
+   "out": "a longe\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 8,
+   "out": "a longer\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 8,
+   "out": "a longer\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  \u001b[2ma lon\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 8,
+   "out": "\u001b[2ma longe\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 8,
+   "out": "\u001b[94m│\u001b[39m a lo\u001b[0m \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 8,
+   "out": "wide 漢\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 8,
+   "out": "wide 漢\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 8,
+   "out": "wide 漢\u001b[0m "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  \u001b[2mwide \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 8,
+   "out": "\u001b[2mwide 漢\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 8,
+   "out": "\u001b[94m│\u001b[39m wide\u001b[0m \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 8,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 8,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 8,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  \u001b[2m\u001b[31mred\u001b[0m t\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 8,
+   "out": "\u001b[2m\u001b[31mred\u001b[0m tail\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 8,
+   "out": "\u001b[94m│\u001b[39m \u001b[31mred\u001b[0m \u001b[0m \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": ""
+   },
+   "width": 8,
+   "out": "\u001b[94m────────\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 8,
+   "out": "\u001b[94m╭──────╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 8,
+   "out": "\u001b[94m├──────┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 8,
+   "out": "\u001b[94m╰──────╯\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "label"
+   },
+   "width": 8,
+   "out": "\u001b[94m─ label \u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 8,
+   "out": "\u001b[94m╭─ labe\u001b[0m╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 8,
+   "out": "\u001b[94m├─ labe\u001b[0m┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 8,
+   "out": "\u001b[94m╰─ labe\u001b[0m╯\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 8,
+   "out": "\u001b[94m─ a much\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 8,
+   "out": "\u001b[94m╭─ a mu\u001b[0m╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 8,
+   "out": "\u001b[94m├─ a mu\u001b[0m┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 8,
+   "out": "\u001b[94m╰─ a mu\u001b[0m╯\u001b[39m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 8,
+   "out": "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mSUBAG\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 8,
+   "out": "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mSUBAG\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  \u001b[33m◆\u001b[39m \u001b[33m\u001b[1mMOD\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker"
+   },
+   "width": 8,
+   "out": " \u001b[39m·\u001b[39m \u001b[39mwork\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 8,
+   "out": "   \u001b[90m↳\u001b[39m \u001b[90mwo\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 8,
+   "out": "\u001b[54m  \u001b[36m›\u001b[39m \u001b[36m\u001b[1mrev\u001b[0m…\u001b[0m\u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 8,
+   "out": "\u001b[54m \u001b[33m›\u001b[39m \u001b[33m\u001b[1mx\u001b[22m\u001b[39m    \u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 8,
+   "out": "\u001b[39m·\u001b[39m \u001b[39mplann\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 12,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 12,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 12,
+   "out": "            "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  \u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 12,
+   "out": "\u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 12,
+   "out": "\u001b[94m│\u001b[39m          \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 12,
+   "out": "short"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 12,
+   "out": "short"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 12,
+   "out": "short       "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  \u001b[2mshort\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 12,
+   "out": "\u001b[2mshort\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 12,
+   "out": "\u001b[94m│\u001b[39m short    \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 12,
+   "out": "a longer li\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 12,
+   "out": "a longer lin\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 12,
+   "out": "a longer lin\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  \u001b[2ma longer \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 12,
+   "out": "\u001b[2ma longer li\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 12,
+   "out": "\u001b[94m│\u001b[39m a longer\u001b[0m \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 12,
+   "out": "wide 漢字 a\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 12,
+   "out": "wide 漢字 an\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 12,
+   "out": "wide 漢字 an\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  \u001b[2mwide 漢字\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 12,
+   "out": "\u001b[2mwide 漢字 a\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 12,
+   "out": "\u001b[94m│\u001b[39m wide 漢\u001b[0m  \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 12,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 12,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 12,
+   "out": "\u001b[31mred\u001b[0m tail    "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  \u001b[2m\u001b[31mred\u001b[0m tail\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 12,
+   "out": "\u001b[2m\u001b[31mred\u001b[0m tail\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 12,
+   "out": "\u001b[94m│\u001b[39m \u001b[31mred\u001b[0m tail \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": ""
+   },
+   "width": 12,
+   "out": "\u001b[94m────────────\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 12,
+   "out": "\u001b[94m╭──────────╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 12,
+   "out": "\u001b[94m├──────────┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 12,
+   "out": "\u001b[94m╰──────────╯\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "label"
+   },
+   "width": 12,
+   "out": "\u001b[94m─ label ────\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 12,
+   "out": "\u001b[94m╭─ label ──╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 12,
+   "out": "\u001b[94m├─ label ──┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 12,
+   "out": "\u001b[94m╰─ label ──╯\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 12,
+   "out": "\u001b[94m─ a much lon\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 12,
+   "out": "\u001b[94m╭─ a much l\u001b[0m╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 12,
+   "out": "\u001b[94m├─ a much l\u001b[0m┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 12,
+   "out": "\u001b[94m╰─ a much l\u001b[0m╯\u001b[39m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 12,
+   "out": "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mSUBAGENTS\u001b[22m\u001b[39m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 12,
+   "out": "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mSUBAGENT\u001b[22m\u001b[39m\u001b[2m \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  \u001b[33m◆\u001b[39m \u001b[33m\u001b[1mMODEL\u001b[22m\u001b[39m\u001b[2m ·\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker"
+   },
+   "width": 12,
+   "out": " \u001b[39m·\u001b[39m \u001b[39mworker\u001b[39m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 12,
+   "out": "   \u001b[90m↳\u001b[39m \u001b[90mworker\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 12,
+   "out": "\u001b[54m  \u001b[36m›\u001b[39m \u001b[36m\u001b[1mreviewe\u001b[0m…\u001b[0m\u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 12,
+   "out": "\u001b[54m \u001b[33m›\u001b[39m \u001b[33m\u001b[1mx\u001b[22m\u001b[39m        \u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 12,
+   "out": "\u001b[39m·\u001b[39m \u001b[39mplanner\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 20,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 20,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 20,
+   "out": "                    "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  \u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 20,
+   "out": "\u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 20,
+   "out": "\u001b[94m│\u001b[39m                  \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 20,
+   "out": "short"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 20,
+   "out": "short"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 20,
+   "out": "short               "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  \u001b[2mshort\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 20,
+   "out": "\u001b[2mshort\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 20,
+   "out": "\u001b[94m│\u001b[39m short            \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 20,
+   "out": "a longer line of te\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 20,
+   "out": "a longer line of tex\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 20,
+   "out": "a longer line of tex\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  \u001b[2ma longer line of \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 20,
+   "out": "\u001b[2ma longer line of te\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 20,
+   "out": "\u001b[94m│\u001b[39m a longer line of\u001b[0m \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 20,
+   "out": "wide 漢字 and emoji\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 20,
+   "out": "wide 漢字 and emoji \u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 20,
+   "out": "wide 漢字 and emoji \u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  \u001b[2mwide 漢字 and emo\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 20,
+   "out": "\u001b[2mwide 漢字 and emoji\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 20,
+   "out": "\u001b[94m│\u001b[39m wide 漢字 and em\u001b[0m \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 20,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 20,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 20,
+   "out": "\u001b[31mred\u001b[0m tail            "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  \u001b[2m\u001b[31mred\u001b[0m tail\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 20,
+   "out": "\u001b[2m\u001b[31mred\u001b[0m tail\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 20,
+   "out": "\u001b[94m│\u001b[39m \u001b[31mred\u001b[0m tail         \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": ""
+   },
+   "width": 20,
+   "out": "\u001b[94m────────────────────\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 20,
+   "out": "\u001b[94m╭──────────────────╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 20,
+   "out": "\u001b[94m├──────────────────┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 20,
+   "out": "\u001b[94m╰──────────────────╯\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "label"
+   },
+   "width": 20,
+   "out": "\u001b[94m─ label ────────────\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 20,
+   "out": "\u001b[94m╭─ label ──────────╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 20,
+   "out": "\u001b[94m├─ label ──────────┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 20,
+   "out": "\u001b[94m╰─ label ──────────╯\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 20,
+   "out": "\u001b[94m─ a much longer labe\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 20,
+   "out": "\u001b[94m╭─ a much longer la\u001b[0m╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 20,
+   "out": "\u001b[94m├─ a much longer la\u001b[0m┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 20,
+   "out": "\u001b[94m╰─ a much longer la\u001b[0m╯\u001b[39m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 20,
+   "out": "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mSUBAGENTS\u001b[22m\u001b[39m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 20,
+   "out": "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mSUBAGENT\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90mworker\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  \u001b[33m◆\u001b[39m \u001b[33m\u001b[1mMODEL\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90manthrop\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker"
+   },
+   "width": 20,
+   "out": " \u001b[39m·\u001b[39m \u001b[39mworker\u001b[39m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 20,
+   "out": "   \u001b[90m↳\u001b[39m \u001b[90mworker\u001b[39m\u001b[2m · \u001b[39m\u001b[90mrunni\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 20,
+   "out": "\u001b[54m  \u001b[36m›\u001b[39m \u001b[36m\u001b[1mreviewer\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90mcomp\u001b[0m…\u001b[0m\u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 20,
+   "out": "\u001b[54m \u001b[33m›\u001b[39m \u001b[33m\u001b[1mx\u001b[22m\u001b[39m                \u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 20,
+   "out": "\u001b[39m·\u001b[39m \u001b[39mplanner\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 40,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 40,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 40,
+   "out": "                                        "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  \u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 40,
+   "out": "\u001b[2m\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": ""
+   },
+   "width": 40,
+   "out": "\u001b[94m│\u001b[39m                                      \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 40,
+   "out": "short"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 40,
+   "out": "short"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 40,
+   "out": "short                                   "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  \u001b[2mshort\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 40,
+   "out": "\u001b[2mshort\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "short"
+   },
+   "width": 40,
+   "out": "\u001b[94m│\u001b[39m short                                \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 40,
+   "out": "a longer line of text that will not fit"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 40,
+   "out": "a longer line of text that will not fit"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 40,
+   "out": "a longer line of text that will not fit "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  \u001b[2ma longer line of text that will not f\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 40,
+   "out": "\u001b[2ma longer line of text that will not fit\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 40,
+   "out": "\u001b[94m│\u001b[39m a longer line of text that will not \u001b[0m \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 40,
+   "out": "wide 漢字 and emoji 🙂 text"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 40,
+   "out": "wide 漢字 and emoji 🙂 text"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 40,
+   "out": "wide 漢字 and emoji 🙂 text             "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  \u001b[2mwide 漢字 and emoji 🙂 text\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 40,
+   "out": "\u001b[2mwide 漢字 and emoji 🙂 text\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 40,
+   "out": "\u001b[94m│\u001b[39m wide 漢字 and emoji 🙂 text          \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 40,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 40,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 40,
+   "out": "\u001b[31mred\u001b[0m tail                                "
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  \u001b[2m\u001b[31mred\u001b[0m tail\u001b[39m"
+  },
+  {
+   "fn": "hint",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 40,
+   "out": "\u001b[2m\u001b[31mred\u001b[0m tail\u001b[39m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "ansi",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 40,
+   "out": "\u001b[94m│\u001b[39m \u001b[31mred\u001b[0m tail                             \u001b[94m│\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": ""
+   },
+   "width": 40,
+   "out": "\u001b[94m────────────────────────────────────────\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 40,
+   "out": "\u001b[94m╭──────────────────────────────────────╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 40,
+   "out": "\u001b[94m├──────────────────────────────────────┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 40,
+   "out": "\u001b[94m╰──────────────────────────────────────╯\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "label"
+   },
+   "width": 40,
+   "out": "\u001b[94m─ label ────────────────────────────────\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 40,
+   "out": "\u001b[94m╭─ label ──────────────────────────────╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 40,
+   "out": "\u001b[94m├─ label ──────────────────────────────┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 40,
+   "out": "\u001b[94m╰─ label ──────────────────────────────╯\u001b[39m"
+  },
+  {
+   "fn": "divider",
+   "theme": "ansi",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 40,
+   "out": "\u001b[94m─ a much longer label than fits ────────\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 40,
+   "out": "\u001b[94m╭─ a much longer label than fits ──────╮\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 40,
+   "out": "\u001b[94m├─ a much longer label than fits ──────┤\u001b[39m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "ansi",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 40,
+   "out": "\u001b[94m╰─ a much longer label than fits ──────╯\u001b[39m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 40,
+   "out": "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mSUBAGENTS\u001b[22m\u001b[39m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 40,
+   "out": "\u001b[36m▎\u001b[39m \u001b[36m\u001b[1mSUBAGENT\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90mworker · run 1234abcd · 1/3\u001b[39m"
+  },
+  {
+   "fn": "header",
+   "theme": "ansi",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  \u001b[33m◆\u001b[39m \u001b[33m\u001b[1mMODEL\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90manthropic/claude\u001b[39m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker"
+   },
+   "width": 40,
+   "out": " \u001b[39m·\u001b[39m \u001b[39mworker\u001b[39m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 40,
+   "out": "   \u001b[90m↳\u001b[39m \u001b[90mworker\u001b[39m\u001b[2m · \u001b[39m\u001b[90mrunning 5s · bash: npm te\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 40,
+   "out": "\u001b[54m  \u001b[36m›\u001b[39m \u001b[36m\u001b[1mreviewer\u001b[22m\u001b[39m\u001b[2m · \u001b[39m\u001b[90mcompleted\u001b[39m                \u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 40,
+   "out": "\u001b[54m \u001b[33m›\u001b[39m \u001b[33m\u001b[1mx\u001b[22m\u001b[39m                                    \u001b[49m"
+  },
+  {
+   "fn": "item",
+   "theme": "ansi",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 40,
+   "out": "\u001b[39m·\u001b[39m \u001b[39mplanner\u001b[39m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "label"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 0,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 1,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 1,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 1,
+   "out": " "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 1,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 1,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 1,
+   "out": "s\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 1,
+   "out": "s\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 1,
+   "out": "s\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 1,
+   "out": "a\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 1,
+   "out": "a\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 1,
+   "out": "a\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 1,
+   "out": "w\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 1,
+   "out": "w\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 1,
+   "out": "w\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 1,
+   "out": "\u001b[31mr\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 1,
+   "out": "\u001b[31mr\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 1,
+   "out": "\u001b[31mr\u001b[0m"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": ""
+   },
+   "width": 1,
+   "out": "─"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 1,
+   "out": "─"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 1,
+   "out": "─"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 1,
+   "out": "─"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "label"
+   },
+   "width": 1,
+   "out": "─\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 1,
+   "out": "─\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 1,
+   "out": "─\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 1,
+   "out": "─\u001b[0m"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 1,
+   "out": "─\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 1,
+   "out": "─\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 1,
+   "out": "─\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 1,
+   "out": "─\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 1,
+   "out": "\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 3,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 3,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 3,
+   "out": "   "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 3,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 3,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 3,
+   "out": "sh\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 3,
+   "out": "sho\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 3,
+   "out": "sho\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 3,
+   "out": "sh\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 3,
+   "out": "sho\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 3,
+   "out": "a \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 3,
+   "out": "a l\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 3,
+   "out": "a l\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 3,
+   "out": "a \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 3,
+   "out": "a l\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 3,
+   "out": "wi\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 3,
+   "out": "wid\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 3,
+   "out": "wid\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 3,
+   "out": "wi\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 3,
+   "out": "wid\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 3,
+   "out": "\u001b[31mre\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 3,
+   "out": "\u001b[31mred\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 3,
+   "out": "\u001b[31mred\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 3,
+   "out": "\u001b[31mre\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 3,
+   "out": "\u001b[31mred\u001b[0m"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": ""
+   },
+   "width": 3,
+   "out": "───"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 3,
+   "out": "───"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 3,
+   "out": "───"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 3,
+   "out": "───"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "label"
+   },
+   "width": 3,
+   "out": "─ l\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 3,
+   "out": "─ l\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 3,
+   "out": "─ l\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 3,
+   "out": "─ l\u001b[0m"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 3,
+   "out": "─ a\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 3,
+   "out": "─ a\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 3,
+   "out": "─ a\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 3,
+   "out": "─ a\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 3,
+   "out": "▎ \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 3,
+   "out": "▎ \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker"
+   },
+   "width": 3,
+   "out": " ·\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 3,
+   "out": "  \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 3,
+   "out": " ›\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 3,
+   "out": "· \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 4,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 4,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 4,
+   "out": "    "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 4,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 4,
+   "out": ""
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 4,
+   "out": "sho\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 4,
+   "out": "shor\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 4,
+   "out": "shor\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  s\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 4,
+   "out": "sho\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 4,
+   "out": "shor\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 4,
+   "out": "a l\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 4,
+   "out": "a lo\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 4,
+   "out": "a lo\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  a\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 4,
+   "out": "a l\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 4,
+   "out": "a lo\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 4,
+   "out": "wid\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 4,
+   "out": "wide\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 4,
+   "out": "wide\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  w\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 4,
+   "out": "wid\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 4,
+   "out": "wide\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 4,
+   "out": "\u001b[31mred\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 4,
+   "out": "\u001b[31mred\u001b[0m \u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 4,
+   "out": "\u001b[31mred\u001b[0m \u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  \u001b[31mr\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 4,
+   "out": "\u001b[31mred\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 4,
+   "out": "\u001b[31mred\u001b[0m \u001b[0m"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": ""
+   },
+   "width": 4,
+   "out": "────"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 4,
+   "out": "────"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 4,
+   "out": "────"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 4,
+   "out": "────"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "label"
+   },
+   "width": 4,
+   "out": "─ la\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 4,
+   "out": "─ la\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 4,
+   "out": "─ la\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 4,
+   "out": "─ la\u001b[0m"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 4,
+   "out": "─ a \u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 4,
+   "out": "─ a \u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 4,
+   "out": "─ a \u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 4,
+   "out": "─ a \u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 4,
+   "out": "▎ S\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 4,
+   "out": "▎ S\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  ◆\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker"
+   },
+   "width": 4,
+   "out": " · \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 4,
+   "out": "   \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 4,
+   "out": "  ›\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 4,
+   "out": " › x"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 4,
+   "out": "· p\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 5,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 5,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 5,
+   "out": "     "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 5,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 5,
+   "out": "│   │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 5,
+   "out": "short"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 5,
+   "out": "short"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 5,
+   "out": "short"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  sh\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 5,
+   "out": "short"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 5,
+   "out": "│ s\u001b[0m │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 5,
+   "out": "a lo\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 5,
+   "out": "a lon\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 5,
+   "out": "a lon\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  a \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 5,
+   "out": "a lo\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 5,
+   "out": "│ a\u001b[0m │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 5,
+   "out": "wide\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 5,
+   "out": "wide \u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 5,
+   "out": "wide \u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  wi\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 5,
+   "out": "wide\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 5,
+   "out": "│ w\u001b[0m │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 5,
+   "out": "\u001b[31mred\u001b[0m \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 5,
+   "out": "\u001b[31mred\u001b[0m t\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 5,
+   "out": "\u001b[31mred\u001b[0m t\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  \u001b[31mre\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 5,
+   "out": "\u001b[31mred\u001b[0m \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 5,
+   "out": "│ \u001b[31mr\u001b[0m │"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": ""
+   },
+   "width": 5,
+   "out": "─────"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 5,
+   "out": "╭───╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 5,
+   "out": "├───┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 5,
+   "out": "╰───╯"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "label"
+   },
+   "width": 5,
+   "out": "─ lab\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 5,
+   "out": "╭─ l\u001b[0m╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 5,
+   "out": "├─ l\u001b[0m┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 5,
+   "out": "╰─ l\u001b[0m╯"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 5,
+   "out": "─ a m\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 5,
+   "out": "╭─ a\u001b[0m╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 5,
+   "out": "├─ a\u001b[0m┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 5,
+   "out": "╰─ a\u001b[0m╯"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 5,
+   "out": "▎ SU\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 5,
+   "out": "▎ SU\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  ◆ \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker"
+   },
+   "width": 5,
+   "out": " · w\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 5,
+   "out": "   ↳\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 5,
+   "out": "  › \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 5,
+   "out": " › x"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 5,
+   "out": "· pl\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 8,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 8,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 8,
+   "out": "        "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 8,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 8,
+   "out": "│      │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 8,
+   "out": "short"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 8,
+   "out": "short"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 8,
+   "out": "short   "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  short"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 8,
+   "out": "short"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 8,
+   "out": "│ shor\u001b[0m │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 8,
+   "out": "a longe\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 8,
+   "out": "a longer\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 8,
+   "out": "a longer\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  a lon\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 8,
+   "out": "a longe\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 8,
+   "out": "│ a lo\u001b[0m │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 8,
+   "out": "wide 漢\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 8,
+   "out": "wide 漢\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 8,
+   "out": "wide 漢\u001b[0m "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  wide \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 8,
+   "out": "wide 漢\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 8,
+   "out": "│ wide\u001b[0m │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 8,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 8,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 8,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  \u001b[31mred\u001b[0m t\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 8,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 8,
+   "out": "│ \u001b[31mred\u001b[0m \u001b[0m │"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": ""
+   },
+   "width": 8,
+   "out": "────────"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 8,
+   "out": "╭──────╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 8,
+   "out": "├──────┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 8,
+   "out": "╰──────╯"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "label"
+   },
+   "width": 8,
+   "out": "─ label "
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 8,
+   "out": "╭─ labe\u001b[0m╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 8,
+   "out": "├─ labe\u001b[0m┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 8,
+   "out": "╰─ labe\u001b[0m╯"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 8,
+   "out": "─ a much\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 8,
+   "out": "╭─ a mu\u001b[0m╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 8,
+   "out": "├─ a mu\u001b[0m┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 8,
+   "out": "╰─ a mu\u001b[0m╯"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 8,
+   "out": "▎ SUBAG\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 8,
+   "out": "▎ SUBAG\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  ◆ MOD\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker"
+   },
+   "width": 8,
+   "out": " · work\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 8,
+   "out": "   ↳ wo\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 8,
+   "out": "  › rev\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 8,
+   "out": " › x"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 8,
+   "out": "· plann\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 12,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 12,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 12,
+   "out": "            "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 12,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 12,
+   "out": "│          │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 12,
+   "out": "short"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 12,
+   "out": "short"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 12,
+   "out": "short       "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  short"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 12,
+   "out": "short"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 12,
+   "out": "│ short    │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 12,
+   "out": "a longer li\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 12,
+   "out": "a longer lin\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 12,
+   "out": "a longer lin\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  a longer \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 12,
+   "out": "a longer li\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 12,
+   "out": "│ a longer\u001b[0m │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 12,
+   "out": "wide 漢字 a\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 12,
+   "out": "wide 漢字 an\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 12,
+   "out": "wide 漢字 an\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  wide 漢字\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 12,
+   "out": "wide 漢字 a\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 12,
+   "out": "│ wide 漢\u001b[0m  │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 12,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 12,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 12,
+   "out": "\u001b[31mred\u001b[0m tail    "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  \u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 12,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 12,
+   "out": "│ \u001b[31mred\u001b[0m tail │"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": ""
+   },
+   "width": 12,
+   "out": "────────────"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 12,
+   "out": "╭──────────╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 12,
+   "out": "├──────────┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 12,
+   "out": "╰──────────╯"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "label"
+   },
+   "width": 12,
+   "out": "─ label ────"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 12,
+   "out": "╭─ label ──╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 12,
+   "out": "├─ label ──┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 12,
+   "out": "╰─ label ──╯"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 12,
+   "out": "─ a much lon\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 12,
+   "out": "╭─ a much l\u001b[0m╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 12,
+   "out": "├─ a much l\u001b[0m┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 12,
+   "out": "╰─ a much l\u001b[0m╯"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 12,
+   "out": "▎ SUBAGENTS"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 12,
+   "out": "▎ SUBAGENT \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  ◆ MODEL ·\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker"
+   },
+   "width": 12,
+   "out": " · worker"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 12,
+   "out": "   ↳ worker\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 12,
+   "out": "  › reviewe\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 12,
+   "out": " › x"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 12,
+   "out": "· planner"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 20,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 20,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 20,
+   "out": "                    "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 20,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 20,
+   "out": "│                  │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 20,
+   "out": "short"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 20,
+   "out": "short"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 20,
+   "out": "short               "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  short"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 20,
+   "out": "short"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 20,
+   "out": "│ short            │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 20,
+   "out": "a longer line of te\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 20,
+   "out": "a longer line of tex\u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 20,
+   "out": "a longer line of tex\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  a longer line of \u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 20,
+   "out": "a longer line of te\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 20,
+   "out": "│ a longer line of\u001b[0m │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 20,
+   "out": "wide 漢字 and emoji\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 20,
+   "out": "wide 漢字 and emoji \u001b[0m"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 20,
+   "out": "wide 漢字 and emoji \u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  wide 漢字 and emo\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 20,
+   "out": "wide 漢字 and emoji\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 20,
+   "out": "│ wide 漢字 and em\u001b[0m │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 20,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 20,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 20,
+   "out": "\u001b[31mred\u001b[0m tail            "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  \u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 20,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 20,
+   "out": "│ \u001b[31mred\u001b[0m tail         │"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": ""
+   },
+   "width": 20,
+   "out": "────────────────────"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 20,
+   "out": "╭──────────────────╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 20,
+   "out": "├──────────────────┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 20,
+   "out": "╰──────────────────╯"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "label"
+   },
+   "width": 20,
+   "out": "─ label ────────────"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 20,
+   "out": "╭─ label ──────────╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 20,
+   "out": "├─ label ──────────┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 20,
+   "out": "╰─ label ──────────╯"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 20,
+   "out": "─ a much longer labe\u001b[0m"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 20,
+   "out": "╭─ a much longer la\u001b[0m╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 20,
+   "out": "├─ a much longer la\u001b[0m┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 20,
+   "out": "╰─ a much longer la\u001b[0m╯"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 20,
+   "out": "▎ SUBAGENTS"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 20,
+   "out": "▎ SUBAGENT · worker\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  ◆ MODEL · anthrop\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker"
+   },
+   "width": 20,
+   "out": " · worker"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 20,
+   "out": "   ↳ worker · runni\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 20,
+   "out": "  › reviewer · comp\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 20,
+   "out": " › x"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 20,
+   "out": "· planner"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 40,
+   "out": ""
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 40,
+   "out": ""
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 40,
+   "out": "                                        "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "",
+    "indent": 0
+   },
+   "width": 40,
+   "out": ""
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": ""
+   },
+   "width": 40,
+   "out": "│                                      │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 40,
+   "out": "short"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 40,
+   "out": "short"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 40,
+   "out": "short                                   "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  short"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "short",
+    "indent": 0
+   },
+   "width": 40,
+   "out": "short"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "short"
+   },
+   "width": 40,
+   "out": "│ short                                │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 40,
+   "out": "a longer line of text that will not fit"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 40,
+   "out": "a longer line of text that will not fit"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 40,
+   "out": "a longer line of text that will not fit "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  a longer line of text that will not f\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit",
+    "indent": 0
+   },
+   "width": 40,
+   "out": "a longer line of text that will not fit"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "a longer line of text that will not fit"
+   },
+   "width": 40,
+   "out": "│ a longer line of text that will not \u001b[0m │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 40,
+   "out": "wide 漢字 and emoji 🙂 text"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 40,
+   "out": "wide 漢字 and emoji 🙂 text"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 40,
+   "out": "wide 漢字 and emoji 🙂 text             "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  wide 漢字 and emoji 🙂 text"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text",
+    "indent": 0
+   },
+   "width": 40,
+   "out": "wide 漢字 and emoji 🙂 text"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "wide 漢字 and emoji 🙂 text"
+   },
+   "width": 40,
+   "out": "│ wide 漢字 and emoji 🙂 text          │"
+  },
+  {
+   "fn": "fitLine",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 40,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "fitLineEmpty",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 40,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "padToWidth",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 40,
+   "out": "\u001b[31mred\u001b[0m tail                                "
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  \u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "hint",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail",
+    "indent": 0
+   },
+   "width": 40,
+   "out": "\u001b[31mred\u001b[0m tail"
+  },
+  {
+   "fn": "frameRow",
+   "theme": "plain",
+   "args": {
+    "text": "\u001b[31mred\u001b[0m tail"
+   },
+   "width": 40,
+   "out": "│ \u001b[31mred\u001b[0m tail                             │"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": ""
+   },
+   "width": 40,
+   "out": "────────────────────────────────────────"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": ""
+   },
+   "width": 40,
+   "out": "╭──────────────────────────────────────╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": ""
+   },
+   "width": 40,
+   "out": "├──────────────────────────────────────┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": ""
+   },
+   "width": 40,
+   "out": "╰──────────────────────────────────────╯"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "label"
+   },
+   "width": 40,
+   "out": "─ label ────────────────────────────────"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "label"
+   },
+   "width": 40,
+   "out": "╭─ label ──────────────────────────────╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "label"
+   },
+   "width": 40,
+   "out": "├─ label ──────────────────────────────┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "label"
+   },
+   "width": 40,
+   "out": "╰─ label ──────────────────────────────╯"
+  },
+  {
+   "fn": "divider",
+   "theme": "plain",
+   "args": {
+    "label": "a much longer label than fits"
+   },
+   "width": 40,
+   "out": "─ a much longer label than fits ────────"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "top",
+    "label": "a much longer label than fits"
+   },
+   "width": 40,
+   "out": "╭─ a much longer label than fits ──────╮"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "divider",
+    "label": "a much longer label than fits"
+   },
+   "width": 40,
+   "out": "├─ a much longer label than fits ──────┤"
+  },
+  {
+   "fn": "frameRule",
+   "theme": "plain",
+   "args": {
+    "edge": "bottom",
+    "label": "a much longer label than fits"
+   },
+   "width": 40,
+   "out": "╰─ a much longer label than fits ──────╯"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagents"
+   },
+   "width": 40,
+   "out": "▎ SUBAGENTS"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "subagent",
+    "meta": "worker · run 1234abcd · 1/3"
+   },
+   "width": 40,
+   "out": "▎ SUBAGENT · worker · run 1234abcd · 1/3"
+  },
+  {
+   "fn": "header",
+   "theme": "plain",
+   "args": {
+    "title": "model",
+    "meta": "anthropic/claude",
+    "tone": "warning",
+    "icon": "◆",
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  ◆ MODEL · anthropic/claude"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker"
+   },
+   "width": 40,
+   "out": " · worker"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "worker",
+    "meta": "running 5s · bash: npm test",
+    "marker": "↳",
+    "tone": "muted",
+    "indent": 3
+   },
+   "width": 40,
+   "out": "   ↳ worker · running 5s · bash: npm te\u001b[0m…\u001b[0m"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "reviewer",
+    "meta": "completed",
+    "active": true,
+    "indent": 2
+   },
+   "width": 40,
+   "out": "  › reviewer · completed"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "x",
+    "active": true,
+    "tone": "warning"
+   },
+   "width": 40,
+   "out": " › x"
+  },
+  {
+   "fn": "item",
+   "theme": "plain",
+   "args": {
+    "label": "planner",
+    "indent": 0
+   },
+   "width": 40,
+   "out": "· planner"
+  }
+ ],
+ "plurals": [
+  {
+   "count": 0,
+   "singular": "run",
+   "out": "0 runs"
+  },
+  {
+   "count": 0,
+   "singular": "child",
+   "plural": "children",
+   "out": "0 children"
+  },
+  {
+   "count": 1,
+   "singular": "run",
+   "out": "1 run"
+  },
+  {
+   "count": 1,
+   "singular": "child",
+   "plural": "children",
+   "out": "1 child"
+  },
+  {
+   "count": 2,
+   "singular": "run",
+   "out": "2 runs"
+  },
+  {
+   "count": 2,
+   "singular": "child",
+   "plural": "children",
+   "out": "2 children"
+  },
+  {
+   "count": 12,
+   "singular": "run",
+   "out": "12 runs"
+  },
+  {
+   "count": 12,
+   "singular": "child",
+   "plural": "children",
+   "out": "12 children"
+  }
+ ]
+}

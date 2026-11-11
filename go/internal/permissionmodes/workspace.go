@@ -19,18 +19,14 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/danielboothcloud/pi-aio/go/internal/difftools"
 )
 
 // GuardedTools are the tools whose targets the guard checks.
 var GuardedTools = map[string]bool{"edit": true, "write": true, "apply_patch": true}
 
-var (
-	unicodeSpacesRe = regexp.MustCompile(`[\x{a0}\x{2000}-\x{200a}\x{202f}\x{205f}\x{3000}]`)
-	hunkRe          = regexp.MustCompile(`^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@`)
-	diffGitRe       = regexp.MustCompile("^diff --git a/([^\r\n\u2028\u2029]*) b/([^\r\n\u2028\u2029]*)$")
-	editOldKeys     = []string{"oldText", "old_text", "old_string"}
-	editNewKeys     = []string{"newText", "new_text", "new_string"}
-)
+var unicodeSpacesRe = regexp.MustCompile(`[\x{a0}\x{2000}-\x{200a}\x{202f}\x{205f}\x{3000}]`)
 
 // OutsideTarget is one mutation target outside the workspace.
 type OutsideTarget struct {
@@ -38,171 +34,12 @@ type OutsideTarget struct {
 	Resolved string `json:"resolved"`
 }
 
-func readEditField(record map[string]any, keys []string) string {
-	for _, key := range keys {
-		if value, ok := record[key].(string); ok {
-			return value
-		}
-	}
-	return ""
-}
-
-type patchFile struct {
-	path   string
-	status string
-	hunks  [][2][]string // per hunk: old lines, new lines
-}
-
-func normalizeDiffPath(path string) (string, bool) {
-	if path == "/dev/null" {
-		return "", false
-	}
-	if strings.HasPrefix(path, "a/") || strings.HasPrefix(path, "b/") {
-		return path[2:], true
-	}
-	return path, true
-}
-
-// parseUnifiedPatch ports cursor-compat.ts parseUnifiedPatch (paths and hunk texts).
-func parseUnifiedPatch(patch string) []*patchFile {
-	var files []*patchFile
-	var current *patchFile
-	hunk := -1
-	for _, line := range strings.Split(patch, "\n") {
-		switch {
-		case strings.HasPrefix(line, "diff --git "):
-			path := "unknown"
-			if m := diffGitRe.FindStringSubmatch(line); m != nil {
-				path = m[2]
-			}
-			current = &patchFile{path: path, status: "modified"}
-			files = append(files, current)
-			hunk = -1
-			continue
-		case strings.HasPrefix(line, "new file mode"):
-			if current != nil {
-				current.status = "added"
-			}
-			continue
-		case strings.HasPrefix(line, "deleted file mode"):
-			if current != nil {
-				current.status = "deleted"
-			}
-			continue
-		case strings.HasPrefix(line, "--- "):
-			oldPath, ok := normalizeDiffPath(jsTrim(line[4:]))
-			if current == nil {
-				current = &patchFile{path: "unknown", status: "modified"}
-				if ok {
-					current.path = oldPath
-				} else {
-					current.status = "added"
-				}
-				files = append(files, current)
-			}
-			if !ok {
-				current.status = "added"
-			} else if current.path == "unknown" {
-				current.path = oldPath
-			}
-			hunk = -1
-			continue
-		case strings.HasPrefix(line, "+++ "):
-			newPath, ok := normalizeDiffPath(jsTrim(line[4:]))
-			if current == nil {
-				current = &patchFile{path: "unknown", status: "modified"}
-				if ok {
-					current.path = newPath
-				} else {
-					current.status = "deleted"
-				}
-				files = append(files, current)
-			}
-			if !ok {
-				current.status = "deleted"
-			} else {
-				current.path = newPath
-			}
-			hunk = -1
-			continue
-		}
-		if current == nil {
-			continue
-		}
-		if hunkRe.MatchString(line) {
-			current.hunks = append(current.hunks, [2][]string{})
-			hunk = len(current.hunks) - 1
-			continue
-		}
-		if hunk < 0 || line == `\ No newline at end of file` || line == "" {
-			continue
-		}
-		h := &current.hunks[hunk]
-		content := string([]rune(line)[1:])
-		switch line[0] {
-		case '+':
-			h[1] = append(h[1], content)
-		case '-':
-			h[0] = append(h[0], content)
-		case ' ':
-			h[0] = append(h[0], content)
-			h[1] = append(h[1], content)
-		}
-	}
-	return files
-}
-
-// applyPatchPaths ports resolveApplyPatchChanges, reduced to the target paths
-// (move destinations included) in change order.
-func applyPatchPaths(input map[string]any) []string {
-	var paths []string
-	if changes, ok := input["changes"].([]any); ok && len(changes) > 0 {
-		for _, raw := range changes {
-			change, ok := raw.(map[string]any)
-			if !ok {
-				continue
-			}
-			path, okPath := change["path"].(string)
-			action, okAction := change["action"].(string)
-			if !okPath || !okAction {
-				continue
-			}
-			paths = append(paths, path)
-			if action == "move" {
-				move, _ := change["movePath"].(string)
-				if move == "" {
-					move, _ = change["move_path"].(string)
-				}
-				if move != "" {
-					paths = append(paths, move)
-				}
-			}
-		}
-		return paths
-	}
-	patch, ok := input["patch"].(string)
-	if !ok || jsTrim(patch) == "" {
-		return nil
-	}
-	for _, file := range parseUnifiedPatch(patch) {
-		if file.status == "added" || file.status == "deleted" {
-			paths = append(paths, file.path)
-			continue
-		}
-		for _, h := range file.hunks {
-			oldText, newText := strings.Join(h[0], "\n"), strings.Join(h[1], "\n")
-			if oldText != "" && oldText != newText {
-				paths = append(paths, file.path)
-			}
-		}
-	}
-	return paths
-}
-
 // MutationTargetPaths returns the raw target paths of an edit/write/apply_patch call.
 func MutationTargetPaths(tool string, input map[string]any) []string {
 	if tool == "apply_patch" {
-		return applyPatchPaths(input)
+		// The parser apply_patch's execute uses (structured changes or a
+		// unified diff), so the guard checks what would be written.
+		return difftools.ApplyPatchTargetPaths(input)
 	}
 	var paths []string
 	for _, key := range []string{"path", "file_path"} {

@@ -1,0 +1,8 @@
+{"argv": ["pig", "--no-session", "-ne", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/gocopy/aio", "-e", "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/fixture-provider.ts", "--model", "fixture/m1"],
+ "env": {}, "cols": 110, "rows": 40,
+ "steps": [{"wait": "fixture", "timeout": 60}, {"sleep": 2},
+  {"send": "do it\r"}, {"wait": "REVIEW MUTATION", "timeout": 30}, {"sleep": 1}, {"screen": "edit approval overlay"},
+  {"send": "j"}, {"sleep": 0.5}, {"screen": "after j (Enable auto selected)"},
+  {"send": "k"}, {"sleep": 0.3}, {"send": "\r"}, {"wait": "apply_patch", "timeout": 30}, {"sleep": 1.5}, {"screen": "apply_patch approval"},
+  {"send": "3"}, {"wait": "Allow write on", "timeout": 30}, {"sleep": 1.5}, {"screen": "write approval"},
+  {"send": "1"}, {"wait": "tui done", "timeout": 30}, {"sleep": 2}, {"screen": "after run"}]}

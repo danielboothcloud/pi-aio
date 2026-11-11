@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/danielboothcloud/pi-aio/go/internal/difftools"
 )
 
 // Mode is one permission mode.
@@ -179,6 +181,37 @@ func commandOf(input map[string]any) string {
 	}
 }
 
+// ApprovalRequest is a file-mutation approval (showMutationApproval's params).
+type ApprovalRequest struct {
+	Tool  string
+	Input map[string]any
+	// Path is the target label shown in the prompt.
+	Path string
+	Cwd  string
+	// Outside is set when the targets fall outside the working directory.
+	Outside *OutsideInfo
+}
+
+// OutsideInfo is approval-dialog.ts OutsideWorkspaceInfo.
+type OutsideInfo struct {
+	Cwd    string
+	Scopes []string
+}
+
+// Approval decisions (approval-dialog.ts ApprovalDecision).
+const (
+	DecisionAllow      = "allow"
+	DecisionAllowAll   = "allowAll"
+	DecisionAllowScope = "allowScope"
+	DecisionBlock      = "block"
+)
+
+// MutationApprover is an optional UI extension: the scrollable diff
+// approval overlay. ok=false falls back to Select, as non-TUI hosts do.
+type MutationApprover interface {
+	ApproveMutation(req ApprovalRequest) (decision string, ok bool)
+}
+
 // UI is the part of the host that the gate needs.
 type UI interface {
 	HasUI() bool
@@ -217,18 +250,30 @@ func (g *Gate) approveOutside(ui UI, tool string, input map[string]any, cwd stri
 		return blocked(fmt.Sprintf("%s blocked: %s is outside the working directory %s, and there is no UI to approve it. Only change files inside %s.", tool, shown, cwd, cwd))
 	}
 	scopes := ApprovalScopes(outside)
-	body := fmt.Sprintf("⚠ Outside the working directory %s. \"%s\" allows further changes under: %s",
-		cwd, OutsideOptions[1], strings.Join(scopes, ", "))
-	choice, _ := ui.Select(body+"\n"+ApprovalPrompt(tool, shown, input), OutsideOptions)
-	switch choice {
-	case OutsideOptions[1]:
+	decision, handled := "", false
+	if approver, ok := ui.(MutationApprover); ok {
+		decision, handled = approver.ApproveMutation(ApprovalRequest{Tool: tool, Input: input, Path: shown, Cwd: cwd, Outside: &OutsideInfo{Cwd: cwd, Scopes: scopes}})
+	}
+	if !handled {
+		switch choice, _ := ui.Select(OutsideBody(cwd, scopes)+"\n"+ApprovalPrompt(tool, shown, input, cwd), OutsideOptions); choice {
+		case OutsideOptions[1]:
+			decision = DecisionAllowScope
+		case OutsideOptions[0]:
+			decision = DecisionAllow
+		}
+	}
+	switch decision {
+	case DecisionAllowScope:
 		g.AllowedRoots = append(g.AllowedRoots, scopes...)
 		return Verdict{}
-	case OutsideOptions[0]:
+	case DecisionAllow:
 		return Verdict{}
 	}
 	return blocked(fmt.Sprintf("%s blocked by user: %s is outside the working directory %s.", tool, shown, cwd))
 }
+
+// OutsideBody ports approval-dialog.ts outsideBody.
+func OutsideBody(cwd string, scopes []string) string { return difftools.OutsideBody(cwd, scopes) }
 
 // Check is the tool_call gate. A Cursor replay call is allowed and, when it
 // shows a mutation outside auto mode, the user gets a warning.
@@ -271,12 +316,29 @@ func (g *Gate) Check(ui UI, tool, toolCallID string, input map[string]any, cwd s
 		if !ui.HasUI() {
 			return blocked(tool + " blocked: no UI to confirm.")
 		}
-		choice, _ := ui.Select(ApprovalPrompt(tool, path, input), ApprovalOptions)
-		switch choice {
-		case ApprovalOptions[1]:
+		decision := DecisionBlock
+		handled := false
+		if approver, ok := ui.(MutationApprover); ok {
+			decision, handled = approver.ApproveMutation(ApprovalRequest{Tool: tool, Input: input, Path: path, Cwd: cwd})
+			if decision == DecisionAllowScope {
+				decision = DecisionBlock
+			}
+		}
+		if !handled {
+			switch choice, _ := ui.Select(ApprovalPrompt(tool, path, input, cwd), ApprovalOptions); choice {
+			case ApprovalOptions[1]:
+				decision = DecisionAllowAll
+			case ApprovalOptions[0]:
+				decision = DecisionAllow
+			default:
+				decision = DecisionBlock
+			}
+		}
+		switch decision {
+		case DecisionAllowAll:
 			g.Mode = ModeAuto
 			return Verdict{SwitchToAuto: true}
-		case ApprovalOptions[0]:
+		case DecisionAllow:
 			return Verdict{}
 		}
 		return blocked(fmt.Sprintf("%s blocked by user on %s", tool, path))
@@ -297,51 +359,11 @@ func (g *Gate) Check(ui UI, tool, toolCallID string, input map[string]any, cwd s
 	return Verdict{}
 }
 
-const (
-	maxPreviewLines = 40
-	maxPreviewChars = 2000
-)
-
-// ApprovalPrompt is "Allow <tool> on <target>?" plus a short preview.
-//
-// Difference from TypeScript: the TypeScript prompt shows a real file diff
-// (diff-tools). Until diff-tools is ported, this preview lists the edit's
-// old and new text, or the start of the written content.
-func ApprovalPrompt(tool, target string, input map[string]any) string {
-	header := fmt.Sprintf("Allow %s on %s?", tool, target)
-	var lines []string
-	add := func(prefix, text string) {
-		for _, line := range strings.Split(text, "\n") {
-			lines = append(lines, prefix+" "+line)
-		}
-	}
-	switch tool {
-	case "edit":
-		edits, _ := input["edits"].([]any)
-		if len(edits) == 0 {
-			edits = []any{input}
-		}
-		for _, raw := range edits {
-			if edit, ok := raw.(map[string]any); ok {
-				add("-", readEditField(edit, editOldKeys))
-				add("+", readEditField(edit, editNewKeys))
-			}
-		}
-	case "write":
-		if content, ok := input["content"].(string); ok {
-			add("+", content)
-		}
-	}
-	if len(lines) == 0 {
-		return header
-	}
-	if len(lines) > maxPreviewLines {
-		more := len(lines) - maxPreviewLines
-		lines = append(lines[:maxPreviewLines], fmt.Sprintf("… %d more lines", more))
-	}
-	preview := strings.Join(lines, "\n")
-	if jsLen(preview) > maxPreviewChars {
-		preview = jsSlice(preview, maxPreviewChars) + "\n… (preview truncated)"
-	}
-	return header + "\n\n" + preview
+// ApprovalPrompt ports the select fallback of approval-dialog.ts
+// showMutationApproval: "Allow <tool> on <target>?" plus the plain diff
+// preview from diff-tools (formatMutationPreview with its default caps).
+// Relative paths resolve against cwd.
+func ApprovalPrompt(tool, target string, input map[string]any, cwd string) string {
+	preview, ok := difftools.FormatMutationPreview(tool, input, difftools.PreviewOptions{Cwd: cwd})
+	return difftools.BuildMutationApprovalPrompt(tool, target, preview, ok)
 }

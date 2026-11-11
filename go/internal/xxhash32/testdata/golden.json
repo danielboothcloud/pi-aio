@@ -1,0 +1,2349 @@
+{
+ "cases": [
+  {
+   "input": "",
+   "seed": 0,
+   "hash": 46947589
+  },
+  {
+   "input": "",
+   "seed": 1,
+   "hash": 187479954
+  },
+  {
+   "input": "",
+   "seed": 2,
+   "hash": 2047909266
+  },
+  {
+   "input": "",
+   "seed": 3,
+   "hash": 2123905782
+  },
+  {
+   "input": "",
+   "seed": 7,
+   "hash": 3618484216
+  },
+  {
+   "input": "",
+   "seed": 999,
+   "hash": 325067401
+  },
+  {
+   "input": "",
+   "seed": 4294967295,
+   "hash": 2422332061
+  },
+  {
+   "input": "a",
+   "seed": 0,
+   "hash": 1426945110
+  },
+  {
+   "input": "a",
+   "seed": 1,
+   "hash": 4111757423
+  },
+  {
+   "input": "a",
+   "seed": 2,
+   "hash": 991979079
+  },
+  {
+   "input": "a",
+   "seed": 3,
+   "hash": 2297456368
+  },
+  {
+   "input": "a",
+   "seed": 7,
+   "hash": 3666002600
+  },
+  {
+   "input": "a",
+   "seed": 999,
+   "hash": 76173015
+  },
+  {
+   "input": "a",
+   "seed": 4294967295,
+   "hash": 3443684653
+  },
+  {
+   "input": "ab",
+   "seed": 0,
+   "hash": 1234828371
+  },
+  {
+   "input": "ab",
+   "seed": 1,
+   "hash": 770583154
+  },
+  {
+   "input": "ab",
+   "seed": 2,
+   "hash": 820667418
+  },
+  {
+   "input": "ab",
+   "seed": 3,
+   "hash": 265658165
+  },
+  {
+   "input": "ab",
+   "seed": 7,
+   "hash": 3829251497
+  },
+  {
+   "input": "ab",
+   "seed": 999,
+   "hash": 3549904804
+  },
+  {
+   "input": "ab",
+   "seed": 4294967295,
+   "hash": 1092002902
+  },
+  {
+   "input": "abc",
+   "seed": 0,
+   "hash": 852579327
+  },
+  {
+   "input": "abc",
+   "seed": 1,
+   "hash": 2856167679
+  },
+  {
+   "input": "abc",
+   "seed": 2,
+   "hash": 1317013917
+  },
+  {
+   "input": "abc",
+   "seed": 3,
+   "hash": 404328719
+  },
+  {
+   "input": "abc",
+   "seed": 7,
+   "hash": 1473238068
+  },
+  {
+   "input": "abc",
+   "seed": 999,
+   "hash": 3589470949
+  },
+  {
+   "input": "abc",
+   "seed": 4294967295,
+   "hash": 2989167648
+  },
+  {
+   "input": "abcd",
+   "seed": 0,
+   "hash": 2741253893
+  },
+  {
+   "input": "abcd",
+   "seed": 1,
+   "hash": 3194890655
+  },
+  {
+   "input": "abcd",
+   "seed": 2,
+   "hash": 3796373215
+  },
+  {
+   "input": "abcd",
+   "seed": 3,
+   "hash": 1126213544
+  },
+  {
+   "input": "abcd",
+   "seed": 7,
+   "hash": 4088447131
+  },
+  {
+   "input": "abcd",
+   "seed": 999,
+   "hash": 2317305818
+  },
+  {
+   "input": "abcd",
+   "seed": 4294967295,
+   "hash": 571019001
+  },
+  {
+   "input": "abcde",
+   "seed": 0,
+   "hash": 2537091483
+  },
+  {
+   "input": "abcde",
+   "seed": 1,
+   "hash": 3725837322
+  },
+  {
+   "input": "abcde",
+   "seed": 2,
+   "hash": 3775037608
+  },
+  {
+   "input": "abcde",
+   "seed": 3,
+   "hash": 1247566894
+  },
+  {
+   "input": "abcde",
+   "seed": 7,
+   "hash": 2155106675
+  },
+  {
+   "input": "abcde",
+   "seed": 999,
+   "hash": 1841705489
+  },
+  {
+   "input": "abcde",
+   "seed": 4294967295,
+   "hash": 1300277935
+  },
+  {
+   "input": "xxxxxxx",
+   "seed": 0,
+   "hash": 30467228
+  },
+  {
+   "input": "xxxxxxx",
+   "seed": 1,
+   "hash": 1340344512
+  },
+  {
+   "input": "xxxxxxx",
+   "seed": 2,
+   "hash": 2264671902
+  },
+  {
+   "input": "xxxxxxx",
+   "seed": 3,
+   "hash": 2292454904
+  },
+  {
+   "input": "xxxxxxx",
+   "seed": 7,
+   "hash": 475077659
+  },
+  {
+   "input": "xxxxxxx",
+   "seed": 999,
+   "hash": 162483637
+  },
+  {
+   "input": "xxxxxxx",
+   "seed": 4294967295,
+   "hash": 1387382069
+  },
+  {
+   "input": "xxxxxxxxxxxxxxx",
+   "seed": 0,
+   "hash": 775798960
+  },
+  {
+   "input": "xxxxxxxxxxxxxxx",
+   "seed": 1,
+   "hash": 1024302665
+  },
+  {
+   "input": "xxxxxxxxxxxxxxx",
+   "seed": 2,
+   "hash": 3510848432
+  },
+  {
+   "input": "xxxxxxxxxxxxxxx",
+   "seed": 3,
+   "hash": 1441559424
+  },
+  {
+   "input": "xxxxxxxxxxxxxxx",
+   "seed": 7,
+   "hash": 2121582841
+  },
+  {
+   "input": "xxxxxxxxxxxxxxx",
+   "seed": 999,
+   "hash": 3097383517
+  },
+  {
+   "input": "xxxxxxxxxxxxxxx",
+   "seed": 4294967295,
+   "hash": 1825776400
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxx",
+   "seed": 0,
+   "hash": 404385805
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxx",
+   "seed": 1,
+   "hash": 403200552
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxx",
+   "seed": 2,
+   "hash": 3946104278
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxx",
+   "seed": 3,
+   "hash": 1705101026
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxx",
+   "seed": 7,
+   "hash": 489421101
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxx",
+   "seed": 999,
+   "hash": 1558686390
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxx",
+   "seed": 4294967295,
+   "hash": 1177783118
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxx",
+   "seed": 0,
+   "hash": 1212095327
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxx",
+   "seed": 1,
+   "hash": 2101351125
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxx",
+   "seed": 2,
+   "hash": 586408509
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxx",
+   "seed": 3,
+   "hash": 3657226238
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxx",
+   "seed": 7,
+   "hash": 364151108
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxx",
+   "seed": 999,
+   "hash": 2149061245
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxx",
+   "seed": 4294967295,
+   "hash": 668027660
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 0,
+   "hash": 1805892444
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 1,
+   "hash": 2685156542
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 2,
+   "hash": 861054365
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 3,
+   "hash": 3116348990
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 7,
+   "hash": 1453537602
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 999,
+   "hash": 3651349964
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 4294967295,
+   "hash": 3645454912
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 0,
+   "hash": 634320413
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 1,
+   "hash": 3478198029
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 2,
+   "hash": 2123963100
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 3,
+   "hash": 889884112
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 7,
+   "hash": 157744070
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 999,
+   "hash": 4060420855
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 4294967295,
+   "hash": 3901605097
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 0,
+   "hash": 827008391
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 1,
+   "hash": 2013662291
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 2,
+   "hash": 118148149
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 3,
+   "hash": 1879147974
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 7,
+   "hash": 2690349968
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 999,
+   "hash": 45467906
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 4294967295,
+   "hash": 3263270462
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 0,
+   "hash": 3482027680
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 1,
+   "hash": 1881657801
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 2,
+   "hash": 1661504631
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 3,
+   "hash": 652780123
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 7,
+   "hash": 2203347026
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 999,
+   "hash": 1529719821
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 4294967295,
+   "hash": 1595548194
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 0,
+   "hash": 4129382658
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 1,
+   "hash": 791340800
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 2,
+   "hash": 4209714775
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 3,
+   "hash": 789764947
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 7,
+   "hash": 1014222954
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 999,
+   "hash": 143848626
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 4294967295,
+   "hash": 3522556269
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 0,
+   "hash": 1272122682
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 1,
+   "hash": 2465418536
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 2,
+   "hash": 1601381580
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 3,
+   "hash": 4115416024
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 7,
+   "hash": 1442965614
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 999,
+   "hash": 2002410811
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 4294967295,
+   "hash": 330866731
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 0,
+   "hash": 1703021275
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 1,
+   "hash": 3208537361
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 2,
+   "hash": 4250347948
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 3,
+   "hash": 1778583512
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 7,
+   "hash": 890477344
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 999,
+   "hash": 2460867515
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "seed": 4294967295,
+   "hash": 4149402891
+  },
+  {
+   "input": "",
+   "seed": 0,
+   "hash": 46947589
+  },
+  {
+   "input": "",
+   "seed": 1,
+   "hash": 187479954
+  },
+  {
+   "input": "",
+   "seed": 2,
+   "hash": 2047909266
+  },
+  {
+   "input": "",
+   "seed": 3,
+   "hash": 2123905782
+  },
+  {
+   "input": "",
+   "seed": 7,
+   "hash": 3618484216
+  },
+  {
+   "input": "",
+   "seed": 999,
+   "hash": 325067401
+  },
+  {
+   "input": "",
+   "seed": 4294967295,
+   "hash": 2422332061
+  },
+  {
+   "input": "!",
+   "seed": 0,
+   "hash": 2622398324
+  },
+  {
+   "input": "!",
+   "seed": 1,
+   "hash": 3727787369
+  },
+  {
+   "input": "!",
+   "seed": 2,
+   "hash": 1778788869
+  },
+  {
+   "input": "!",
+   "seed": 3,
+   "hash": 529765520
+  },
+  {
+   "input": "!",
+   "seed": 7,
+   "hash": 3097210106
+  },
+  {
+   "input": "!",
+   "seed": 999,
+   "hash": 2238615823
+  },
+  {
+   "input": "!",
+   "seed": 4294967295,
+   "hash": 1751876918
+  },
+  {
+   "input": "!(",
+   "seed": 0,
+   "hash": 1864714533
+  },
+  {
+   "input": "!(",
+   "seed": 1,
+   "hash": 1609984759
+  },
+  {
+   "input": "!(",
+   "seed": 2,
+   "hash": 1356334602
+  },
+  {
+   "input": "!(",
+   "seed": 3,
+   "hash": 3805384030
+  },
+  {
+   "input": "!(",
+   "seed": 7,
+   "hash": 1097691288
+  },
+  {
+   "input": "!(",
+   "seed": 999,
+   "hash": 3048215639
+  },
+  {
+   "input": "!(",
+   "seed": 4294967295,
+   "hash": 1261263660
+  },
+  {
+   "input": "!(/",
+   "seed": 0,
+   "hash": 2714732393
+  },
+  {
+   "input": "!(/",
+   "seed": 1,
+   "hash": 815506198
+  },
+  {
+   "input": "!(/",
+   "seed": 2,
+   "hash": 2100884991
+  },
+  {
+   "input": "!(/",
+   "seed": 3,
+   "hash": 2337348249
+  },
+  {
+   "input": "!(/",
+   "seed": 7,
+   "hash": 730604873
+  },
+  {
+   "input": "!(/",
+   "seed": 999,
+   "hash": 4171688769
+  },
+  {
+   "input": "!(/",
+   "seed": 4294967295,
+   "hash": 4211992133
+  },
+  {
+   "input": "!(/6",
+   "seed": 0,
+   "hash": 2855977252
+  },
+  {
+   "input": "!(/6",
+   "seed": 1,
+   "hash": 464217056
+  },
+  {
+   "input": "!(/6",
+   "seed": 2,
+   "hash": 4073234884
+  },
+  {
+   "input": "!(/6",
+   "seed": 3,
+   "hash": 3201014320
+  },
+  {
+   "input": "!(/6",
+   "seed": 7,
+   "hash": 613244046
+  },
+  {
+   "input": "!(/6",
+   "seed": 999,
+   "hash": 303767606
+  },
+  {
+   "input": "!(/6",
+   "seed": 4294967295,
+   "hash": 1429924324
+  },
+  {
+   "input": "!(/6=",
+   "seed": 0,
+   "hash": 4160467840
+  },
+  {
+   "input": "!(/6=",
+   "seed": 1,
+   "hash": 1825572680
+  },
+  {
+   "input": "!(/6=",
+   "seed": 2,
+   "hash": 1469375813
+  },
+  {
+   "input": "!(/6=",
+   "seed": 3,
+   "hash": 1117044029
+  },
+  {
+   "input": "!(/6=",
+   "seed": 7,
+   "hash": 3973635163
+  },
+  {
+   "input": "!(/6=",
+   "seed": 999,
+   "hash": 1486652126
+  },
+  {
+   "input": "!(/6=",
+   "seed": 4294967295,
+   "hash": 704945083
+  },
+  {
+   "input": "!(/6=D",
+   "seed": 0,
+   "hash": 1580072723
+  },
+  {
+   "input": "!(/6=D",
+   "seed": 1,
+   "hash": 3489294359
+  },
+  {
+   "input": "!(/6=D",
+   "seed": 2,
+   "hash": 3412553531
+  },
+  {
+   "input": "!(/6=D",
+   "seed": 3,
+   "hash": 1964692154
+  },
+  {
+   "input": "!(/6=D",
+   "seed": 7,
+   "hash": 1737765979
+  },
+  {
+   "input": "!(/6=D",
+   "seed": 999,
+   "hash": 166297703
+  },
+  {
+   "input": "!(/6=D",
+   "seed": 4294967295,
+   "hash": 2081731489
+  },
+  {
+   "input": "!(/6=DK",
+   "seed": 0,
+   "hash": 302456400
+  },
+  {
+   "input": "!(/6=DK",
+   "seed": 1,
+   "hash": 298953860
+  },
+  {
+   "input": "!(/6=DK",
+   "seed": 2,
+   "hash": 868575177
+  },
+  {
+   "input": "!(/6=DK",
+   "seed": 3,
+   "hash": 2867172026
+  },
+  {
+   "input": "!(/6=DK",
+   "seed": 7,
+   "hash": 1845610376
+  },
+  {
+   "input": "!(/6=DK",
+   "seed": 999,
+   "hash": 4278118798
+  },
+  {
+   "input": "!(/6=DK",
+   "seed": 4294967295,
+   "hash": 518291376
+  },
+  {
+   "input": "!(/6=DKR",
+   "seed": 0,
+   "hash": 471251973
+  },
+  {
+   "input": "!(/6=DKR",
+   "seed": 1,
+   "hash": 3576639891
+  },
+  {
+   "input": "!(/6=DKR",
+   "seed": 2,
+   "hash": 1135830501
+  },
+  {
+   "input": "!(/6=DKR",
+   "seed": 3,
+   "hash": 1131321035
+  },
+  {
+   "input": "!(/6=DKR",
+   "seed": 7,
+   "hash": 2206396636
+  },
+  {
+   "input": "!(/6=DKR",
+   "seed": 999,
+   "hash": 2009825009
+  },
+  {
+   "input": "!(/6=DKR",
+   "seed": 4294967295,
+   "hash": 457556144
+  },
+  {
+   "input": "!(/6=DKRY",
+   "seed": 0,
+   "hash": 3739419680
+  },
+  {
+   "input": "!(/6=DKRY",
+   "seed": 1,
+   "hash": 3503929308
+  },
+  {
+   "input": "!(/6=DKRY",
+   "seed": 2,
+   "hash": 1989969610
+  },
+  {
+   "input": "!(/6=DKRY",
+   "seed": 3,
+   "hash": 181722120
+  },
+  {
+   "input": "!(/6=DKRY",
+   "seed": 7,
+   "hash": 2801338495
+  },
+  {
+   "input": "!(/6=DKRY",
+   "seed": 999,
+   "hash": 3852105708
+  },
+  {
+   "input": "!(/6=DKRY",
+   "seed": 4294967295,
+   "hash": 2996527071
+  },
+  {
+   "input": "!(/6=DKRY`",
+   "seed": 0,
+   "hash": 3281759056
+  },
+  {
+   "input": "!(/6=DKRY`",
+   "seed": 1,
+   "hash": 42628305
+  },
+  {
+   "input": "!(/6=DKRY`",
+   "seed": 2,
+   "hash": 2116432585
+  },
+  {
+   "input": "!(/6=DKRY`",
+   "seed": 3,
+   "hash": 1661017419
+  },
+  {
+   "input": "!(/6=DKRY`",
+   "seed": 7,
+   "hash": 1175658057
+  },
+  {
+   "input": "!(/6=DKRY`",
+   "seed": 999,
+   "hash": 2740041071
+  },
+  {
+   "input": "!(/6=DKRY`",
+   "seed": 4294967295,
+   "hash": 2356233352
+  },
+  {
+   "input": "!(/6=DKRY`g",
+   "seed": 0,
+   "hash": 402975540
+  },
+  {
+   "input": "!(/6=DKRY`g",
+   "seed": 1,
+   "hash": 1578071733
+  },
+  {
+   "input": "!(/6=DKRY`g",
+   "seed": 2,
+   "hash": 3973554666
+  },
+  {
+   "input": "!(/6=DKRY`g",
+   "seed": 3,
+   "hash": 291307344
+  },
+  {
+   "input": "!(/6=DKRY`g",
+   "seed": 7,
+   "hash": 871111145
+  },
+  {
+   "input": "!(/6=DKRY`g",
+   "seed": 999,
+   "hash": 1154519617
+  },
+  {
+   "input": "!(/6=DKRY`g",
+   "seed": 4294967295,
+   "hash": 1629633298
+  },
+  {
+   "input": "!(/6=DKRY`gn",
+   "seed": 0,
+   "hash": 3560059989
+  },
+  {
+   "input": "!(/6=DKRY`gn",
+   "seed": 1,
+   "hash": 976293488
+  },
+  {
+   "input": "!(/6=DKRY`gn",
+   "seed": 2,
+   "hash": 3977333123
+  },
+  {
+   "input": "!(/6=DKRY`gn",
+   "seed": 3,
+   "hash": 4212030609
+  },
+  {
+   "input": "!(/6=DKRY`gn",
+   "seed": 7,
+   "hash": 4038530995
+  },
+  {
+   "input": "!(/6=DKRY`gn",
+   "seed": 999,
+   "hash": 2307127384
+  },
+  {
+   "input": "!(/6=DKRY`gn",
+   "seed": 4294967295,
+   "hash": 1771739393
+  },
+  {
+   "input": "!(/6=DKRY`gnu",
+   "seed": 0,
+   "hash": 134671550
+  },
+  {
+   "input": "!(/6=DKRY`gnu",
+   "seed": 1,
+   "hash": 3923088579
+  },
+  {
+   "input": "!(/6=DKRY`gnu",
+   "seed": 2,
+   "hash": 2285747107
+  },
+  {
+   "input": "!(/6=DKRY`gnu",
+   "seed": 3,
+   "hash": 3766325529
+  },
+  {
+   "input": "!(/6=DKRY`gnu",
+   "seed": 7,
+   "hash": 2004691988
+  },
+  {
+   "input": "!(/6=DKRY`gnu",
+   "seed": 999,
+   "hash": 59727131
+  },
+  {
+   "input": "!(/6=DKRY`gnu",
+   "seed": 4294967295,
+   "hash": 1861707550
+  },
+  {
+   "input": "!(/6=DKRY`gnu\"",
+   "seed": 0,
+   "hash": 2967200955
+  },
+  {
+   "input": "!(/6=DKRY`gnu\"",
+   "seed": 1,
+   "hash": 3181380420
+  },
+  {
+   "input": "!(/6=DKRY`gnu\"",
+   "seed": 2,
+   "hash": 1518654757
+  },
+  {
+   "input": "!(/6=DKRY`gnu\"",
+   "seed": 3,
+   "hash": 1993776884
+  },
+  {
+   "input": "!(/6=DKRY`gnu\"",
+   "seed": 7,
+   "hash": 1752452419
+  },
+  {
+   "input": "!(/6=DKRY`gnu\"",
+   "seed": 999,
+   "hash": 1113265651
+  },
+  {
+   "input": "!(/6=DKRY`gnu\"",
+   "seed": 4294967295,
+   "hash": 2557110546
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")",
+   "seed": 0,
+   "hash": 4194435726
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")",
+   "seed": 1,
+   "hash": 3490541691
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")",
+   "seed": 2,
+   "hash": 1706142248
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")",
+   "seed": 3,
+   "hash": 3108497581
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")",
+   "seed": 7,
+   "hash": 3077029810
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")",
+   "seed": 999,
+   "hash": 3657769972
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")",
+   "seed": 4294967295,
+   "hash": 393046329
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")0",
+   "seed": 0,
+   "hash": 511249521
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")0",
+   "seed": 1,
+   "hash": 3776782087
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")0",
+   "seed": 2,
+   "hash": 2847704214
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")0",
+   "seed": 3,
+   "hash": 3256192681
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")0",
+   "seed": 7,
+   "hash": 952143797
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")0",
+   "seed": 999,
+   "hash": 2045789955
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")0",
+   "seed": 4294967295,
+   "hash": 2655941138
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07",
+   "seed": 0,
+   "hash": 2212546866
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07",
+   "seed": 1,
+   "hash": 1635156690
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07",
+   "seed": 2,
+   "hash": 2227130218
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07",
+   "seed": 3,
+   "hash": 2300489795
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07",
+   "seed": 7,
+   "hash": 1820124581
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07",
+   "seed": 999,
+   "hash": 3811542716
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07",
+   "seed": 4294967295,
+   "hash": 3205620926
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>",
+   "seed": 0,
+   "hash": 2838149983
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>",
+   "seed": 1,
+   "hash": 3570075947
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>",
+   "seed": 2,
+   "hash": 2544091474
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>",
+   "seed": 3,
+   "hash": 1622895911
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>",
+   "seed": 7,
+   "hash": 883249444
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>",
+   "seed": 999,
+   "hash": 2801875860
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>",
+   "seed": 4294967295,
+   "hash": 2444968770
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>E",
+   "seed": 0,
+   "hash": 638563518
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>E",
+   "seed": 1,
+   "hash": 2696264375
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>E",
+   "seed": 2,
+   "hash": 2157666337
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>E",
+   "seed": 3,
+   "hash": 3143175289
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>E",
+   "seed": 7,
+   "hash": 1339743116
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>E",
+   "seed": 999,
+   "hash": 3474035492
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>E",
+   "seed": 4294967295,
+   "hash": 3578347991
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>EL",
+   "seed": 0,
+   "hash": 2112812486
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>EL",
+   "seed": 1,
+   "hash": 2795732738
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>EL",
+   "seed": 2,
+   "hash": 4232357438
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>EL",
+   "seed": 3,
+   "hash": 2124984890
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>EL",
+   "seed": 7,
+   "hash": 3355273815
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>EL",
+   "seed": 999,
+   "hash": 880093082
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>EL",
+   "seed": 4294967295,
+   "hash": 3323445108
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELS",
+   "seed": 0,
+   "hash": 2582711853
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELS",
+   "seed": 1,
+   "hash": 3607531193
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELS",
+   "seed": 2,
+   "hash": 3115358431
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELS",
+   "seed": 3,
+   "hash": 2490787198
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELS",
+   "seed": 7,
+   "hash": 1678405281
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELS",
+   "seed": 999,
+   "hash": 947745406
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELS",
+   "seed": 4294967295,
+   "hash": 2225561517
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZ",
+   "seed": 0,
+   "hash": 2966891026
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZ",
+   "seed": 1,
+   "hash": 713810731
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZ",
+   "seed": 2,
+   "hash": 2409308769
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZ",
+   "seed": 3,
+   "hash": 1769454594
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZ",
+   "seed": 7,
+   "hash": 2183933022
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZ",
+   "seed": 999,
+   "hash": 1343174733
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZ",
+   "seed": 4294967295,
+   "hash": 1770970372
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZa",
+   "seed": 0,
+   "hash": 815360098
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZa",
+   "seed": 1,
+   "hash": 907453580
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZa",
+   "seed": 2,
+   "hash": 3769751455
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZa",
+   "seed": 3,
+   "hash": 3156750963
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZa",
+   "seed": 7,
+   "hash": 3407053553
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZa",
+   "seed": 999,
+   "hash": 2744422643
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZa",
+   "seed": 4294967295,
+   "hash": 1011205790
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZah",
+   "seed": 0,
+   "hash": 579584604
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZah",
+   "seed": 1,
+   "hash": 1819802865
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZah",
+   "seed": 2,
+   "hash": 758967882
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZah",
+   "seed": 3,
+   "hash": 2037873396
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZah",
+   "seed": 7,
+   "hash": 1122604011
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZah",
+   "seed": 999,
+   "hash": 728591591
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZah",
+   "seed": 4294967295,
+   "hash": 4197419218
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZaho",
+   "seed": 0,
+   "hash": 3561936412
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZaho",
+   "seed": 1,
+   "hash": 61544745
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZaho",
+   "seed": 2,
+   "hash": 2501752076
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZaho",
+   "seed": 3,
+   "hash": 48150922
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZaho",
+   "seed": 7,
+   "hash": 517020839
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZaho",
+   "seed": 999,
+   "hash": 747783358
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZaho",
+   "seed": 4294967295,
+   "hash": 1108588465
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov",
+   "seed": 0,
+   "hash": 1364325526
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov",
+   "seed": 1,
+   "hash": 2959056421
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov",
+   "seed": 2,
+   "hash": 749649131
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov",
+   "seed": 3,
+   "hash": 1384096686
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov",
+   "seed": 7,
+   "hash": 2697321388
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov",
+   "seed": 999,
+   "hash": 2560914364
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov",
+   "seed": 4294967295,
+   "hash": 1693721342
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#",
+   "seed": 0,
+   "hash": 1701173840
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#",
+   "seed": 1,
+   "hash": 2332914193
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#",
+   "seed": 2,
+   "hash": 2928948257
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#",
+   "seed": 3,
+   "hash": 1816525386
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#",
+   "seed": 7,
+   "hash": 2706624806
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#",
+   "seed": 999,
+   "hash": 2125675904
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#",
+   "seed": 4294967295,
+   "hash": 1732668704
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*",
+   "seed": 0,
+   "hash": 3590739786
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*",
+   "seed": 1,
+   "hash": 2365810197
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*",
+   "seed": 2,
+   "hash": 2859180826
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*",
+   "seed": 3,
+   "hash": 3865150377
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*",
+   "seed": 7,
+   "hash": 1864928899
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*",
+   "seed": 999,
+   "hash": 3550678023
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*",
+   "seed": 4294967295,
+   "hash": 3926031202
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*1",
+   "seed": 0,
+   "hash": 1401942647
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*1",
+   "seed": 1,
+   "hash": 2526624138
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*1",
+   "seed": 2,
+   "hash": 2222863722
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*1",
+   "seed": 3,
+   "hash": 3376697671
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*1",
+   "seed": 7,
+   "hash": 230282773
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*1",
+   "seed": 999,
+   "hash": 2893106995
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*1",
+   "seed": 4294967295,
+   "hash": 1346016880
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18",
+   "seed": 0,
+   "hash": 21597183
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18",
+   "seed": 1,
+   "hash": 3218430123
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18",
+   "seed": 2,
+   "hash": 3939293225
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18",
+   "seed": 3,
+   "hash": 3441589803
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18",
+   "seed": 7,
+   "hash": 1946668942
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18",
+   "seed": 999,
+   "hash": 1802332599
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18",
+   "seed": 4294967295,
+   "hash": 1059370727
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?",
+   "seed": 0,
+   "hash": 719353227
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?",
+   "seed": 1,
+   "hash": 2699332610
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?",
+   "seed": 2,
+   "hash": 153787281
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?",
+   "seed": 3,
+   "hash": 1596936260
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?",
+   "seed": 7,
+   "hash": 988464889
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?",
+   "seed": 999,
+   "hash": 637378363
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?",
+   "seed": 4294967295,
+   "hash": 4056389569
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?F",
+   "seed": 0,
+   "hash": 2905356289
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?F",
+   "seed": 1,
+   "hash": 4089805532
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?F",
+   "seed": 2,
+   "hash": 4088587664
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?F",
+   "seed": 3,
+   "hash": 3113096140
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?F",
+   "seed": 7,
+   "hash": 613726890
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?F",
+   "seed": 999,
+   "hash": 2991779957
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?F",
+   "seed": 4294967295,
+   "hash": 692391086
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FM",
+   "seed": 0,
+   "hash": 975334003
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FM",
+   "seed": 1,
+   "hash": 3253784822
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FM",
+   "seed": 2,
+   "hash": 3060749649
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FM",
+   "seed": 3,
+   "hash": 3180122485
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FM",
+   "seed": 7,
+   "hash": 4039951793
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FM",
+   "seed": 999,
+   "hash": 2356870857
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FM",
+   "seed": 4294967295,
+   "hash": 3625213111
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT",
+   "seed": 0,
+   "hash": 3399863395
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT",
+   "seed": 1,
+   "hash": 1808597490
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT",
+   "seed": 2,
+   "hash": 739618009
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT",
+   "seed": 3,
+   "hash": 633828912
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT",
+   "seed": 7,
+   "hash": 3479675232
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT",
+   "seed": 999,
+   "hash": 636052738
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT",
+   "seed": 4294967295,
+   "hash": 3116515299
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[",
+   "seed": 0,
+   "hash": 1550107427
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[",
+   "seed": 1,
+   "hash": 3424521809
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[",
+   "seed": 2,
+   "hash": 2438015776
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[",
+   "seed": 3,
+   "hash": 3915831008
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[",
+   "seed": 7,
+   "hash": 4268720097
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[",
+   "seed": 999,
+   "hash": 1408976016
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[",
+   "seed": 4294967295,
+   "hash": 70032224
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[b",
+   "seed": 0,
+   "hash": 4026902254
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[b",
+   "seed": 1,
+   "hash": 3616065736
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[b",
+   "seed": 2,
+   "hash": 2028611304
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[b",
+   "seed": 3,
+   "hash": 2181294534
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[b",
+   "seed": 7,
+   "hash": 3282572783
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[b",
+   "seed": 999,
+   "hash": 745933172
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[b",
+   "seed": 4294967295,
+   "hash": 3425263557
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bi",
+   "seed": 0,
+   "hash": 4236621031
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bi",
+   "seed": 1,
+   "hash": 366116949
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bi",
+   "seed": 2,
+   "hash": 781150328
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bi",
+   "seed": 3,
+   "hash": 3123663532
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bi",
+   "seed": 7,
+   "hash": 739863052
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bi",
+   "seed": 999,
+   "hash": 2961687960
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bi",
+   "seed": 4294967295,
+   "hash": 2581266392
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bip",
+   "seed": 0,
+   "hash": 1267206382
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bip",
+   "seed": 1,
+   "hash": 559485580
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bip",
+   "seed": 2,
+   "hash": 2331153640
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bip",
+   "seed": 3,
+   "hash": 3357855325
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bip",
+   "seed": 7,
+   "hash": 1309357397
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bip",
+   "seed": 999,
+   "hash": 1828468713
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bip",
+   "seed": 4294967295,
+   "hash": 2990871115
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bipw",
+   "seed": 0,
+   "hash": 3233839358
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bipw",
+   "seed": 1,
+   "hash": 2705788986
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bipw",
+   "seed": 2,
+   "hash": 2244294852
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bipw",
+   "seed": 3,
+   "hash": 2310312157
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bipw",
+   "seed": 7,
+   "hash": 4207887089
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bipw",
+   "seed": 999,
+   "hash": 7745789
+  },
+  {
+   "input": "!(/6=DKRY`gnu\")07>ELSZahov#*18?FMT[bipw",
+   "seed": 4294967295,
+   "hash": 199921714
+  },
+  {
+   "input": "const value = 1;",
+   "seed": 0,
+   "hash": 3790286238
+  },
+  {
+   "input": "const value = 1;",
+   "seed": 1,
+   "hash": 2915789036
+  },
+  {
+   "input": "const value = 1;",
+   "seed": 2,
+   "hash": 2762204835
+  },
+  {
+   "input": "const value = 1;",
+   "seed": 3,
+   "hash": 2173937355
+  },
+  {
+   "input": "const value = 1;",
+   "seed": 7,
+   "hash": 1499502800
+  },
+  {
+   "input": "const value = 1;",
+   "seed": 999,
+   "hash": 3503076057
+  },
+  {
+   "input": "const value = 1;",
+   "seed": 4294967295,
+   "hash": 623261937
+  },
+  {
+   "input": "\tfunction foo() {",
+   "seed": 0,
+   "hash": 3902418965
+  },
+  {
+   "input": "\tfunction foo() {",
+   "seed": 1,
+   "hash": 1994733755
+  },
+  {
+   "input": "\tfunction foo() {",
+   "seed": 2,
+   "hash": 2844459620
+  },
+  {
+   "input": "\tfunction foo() {",
+   "seed": 3,
+   "hash": 1615463324
+  },
+  {
+   "input": "\tfunction foo() {",
+   "seed": 7,
+   "hash": 3936348589
+  },
+  {
+   "input": "\tfunction foo() {",
+   "seed": 999,
+   "hash": 4049568486
+  },
+  {
+   "input": "\tfunction foo() {",
+   "seed": 4294967295,
+   "hash": 216927725
+  },
+  {
+   "input": "}",
+   "seed": 0,
+   "hash": 21281560
+  },
+  {
+   "input": "}",
+   "seed": 1,
+   "hash": 601853975
+  },
+  {
+   "input": "}",
+   "seed": 2,
+   "hash": 2573890394
+  },
+  {
+   "input": "}",
+   "seed": 3,
+   "hash": 3454766928
+  },
+  {
+   "input": "}",
+   "seed": 7,
+   "hash": 518711930
+  },
+  {
+   "input": "}",
+   "seed": 999,
+   "hash": 1966972800
+  },
+  {
+   "input": "}",
+   "seed": 4294967295,
+   "hash": 1030362229
+  },
+  {
+   "input": "import { x } from \"y\";",
+   "seed": 0,
+   "hash": 2327609274
+  },
+  {
+   "input": "import { x } from \"y\";",
+   "seed": 1,
+   "hash": 3594791363
+  },
+  {
+   "input": "import { x } from \"y\";",
+   "seed": 2,
+   "hash": 463422377
+  },
+  {
+   "input": "import { x } from \"y\";",
+   "seed": 3,
+   "hash": 3979266219
+  },
+  {
+   "input": "import { x } from \"y\";",
+   "seed": 7,
+   "hash": 153444551
+  },
+  {
+   "input": "import { x } from \"y\";",
+   "seed": 999,
+   "hash": 1450220577
+  },
+  {
+   "input": "import { x } from \"y\";",
+   "seed": 4294967295,
+   "hash": 3420435378
+  },
+  {
+   "input": "漢字のテキスト",
+   "seed": 0,
+   "hash": 2352521731
+  },
+  {
+   "input": "漢字のテキスト",
+   "seed": 1,
+   "hash": 354532872
+  },
+  {
+   "input": "漢字のテキスト",
+   "seed": 2,
+   "hash": 3547629321
+  },
+  {
+   "input": "漢字のテキスト",
+   "seed": 3,
+   "hash": 3066480168
+  },
+  {
+   "input": "漢字のテキスト",
+   "seed": 7,
+   "hash": 3616210164
+  },
+  {
+   "input": "漢字のテキスト",
+   "seed": 999,
+   "hash": 1245232611
+  },
+  {
+   "input": "漢字のテキスト",
+   "seed": 4294967295,
+   "hash": 961879760
+  },
+  {
+   "input": "emoji 🙂 and 👩‍💻",
+   "seed": 0,
+   "hash": 1141575477
+  },
+  {
+   "input": "emoji 🙂 and 👩‍💻",
+   "seed": 1,
+   "hash": 2635140669
+  },
+  {
+   "input": "emoji 🙂 and 👩‍💻",
+   "seed": 2,
+   "hash": 3295035282
+  },
+  {
+   "input": "emoji 🙂 and 👩‍💻",
+   "seed": 3,
+   "hash": 4274610391
+  },
+  {
+   "input": "emoji 🙂 and 👩‍💻",
+   "seed": 7,
+   "hash": 2468889753
+  },
+  {
+   "input": "emoji 🙂 and 👩‍💻",
+   "seed": 999,
+   "hash": 2831431156
+  },
+  {
+   "input": "emoji 🙂 and 👩‍💻",
+   "seed": 4294967295,
+   "hash": 3364981373
+  },
+  {
+   "input": "café naïve",
+   "seed": 0,
+   "hash": 3997760469
+  },
+  {
+   "input": "café naïve",
+   "seed": 1,
+   "hash": 2908757577
+  },
+  {
+   "input": "café naïve",
+   "seed": 2,
+   "hash": 3283273741
+  },
+  {
+   "input": "café naïve",
+   "seed": 3,
+   "hash": 3288237766
+  },
+  {
+   "input": "café naïve",
+   "seed": 7,
+   "hash": 3850512407
+  },
+  {
+   "input": "café naïve",
+   "seed": 999,
+   "hash": 852171214
+  },
+  {
+   "input": "café naïve",
+   "seed": 4294967295,
+   "hash": 1708295346
+  },
+  {
+   "input": "\u0000nul",
+   "seed": 0,
+   "hash": 2152831899
+  },
+  {
+   "input": "\u0000nul",
+   "seed": 1,
+   "hash": 4288936699
+  },
+  {
+   "input": "\u0000nul",
+   "seed": 2,
+   "hash": 1877775714
+  },
+  {
+   "input": "\u0000nul",
+   "seed": 3,
+   "hash": 2823841383
+  },
+  {
+   "input": "\u0000nul",
+   "seed": 7,
+   "hash": 415570498
+  },
+  {
+   "input": "\u0000nul",
+   "seed": 999,
+   "hash": 1712569896
+  },
+  {
+   "input": "\u0000nul",
+   "seed": 4294967295,
+   "hash": 2636248480
+  },
+  {
+   "input": "lone \ud800 surrogate",
+   "seed": 0,
+   "hash": 2805429743
+  },
+  {
+   "input": "lone \ud800 surrogate",
+   "seed": 1,
+   "hash": 2330365913
+  },
+  {
+   "input": "lone \ud800 surrogate",
+   "seed": 2,
+   "hash": 144246526
+  },
+  {
+   "input": "lone \ud800 surrogate",
+   "seed": 3,
+   "hash": 3488579775
+  },
+  {
+   "input": "lone \ud800 surrogate",
+   "seed": 7,
+   "hash": 1486660224
+  },
+  {
+   "input": "lone \ud800 surrogate",
+   "seed": 999,
+   "hash": 1276488711
+  },
+  {
+   "input": "lone \ud800 surrogate",
+   "seed": 4294967295,
+   "hash": 2636357313
+  },
+  {
+   "input": "﻿bom",
+   "seed": 0,
+   "hash": 1620540410
+  },
+  {
+   "input": "﻿bom",
+   "seed": 1,
+   "hash": 1928679736
+  },
+  {
+   "input": "﻿bom",
+   "seed": 2,
+   "hash": 1192990501
+  },
+  {
+   "input": "﻿bom",
+   "seed": 3,
+   "hash": 1500803444
+  },
+  {
+   "input": "﻿bom",
+   "seed": 7,
+   "hash": 3535029920
+  },
+  {
+   "input": "﻿bom",
+   "seed": 999,
+   "hash": 1020896270
+  },
+  {
+   "input": "﻿bom",
+   "seed": 4294967295,
+   "hash": 3491667947
+  }
+ ]
+}

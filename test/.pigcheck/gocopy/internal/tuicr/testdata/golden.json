@@ -1,0 +1,438 @@
+{
+ "worlds": {
+  "originHead": {
+   "git symbolic-ref --short refs/remotes/origin/HEAD": "origin/develop",
+   "git rev-parse --abbrev-ref HEAD": "feat",
+   "git rev-parse --verify --quiet origin/develop": "abc"
+  },
+  "onMain": {
+   "git rev-parse --abbrev-ref HEAD": "main",
+   "git rev-parse --verify --quiet main": "abc",
+   "git rev-parse --verify --quiet master": "def"
+  },
+  "localMaster": {
+   "git rev-parse --abbrev-ref HEAD": "x",
+   "git rev-parse --verify --quiet master": "abc"
+  },
+  "none": {},
+  "comments": {
+   "tuicr review list --all": "[{\"path\":\"/s1\",\"comment_count\":2},{\"path\":\"/s0\",\"comment_count\":0},{\"path\":\"/s2\",\"comment_count\":1}]",
+   "tuicr review comments --session /s1": "[{\"id\":\"a\",\"location\":\"src/a.ts:3\",\"comment_type\":\"issue\",\"content\":\"  fix\\n\\nthis  \"},{\"id\":\"b\",\"path\":\"b.ts\",\"comment_type\":\"none\",\"content\":\"ok\"}]",
+   "tuicr review comments --session /s2": "[{\"id\":\"c\",\"content\":\"general\"}]"
+  },
+  "badJson": {
+   "tuicr review list --all": "{nope"
+  },
+  "notArray": {
+   "tuicr review list --all": "{}"
+  }
+ },
+ "results": {
+  "originHead": {
+   "base": "origin/develop",
+   "comments": []
+  },
+  "onMain": {
+   "base": "master",
+   "comments": []
+  },
+  "localMaster": {
+   "base": "master",
+   "comments": []
+  },
+  "none": {
+   "base": null,
+   "comments": []
+  },
+  "comments": {
+   "base": null,
+   "comments": [
+    {
+     "id": "a",
+     "location": "src/a.ts:3",
+     "comment_type": "issue",
+     "content": "  fix\n\nthis  "
+    },
+    {
+     "id": "b",
+     "path": "b.ts",
+     "comment_type": "none",
+     "content": "ok"
+    },
+    {
+     "id": "c",
+     "content": "general"
+    }
+   ]
+  },
+  "badJson": {
+   "base": null,
+   "comments": {
+    "error": "tuicr review list --all printed malformed JSON"
+   }
+  },
+  "notArray": {
+   "base": null,
+   "comments": {
+    "error": "tuicr review list --all did not print a JSON array"
+   }
+  }
+ },
+ "formats": [
+  {
+   "comments": [],
+   "text": "I reviewed your changes. Please address these comments:\n"
+  },
+  {
+   "comments": [
+    {
+     "id": "a",
+     "location": "src/a.ts:3",
+     "comment_type": "issue",
+     "content": "  fix\n\nthis  "
+    },
+    {
+     "id": "b",
+     "path": "b.ts",
+     "comment_type": "none",
+     "content": "ok"
+    },
+    {
+     "id": "c",
+     "content": "general\nnote",
+     "comment_type": "nit"
+    }
+   ],
+   "text": "I reviewed your changes. Please address these comments:\n\n1. `src/a.ts:3` [ISSUE] - fix this\n2. `b.ts` - ok\n3. [NIT] - general note"
+  }
+ ],
+ "pickers": [
+  {
+   "base": "origin/main",
+   "label": "Uncommitted changes",
+   "answer": "HEAD~3..HEAD",
+   "args": [
+    "-w"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Branch vs origin/main (+ uncommitted)",
+   "answer": "HEAD~3..HEAD",
+   "args": [
+    "-r",
+    "origin/main..HEAD",
+    "-w"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Branch vs origin/main",
+   "answer": "HEAD~3..HEAD",
+   "args": [
+    "-r",
+    "origin/main..HEAD"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Last commit",
+   "answer": "HEAD~3..HEAD",
+   "args": [
+    "-r",
+    "HEAD~1..HEAD"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Pick commits",
+   "answer": "HEAD~3..HEAD",
+   "args": []
+  },
+  {
+   "base": "origin/main",
+   "label": "Every tracked file",
+   "answer": "HEAD~3..HEAD",
+   "args": [
+    "-A"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Custom revset...",
+   "answer": "HEAD~3..HEAD",
+   "args": [
+    "-r",
+    "HEAD~3..HEAD"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Pull request...",
+   "answer": "HEAD~3..HEAD",
+   "args": [
+    "pr",
+    "HEAD~3..HEAD"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Uncommitted changes",
+   "answer": "  ",
+   "args": [
+    "-w"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Branch vs origin/main (+ uncommitted)",
+   "answer": "  ",
+   "args": [
+    "-r",
+    "origin/main..HEAD",
+    "-w"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Branch vs origin/main",
+   "answer": "  ",
+   "args": [
+    "-r",
+    "origin/main..HEAD"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Last commit",
+   "answer": "  ",
+   "args": [
+    "-r",
+    "HEAD~1..HEAD"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Pick commits",
+   "answer": "  ",
+   "args": []
+  },
+  {
+   "base": "origin/main",
+   "label": "Every tracked file",
+   "answer": "  ",
+   "args": [
+    "-A"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Custom revset...",
+   "answer": "  ",
+   "args": null
+  },
+  {
+   "base": "origin/main",
+   "label": "Pull request...",
+   "answer": "  ",
+   "args": null
+  },
+  {
+   "base": "origin/main",
+   "label": "Uncommitted changes",
+   "answer": null,
+   "args": [
+    "-w"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Branch vs origin/main (+ uncommitted)",
+   "answer": null,
+   "args": [
+    "-r",
+    "origin/main..HEAD",
+    "-w"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Branch vs origin/main",
+   "answer": null,
+   "args": [
+    "-r",
+    "origin/main..HEAD"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Last commit",
+   "answer": null,
+   "args": [
+    "-r",
+    "HEAD~1..HEAD"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Pick commits",
+   "answer": null,
+   "args": []
+  },
+  {
+   "base": "origin/main",
+   "label": "Every tracked file",
+   "answer": null,
+   "args": [
+    "-A"
+   ]
+  },
+  {
+   "base": "origin/main",
+   "label": "Custom revset...",
+   "answer": null,
+   "args": null
+  },
+  {
+   "base": "origin/main",
+   "label": "Pull request...",
+   "answer": null,
+   "args": null
+  },
+  {
+   "base": null,
+   "label": "Uncommitted changes",
+   "answer": "HEAD~3..HEAD",
+   "args": [
+    "-w"
+   ]
+  },
+  {
+   "base": null,
+   "label": "Last commit",
+   "answer": "HEAD~3..HEAD",
+   "args": [
+    "-r",
+    "HEAD~1..HEAD"
+   ]
+  },
+  {
+   "base": null,
+   "label": "Pick commits",
+   "answer": "HEAD~3..HEAD",
+   "args": []
+  },
+  {
+   "base": null,
+   "label": "Every tracked file",
+   "answer": "HEAD~3..HEAD",
+   "args": [
+    "-A"
+   ]
+  },
+  {
+   "base": null,
+   "label": "Custom revset...",
+   "answer": "HEAD~3..HEAD",
+   "args": [
+    "-r",
+    "HEAD~3..HEAD"
+   ]
+  },
+  {
+   "base": null,
+   "label": "Pull request...",
+   "answer": "HEAD~3..HEAD",
+   "args": [
+    "pr",
+    "HEAD~3..HEAD"
+   ]
+  },
+  {
+   "base": null,
+   "label": "Uncommitted changes",
+   "answer": "  ",
+   "args": [
+    "-w"
+   ]
+  },
+  {
+   "base": null,
+   "label": "Last commit",
+   "answer": "  ",
+   "args": [
+    "-r",
+    "HEAD~1..HEAD"
+   ]
+  },
+  {
+   "base": null,
+   "label": "Pick commits",
+   "answer": "  ",
+   "args": []
+  },
+  {
+   "base": null,
+   "label": "Every tracked file",
+   "answer": "  ",
+   "args": [
+    "-A"
+   ]
+  },
+  {
+   "base": null,
+   "label": "Custom revset...",
+   "answer": "  ",
+   "args": null
+  },
+  {
+   "base": null,
+   "label": "Pull request...",
+   "answer": "  ",
+   "args": null
+  },
+  {
+   "base": null,
+   "label": "Uncommitted changes",
+   "answer": null,
+   "args": [
+    "-w"
+   ]
+  },
+  {
+   "base": null,
+   "label": "Last commit",
+   "answer": null,
+   "args": [
+    "-r",
+    "HEAD~1..HEAD"
+   ]
+  },
+  {
+   "base": null,
+   "label": "Pick commits",
+   "answer": null,
+   "args": []
+  },
+  {
+   "base": null,
+   "label": "Every tracked file",
+   "answer": null,
+   "args": [
+    "-A"
+   ]
+  },
+  {
+   "base": null,
+   "label": "Custom revset...",
+   "answer": null,
+   "args": null
+  },
+  {
+   "base": null,
+   "label": "Pull request...",
+   "answer": null,
+   "args": null
+  }
+ ]
+}

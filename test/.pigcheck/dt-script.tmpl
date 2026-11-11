@@ -1,0 +1,6 @@
+[{"tool":"write","args":{"path":"@@D@@/w.txt","content":"new content\nline 2\n"}},
+ {"tool":"edit","args":{"path":"@@D@@/e.ts","edits":[{"oldText":"const b = 2;","newText":"const b = 20;"}]}},
+ {"tool":"apply_patch","args":{"changes":[{"path":"@@D@@/p.ts","action":"update","oldText":"two","newText":"TWO"},{"path":"@@D@@/n.md","action":"add","content":"# fresh"}]}},
+ {"tool":"edit","args":{"path":"@@D@@/e.ts","oldText":"missing text","newText":"x"}},
+ {"tool":"edit","args":{"path":"@@D@@/e.ts","old_string":"    export const c = 3;","new_string":"export const c = 30;"}},
+ {"text":"tools done"}]
