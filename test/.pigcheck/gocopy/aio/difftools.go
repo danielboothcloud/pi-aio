@@ -334,9 +334,15 @@ func (u ctxUI) ApproveMutation(req pm.ApprovalRequest) (string, bool) {
 		Rows:    func() int { return max(ctx.Height(), 1) },
 		Columns: func() int { return max(ctx.Width(), 1) },
 	})
+	body := pm.MutationPromptBody
+	if outside != nil {
+		body = pm.OutsidePromptBody
+	}
+	end := beginAgentPrompt(ctx, "custom", "Approval needed", body, &header)
 	value, err := ctx.Custom(&approvalComponent{dialog: dialog}, sdk.RemoteOverlayOptions{Overlay: true, OverlayOptions: &sdk.OverlayOptions{
 		Anchor: "bottom-center", Width: sdk.OverlayPercent(100), MaxHeight: sdk.OverlayPercent(100), Margin: &sdk.OverlayMargin{},
 	}})
+	end()
 	if err != nil {
 		return "", false
 	}

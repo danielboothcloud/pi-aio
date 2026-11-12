@@ -127,12 +127,12 @@ without harm.
 | Order | Feature | TS lines | Status |
 |---|---|---|---|
 | 1 | blocklist | 1206 | Done. Golden parity on 297 commands and 3 rule sets, including JavaScript lookahead and backreference rules (`regexp2`, ECMAScript mode). The recipe tier comes from the active recipe, or from `AIO_RECIPE_BLOCKLIST` in subagent children. |
-| 2 | permission-modes | 1860 | Done, with the gaps below. Golden parity on 80 commands, 7 plan messages, 8 `apply_patch` inputs, 13 workspace-guard cases, 392 gate cases (4 modes, with and without UI, 6 answer sets), the todo tool, and 8 mode contexts. |
-| 3 | recipes (in-session part) | 3862 | Done, with the gaps below. Golden parity on 24 loads (6 folders, 4 trust combinations), model specs, branch scans, the shared trust store (Go reads what TypeScript writes), and trust prompt text. Selection precedence has unit tests. The launcher (`bin/aio-pig.mjs`) stays in Node; `AIO_PIG_EXTENSION=<repo>/go/aio` makes it load the Go extension. |
+| 2 | permission-modes | 1860 | Done, with the gaps below. Golden parity on 80 commands, 7 plan messages, 8 `apply_patch` inputs, 13 workspace-guard cases, 392 gate cases (4 modes, with and without UI, 6 answer sets, and the 115 agent-prompt events of the approval prompts), the todo tool, and 8 mode contexts. The diff overlay and the plan prompts emit the same agent-prompt events. |
+| 3 | recipes (in-session part) | 3862 | Done, with the gaps below. Golden parity on 24 loads (6 folders, 4 trust combinations), model specs, branch scans, the shared trust store (Go reads what TypeScript writes), and trust prompt text. Golden parity from the real `registerRecipes` handlers: 11 name suggestions, 13 `init` argument parses, 17 `.pi-recipe` scaffolds (byte for byte, in JavaScript key order), 22 `/recipe init` runs (blank, `--from`, picker, input, errors), 7 status reports with their text, JSON, and 56 chrome renders, 25 `/recipe status` and `/recipe-status` runs in 4 modes, 5 runs of recipes named like a subcommand, 7 session trust questions, 6 `--no-approve` trust reads, and 600 launch decisions (`decideRelaunch` in 6 environments). Selection precedence has unit tests. The launcher (`bin/aio-pig.mjs`) stays in Node; `AIO_PIG_EXTENSION=<repo>/go/aio` makes it load the Go extension. Checked in the PiG fork in JSON, RPC, and TUI mode. |
 | 4 | styles, effort, notifications, session-naming | 1468 | Done, with the gaps below. Golden parity: styles (16 mode contexts, parsing, context filter, command notices), effort (30 parses, 144 payload overrides, 196 level reconciles, completions), notifications (33 text-cleaning cases, settings normalization, 6 backend delivery paths, 14 event scenarios including `/notify`), session-naming (15 titles, 10 eligibility and prompt flows). |
-| 5 | goals, btw | 1905 | Done, with the gaps below. Golden parity: goals (8 branch reads, 12 argument parses, 6 completion sets, 16 review parses, 7 one-line texts, 16 status cases, 5 descriptions, 5 prompts, 9 latest-entry reads, 7 workspace snapshots, and 18 scenarios with 191 steps through the real `registerGoals`), btw (88 digests, 11 prompts, 11 sanitize cases, 10 outcomes, 70 box and card renders, 8 snapshots, 4 command scenarios). |
+| 5 | goals, btw | 1905 | Done. Golden parity: goals (8 branch reads, 12 argument parses, 6 completion sets, 16 review parses, 7 one-line texts, 16 status cases, 5 descriptions, 5 prompts, 9 latest-entry reads, 7 workspace snapshots, and 18 scenarios with 191 steps through the real `registerGoals`, with their 210 notification events: goal activity, "needs attention", "complete", and the `goal_propose` agent prompt, and 15 draft card renders in the shared chrome), btw (88 digests, 11 prompts, 11 sanitize cases, 10 outcomes, 70 box and card renders and 24 more in the chrome colors, 8 snapshots, 4 command scenarios with their "Side answer ready" and "Side question failed" signals). |
 | 6 | subagents | 4288 | Done, with the gaps below. Golden parity: agent discovery (3 trees, 16 invalid files, embedded builtins checked against `subagents/agents`), child extension launch (7 argv cases, 3 enforce cases), activity (23 events, 420 formats, durations, argument summaries), transcripts (6 event scripts with budgets, clipping, sanitizing), history restore (19 branch entries, 50-run cap), 8 saved transcripts, 7 spawn specs, run results and progress, 16 widget renders, 40 transcript renders, 10 inspector scripts (72 frames with keys), and 11 real runner scenarios with `subagents/test-fixture-child.mjs` (retry, timeout, quota, settle reaping, spawn failure). Manual resume has a Go test. Shared packages: `chrome` (port of `ui/chrome.ts`, 900 renders), `piargs` (Pi's `parseArgs`, 57 argv cases), `tuiwidth` (copy of the SDK's pi-tui width code), `jsstr` (JavaScript string helpers, moved from btw). |
-| 7 | rtk, hypa, user-bash, ast-grep, nvim, tuicr, init | 4220 | Done, with the gaps below. Golden parity: init (24 prompts), rtk and user-bash (16 commands, 12 editor texts), ast-grep (18 inputs, 12 summaries, 20 process outcomes, 3 results including truncation), nvim with the shared `toolpaths` package (45 command runs, 16 tool inputs, launcher argv), tuicr (7 fake worlds, 42 picker choices), hypa (18 configs, 14 timeout injections, binary resolution, command builders, image sniffing, 12 tool runs including UTF-16 truncation). |
+| 7 | rtk, hypa, user-bash, ast-grep, nvim, tuicr, init | 4220 | Done, with the gaps below. Golden parity: init (24 prompts), rtk and user-bash (16 commands, 12 editor texts), ast-grep (18 inputs, 12 summaries, 20 process outcomes, 3 results including truncation), nvim with the shared `toolpaths` package (45 command runs, 16 tool inputs, launcher argv), tuicr (7 fake worlds, 42 picker choices), hypa (18 configs, 14 timeout injections, binary resolution, command builders, image sniffing, 12 tool runs including UTF-16 truncation, and the `hypa_mcp_proxy` bridge: 6 Pi `mcp.json` reads, 34 bridge runs through the real `registerHypaMcpProxyBridge` with a scripted exec, and its registration and schema). The bridge was checked in the PiG fork with a mock `hypa` binary. |
 | 8 | pretty-tools, diff-tools, copy-widget | 11012 | Done, with the gaps below. Golden parity: jsdiff (289 line diffs, 1156 patches, 625 word diffs from the npm `diff` package), xxHash32 (469 hashes from `xxhash-wasm`), and diff-tools (30 `parseDiff` and 8 patch parses, 108 separator labels, 37 cascading replaces, 19 `replaceForPatch` cases, 20 Cursor argument sets, 6 `apply_patch` fixture scenarios with rollback, 8 encodings, 8 conflict files, 9 hashline files and 25 anchor edits, 36 mutation previews, 7 edit-guard calls, 5 config folders, a fixture git repository and 5 git parses, 16 tool executes, 156 tool-card renders, 160 split and unified renders, 12 review hunks, 3 preset renders, and 80 approval overlay and select cases with key sequences). The approval overlay replaces the permission-modes `ctx.Select` preview in the TUI. pretty-tools (13 background steps, icons and languages, 84 background fills, 52 grep-guard commands, 11 find globs, the rtk tool-routing helpers (7 truncations, 5 line limits, 6 exit checks), 12 autocomplete cases with a mock finder, 4 tool registrations, 15 lifecycle steps, 44 tool executes with scripted rtk runs and built-in tools, and 516 tool-card renders at 4 widths, collapsed, expanded, and error). copy-widget (43 Markdown samples through the real marked-based `parse.ts`, 8 labels, 84 preview renders of the pi-tui `Markdown` component, 14 picker scenarios with 63 key frames and 119 renders, and 11 `/pick` and `ctrl+p` flows with clipboard results). |
 | 9 | ask-user-question | 5260 | Done, with the gaps below. Golden parity: rpiv-config (108 config loads over 8 fixture HOME folders and 9 `XDG_CONFIG_HOME` values, 16 guidance checks), tool metadata and schema (3 guidance configs), 6 sanitize and 12 validation cases, 8 answer segments, 7 response envelopes, 8 item lists, 27 collapse keys, 49 layout and 8 box cases, pi-tui `Input` (10 key scripts, 76 steps, 380 renders), 16 reducer cases, 21 questionnaire scenarios (172 key frames with actions and state, 573 renders at 2 to 5 terminal sizes from 160x50 to 12x10), 16 RPC dialog walks, 4 reconciles, and 24 tool executes through a mock host (64 overlay frames, events, terminal-input listener, collapse, notices). A Go test covers PiG's key routing (the overlay gets a key before the terminal-input listeners). |
 | 10 | browser-search | 3377 | Done, with a deliberate divergence and the gaps below. Golden parity: 21 environment sets and the main environment, 20 settings merges, 14 settings loads (7 folders, trusted and untrusted, V8 parse-error texts), 98 URL validations (WHATWG host parsing, IPv4 and IPv6 forms, IDNA), 13 DNS checks with a fixed resolver table, 26 challenge detections, 13 challenge-content checks, 19 SearXNG and 22 Exa searches against a local scripted server (requests, bodies, timeouts, odd JSON), 26 Camofox flows (requests, auth headers, sleeps, snapshot fallback, tab clean-up), 12 `fetchSingleUrl` cases that end at the Camofox container, tool registrations, 7 session-start and 4 dependency cases, and 35 tool executes with updates. The embedded `Readability.js` is checked against `@mozilla/readability`. The fetch chain after the container is Go-only: a local Camoufox worker and a plain HTTP fallback replace CloakBrowser (see "Camoufox worker"). Go tests cover the worker protocol and lifecycle with a fake worker, the HTTP fallback against local servers, and the notices. The SSRF rule list is shared through `testdata/browser-policy.json`, which the Python unit tests read. An opt-in test (`AIO_CAMOUFOX_E2E=1`) runs the real worker against local pages. |
@@ -146,26 +146,27 @@ Some gaps come from limits of PiG 0.7.0 and its Go SDK. See
 
 These gaps close when the related feature is ported:
 
-- **permission-modes:** The approval prompts emit no agent-prompt event
-  (notifications). The TUI uses the diff-tools overlay. RPC uses `ctx.Select`
-  with the same plain diff preview as TypeScript.
 - **permission-modes:** Relative paths resolve against the session cwd only.
   The Go process's own working directory is not the host's tool base.
 
-- **recipes:** `/recipe init`, `/recipe status`, and `/recipe-status` are
-  not ported; they tell you to use them from pi.
-- **recipes:** A new or changed `.pi-recipe` gets a "run /recipe trust" hint
-  in the session, not a selector. The launcher still asks on the terminal.
-- **recipes:** The launch notes that depend on argv and `--no-approve` are
-  not read yet. A Go extension can read pig's argv from
-  `PIG_HARNESS_ARGV_FILE` (`piargs.HarnessArgv`, used by subagents), so
-  this gap can close. The empty-scope check uses the recipe's own
-  `models`, and it stops pig with `ctx.Shutdown()`, not a process exit.
-- **recipes:** A live `/recipe` switch reports the recipe's `style` as not
-  applied, because styles is not ported. The starting style is published but
-  has no Go consumer yet.
-- **recipes:** Name sorting approximates `localeCompare` (case-insensitive,
-  then bytes). MCP servers register in name order.
+- **recipes:** A Go extension cannot read the terminal before pig's TUI
+  starts, so a new or changed `.pi-recipe` is asked about in the session
+  (a select), not on the terminal (`PIG-LIMITS.md`, limit 10). The
+  `bin/aio-pig.mjs` launcher still asks on the terminal before pig starts.
+- **recipes:** In print and JSON mode, the `/recipe status` text, the
+  trust hint, and the empty-scope message go to the extension stderr,
+  which PiG does not show (limit 8). The status report is still a session
+  entry, and JSON mode prints it as `entry_appended`.
+- **recipes:** The empty-scope stop exits with status 1 only in a pig
+  whose SDK has `Context.ShutdownWithCode` (PiG D236). An older pig gets
+  `ctx.Shutdown()`, which print and JSON mode ignore (limit 9).
+- **recipes:** The `resumed recipe` launch note for `--continue`,
+  `--session`, and `--session-id` reads the opened session's branch at
+  session start. TypeScript resolves the session in the factory; the
+  session is the same.
+- **recipes:** Name sorting approximates `localeCompare` (base letters,
+  then accents, then case, then bytes). MCP servers register in name
+  order.
 
 - **effort:** Print-mode notices go through `ctx.Notify`, not
   stdout/stderr. The `reasoning_effort` override
@@ -173,13 +174,7 @@ These gaps close when the related feature is ported:
   Codex responses use `reasoning.effort` and are unchanged.
 - **notifications:** The terminal fallback (OSC 777/99 and the bell) writes
   to `/dev/tty`, because the Go extension's stdout is the wire to the PiG
-  host. Go producers (permission prompts, goals) do not emit agent-prompt
-  or goal events yet; Node producers on the shared event bus still do.
-- **goals:** No AIO notification events (goal activity, "needs
-  attention", "complete", agent prompts). The draft card is plain text
-  without `ui/chrome`, and the footer status has no theme tone.
-- **btw:** No AIO notification events. The box and the card have no theme
-  colors.
+  host.
 - **subagents:** Children run `$PIG_HARNESS_BINARY` (pig). The parent's
   `-ne`/`-e` flags come from `PIG_HARNESS_ARGV_FILE`; a `-ne` child lists
   the Go extension directory (from the extension source info) instead of
@@ -299,8 +294,9 @@ These gaps close when the related feature is ported:
   but the parse error text is Go's. The warning goes to the extension's
   stderr. The schema is the same JSON Schema, but its object keys are in
   Go map order.
-- **ask-user-question:** Agent-prompt event ids come from a counter in
-  `go/aio`. yaml-hooks has its own counter, and Node producers have theirs.
+- **ask-user-question:** Agent-prompt event ids come from one counter in
+  `go/aio` (ask-user-question, goals, permission and plan prompts).
+  yaml-hooks has its own counter, and Node producers have theirs.
 
 - **browser-search:** The fetch chain differs from TypeScript on purpose.
   Go tries the Camofox container only when `BROWSER_SEARCH_CAMOFOX_BASE`
@@ -389,6 +385,11 @@ These gaps close when the related feature is ported:
   command (limit 5). The command is then in the editor history. Without
   an AIO editor (for example in RPC mode) the `--sessions` picker does not
   open.
+- **hypa:** The `hypa_mcp_proxy` details data is a Go map, so its keys
+  are sorted. The tool text, the invoke arguments (read from
+  `ctx.ToolInput()`), and the printed schemas keep the JavaScript order.
+  The default Pi `mcp.json` for deduplication is `~/.pi/agent/mcp.json`,
+  as in TypeScript.
 - **user-bash:** The `user-bash` status is sent only when it changes;
   TypeScript sets it after every key in-process.
 

@@ -1,0 +1,26 @@
+{
+  "defaultRecipe": "svc",
+  "recipes": {
+    "svc": {
+      "description": "Work setup with the fixture model",
+      "model": "fixture/m1:low",
+      "models": [
+        "fixture/m1"
+      ],
+      "mcpServers": {
+        "linear": {
+          "url": "https://mcp.example.invalid/linear",
+          "headers": {
+            "Authorization": "Bearer x"
+          }
+        }
+      },
+      "extensions": [],
+      "blocklist": {
+        "entries": []
+      },
+      "permissionMode": "plan",
+      "style": "concise"
+    }
+  }
+}

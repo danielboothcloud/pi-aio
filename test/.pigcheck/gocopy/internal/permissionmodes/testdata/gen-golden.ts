@@ -42,9 +42,16 @@ function harness(answers: Array<string | undefined>, hasUI: boolean, provider = 
 	const tools = new Map<string, { execute: (...args: unknown[]) => Promise<unknown> }>();
 	const prompts: string[] = [];
 	const notes: string[] = [];
+	const events: unknown[] = [];
 	const queue = [...answers];
 	const pi = {
 		appendEntry: () => {},
+		// Notification agent-prompt events (withAgentPrompt); aio:ui-state is not recorded.
+		events: {
+			emit: (name: string, payload: unknown) => {
+				if (name.startsWith("aio:notification")) events.push({ name, payload });
+			},
+		},
 		getActiveTools: () => ["read", "edit", "write", "bash"],
 		on: (event: string, handler: (event: unknown, ctx: unknown) => Promise<unknown>) => {
 			handlers.set(event, [...(handlers.get(event) ?? []), handler]);
@@ -65,6 +72,7 @@ function harness(answers: Array<string | undefined>, hasUI: boolean, provider = 
 		cwd,
 		hasUI,
 		model: { provider, id: "m" },
+		sessionManager: { getSessionId: () => "s" },
 		ui: {
 			notify: (message: string) => notes.push(message),
 			select: async (prompt: string) => {
@@ -78,7 +86,7 @@ function harness(answers: Array<string | undefined>, hasUI: boolean, provider = 
 		},
 	};
 	registerPermissionModes(pi as never, ["node", "pi"]);
-	return { handlers, commands, tools, prompts, notes, ctx };
+	return { handlers, commands, tools, prompts, notes, events, ctx };
 }
 
 // ---- pure functions ----
@@ -174,7 +182,7 @@ for (const mode of ["default", "ask", "plan", "auto"]) {
 				gate.push(placeholders({
 					mode, hasUI, answers: answers.map((a) => a ?? null), tool: call.tool, id: event.toolCallId, input: call.input,
 					result: result ?? null, again: again ?? null,
-					prompts: h.prompts.map((p) => p.split("\n\n")[0]), notes: h.notes,
+					prompts: h.prompts.map((p) => p.split("\n\n")[0]), notes: h.notes, events: h.events,
 					modeAfter: getPermissionModeAccess()?.getMode(),
 				}));
 			}

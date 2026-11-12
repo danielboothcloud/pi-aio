@@ -11,6 +11,7 @@ require (
 	github.com/yuin/goldmark v1.8.7
 	go.yaml.in/yaml/v3 v3.0.6
 	golang.org/x/net v0.62.0
+	golang.org/x/text v0.43.0
 )
 
 require (
@@ -19,7 +20,6 @@ require (
 	github.com/go-shiori/dom v0.0.0-20230515143342-73569d674e1c // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
 	github.com/itlightning/dateparse v0.2.1 // indirect
-	golang.org/x/text v0.43.0 // indirect
 )
 
 replace github.com/MichaelKinsy/PiG/extensions/sdk => /Users/danielbooth/projects/work/danielboothcloud/PiG/extensions/sdk

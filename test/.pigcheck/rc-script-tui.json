@@ -1,0 +1,4 @@
+[{"text": "The largest file is go.mod."},
+ {"tool": "goal_propose", "args": {"objective": "Ship it", "doneWhen": "tests pass"}},
+ {"tool": "goal_blocked", "args": {"reason": "need a decision"}},
+ {"text": "paused"}]

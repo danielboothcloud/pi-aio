@@ -109,6 +109,8 @@ async function runScenario(name: string, options: Options, steps: Step[]): Promi
 		registerCommand: (name: string, command: any) => commands.set(name, command),
 		registerTool: (tool: any) => tools.set(tool.name, tool),
 		registerMessageRenderer: () => {},
+		// Notification protocol events (goal activity, signals, agent prompts).
+		events: { emit: (name: string, payload: unknown) => log.push({ op: "event", name, payload }) },
 		appendEntry: (customType: string, data: unknown) => {
 			entries.push({ type: "custom", customType, data });
 			log.push({ op: "append", customType, data });
@@ -239,6 +241,22 @@ const goalEntry = (goal: unknown) => ({ type: "custom", customType: "aio-goal", 
 const propose = { op: "tool", name: "goal_propose", params: { objective: "  Add a dark mode toggle ", doneWhen: " Toggle works; npm test passes " } } as const;
 const done = (summary = "Added the toggle; npm test passes.") => ({ op: "tool", name: "goal_done", params: { summary } }) as const;
 const settles = (count: number, outcome = "completed"): Step[] => Array.from({ length: count }, () => ({ op: "settle", outcome }));
+
+// The draft card: the real message renderer with a tagged theme.
+let draftRenderer: ((message: unknown, options: unknown, theme: unknown) => { render(width: number): string[] } | undefined) | undefined;
+registerGoals({
+	on: () => {}, registerCommand: () => {}, registerTool: () => {}, appendEntry: () => {}, sendMessage: () => {}, exec: async () => ({}),
+	registerMessageRenderer: (_type: string, renderer: typeof draftRenderer) => { draftRenderer = renderer; },
+} as never);
+const tagged = { fg: (role: string, text: string) => `<${role}>${text}</>`, bold: (text: string) => `*${text}*` };
+const draftCards: unknown[] = [];
+for (const text of ["make it faster", "a much longer goal text that wraps over several rows of the card ünïcödé 🎉", ""]) {
+	for (const width of [0, 1, 8, 30, 80]) {
+		const component = draftRenderer!({ details: { kind: "draft", text } }, {}, tagged);
+		draftCards.push({ text, width, rows: component!.render(width) });
+	}
+}
+const otherKind = draftRenderer!({ details: { kind: "continue", text: "x" } }, {}, tagged) ?? null;
 
 const scenarios = [
 	await runScenario("happy path with UI", { exec: [...GIT_OK] }, [
@@ -539,6 +557,8 @@ const output = `${JSON.stringify(
 		latest,
 		workspace: workspaceCases,
 		scenarios,
+		draftCards,
+		otherKind,
 	},
 	null,
 	1,

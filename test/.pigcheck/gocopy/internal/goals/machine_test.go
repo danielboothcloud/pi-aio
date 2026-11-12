@@ -33,6 +33,10 @@ func (h *quietHost) IsIdle() bool                { return true }
 func (h *quietHost) Abort()                      {}
 func (h *quietHost) Branch() []json.RawMessage   { return nil }
 func (h *quietHost) HasModel() bool              { return true }
+func (h *quietHost) Mode() string                { return "tui" }
+func (h *quietHost) SessionID() string           { return "s" }
+func (h *quietHost) Emit(string, map[string]any) {}
+func (h *quietHost) NextPromptID() int           { return 1 }
 func (h *quietHost) Exec(string, []string) (string, int, error) {
 	return "", 0, nil
 }

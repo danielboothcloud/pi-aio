@@ -2,7 +2,10 @@ package btw
 
 import (
 	"encoding/json"
+	"strconv"
 	"sync"
+
+	notify "github.com/danielboothcloud/pi-aio/go/internal/notifications"
 )
 
 // DefaultAnswerCardMs is how long the answered card stays above the editor.
@@ -24,6 +27,22 @@ type Host interface {
 	AppendEntry(data EntryData) error
 	// Now is the wall clock in milliseconds.
 	Now() float64
+	// SessionID and Emit carry the notification signals (pi.events.emit).
+	SessionID() string
+	Emit(event string, payload map[string]any)
+}
+
+// signal is emitNotification for a /btw outcome (notifications/protocol.ts):
+// a background signal, sent only in the TUI and never from a child.
+func signal(h Host, run *Run, title, body, preview string) {
+	mode := ""
+	if h.IsTUI() {
+		mode = "tui"
+	}
+	if !notify.SignalAllowed(mode) {
+		return
+	}
+	h.Emit(notify.NotificationEvent, notify.SignalPayload("background", "btw:"+strconv.Itoa(run.Seq), h.SessionID(), title, body, &preview, nil))
 }
 
 // AskInput is the context of one side question.
@@ -136,6 +155,7 @@ func (r *Runner) finish(h Host, run *Run, outcome Outcome, latencyMs float64) {
 	r.syncAsking(h, nil)
 	tui := h.HasUI() && h.IsTUI()
 	if outcome.Error != "" {
+		signal(h, run, "Side question failed", "The background side question could not be answered.", outcome.Error)
 		h.StopCardTimer()
 		if tui {
 			h.ClearCard()
@@ -151,6 +171,7 @@ func (r *Runner) finish(h Host, run *Run, outcome Outcome, latencyMs float64) {
 		Usage: outcome.Usage, LatencyMs: latencyMs, Timestamp: now,
 	}
 	_ = h.AppendEntry(data)
+	signal(h, run, "Side answer ready", "Your /btw answer is ready in Pi.", outcome.Answer)
 	if h.HasUI() {
 		h.Notify(ToastText(r.layout, data), "info")
 	}

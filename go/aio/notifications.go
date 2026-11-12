@@ -5,8 +5,10 @@ package aio
 //   - The terminal fallback (OSC 777/99 and the bell) writes to /dev/tty.
 //     The Go extension's stdout is the wire to the PiG host, so writing
 //     escape sequences there would break the extension protocol.
-//   - Producers in Go (permission prompts, goals) do not emit agent-prompt
-//     or goal events yet; Node producers on the shared event bus still do.
+//
+// The producer helpers below (sessionID, emitNotification, withAgentPrompt)
+// are the port of notifications/protocol.ts. Go producers (goals, btw,
+// permission prompts, subagents) emit through them on the event bus.
 
 import (
 	"context"
@@ -25,6 +27,50 @@ import (
 )
 
 func init() { addRegistrar(OrderNotifications, "notifications", registerNotifications) }
+
+// sessionID is ctx.sessionManager.getSessionId(); "" when the host cannot
+// answer.
+func sessionID(ctx sdk.Context) string {
+	id, _ := ctx.GetSessionID()
+	return id
+}
+
+// emitNotification is protocol.ts emitNotification: a human-only signal,
+// sent only in the TUI and never from a subagent child. preview is omitted
+// when "" is not wanted: pass nil.
+func emitNotification(ctx sdk.Context, category, id, title, body string, preview *string, replacesCompletion bool) {
+	defer func() { _ = recover() }() // observability must never change the producer
+	if !notify.SignalAllowed(ctx.Mode()) {
+		return
+	}
+	var replaces *bool
+	if replacesCompletion {
+		replaces = &replacesCompletion
+	}
+	_ = ctx.Events().Emit(notify.NotificationEvent, notify.SignalPayload(category, id, sessionID(ctx), title, body, preview, replaces))
+}
+
+// beginAgentPrompt is the first half of protocol.ts withAgentPrompt: it
+// emits the agent-prompt event with active true and returns the function
+// that emits it with active false. The id comes from agentPromptSeq, the
+// counter ask-user-question uses.
+func beginAgentPrompt(ctx sdk.Context, kind, title, body string, preview *string) (end func()) {
+	id := int(agentPromptSeq.Add(1))
+	session := sessionID(ctx)
+	emit := func(active bool) {
+		defer func() { _ = recover() }() // the dialog must work without observers
+		_ = ctx.Events().Emit(notify.AgentPromptEvent, notify.AgentPromptPayload(kind, title, body, preview, id, session, active))
+	}
+	emit(true)
+	return func() { emit(false) }
+}
+
+// withAgentPrompt is protocol.ts withAgentPrompt: it marks an agent-owned
+// dialog with the agent-prompt event (active true, then false) around show.
+func withAgentPrompt[T any](ctx sdk.Context, kind, title, body string, preview *string, show func() T) T {
+	defer beginAgentPrompt(ctx, kind, title, body, preview)()
+	return show()
+}
 
 func runProgram(ctx context.Context, bin string, args []string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)

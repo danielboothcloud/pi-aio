@@ -212,6 +212,30 @@ type MutationApprover interface {
 	ApproveMutation(req ApprovalRequest) (decision string, ok bool)
 }
 
+// PromptMarker is an optional UI extension: it marks an agent-owned dialog
+// with the notification agent-prompt event (notifications/protocol.ts
+// withAgentPrompt). The returned function ends the mark.
+type PromptMarker interface {
+	MarkAgentPrompt(kind, title, body, preview string) (done func())
+}
+
+// agentSelect is ui.Select inside withAgentPrompt (kind "select",
+// title "Approval needed").
+func agentSelect(ui UI, body, preview, title string, options []string) (string, bool) {
+	if marker, ok := ui.(PromptMarker); ok {
+		done := marker.MarkAgentPrompt("select", "Approval needed", body, preview)
+		defer done()
+	}
+	return ui.Select(title, options)
+}
+
+// Agent-prompt bodies (approval-dialog.ts showMutationApproval, index.ts).
+const (
+	MutationPromptBody = "The agent is waiting for permission to change files."
+	OutsidePromptBody  = "The agent wants to change files outside its working directory."
+	ShellPromptBody    = "The agent is waiting for permission to run a command."
+)
+
 // UI is the part of the host that the gate needs.
 type UI interface {
 	HasUI() bool
@@ -255,7 +279,7 @@ func (g *Gate) approveOutside(ui UI, tool string, input map[string]any, cwd stri
 		decision, handled = approver.ApproveMutation(ApprovalRequest{Tool: tool, Input: input, Path: shown, Cwd: cwd, Outside: &OutsideInfo{Cwd: cwd, Scopes: scopes}})
 	}
 	if !handled {
-		switch choice, _ := ui.Select(OutsideBody(cwd, scopes)+"\n"+ApprovalPrompt(tool, shown, input, cwd), OutsideOptions); choice {
+		switch choice, _ := agentSelect(ui, OutsidePromptBody, shown, OutsideBody(cwd, scopes)+"\n"+ApprovalPrompt(tool, shown, input, cwd), OutsideOptions); choice {
 		case OutsideOptions[1]:
 			decision = DecisionAllowScope
 		case OutsideOptions[0]:
@@ -325,7 +349,7 @@ func (g *Gate) Check(ui UI, tool, toolCallID string, input map[string]any, cwd s
 			}
 		}
 		if !handled {
-			switch choice, _ := ui.Select(ApprovalPrompt(tool, path, input, cwd), ApprovalOptions); choice {
+			switch choice, _ := agentSelect(ui, MutationPromptBody, path, ApprovalPrompt(tool, path, input, cwd), ApprovalOptions); choice {
 			case ApprovalOptions[1]:
 				decision = DecisionAllowAll
 			case ApprovalOptions[0]:
@@ -351,7 +375,7 @@ func (g *Gate) Check(ui UI, tool, toolCallID string, input map[string]any, cwd s
 		if !ui.HasUI() {
 			return blocked(tool + " blocked: no UI to confirm.")
 		}
-		if choice, _ := ui.Select(fmt.Sprintf("Allow %s \"%s\"?", tool, cmd), ShellOptions); choice == "Allow" {
+		if choice, _ := agentSelect(ui, ShellPromptBody, cmd, fmt.Sprintf("Allow %s \"%s\"?", tool, cmd), ShellOptions); choice == "Allow" {
 			return Verdict{}
 		}
 		return blocked(tool + " blocked by user")

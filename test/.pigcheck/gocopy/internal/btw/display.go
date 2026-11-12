@@ -52,13 +52,29 @@ func padToWidth(l Layout, text string, width int) string {
 	return fitted + strings.Repeat(" ", pad)
 }
 
+// Theme is the foreground part of ui/chrome ChromeTheme.
+type Theme interface {
+	Fg(role, text string) string
+}
+
+// PlainTheme leaves text uncolored (the identity theme).
+type PlainTheme struct{}
+
+// Fg returns text unchanged.
+func (PlainTheme) Fg(_, text string) string { return text }
+
 // FrameRule is the plain (uncolored) form of ui/chrome chromeFrameRule.
 func FrameRule(l Layout, width int, edge, label string) string {
+	return frameRule(l, PlainTheme{}, width, edge, label)
+}
+
+// frameRule is ui/chrome chromeFrameRule.
+func frameRule(l Layout, t Theme, width int, edge, label string) string {
 	if width <= 0 {
 		return ""
 	}
 	if width <= 4 {
-		return divider(l, width, label)
+		return divider(l, t, width, label)
 	}
 	left, right := "├", "┤"
 	switch edge {
@@ -76,31 +92,34 @@ func FrameRule(l Layout, width int, edge, label string) string {
 	if fill < 0 {
 		fill = 0
 	}
-	return left + title + strings.Repeat("─", fill) + right
+	return t.Fg("borderMuted", left+title+strings.Repeat("─", fill)+right)
 }
 
-// divider is the plain form of ui/chrome chromeDivider.
-func divider(l Layout, width int, label string) string {
+// divider is ui/chrome chromeDivider.
+func divider(l Layout, t Theme, width int, label string) string {
 	if width <= 0 {
 		return ""
 	}
 	if label == "" {
-		return strings.Repeat("─", width)
+		return t.Fg("borderMuted", strings.Repeat("─", width))
 	}
-	prefix := FitLine(l, "─ "+label+" ", width, "")
-	fill := width - l.Width(prefix)
-	if fill < 0 {
-		fill = 0
-	}
-	return prefix + strings.Repeat("─", fill)
+	decorated := "─ " + label + " "
+	suffix := strings.Repeat("─", max(0, width-Len16(decorated)))
+	return FitLine(l, t.Fg("borderMuted", decorated+suffix), width, "")
 }
 
 // FrameRow is the plain form of ui/chrome chromeFrameRow.
 func FrameRow(l Layout, text string, width int) string {
+	return frameRow(l, PlainTheme{}, text, width)
+}
+
+// frameRow is ui/chrome chromeFrameRow.
+func frameRow(l Layout, t Theme, text string, width int) string {
 	if width <= 4 {
 		return FitLine(l, text, width, "")
 	}
-	return "│ " + padToWidth(l, text, width-4) + " │"
+	border := t.Fg("borderMuted", "│")
+	return border + " " + padToWidth(l, text, width-4) + " " + border
 }
 
 // EntryData is the `by-the-way` entry: the transcript box.
@@ -163,21 +182,27 @@ func metaParts(data EntryData) string {
 	return strings.Join(parts, " · ")
 }
 
-func questionRow(l Layout, question string, width int) string {
+func questionRow(l Layout, t Theme, question string, width int) string {
 	inner := width - 4
-	return FrameRow(l, glyphQuestion+" "+FitLine(l, question, max(1, inner-3), "…"), width)
+	return frameRow(l, t, t.Fg("accent", glyphQuestion+" "+FitLine(l, question, max(1, inner-3), "…")), width)
 }
 
-// BoxRows renders the permanent transcript box.
+// BoxRows renders the permanent transcript box uncolored.
 func BoxRows(l Layout, data EntryData, width int) []string {
+	return ThemedBoxRows(l, PlainTheme{}, data, width)
+}
+
+// ThemedBoxRows is btw/display.ts buildBtwBoxRows: the transcript box in
+// the shared chrome colors.
+func ThemedBoxRows(l Layout, t Theme, data EntryData, width int) []string {
 	if width <= 4 {
 		return nil
 	}
-	rows := []string{FrameRule(l, width, "top", boxLabel), questionRow(l, data.Question, width), FrameRow(l, "", width)}
+	rows := []string{frameRule(l, t, width, "top", boxLabel), questionRow(l, t, data.Question, width), frameRow(l, t, "", width)}
 	for _, line := range l.Wrap(data.Answer, max(1, width-4)) {
-		rows = append(rows, FrameRow(l, line, width))
+		rows = append(rows, frameRow(l, t, t.Fg("text", line), width))
 	}
-	rows = append(rows, FrameRule(l, width, "bottom", ""), FitLine(l, "· "+metaParts(data), width, "…"))
+	rows = append(rows, frameRule(l, t, width, "bottom", ""), FitLine(l, t.Fg("dim", "· "+metaParts(data)), width, "…"))
 	return rows
 }
 
@@ -201,37 +226,43 @@ func lastSegment(s string) string {
 	return s
 }
 
-// CardRows renders the card at now (milliseconds); it never exceeds
-// MaxCardRows rows.
+// CardRows renders the card uncolored at now (milliseconds); it never
+// exceeds MaxCardRows rows.
 func CardRows(l Layout, card Card, width int, now float64) []string {
+	return ThemedCardRows(l, PlainTheme{}, card, width, now)
+}
+
+// ThemedCardRows is btw/display.ts buildBtwCardRows: the card in the
+// shared chrome colors.
+func ThemedCardRows(l Layout, t Theme, card Card, width int, now float64) []string {
 	if width <= 4 {
 		return nil
 	}
-	rows := []string{FrameRule(l, width, "top", boxLabel), questionRow(l, card.Question, width)}
+	rows := []string{frameRule(l, t, width, "top", boxLabel), questionRow(l, t, card.Question, width)}
 	if card.Pending {
 		elapsed := int64(0)
 		if now > card.StartedAt {
 			elapsed = int64((now - card.StartedAt) / 1000)
 		}
-		rows = append(rows, FrameRow(l, fmt.Sprintf("%s asking %s · %ds", glyphAsking, lastSegment(card.Model), elapsed), width))
-		return append(rows, FrameRule(l, width, "bottom", ""))
+		rows = append(rows, frameRow(l, t, t.Fg("muted", fmt.Sprintf("%s asking %s · %ds", glyphAsking, lastSegment(card.Model), elapsed)), width))
+		return append(rows, frameRule(l, t, width, "bottom", ""))
 	}
 	answer := l.Wrap(card.Answer, max(1, width-4))
-	rows = append(rows, FrameRow(l, "", width))
+	rows = append(rows, frameRow(l, t, "", width))
 	if len(answer) > MaxCardAnswerRows {
 		shown := answer[:MaxCardAnswerRows-1]
 		for _, line := range shown {
-			rows = append(rows, FrameRow(l, line, width))
+			rows = append(rows, frameRow(l, t, t.Fg("text", line), width))
 		}
-		rows = append(rows, FrameRow(l, fmt.Sprintf("…+%d more lines (full answer in the transcript)", len(answer)-len(shown)), width))
+		rows = append(rows, frameRow(l, t, t.Fg("dim", fmt.Sprintf("…+%d more lines (full answer in the transcript)", len(answer)-len(shown))), width))
 	} else {
 		for _, line := range answer {
-			rows = append(rows, FrameRow(l, line, width))
+			rows = append(rows, frameRow(l, t, t.Fg("text", line), width))
 		}
 	}
-	rows = append(rows, FrameRule(l, width, "bottom", ""))
+	rows = append(rows, frameRule(l, t, width, "bottom", ""))
 	hideIn := ceilSeconds(card.DismissAt - now)
-	return append(rows, FitLine(l, fmt.Sprintf("· auto-hides in %ds", hideIn), width, "…"))
+	return append(rows, FitLine(l, t.Fg("dim", fmt.Sprintf("· auto-hides in %ds", hideIn)), width, "…"))
 }
 
 func ceilSeconds(ms float64) int64 {

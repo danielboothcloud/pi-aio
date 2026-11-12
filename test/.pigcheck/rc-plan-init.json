@@ -1,0 +1,3 @@
+{"answers": [{"match": "Create .pi-recipe", "value": "Copy work — Work setup with the fixture model"}, {"match": "Recipe name for this folder", "value": "svc"}],
+ "steps": [{"prompt": "/recipe init"}, {"prompt": "/recipe status --json"}, {"prompt": "/recipe-status"}, {"prompt": "/recipe-status --bad"}, {"prompt": "/recipe svc"}, {"prompt": "/recipe-status --json"}],
+ "stderr": "rc-rpc-init.err"}

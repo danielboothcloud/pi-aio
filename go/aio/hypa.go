@@ -3,9 +3,13 @@ package aio
 // hypa wiring (port of hypa/index.ts and tools.ts; vendored from
 // @hypabolic/pi-hypa 0.1.15, FSL-1.1-ALv2 — see hypa/LICENSE-FSL).
 //
+// The optional hypa_mcp_proxy bridge (mcp-proxy-bridge.ts, off by default)
+// registers when mcpProxyEnabled or HYPA_PI_ENABLE_MCP_PROXY turns it on;
+// the logic is go/internal/hypa ExecuteMcpProxy.
+//
 // Differences from TypeScript:
-//   - The MCP proxy bridge (off by default) is not ported; when a config
-//     turns it on, the session gets a warning.
+//   - The bridge's details data is a Go map (sorted keys); the text, the
+//     invoke arguments, and the printed schemas keep the JavaScript order.
 //   - A broken hypa config file does not stop the extension from loading.
 //     The session gets a warning and hypa uses the env and the defaults.
 //   - The hypa_* tools have no custom TUI renderers; PiG draws its default
@@ -268,6 +272,10 @@ func registerHypa(e *sdk.Extension) {
 		})
 	}
 
+	if s.config.McpProxyEnabled {
+		registerHypaMcpProxy(e, s, home)
+	}
+
 	if s.config.Mode == "replace" {
 		e.OnEvent("before_agent_start", func(ctx sdk.Context, _ map[string]any) (any, error) {
 			current, err := ctx.GetActiveTools()
@@ -284,9 +292,6 @@ func registerHypa(e *sdk.Extension) {
 	e.OnSessionStart(func(ctx sdk.Context, _ map[string]any) (any, error) {
 		if s.configErr != nil {
 			ctx.Notify("hypa: "+s.configErr.Error()+" — using env and defaults", "warning")
-		}
-		if s.config.McpProxyEnabled {
-			ctx.Notify("hypa: the MCP proxy bridge is not ported to the Go extension; use pi for it", "warning")
 		}
 		return nil, nil
 	})
@@ -402,5 +407,29 @@ func registerHypa(e *sdk.Extension) {
 		}
 		ctx.Notify(strings.Join(lines, "\n"), level)
 		return nil
+	})
+}
+
+// registerHypaMcpProxy is registerHypaMcpProxyBridge: the lazy
+// hypa_mcp_proxy tool over `hypa mcp ...`. Errors become a text result.
+func registerHypaMcpProxy(e *sdk.Extension, s *hypaState, home string) {
+	e.RegisterTool(sdk.ToolDefinition{
+		Name: hypa.McpProxyTool, Label: hypa.McpProxyTool, Description: hypa.McpProxyDescription,
+		PromptSnippet: hypa.McpProxySnippet, PromptGuidelines: hypa.McpProxyGuidelines,
+		Parameters: sdk.Schema(hypa.McpProxySchema()),
+		Execute: func(ctx sdk.Context, params map[string]any) (any, error) {
+			run := func(args []string, timeoutMs int) (hypa.McpRun, error) {
+				timeout := float64(timeoutMs)
+				result, err := s.runHypa(ctx, args, &timeout)
+				if err != nil {
+					// A failed spawn is a failed exec: no JSON, with the reason.
+					return hypa.McpRun{Stderr: err.Error(), Code: 1}, nil
+				}
+				return hypa.McpRun{Stdout: result.stdout, Stderr: result.stderr, Code: result.code, Killed: result.killed}, nil
+			}
+			result, err := hypa.ExecuteMcpProxy(s.config, hypa.McpInput{Params: params, Raw: []byte(ctx.ToolInput())}, home, run)
+			text, details := hypa.McpProxyResult(params["action"], result, err)
+			return sdk.ToolResult{Content: text, Details: details}, nil
+		},
 	})
 }

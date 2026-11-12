@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/danielboothcloud/pi-aio/go/internal/btw"
+	"github.com/danielboothcloud/pi-aio/go/internal/chrome"
 )
 
 const (
@@ -364,12 +365,13 @@ func DescribeGoal(goal Goal) string {
 	return strings.Join(lines, "\n")
 }
 
-// DraftRows renders the visible draft message: the plain form of the
-// chromeHeader card ("◎ GOAL · drafting") with the indented, wrapped text.
-func DraftRows(l btw.Layout, text string, width int) []string {
-	rows := []string{btw.FitLine(l, "◎ GOAL · drafting", width, "…")}
-	for _, line := range l.Wrap(text, max(1, width-2)) {
-		rows = append(rows, btw.FitLine(l, "  "+line, width, "…"))
+// DraftCard is the goals/index.ts message renderer for the visible draft
+// message: the shared chrome header ("◎ GOAL · drafting") and the wrapped,
+// indented text.
+func DraftCard(t chrome.Theme, text string, width int) []string {
+	rows := []string{chrome.Header(t, chrome.HeaderOptions{Title: "Goal", Meta: "drafting", Icon: "◎"}, width)}
+	for _, line := range chrome.Wrap(text, max(1, width-2)) {
+		rows = append(rows, chrome.FitLine("  "+line, width))
 	}
 	return rows
 }

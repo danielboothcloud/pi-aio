@@ -1,0 +1,18 @@
+{
+  "defaultRecipe": "json-blank",
+  "recipes": {
+    "json-blank": {
+      "description": "Recipe for json-blank",
+      "model": "fixture/m1",
+      "thinkingLevel": "off",
+      "models": [
+        "fixture/m1"
+      ],
+      "mcpServers": {},
+      "extensions": [],
+      "blocklist": {
+        "entries": []
+      }
+    }
+  }
+}

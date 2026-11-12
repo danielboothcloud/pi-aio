@@ -148,7 +148,92 @@ for (const [name, params, result] of [
 	toolRuns.push({ name, tool, params, result, calls, text: out.content[0].text.replace(/Full output saved to: \S+\]/, "Full output saved to: @@PATH@@]") });
 }
 
-const doc = `${JSON.stringify(ph({ numbers, flags, files, envs, configs, configPaths, rewrites, outcomeCases, timeouts, qualifies, resolutions, execArgs, quotes, reads, greps, finds, lss, limits, raws, replaceCases, images, toolRuns }), null, 1)}\n`;
+// The hypa_mcp_proxy bridge: the real registerHypaMcpProxyBridge with a
+// scripted exec. Pi's mcp.json fixtures decide which servers are duplicates.
+const bridge = await import(join(repo, "hypa", "mcp-proxy-bridge.ts"));
+const mcpTmp = mkdtempSync(join(tmpdir(), "aio-hypa-mcp-"));
+const mcpFiles: Record<string, string> = {
+	"object.json": JSON.stringify({ mcpServers: { " Docs ": {}, "": {} }, mcp_servers: { linear: {} }, servers: [{ name: "GitHub" }, { name: " " }, null, { name: 3 }] }),
+	"array.json": JSON.stringify({ mcpServers: [{ name: "a" }] }),
+	"list.json": JSON.stringify([1]),
+	"null.json": "null",
+	"bad.json": "{",
+};
+for (const [name, text] of Object.entries(mcpFiles)) writeFileSync(join(mcpTmp, name), text);
+const mcpNames = [...Object.keys(mcpFiles), "missing.json"].map((file) => ({ file, names: [...bridge.loadPiMcpServerNames(join(mcpTmp, file))].sort() }));
+type Reply = { stdout?: string; stderr?: string; code?: number; killed?: boolean };
+const listJSON = JSON.stringify([
+	{ name: "docs", transport: "http", endpoint: "https://d", auth: "oauth", hasTls: true },
+	{ name: "Linear", transport: "stdio", endpoint: null },
+	{ name: "fresh", transport: "", auth: 7 },
+]);
+const schemaJSON = `{"servers":[{"serverName":"fresh","tools":[{"name":"q","description":"Query","inputSchema":{"type":"object","properties":{"b":{"type":"string"},"a":{"type":"number"},"10":{}},"required":["b"]}},{"name":"n","description":"No schema"},{"name":"z","description":"Null","inputSchema":null}]},{"serverName":"docs","tools":[]}],"errors":[{"serverName":"bad","code":"E_AUTH","message":"login"}]}`;
+const mcpCases: Array<{ name: string; params: Record<string, unknown>; replies?: Reply[]; mcpConfig?: string; timeout?: number }> = [
+	{ name: "list", params: { action: "list" }, replies: [{ stdout: listJSON }] },
+	{ name: "list duplicates", params: { action: "list", includeDuplicates: true, timeoutMs: 1500.9 }, replies: [{ stdout: listJSON }] },
+	{ name: "list empty", params: { action: "list" }, replies: [{ stdout: "[]" }] },
+	{ name: "list all hidden", params: { action: "list" }, replies: [{ stdout: '[{"name":"DOCS"}]' }] },
+	{ name: "list object", params: { action: "list" }, replies: [{ stdout: '{"a":1}' }] },
+	{ name: "list nameless", params: { action: "list", includeDuplicates: true }, replies: [{ stdout: '[{"transport":"x"}]' }] },
+	{ name: "list serverName", params: { action: "list" }, replies: [{ stdout: '[{"serverName":"docs"},{"serverName":"x","name":"y"}]' }] },
+	{ name: "search", params: { action: "search", query: "find issues" }, replies: [{ stdout: '[{"serverName":"fresh","toolName":"q","description":"Query","score":0.125},{"serverName":"docs","toolName":"d","description":"x","score":1},{"serverName":"fresh","toolName":"w","description":"no score"}]' }] },
+	{ name: "search none", params: { action: "search", query: "x" }, replies: [{ stdout: "[]" }] },
+	{ name: "search null score", params: { action: "search", query: "x" }, replies: [{ stdout: '[{"serverName":"a","toolName":"b","description":"c","score":null}]' }] },
+	{ name: "search blank", params: { action: "search", query: "  " } },
+	{ name: "search missing", params: { action: "search" } },
+	{ name: "schema", params: { action: "schema" }, replies: [{ stdout: schemaJSON }] },
+	{ name: "schema server", params: { action: "schema", server: "fresh", includeDuplicates: true }, replies: [{ stdout: schemaJSON }] },
+	{ name: "schema empty", params: { action: "schema", server: " " }, replies: [{ stdout: '{"servers":null,"errors":null}' }] },
+	{ name: "schema no tools", params: { action: "schema" }, replies: [{ stdout: '{"servers":[{"serverName":"x"}]}' }] },
+	{ name: "invoke", params: { action: "invoke", server: "fresh", tool: "q", arguments: { b: "x", a: 1, "2": [true] }, hint: "summary" }, replies: [{ stdout: '{"serverName":"fresh","toolName":"q","compressedResponse":"done"}' }] },
+	{ name: "invoke string args", params: { action: "invoke", server: "fresh", tool: "q", arguments: '  {"z":1}  ', hint: " " }, replies: [{ stdout: '{"serverName":"fresh","toolName":"q","compressedResponse":""}' }] },
+	{ name: "invoke null args", params: { action: "invoke", server: "fresh", tool: "q", arguments: null }, replies: [{ stdout: '{"serverName":"fresh","toolName":"q","isError":true,"error":{"code":"E1","message":"boom"}}' }] },
+	{ name: "invoke blank args", params: { action: "invoke", server: "fresh", tool: "q", arguments: "   " }, replies: [{ stdout: '{"serverName":"fresh","toolName":"q","isError":true,"error":null}' }] },
+	{ name: "invoke duplicate", params: { action: "invoke", server: " DOCS ", tool: "q" } },
+	{ name: "invoke duplicate forced", params: { action: "invoke", server: "docs", tool: "q", includeDuplicates: true, arguments: [1, 2] }, replies: [{ stdout: '{"serverName":"docs","toolName":"q"}' }] },
+	{ name: "invoke no server", params: { action: "invoke", tool: "q" } },
+	{ name: "invoke no tool", params: { action: "invoke", server: "x", tool: "" } },
+	{ name: "auth", params: { action: "auth_check", server: "fresh", timeoutMs: -5 }, replies: [{ stdout: '{"ok":true,"b":2,"a":{"y":1,"x":[{"q":1,"1":2}]}}' }] },
+	{ name: "auth missing", params: { action: "auth_check" } },
+	{ name: "unknown", params: { action: "nope" } },
+	{ name: "killed", params: { action: "list" }, replies: [{ stdout: "[]", killed: true }] },
+	{ name: "no json stderr", params: { action: "list" }, replies: [{ stdout: " ", stderr: " boom \n", code: 2 }] },
+	{ name: "no json code", params: { action: "schema", server: "x" }, replies: [{ stdout: "", code: 3 }] },
+	{ name: "invalid json", params: { action: "list" }, replies: [{ stdout: "not json" }] },
+	{ name: "invalid json tail", params: { action: "list" }, replies: [{ stdout: '[{"name":"x"}] trailing' }] },
+	{ name: "array config", params: { action: "list" }, replies: [{ stdout: '[{"name":"a"},{"name":"0"}]' }], mcpConfig: "array.json" },
+	{ name: "missing config", params: { action: "list" }, replies: [{ stdout: listJSON }], mcpConfig: "missing.json", timeout: 2500 },
+];
+const mcpRuns: unknown[] = [];
+for (const c of mcpCases) {
+	const calls: unknown[] = [];
+	const replies = [...(c.replies ?? [])];
+	const registered = new Map<string, { execute: (...a: unknown[]) => Promise<{ content: Array<{ text: string }>; details: unknown }> }>();
+	const fakePi = {
+		exec: async (bin: string, args: string[], opts: { timeout?: number }) => {
+			calls.push({ bin, args, timeout: opts.timeout ?? null });
+			const reply = replies.shift() ?? { stdout: "" };
+			return { stdout: reply.stdout ?? "", stderr: reply.stderr ?? "", code: reply.code ?? 0, killed: reply.killed };
+		},
+		registerTool: (d: { name: string; execute: never }) => registered.set(d.name, d),
+	};
+	bridge.registerHypaMcpProxyBridge(fakePi as never, { mode: "additive", binary: "/opt/hypa", rewriteTimeoutMs: 5000, askNonInteractive: "deny", mcpProxyEnabled: true,
+		mcpProxyTimeoutMs: c.timeout ?? 10000, piMcpConfigPath: join(mcpTmp, c.mcpConfig ?? "object.json") });
+	const out = await registered.get("hypa_mcp_proxy")!.execute("t", c.params, undefined);
+	mcpRuns.push({ name: c.name, params: c.params, input: JSON.stringify(c.params), replies: c.replies ?? [], mcpConfig: c.mcpConfig ?? "object.json", timeout: c.timeout ?? 10000, calls, text: out.content[0].text, details: out.details });
+}
+const disabled = new Map<string, unknown>();
+bridge.registerHypaMcpProxyBridge({ exec: async () => ({ stdout: "", stderr: "", code: 0 }), registerTool: (d: { name: string }) => disabled.set(d.name, d) } as never,
+	{ mode: "additive", binary: "/opt/hypa", rewriteTimeoutMs: 5000, askNonInteractive: "deny", mcpProxyEnabled: false, mcpProxyTimeoutMs: 10000 });
+const mcpTool: { name: string; label: string; description: string; promptSnippet: string; promptGuidelines: string[]; parameters: unknown } = (() => {
+	let tool: any;
+	bridge.registerHypaMcpProxyBridge({ exec: async () => ({}), registerTool: (d: unknown) => { tool = d; } } as never, { mcpProxyEnabled: true } as never);
+	return { name: tool.name, label: tool.label, description: tool.description, promptSnippet: tool.promptSnippet, promptGuidelines: tool.promptGuidelines, parameters: tool.parameters };
+})();
+const mcpRegistration = { disabledRegisters: disabled.size, tool: mcpTool, mcpFiles };
+rmSync(mcpTmp, { recursive: true, force: true });
+
+const doc = `${JSON.stringify(ph({ numbers, flags, files, envs, configs, configPaths, rewrites, outcomeCases, timeouts, qualifies, resolutions, execArgs, quotes, reads, greps, finds, lss, limits, raws, replaceCases, images, toolRuns, mcpNames, mcpRuns, mcpRegistration }), null, 1)}\n`;
 const goldenPath = join(here, "golden.json");
 if (process.argv.includes("--check")) {
 	let current = "";
@@ -161,8 +246,8 @@ if (process.argv.includes("--check")) {
 		console.error("hypa golden.json is stale: run npx tsx go/internal/hypa/testdata/gen-golden.ts");
 		process.exit(1);
 	}
-	console.log(`hypa golden.json is current (${toolRuns.length} tool runs)`);
+	console.log(`hypa golden.json is current (${toolRuns.length} tool runs, ${mcpRuns.length} MCP proxy runs)`);
 } else {
 	writeFileSync(goldenPath, doc);
-	console.log(`hypa golden.json: ${configs.length} configs, ${timeouts.length} timeouts, ${toolRuns.length} tool runs`);
+	console.log(`hypa golden.json: ${configs.length} configs, ${timeouts.length} timeouts, ${toolRuns.length} tool runs, ${mcpNames.length} mcp.json reads, ${mcpRuns.length} MCP proxy runs`);
 }

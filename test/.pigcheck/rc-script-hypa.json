@@ -1,0 +1,4 @@
+[{"tool": "hypa_mcp_proxy", "args": {"action": "list"}},
+ {"tool": "hypa_mcp_proxy", "args": {"action": "invoke", "server": "fresh", "tool": "q", "arguments": {"b": 1, "a": 2}, "hint": "summary"}},
+ {"tool": "hypa_mcp_proxy", "args": {"action": "schema", "server": "fresh"}},
+ {"text": "bridge done"}]

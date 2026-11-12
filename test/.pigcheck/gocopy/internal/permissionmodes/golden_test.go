@@ -40,17 +40,18 @@ type golden struct {
 		Scopes  []string        `json:"scopes"`
 	} `json:"outside"`
 	Gate []struct {
-		Mode      string         `json:"mode"`
-		HasUI     bool           `json:"hasUI"`
-		Answers   []*string      `json:"answers"`
-		Tool      string         `json:"tool"`
-		ID        string         `json:"id"`
-		Input     map[string]any `json:"input"`
-		Result    map[string]any `json:"result"`
-		Again     map[string]any `json:"again"`
-		Prompts   []string       `json:"prompts"`
-		Notes     []string       `json:"notes"`
-		ModeAfter string         `json:"modeAfter"`
+		Mode      string          `json:"mode"`
+		HasUI     bool            `json:"hasUI"`
+		Answers   []*string       `json:"answers"`
+		Tool      string          `json:"tool"`
+		ID        string          `json:"id"`
+		Input     map[string]any  `json:"input"`
+		Result    map[string]any  `json:"result"`
+		Again     map[string]any  `json:"again"`
+		Prompts   []string        `json:"prompts"`
+		Events    json.RawMessage `json:"events"`
+		Notes     []string        `json:"notes"`
+		ModeAfter string          `json:"modeAfter"`
 	} `json:"gate"`
 	Todo []struct {
 		Params  map[string]any `json:"params"`
@@ -110,6 +111,22 @@ type fakeUI struct {
 	answers []*string
 	prompts []string
 	notes   []string
+	events  []any
+}
+
+// promptIDs is withAgentPrompt's module-level counter: the generator runs
+// every gate case in one process, so ids continue across cases.
+var promptIDs int
+
+func (f *fakeUI) MarkAgentPrompt(kind, title, body, preview string) func() {
+	promptIDs++
+	id := promptIDs
+	emit := func(active bool) {
+		f.events = append(f.events, map[string]any{"name": "aio:notification:agent-prompt",
+			"payload": map[string]any{"kind": kind, "title": title, "body": body, "preview": preview, "id": id, "sessionId": "s", "active": active}})
+	}
+	emit(true)
+	return func() { emit(false) }
 }
 
 func (f *fakeUI) HasUI() bool { return f.hasUI }
@@ -198,6 +215,16 @@ func TestGateMatchesTypeScript(t *testing.T) {
 		}
 		if !equalStrings(ui.notes, c.Notes) {
 			t.Errorf("%s notes:\n go %q\n ts %q", name, ui.notes, c.Notes)
+		}
+		gotEvents, _ := json.Marshal(ui.events)
+		var got, want any
+		_ = json.Unmarshal(gotEvents, &got)
+		_ = json.Unmarshal(c.Events, &want)
+		if got == nil {
+			got = []any{}
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("%s events:\n go %s\n ts %s", name, gotEvents, c.Events)
 		}
 		if string(gate.Mode) != c.ModeAfter {
 			t.Errorf("%s mode after: %s, TypeScript %s", name, gate.Mode, c.ModeAfter)

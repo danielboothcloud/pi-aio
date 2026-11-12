@@ -1,0 +1,5 @@
+[{"tool": "goal_propose", "args": {"objective": "Ship it", "doneWhen": "tests pass"}},
+ {"tool": "goal_blocked", "args": {"reason": "need a decision"}},
+ {"text": "paused"},
+ {"tool": "bash", "args": {"command": "rm -rf rc-nothing-here"}},
+ {"text": "blocked ok"}]

@@ -1247,6 +1247,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -1275,6 +1284,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -1322,9 +1340,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 1,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Add a dark mode toggle\n\nDone when:\nToggle works; npm test passes"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 1,
+        "sessionId": "s",
+        "active": false
+       }
       },
       {
        "op": "append",
@@ -1346,6 +1390,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 0/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "notify",
@@ -1407,6 +1460,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 1/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -1451,6 +1513,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 2/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -1542,6 +1613,28 @@
        "text": null
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:complete",
+        "title": "Goal complete",
+        "body": "The goal has been marked complete.",
+        "preview": "Add a dark mode toggle",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal complete: Add a dark mode toggle",
        "level": "info"
@@ -1602,7 +1695,17 @@
       "op": "start"
      },
      "result": null,
-     "log": []
+     "log": [
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
+      }
+     ]
     },
     {
      "step": {
@@ -1611,6 +1714,15 @@
      },
      "result": null,
      "log": [
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
+      },
       {
        "op": "send",
        "message": {
@@ -1657,6 +1769,15 @@
          "updatedAt": "@@TIME@@"
         }
        }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -1696,7 +1817,17 @@
       ],
       "continue": true
      },
-     "log": []
+     "log": [
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      }
+     ]
     },
     {
      "step": {
@@ -1754,6 +1885,15 @@
          "lastReview": "tests fail"
         }
        }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -1794,7 +1934,17 @@
       ],
       "continue": true
      },
-     "log": []
+     "log": [
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      }
+     ]
     },
     {
      "step": {
@@ -1851,6 +2001,15 @@
          "updatedAt": "@@TIME@@",
          "lastReview": "still failing\nmore detail"
         }
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
        }
       }
      ]
@@ -1912,6 +2071,28 @@
          "pauseReason": "the review rejected the completion 3 times"
         }
        }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "the review rejected the completion 3 times",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
       }
      ]
     },
@@ -1962,6 +2143,15 @@
        }
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Fix the build",
        "level": "info"
@@ -1981,6 +2171,15 @@
          "updatedAt": "@@TIME@@",
          "lastReview": "Rejected without a reason."
         }
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
        }
       },
       {
@@ -2038,7 +2237,17 @@
       ],
       "continue": true
      },
-     "log": []
+     "log": [
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      }
+     ]
     }
    ]
   },
@@ -2058,6 +2267,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2114,6 +2332,15 @@
        "text": "[accent]◎ goal · draft"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "send",
        "message": {
         "customType": "aio-goal-message",
@@ -2167,6 +2394,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2181,6 +2417,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -2214,9 +2459,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Refactor auth",
+        "id": 2,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Refactor auth\n\nDone when:\ntests"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Refactor auth",
+        "id": 2,
+        "sessionId": "s",
+        "active": false
+       }
       }
      ]
     },
@@ -2248,9 +2519,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Refactor auth into a module",
+        "id": 3,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Refactor auth into a module\n\nDone when:\ntests"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Refactor auth into a module",
+        "id": 3,
+        "sessionId": "s",
+        "active": false
+       }
       },
       {
        "op": "append",
@@ -2272,6 +2569,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 0/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "notify",
@@ -2298,6 +2604,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2312,6 +2627,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -2345,9 +2669,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 4,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Add a dark mode toggle\n\nDone when:\nToggle works; npm test passes"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 4,
+        "sessionId": "s",
+        "active": false
+       }
       },
       {
        "op": "append",
@@ -2369,6 +2719,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 0/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "notify",
@@ -2418,6 +2777,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 1/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2462,6 +2830,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 2/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2506,6 +2883,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 3/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2550,6 +2936,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 4/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2594,6 +2989,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 5/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2638,6 +3042,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 6/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2682,6 +3095,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 7/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2726,6 +3148,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 8/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2770,6 +3201,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 9/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2814,6 +3254,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 10/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2858,6 +3307,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 11/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2902,6 +3360,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 12/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2946,6 +3413,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 13/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -2990,6 +3466,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 14/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3034,6 +3519,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 15/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3078,6 +3572,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 16/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3122,6 +3625,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 17/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3166,6 +3678,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 18/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3210,6 +3731,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 19/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3254,6 +3784,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 20/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3298,6 +3837,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 21/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3342,6 +3890,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 22/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3386,6 +3943,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 23/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3430,6 +3996,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 24/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3474,6 +4049,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 25/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3518,6 +4102,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 26/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3562,6 +4155,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 27/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3606,6 +4208,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 28/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3650,6 +4261,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 29/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3694,6 +4314,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 30/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3738,6 +4367,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 31/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3782,6 +4420,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 32/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3826,6 +4473,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 33/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3870,6 +4526,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 34/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3914,6 +4579,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 35/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -3958,6 +4632,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 36/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4002,6 +4685,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 37/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4046,6 +4738,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 38/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4090,6 +4791,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 39/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4134,6 +4844,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 40/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4178,6 +4897,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 41/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4222,6 +4950,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 42/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4266,6 +5003,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 43/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4310,6 +5056,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 44/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4354,6 +5109,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 45/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4398,6 +5162,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 46/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4442,6 +5215,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 47/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4486,6 +5268,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 48/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4530,6 +5321,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 49/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4574,6 +5374,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 50/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4608,6 +5417,28 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[warning]◎ goal · paused"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "reached 50 automatic continuations",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
       },
       {
        "op": "notify",
@@ -4653,6 +5484,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Add a dark mode toggle",
        "level": "info"
@@ -4677,6 +5517,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 1/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -4714,6 +5563,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -4728,6 +5586,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -4761,9 +5628,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 5,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Add a dark mode toggle\n\nDone when:\nToggle works; npm test passes"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 5,
+        "sessionId": "s",
+        "active": false
+       }
       },
       {
        "op": "append",
@@ -4785,6 +5678,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 0/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "notify",
@@ -4826,6 +5728,28 @@
        "text": "[warning]◎ goal · paused"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "the model stopped with an error",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal paused: the model stopped with an error. Run /goal resume to continue.",
        "level": "warning"
@@ -4861,6 +5785,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Add a dark mode toggle",
        "level": "info"
@@ -4885,6 +5818,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 1/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -4942,6 +5884,15 @@
        "text": "[warning]◎ goal · paused"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal paused: stopped with Esc. Run /goal resume to continue.",
        "level": "info"
@@ -4993,6 +5944,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Add a dark mode toggle",
        "level": "info"
@@ -5040,6 +6000,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -5054,6 +6023,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -5093,6 +6071,15 @@
        "text": null
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal cleared.",
        "level": "info"
@@ -5126,6 +6113,15 @@
        "text": "[accent]◎ goal · draft"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "send",
        "message": {
         "customType": "aio-goal-message",
@@ -5157,9 +6153,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 6,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Add a dark mode toggle\n\nDone when:\nToggle works; npm test passes"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 6,
+        "sessionId": "s",
+        "active": false
+       }
       },
       {
        "op": "append",
@@ -5181,6 +6203,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 0/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "notify",
@@ -5222,6 +6253,28 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[warning]◎ goal · paused"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "need the API key",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
       },
       {
        "op": "notify",
@@ -5273,6 +6326,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Add a dark mode toggle",
        "level": "info"
@@ -5307,6 +6369,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[warning]◎ goal · paused"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
       },
       {
        "op": "abort"
@@ -5361,6 +6432,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Add a dark mode toggle",
        "level": "info"
@@ -5402,6 +6482,28 @@
        "text": "[warning]◎ goal · paused"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "blocked",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal paused: blocked. Run /goal resume to continue.",
        "level": "warning"
@@ -5437,6 +6539,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Add a dark mode toggle",
        "level": "info"
@@ -5461,6 +6572,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
       },
       {
        "op": "abort"
@@ -5508,6 +6628,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -5522,6 +6651,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -5555,9 +6693,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 7,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Add a dark mode toggle\n\nDone when:\nToggle works; npm test passes"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 7,
+        "sessionId": "s",
+        "active": false
+       }
       }
      ]
     },
@@ -5572,6 +6736,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -5602,6 +6775,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -5649,7 +6831,17 @@
       "op": "start"
      },
      "result": null,
-     "log": []
+     "log": [
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
+      }
+     ]
     },
     {
      "step": {
@@ -5658,6 +6850,15 @@
      },
      "result": null,
      "log": [
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
+      },
       {
        "op": "send",
        "message": {
@@ -5704,6 +6905,15 @@
          "updatedAt": "@@TIME@@"
         }
        }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -5719,6 +6929,24 @@
        "customType": "aio-goal",
        "data": {
         "goal": null
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
        }
       },
       {
@@ -5766,6 +6994,15 @@
          "createdAt": "@@TIME@@",
          "updatedAt": "@@TIME@@"
         }
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
        }
       }
      ]
@@ -5827,6 +7064,28 @@
          "lastReview": "Approved."
         }
        }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:complete",
+        "title": "Goal complete",
+        "body": "The goal has been marked complete.",
+        "preview": "Second",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
       }
      ]
     },
@@ -5837,6 +7096,15 @@
      },
      "result": null,
      "log": [
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
+      },
       {
        "op": "send",
        "message": {
@@ -5886,6 +7154,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -5900,6 +7177,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -5933,9 +7219,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 8,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Add a dark mode toggle\n\nDone when:\nToggle works; npm test passes"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 8,
+        "sessionId": "s",
+        "active": false
+       }
       },
       {
        "op": "append",
@@ -5957,6 +7269,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 0/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "notify",
@@ -6028,6 +7349,28 @@
        "text": "[warning]◎ goal · paused"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "review failed: network down",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal paused: review failed: network down. Run /goal resume to continue.",
        "level": "warning"
@@ -6063,6 +7406,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Add a dark mode toggle",
        "level": "info"
@@ -6087,6 +7439,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 1/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -6180,6 +7541,28 @@
        "text": null
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:complete",
+        "title": "Goal complete",
+        "body": "The goal has been marked complete.",
+        "preview": "Add a dark mode toggle",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal complete: Add a dark mode toggle",
        "level": "info"
@@ -6239,6 +7622,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -6253,6 +7645,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -6286,9 +7687,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 9,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Add a dark mode toggle\n\nDone when:\nToggle works; npm test passes"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 9,
+        "sessionId": "s",
+        "active": false
+       }
       },
       {
        "op": "append",
@@ -6310,6 +7737,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 0/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "notify",
@@ -6381,6 +7817,28 @@
        "text": "[warning]◎ goal · paused"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "review failed: rate limited",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal paused: review failed: rate limited. Run /goal resume to continue.",
        "level": "warning"
@@ -6416,6 +7874,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Add a dark mode toggle",
        "level": "info"
@@ -6440,6 +7907,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 1/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -6532,6 +8008,28 @@
        "text": "[warning]◎ goal · paused"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "review failed: the review call failed",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal paused: review failed: the review call failed. Run /goal resume to continue.",
        "level": "warning"
@@ -6567,6 +8065,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Add a dark mode toggle",
        "level": "info"
@@ -6591,6 +8098,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 1/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -6683,6 +8199,28 @@
        "text": "[warning]◎ goal · paused"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "review failed: the review reply had no APPROVED or REJECTED verdict",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal paused: review failed: the review reply had no APPROVED or REJECTED verdict. Run /goal resume to continue.",
        "level": "warning"
@@ -6718,6 +8256,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Add a dark mode toggle",
        "level": "info"
@@ -6742,6 +8289,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 1/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -6834,6 +8390,28 @@
        "text": "[warning]◎ goal · paused"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "review failed: the review was aborted",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal paused: review failed: the review was aborted. Run /goal resume to continue.",
        "level": "warning"
@@ -6869,6 +8447,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Add a dark mode toggle",
        "level": "info"
@@ -6893,6 +8480,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 1/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -6985,6 +8581,28 @@
        "text": "[warning]◎ goal · paused"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "review failed: the review reply had no APPROVED or REJECTED verdict",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal paused: review failed: the review reply had no APPROVED or REJECTED verdict. Run /goal resume to continue.",
        "level": "warning"
@@ -7010,6 +8628,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -7024,6 +8651,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -7057,9 +8693,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 10,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Add a dark mode toggle\n\nDone when:\nToggle works; npm test passes"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 10,
+        "sessionId": "s",
+        "active": false
+       }
       },
       {
        "op": "append",
@@ -7081,6 +8743,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 0/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "notify",
@@ -7138,6 +8809,28 @@
        "text": "[warning]◎ goal · paused"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "review failed: no session model is selected",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal paused: review failed: no session model is selected. Run /goal resume to continue.",
        "level": "warning"
@@ -7165,6 +8858,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -7179,6 +8881,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -7212,9 +8923,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 11,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Add a dark mode toggle\n\nDone when:\nToggle works; npm test passes"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 11,
+        "sessionId": "s",
+        "active": false
+       }
       },
       {
        "op": "append",
@@ -7236,6 +8973,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 0/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "notify",
@@ -7333,6 +9079,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -7347,6 +9102,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -7380,9 +9144,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 12,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Add a dark mode toggle\n\nDone when:\nToggle works; npm test passes"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 12,
+        "sessionId": "s",
+        "active": false
+       }
       },
       {
        "op": "append",
@@ -7404,6 +9194,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 0/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "notify",
@@ -7482,6 +9281,15 @@
          "text": "[accent]◎ goal · reviewing"
         },
         {
+         "op": "event",
+         "name": "aio:notification:goal-activity",
+         "payload": {
+          "sessionId": "s",
+          "active": false,
+          "quietSettle": true
+         }
+        },
+        {
          "op": "notify",
          "text": "Goal cleared.",
          "level": "info"
@@ -7540,6 +9348,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -7554,6 +9371,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · draft"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -7587,9 +9413,35 @@
      },
      "log": [
       {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 13,
+        "sessionId": "s",
+        "active": true
+       }
+      },
+      {
        "op": "confirm",
        "title": "Start this goal?",
        "body": "Add a dark mode toggle\n\nDone when:\nToggle works; npm test passes"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:agent-prompt",
+       "payload": {
+        "kind": "confirm",
+        "title": "Confirm goal",
+        "body": "The agent is waiting for you to confirm the goal.",
+        "preview": "Add a dark mode toggle",
+        "id": 13,
+        "sessionId": "s",
+        "active": false
+       }
       },
       {
        "op": "append",
@@ -7611,6 +9463,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 0/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "notify",
@@ -7690,6 +9551,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 0/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -7735,6 +9605,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 1/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       }
      ]
     }
@@ -7776,6 +9655,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[warning]◎ goal · paused"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -7817,6 +9705,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Ship the parser",
        "level": "info"
@@ -7842,6 +9739,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 1/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -7881,6 +9787,28 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[warning]◎ goal · paused"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "could not continue: session is closing",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
       },
       {
        "op": "notify",
@@ -7960,6 +9888,15 @@
        "text": "[warning]◎ goal · paused"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal paused: Ship the parser. Run /goal resume to continue.",
        "level": "info"
@@ -8027,6 +9964,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -8080,6 +10026,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -8136,6 +10091,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": null
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -8191,6 +10155,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[warning]◎ goal · paused"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": false
+       }
       }
      ]
     },
@@ -8239,6 +10212,15 @@
        "text": "[accent]◎ goal · 0/50"
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Ship the parser",
        "level": "info"
@@ -8265,6 +10247,15 @@
        "op": "status",
        "key": "aio-goal",
        "text": "[accent]◎ goal · 1/50"
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
       },
       {
        "op": "send",
@@ -8348,6 +10339,15 @@
          "pauseReason": "session reopened"
         }
        }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
       }
      ]
     },
@@ -8376,6 +10376,15 @@
        }
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Ship the parser",
        "level": "info"
@@ -8395,6 +10404,15 @@
          "createdAt": "@@TIME@@",
          "updatedAt": "@@TIME@@"
         }
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
        }
       },
       {
@@ -8442,7 +10460,30 @@
        }
       ]
      },
-     "log": []
+     "log": [
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification",
+       "payload": {
+        "category": "goal",
+        "id": "g-@@ID@@:paused:@@TIME@@",
+        "title": "Goal needs attention",
+        "body": "The goal is paused. Return to Pi to review the next action.",
+        "preview": "the model stopped with an error",
+        "replacesCompletion": true,
+        "sessionId": "s"
+       }
+      }
+     ]
     },
     {
      "step": {
@@ -8469,6 +10510,15 @@
        }
       },
       {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
+       }
+      },
+      {
        "op": "notify",
        "text": "Goal resumed: Ship the parser",
        "level": "info"
@@ -8488,6 +10538,15 @@
          "createdAt": "@@TIME@@",
          "updatedAt": "@@TIME@@"
         }
+       }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": true,
+        "quietSettle": false
        }
       },
       {
@@ -8532,6 +10591,15 @@
          "pauseReason": "stopped with Esc"
         }
        }
+      },
+      {
+       "op": "event",
+       "name": "aio:notification:goal-activity",
+       "payload": {
+        "sessionId": "s",
+        "active": false,
+        "quietSettle": true
+       }
       }
      ]
     },
@@ -8544,5 +10612,286 @@
     }
    ]
   }
- ]
+ ],
+ "draftCards": [
+  {
+   "text": "make it faster",
+   "width": 0,
+   "rows": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "text": "make it faster",
+   "width": 1,
+   "rows": [
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "text": "make it faster",
+   "width": 8,
+   "rows": [
+    "<accent\u001b[0m…\u001b[0m",
+    "  make",
+    "  it",
+    "  faster"
+   ]
+  },
+  {
+   "text": "make it faster",
+   "width": 30,
+   "rows": [
+    "<accent>◎</> <accent>*GOAL*</\u001b[0m…\u001b[0m",
+    "  make it faster"
+   ]
+  },
+  {
+   "text": "make it faster",
+   "width": 80,
+   "rows": [
+    "<accent>◎</> <accent>*GOAL*</><dim> · </><muted>drafting</>",
+    "  make it faster"
+   ]
+  },
+  {
+   "text": "a much longer goal text that wraps over several rows of the card ünïcödé 🎉",
+   "width": 0,
+   "rows": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "text": "a much longer goal text that wraps over several rows of the card ünïcödé 🎉",
+   "width": 1,
+   "rows": [
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "text": "a much longer goal text that wraps over several rows of the card ünïcödé 🎉",
+   "width": 8,
+   "rows": [
+    "<accent\u001b[0m…\u001b[0m",
+    "  a much",
+    "  longer",
+    "  goal",
+    "  text",
+    "  that",
+    "  wraps",
+    "  over",
+    "  severa",
+    "  l rows",
+    "  of the",
+    "  card",
+    "  ünïcöd",
+    "  é 🎉"
+   ]
+  },
+  {
+   "text": "a much longer goal text that wraps over several rows of the card ünïcödé 🎉",
+   "width": 30,
+   "rows": [
+    "<accent>◎</> <accent>*GOAL*</\u001b[0m…\u001b[0m",
+    "  a much longer goal text that",
+    "  wraps over several rows of",
+    "  the card ünïcödé 🎉"
+   ]
+  },
+  {
+   "text": "a much longer goal text that wraps over several rows of the card ünïcödé 🎉",
+   "width": 80,
+   "rows": [
+    "<accent>◎</> <accent>*GOAL*</><dim> · </><muted>drafting</>",
+    "  a much longer goal text that wraps over several rows of the card ünïcödé 🎉"
+   ]
+  },
+  {
+   "text": "",
+   "width": 0,
+   "rows": [
+    "",
+    ""
+   ]
+  },
+  {
+   "text": "",
+   "width": 1,
+   "rows": [
+    "\u001b[0m…\u001b[0m",
+    "\u001b[0m…\u001b[0m"
+   ]
+  },
+  {
+   "text": "",
+   "width": 8,
+   "rows": [
+    "<accent\u001b[0m…\u001b[0m",
+    "  "
+   ]
+  },
+  {
+   "text": "",
+   "width": 30,
+   "rows": [
+    "<accent>◎</> <accent>*GOAL*</\u001b[0m…\u001b[0m",
+    "  "
+   ]
+  },
+  {
+   "text": "",
+   "width": 80,
+   "rows": [
+    "<accent>◎</> <accent>*GOAL*</><dim> · </><muted>drafting</>",
+    "  "
+   ]
+  }
+ ],
+ "otherKind": null
 }

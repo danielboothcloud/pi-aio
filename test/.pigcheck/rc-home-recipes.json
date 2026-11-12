@@ -1,0 +1,21 @@
+{
+  "recipes": {
+    "work": {
+      "description": "Work setup with the fixture model",
+      "model": "fixture/m1:low",
+      "mcpServers": {
+        "linear": {
+          "url": "https://mcp.example.invalid/linear",
+          "headers": {
+            "Authorization": "Bearer x"
+          }
+        }
+      },
+      "permissionMode": "plan",
+      "style": "concise"
+    },
+    "plain": {
+      "description": "Nothing but a name"
+    }
+  }
+}

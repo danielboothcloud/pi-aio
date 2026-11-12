@@ -3,9 +3,10 @@ package aio
 // Goals wiring (port of goals/index.ts). The state machine, prompts, and
 // review live in internal/goals; this file adapts sdk.Context to its Host.
 //
-// Not ported: AIO notification events (goal activity, "needs attention",
-// "complete", agent prompts) and the ui/chrome draft card. The draft message
-// renders as a plain-text card, and the status has no theme tone.
+// The machine emits the AIO notification events of notifications/protocol.ts
+// (goal activity, "needs attention", "complete", and the goal_propose agent
+// prompt) on the extension event bus, where the notifications feature
+// listens. The draft message renders as the ui/chrome card (DraftCard).
 
 import (
 	"context"
@@ -29,12 +30,12 @@ type goalHost struct{ ctx sdk.Context }
 func (h goalHost) HasUI() bool                  { return h.ctx.HasUI() }
 func (h goalHost) Notify(message, level string) { h.ctx.Notify(message, level) }
 
-func (h goalHost) SetStatus(text, _ string) {
+func (h goalHost) SetStatus(text, tone string) {
 	if text == "" {
 		h.ctx.ClearStatus(goals.StatusKey)
 		return
 	}
-	h.ctx.SetStatus(goals.StatusKey, text)
+	h.ctx.SetStatus(goals.StatusKey, h.ctx.UITheme().Fg(tone, text))
 }
 
 func (h goalHost) Persist(goal *goals.Goal) error {
@@ -64,7 +65,16 @@ func (h goalHost) IsIdle() bool {
 	return err != nil || idle
 }
 
-func (h goalHost) Abort()                    { h.ctx.Abort() }
+func (h goalHost) Abort()            { h.ctx.Abort() }
+func (h goalHost) Mode() string      { return h.ctx.Mode() }
+func (h goalHost) SessionID() string { return sessionID(h.ctx) }
+func (h goalHost) NextPromptID() int { return int(agentPromptSeq.Add(1)) }
+
+// Emit is pi.events.emit: observers must never change the producer.
+func (h goalHost) Emit(event string, payload map[string]any) {
+	defer func() { _ = recover() }()
+	_ = h.ctx.Events().Emit(event, payload)
+}
 func (h goalHost) Branch() []json.RawMessage { return sessionBranch(h.ctx) }
 func (h goalHost) HasModel() bool            { return h.ctx.Model() != "" }
 
@@ -160,13 +170,13 @@ func registerGoals(e *sdk.Extension) {
 	}
 	m := goals.NewMachine(nil)
 
-	e.MessageRenderer(goals.MessageType, func(_ sdk.Context, message map[string]any, _ sdk.MessageRenderOptions, width int) ([]string, error) {
+	e.MessageRenderer(goals.MessageType, func(ctx sdk.Context, message map[string]any, _ sdk.MessageRenderOptions, width int) ([]string, error) {
 		details, _ := message["details"].(map[string]any)
 		if kind, _ := details["kind"].(string); kind != "draft" {
 			return nil, nil
 		}
 		text, _ := details["text"].(string)
-		return goals.DraftRows(sdkLayout{}, text, width), nil
+		return goals.DraftCard(ctx.UITheme(), text, width), nil
 	})
 
 	text := func(s string) any { return sdk.ToolResult{Content: s, Details: map[string]any{}} }

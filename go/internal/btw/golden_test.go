@@ -93,6 +93,14 @@ type golden struct {
 		Now   float64    `json:"now"`
 		Rows  []string   `json:"rows"`
 	} `json:"cards"`
+	Themed []struct {
+		Kind  string     `json:"kind"`
+		Data  EntryData  `json:"data"`
+		Card  goldenCard `json:"card"`
+		Width int        `json:"width"`
+		Now   float64    `json:"now"`
+		Rows  []string   `json:"rows"`
+	} `json:"themed"`
 	StatusLines []struct {
 		ID  *string `json:"id"`
 		Out string  `json:"out"`
@@ -454,6 +462,20 @@ func TestGoldenDisplay(t *testing.T) {
 			}
 		}
 	}
+	for _, c := range g.Themed {
+		var got []string
+		if c.Kind == "box" {
+			got = ThemedBoxRows(l, taggedTheme{}, c.Data, c.Width)
+		} else {
+			got = ThemedCardRows(l, taggedTheme{}, c.Card.card(), c.Width, c.Now)
+		}
+		if !equalRows(got, c.Rows) {
+			t.Errorf("themed %s width %d:\n got %q\nwant %q", c.Kind, c.Width, got, c.Rows)
+		}
+	}
+	if len(g.Themed) == 0 {
+		t.Error("no themed renders")
+	}
 	for _, c := range g.StatusLines {
 		id := ""
 		if c.ID != nil {
@@ -537,9 +559,14 @@ func (h *recordingHost) AppendEntry(data EntryData) error {
 	h.log = append(h.log, map[string]any{"op": "append", "customType": EntryType, "data": data})
 	return nil
 }
-func (h *recordingHost) Now() float64 { return h.now }
+func (h *recordingHost) Now() float64      { return h.now }
+func (h *recordingHost) SessionID() string { return "s" }
+func (h *recordingHost) Emit(event string, payload map[string]any) {
+	h.log = append(h.log, map[string]any{"op": "event", "name": event, "payload": payload})
+}
 
 func TestGoldenCommandScenarios(t *testing.T) {
+	t.Setenv("AIO_SUBAGENT_CHILD", "") // the generator runs as a parent session
 	g := loadGolden(t)
 	root, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
@@ -605,3 +632,7 @@ func TestGoldenCommandScenarios(t *testing.T) {
 		})
 	}
 }
+
+type taggedTheme struct{}
+
+func (taggedTheme) Fg(role, text string) string { return "<" + role + ">" + text + "</>" }

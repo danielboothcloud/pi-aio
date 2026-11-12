@@ -21,7 +21,6 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	sdktui "github.com/MichaelKinsy/PiG/extensions/sdk/tui"
 
-	notify "github.com/danielboothcloud/pi-aio/go/internal/notifications"
 	"github.com/danielboothcloud/pi-aio/go/internal/piargs"
 	sa "github.com/danielboothcloud/pi-aio/go/internal/subagents"
 )
@@ -274,9 +273,7 @@ func (s *subagentState) emitBackground(ctx sdk.Context, run *sa.Run, failedLaunc
 	case state == "failed":
 		title = "Background agents failed"
 	}
-	sessionID, _ := ctx.GetSessionID()
-	_ = ctx.Events().Emit(notify.NotificationEvent, map[string]any{"category": "background", "id": "subagent:" + id,
-		"sessionId": sessionID, "title": title, "body": body, "replacesCompletion": true})
+	emitNotification(ctx, "background", "subagent:"+id, title, body, nil, true)
 }
 
 func (s *subagentState) sendComplete(ctx sdk.Context, run *sa.Run) {

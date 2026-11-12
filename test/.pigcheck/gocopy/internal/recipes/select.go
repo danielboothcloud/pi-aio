@@ -3,6 +3,9 @@ package recipes
 import (
 	"sort"
 	"strings"
+	"unicode"
+
+	"golang.org/x/text/unicode/norm"
 )
 
 func sortedKeys[V any](m map[string]V) []string {
@@ -14,15 +17,30 @@ func sortedKeys[V any](m map[string]V) []string {
 	return keys
 }
 
-// sortLikeLocale approximates localeCompare: case-insensitive first, then by bytes.
+// sortLikeLocale approximates localeCompare: base letters first (accents
+// and case removed), then accents, then case, then bytes.
 func sortLikeLocale(keys []string) {
-	sort.Slice(keys, func(i, j int) bool {
-		a, b := strings.ToLower(keys[i]), strings.ToLower(keys[j])
-		if a != b {
+	sort.SliceStable(keys, func(i, j int) bool {
+		if a, b := baseLetters(keys[i]), baseLetters(keys[j]); a != b {
+			return a < b
+		}
+		if a, b := strings.ToLower(keys[i]), strings.ToLower(keys[j]); a != b {
 			return a < b
 		}
 		return keys[i] < keys[j]
 	})
+}
+
+// baseLetters lowercases s and removes combining marks after canonical
+// decomposition ("Ü" sorts with "u").
+func baseLetters(s string) string {
+	var b strings.Builder
+	for _, r := range norm.NFD.String(strings.ToLower(s)) {
+		if !unicode.Is(unicode.Mn, r) {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 // LatestPersisted scans the branch for the newest recipe-state entry. It

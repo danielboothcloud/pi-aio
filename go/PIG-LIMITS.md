@@ -27,7 +27,9 @@ its path. With `PIG_HOME=~/.config/pi`, the path is
 | `sendUserMessage` drops `expandPromptTemplates` | The host bridge has no such option | Commands run through the base editor's host `onSubmit` |
 | `ctx.Abort` is not Pi's TUI abort | The host keeps the queued messages and waits until idle | The queue sends the host's interrupt key through the base editor |
 | JSON-only event bus, private editor factories | SDK design | The frame protocol is package state; no selector frames |
-| Go extension stderr is not shown | PiG divergence D56 | Notices that must be seen also go into the tool result |
+| Go extension stderr is not shown | PiG divergence D56 | Notices that must be seen also go into the tool result or a session entry |
+| No exit status in an older pig | `Context.ShutdownWithCode` is PiG divergence D236 | The recipe empty-scope stop falls back to `ctx.Shutdown()` |
+| No terminal before the TUI starts | The extension's stdin and stdout are the wire to pig | The `.pi-recipe` trust question is a session select; the launcher asks on the terminal |
 
 ## 1. No call to suspend the host TUI
 
@@ -192,10 +194,201 @@ terminal.
 
 **Workaround:** browser-search writes its fallback notice to stderr in
 JSON and print mode and also puts the warning in
-the tool result text and details.
+the tool result text and details. Recipes write the `/recipe status` text,
+the `.pi-recipe` trust hint, and the empty-scope message to stderr in
+print and JSON mode, as TypeScript does. The status report is also a
+`recipe-status-report` session entry, which JSON mode prints as an
+`entry_appended` event.
 
 **Check:** Run `pig --mode json` with a Go extension that writes to
 stderr. Look for the line on pig's stderr.
+
+## 9. No exit status in an older pig
+
+**Problem:** TypeScript recipes stop a scoped startup whose `--models`
+scope matches no model with `process.exit(1)`, before any prompt reaches a
+provider. `ctx.shutdown()` is not enough: print and JSON mode ignore it. A
+Go extension cannot end the pig process. The PiG fork adds
+`Context.ShutdownWithCode` (D236) for this, but the fork binary at
+`test/.pigcheck/pigfork/pig` (commit f46b9ab2c) does not have it yet.
+
+**Workaround:** `go/aio/recipes.go` (`exitWithCode`) calls
+`ShutdownWithCode(1)` when the pig's SDK has it, and `ctx.Shutdown()`
+otherwise. The extension builds against both SDKs.
+
+**Reproduction:** In a folder with no `.pi-recipe`, run
+`pig --mode json --recipe ghost --models nope/none -p hello` with a
+recipe `ghost` whose `models` is `["nope/none"]` (scratch recipes file in
+`AIO_RECIPES_FILE`). With `pigfork/pig`, the prompt runs. With a pig built
+from the fork tree that has D236, pig exits with status 1 and sends no
+model request. In RPC and TUI mode both stop.
+
+## 10. No terminal before the TUI starts
+
+**Problem:** TypeScript recipes ask the `.pi-recipe` trust question on the
+terminal while extension factories load, before the TUI starts
+(`promptRecipeTrust`). A just-trusted recipe can then still relaunch pi.
+A Go extension's stdin and stdout are the connection to pig, and its
+factory runs without a terminal.
+
+**Workaround:** The Go recipes ask through the session UI at
+`session_start` (a non-blocking select), as TypeScript does in RPC and in
+a TUI whose launch could not ask. Without a UI they write the stderr hint.
+`bin/aio-pig.mjs` asks on the terminal before pig starts and sets
+`AIO_PIG_TRUST_ASKED=1`, so the session does not ask again.
+
+**Reproduction:** Put a new `.pi-recipe` in a folder and start
+`pig -ne -e go/aio` there without the launcher. The question appears as a
+select in the TUI after startup, not as a terminal prompt.
+
+## Limits addressed in the PiG fork
+
+The PiG fork adds host calls for the limits below. Each one is a
+numbered PiG divergence (`docs/parity/divergences/D<N>.md` in the fork)
+and is documented in the fork's agent docs
+(`internal/pigdocs/content/extension-api.md`). Fork commit `37aa2de0e`
+has D234 and `b4007a7e0` has D235. D236 to D238, the re-entry docs and
+the working-directory test are in the fork worktree and not committed
+yet. Build `pig` from a fork tree that has them before you remove a
+workaround.
+
+| Limit | PiG change | Port status |
+|---|---|---|
+| A Node provider cannot see an env value set by a Go extension | D234 `ctx.SetSharedEnv` / `ctx.UnsetSharedEnv` | Used by `go/aio/permissionmodes.go` |
+| A model call cannot be cancelled | D235 `ModelRegistry.CompleteContext`, `StreamContext`, `StreamSimpleContext` | Used by btw, session naming and goals |
+| No pig argv and no exit status | D236 `ctx.HostLaunch()` and `ctx.ShutdownWithCode(code)` | Limit 9: partly used; argv still comes from `PIG_HARNESS_ARGV_FILE` |
+| Terminal sequences go to `/dev/tty` | D237 `ctx.WriteTerminal(data)` | Not used yet |
+| A relaunch starts a second pig | D238 `ctx.Relaunch(sdk.RelaunchOptions{Args, Env})` | Limit 10: not used yet |
+| Relative tool paths | No new call: the built-in tools use `ctx.Cwd()` | `workspace.go` comment is out of date |
+| Host calls that re-enter the extension | Documented, behavior kept (it is Pi's) | Rule below |
+
+### D236: pig's launch and exit status
+
+`ctx.HostLaunch()` returns pig's arguments after the executable
+(`Argv`, in order and unchanged), the run mode (`Mode`), and whether
+pig's stdin and stdout were terminals at launch (`StdinIsTTY`,
+`StdoutIsTTY`). It reads nothing from the environment.
+`ctx.ShutdownWithCode(code)` ends pig with status `code` (0 to 255) in
+every mode. Called in `session_start`, it stops before the command-line
+prompt is sent.
+
+**To remove the workaround (limit 9):**
+
+1. In `go/aio/recipes.go`, call `ctx.ShutdownWithCode(1)` directly and
+   delete the `ctx.Shutdown()` fallback in `exitWithCode`.
+2. Read argv from `ctx.HostLaunch().Argv` in place of
+   `piargs.HarnessArgv()`, and read the TTY state from its fields.
+   Keep `ChildBaseEnv` dropping `PIG_HARNESS_*`.
+3. Delete limit 9 and its summary row.
+
+### D237: terminal sequences
+
+`ctx.WriteTerminal(data)` writes BEL, OSC strings (except OSC 8
+hyperlinks), and tmux passthroughs of those (at most 64 KiB) to the
+terminal between TUI frames. The host refuses any other bytes, so the
+next frame is drawn correctly. In print, JSON and RPC mode the call
+writes nothing and returns an error that names the mode.
+
+**To remove the workaround:**
+
+1. In `go/aio/notifications.go`, replace `writeTTY` with a writer that
+   calls `WriteTerminal` on the context from `OnLoaded` (`Backend.Send`
+   runs after the handler returns). Pass it to `notify.NewBackend`.
+   Every sequence that `internal/notifications/backend.go` builds is
+   accepted: OSC 777, kitty's OSC 99, the tmux passthrough, and BEL.
+2. Ignore or log the error in print, JSON and RPC mode.
+3. Delete `writeTTY` and the `/dev/tty` notes in this file and in
+   `README.md` "Known gaps" (notifications).
+
+### D238: relaunch in the same process
+
+`ctx.Relaunch(sdk.RelaunchOptions{Args, Env})` shuts the current runtime
+down (`session_shutdown` with reason `quit`) and replaces the pig process
+image with `pig <Args>`. The PID, terminal and stdio stay the same, so
+only one pig runs. If `Args` chooses no session, the host adds
+`--session <current file>` when that file exists. `Env` holds only the
+changed keys; `nil` removes a key, and `PIG_EXT_*` and `PIG_HARNESS_*`
+keys are refused. The call returns when the mode accepts or refuses the
+request. It is refused on Windows, after pig has read piped stdin, in
+RPC mode after pig started to read commands, and while pig shuts down.
+The current runtime keeps running after a refusal.
+
+**To remove the workaround (limit 10):**
+
+1. In `go/internal/recipes/launch.go`, make `DecideLaunch` return the
+   relaunch `Args` (`[...injected, ...bridgeable]`) and the changed
+   `Env` keys (`AIO_RECIPE_STAGE=1`, `AIO_RECIPE_INJECTED_ARGS`,
+   `AIO_RECIPE_ACTIVE`, `AIO_RECIPE_ORIGIN`, and `AIO_PIG_TRUST_ASKED`
+   when it applies). Delete `PigRestartNote`, `PigLauncherMismatchNote`,
+   `StartedByPigLauncher` and `PigLauncherEnv`.
+2. In `go/aio/recipes.go` `sessionStart`, call `ctx.Relaunch` when the
+   decision is a relaunch and return. Show the current note only when
+   the call returns an error. Do the same for `resumeHint` on a resume.
+3. In `recipes/pig-host.ts`, add `pigRelaunch(ctx, spec)` that calls
+   `await ctx.relaunch({ args, env })` with only the changed AIO keys.
+   Use it in `trampoline.ts`, `index.ts` and `resume.ts` in place of the
+   launcher branches and the restart hint.
+4. Remove `bin/aio-pig.mjs`, `recipes/pig-launch/`, any wrapper script
+   for the launcher, and its `package.json` bin entry.
+5. Replace limit 10 with the two cases that stay: piped stdin cannot be
+   bridged, and Windows refuses the relaunch.
+
+### Relative tool paths: no new call
+
+Pi's built-in `write` and `edit` resolve a relative path against
+`ctx.cwd` (`dist/core/tools/write.js:31`, `edit.js:92`), not
+`process.cwd()`. PiG does the same, so `ctx.Cwd()` is the base of the
+built-in tools. The fork test
+`TestBuiltinFileToolsResolveRelativePathsAgainstCtxCwd` starts pig in
+one folder with a session from another and checks this. The
+TypeScript guard also checks `process.cwd()` because AIO's own
+`apply_patch` resolves against it (`diff-tools/index.ts:1603`).
+
+The fork found one difference from Pi: PiG starts isolated and packed
+extensions in the session cwd, but Pi's `process.cwd()` is the folder
+pig started in. A Go extension's `os.Getwd()` is therefore the session
+cwd. Only a fused extension sees pig's own folder.
+
+**To update the port:**
+
+1. In `go/internal/permissionmodes/workspace.go`, replace the
+   "Difference from TypeScript" comment. Check a relative path against
+   `ctx.Cwd()` and `os.Getwd()`, without duplicates, as
+   `workspace-guard.ts` does.
+2. Remove the permission-modes "relative paths" gap from `README.md`.
+3. Correct the working-directory rule below if PiG changes where it
+   starts extensions.
+
+### Host calls that re-enter the extension
+
+Some host calls run this extension's own handlers before they return,
+as in Pi. The fork keeps this behavior and lists the calls in
+`extension-api.md` ("Host calls that run your own handlers before they
+return"). The fork test
+`TestGoHostCallRunsTheCallersHandlersBeforeItReturns` checks the order.
+
+| Call | Events this extension receives before the call returns |
+|---|---|
+| `SetThinkingLevel` | `thinking_level_select` (only when the level changes) |
+| `SetModel` | `thinking_level_select`, then `model_select` |
+| `SetSessionName` | `session_info_changed` |
+| `NewSession`, `SwitchSession` | `session_before_switch`, then `session_shutdown` |
+| `Fork` | `session_before_fork`, then `session_shutdown` |
+| `NavigateTree` | `session_before_tree`, then `session_tree` |
+| `Reload` | `session_shutdown` |
+| `SendUserMessage` | `input` and `before_agent_start`; also `agent_start` in print and JSON mode |
+| `SendMessage` with `triggerTurn` on an idle session | `before_agent_start` in RPC mode only |
+| `ExecuteTool` | The nested tool's events and the tool itself |
+| `Events().Emit` | This extension's own listeners |
+
+`AppendEntry`, `SetLabel`, `SetActiveTools`, `Notify`, `Exec` and
+`Compact` send nothing back before they return.
+
+The fork found two open issues that are not fixed yet. In the
+interactive mode, `ctx.Abort` waits until the session is idle, and a
+call from a `turn_start` handler can hang the run (see limit 6). The
+point where `SendUserMessage` and `SendMessage` return also differs by
+mode in PiG, where Pi has one behavior.
 
 ## Rules that come from these limits
 
@@ -208,16 +401,23 @@ stderr. Look for the line on pig's stderr.
   for example notification signals. It is shared between processes.
 - Read pig's argv from `PIG_HARNESS_ARGV_FILE` (a JSON string array of the
   arguments after the binary), with `piargs.HarnessArgv()`. PiG sets it in
-  every extension cell; a Go extension's own `os.Args` is its runner. The
-  Go extension's working directory is pig's working directory. Subagent
+  every extension cell; a Go extension's own `os.Args` is its runner.
+  With a pig that has D236, use `ctx.HostLaunch().Argv`. Subagent
   children must not inherit the variable (`ChildBaseEnv` drops
   `PIG_HARNESS_*` and `PIG_EXT_*`).
+- The Go extension's working directory is the session cwd when it
+  starts (isolated and packed cells), not the folder pig started in.
+  The built-in tools resolve relative paths against `ctx.Cwd()`.
 - Expect SDK callbacks and your own goroutines to run at the same time.
   TypeScript code that relies on one thread (for example the subagent
   runner's `onUpdate`) must serialize the calls in Go.
 - Do not hold a feature mutex across a host call that sends an event back
   to this extension. For example, `SetThinkingLevel` sends
   `thinking_level_select`, and that handler then waits for the same mutex.
+  See "Host calls that re-enter the extension" for the full list. Release
+  the lock before the call, or record the change and commit it after the
+  call returns.
 - Do not write terminal sequences to stdout. Stdout is the connection to
-  the PiG host. Write them to `/dev/tty`.
+  the PiG host. With a pig that has D237, use `ctx.WriteTerminal`;
+  otherwise write them to `/dev/tty`.
 - Do not stop `pig` processes that you did not start during tests.

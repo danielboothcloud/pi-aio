@@ -5,7 +5,9 @@ package aio
 //
 // Differences from TypeScript, until the related features are ported:
 //   - File-mutation approvals use the diff-tools overlay in the TUI
-//     (ApproveMutation in difftools.go) and ctx.Select elsewhere.
+//     (ApproveMutation in difftools.go) and ctx.Select elsewhere. Every
+//     approval and plan prompt emits the notification agent-prompt event
+//     (withAgentPrompt), as in TypeScript.
 //   - The Cursor bridge switch goes through PiG's shared environment
 //     (ctx.SetSharedEnv, PiG divergence D234), which reaches the Node
 //     provider's process.env but not this process's environment.
@@ -74,6 +76,11 @@ func (u ctxUI) Select(title string, options []string) (string, bool) {
 	}
 	s, isString := choice.(string)
 	return s, isString
+}
+
+// MarkAgentPrompt marks the gate's select fallback (withAgentPrompt).
+func (u ctxUI) MarkAgentPrompt(kind, title, body, preview string) func() {
+	return beginAgentPrompt(u.ctx, kind, title, body, &preview)
 }
 
 var spinnerFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
@@ -399,7 +406,9 @@ func (s *modesState) agentEnd(ctx sdk.Context, data map[string]any) {
 	listMessage := pm.PlanListMessage(items)
 	s.mu.Unlock()
 
+	end := beginAgentPrompt(ctx, "select", "Plan ready", "Review the agent's plan and choose what happens next.", nil)
 	choice, ok := ctxUI{ctx}.Select("Plan ready — what next?", []string{"Execute the plan", "Stay in plan mode", "Refine the plan"})
+	end()
 	if !ok {
 		return
 	}
@@ -418,7 +427,9 @@ func (s *modesState) agentEnd(ctx sdk.Context, data map[string]any) {
 		_ = ctx.SendMessage(pm.PlanListType, listMessage, true, sdk.SendMessageOptions{DeliverAs: "followUp"})
 		_ = ctx.SendMessage(pm.ExecuteType, body, true, sdk.SendMessageOptions{TriggerTurn: &yes, DeliverAs: "followUp"})
 	case choice == "Refine the plan":
+		end := beginAgentPrompt(ctx, "editor", "Input needed", "The agent is waiting for your plan refinement.", nil)
 		refinement, ok, err := ctx.Editor("Refine the plan:", "")
+		end()
 		text, _ := refinement.(string)
 		if err == nil && ok && strings.TrimSpace(text) != "" {
 			_ = ctx.SendMessage(pm.PlanListType, listMessage, true, sdk.SendMessageOptions{DeliverAs: "followUp"})

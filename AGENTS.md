@@ -540,8 +540,16 @@ generated `dist/` tree without changing the package contract.
   `index.ts`; shares the TS trust store and config tiers; publishes its
   blocklist and starting mode to the other Go features through package
   state; the Node launcher keeps the bridge, and `AIO_PIG_EXTENSION`
-  makes the launcher inject `go/aio` instead of `index.ts`), then
-  styles, effort, notifications, and session-naming. Group 5 (goals,
+  makes the launcher inject `go/aio` instead of `index.ts`). The Go
+  recipes also own `/recipe init`, `/recipe status [--json]`,
+  `/recipe-status`, the session trust question for a new `.pi-recipe`
+  (a non-blocking select, or a stderr hint without a UI; skipped when
+  `AIO_PIG_TRUST_ASKED=1`), and the launch notes of `decideRelaunch`.
+  They read pig's argv with `piargs.HarnessArgv` (`--no-approve`, the
+  actual `--models` scope). The empty-scope stop uses
+  `Context.ShutdownWithCode` (PiG D236) when the pig has it, else
+  `ctx.Shutdown()`. Styles, effort, notifications, and session-naming
+  are ported too. Group 5 (goals,
   btw) is ported: the goal loop runs only on `agent_before_settle`, the
   goal review and `/btw` share one isolated completion helper
   (`completeWith` in `go/aio/goals.go`) and the btw branch digest, and a
@@ -614,7 +622,12 @@ generated `dist/` tree without changing the package contract.
   re-enters the extension (`SetThinkingLevel` → `thinking_level_select`
   deadlocked effort once). Group 7 (init, rtk, user-bash, ast-grep,
   nvim, tuicr, hypa) is ported; `go/internal/toolpaths` is the shared port
-  of `yaml-hooks/tool-paths.ts`. PiG 0.7.0 panics when a Go editor
+  of `yaml-hooks/tool-paths.ts`. The hypa port includes the optional
+  `hypa_mcp_proxy` bridge (off by default, same config switch); it reads
+  the invoke arguments in the model's key order from `ctx.ToolInput()`.
+  Go producers (goals, btw, permission and plan prompts, subagents) emit
+  the `notifications/protocol.ts` events through `go/aio/notifications.go`
+  (`emitNotification`, `withAgentPrompt`). PiG 0.7.0 panics when a Go editor
   component overrides any method; the PiG fork fixes it, and the Go
   user-bash, queue, and frame editors need that fork. The Go SDK cannot
   suspend the host TUI, so

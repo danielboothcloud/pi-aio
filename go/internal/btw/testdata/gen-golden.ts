@@ -187,6 +187,15 @@ for (const width of [4, 5, 12, 30, 60]) {
 	const late = { phase: "answered", question: "q", answer: "a", answeredAt: NOW, dismissAt: NOW - 10 };
 	cards.push({ card: late, width, now: NOW, rows: display.buildBtwCardRows(identity, late, width, NOW) });
 }
+// The same rows in the shared chrome colors (a tagged theme).
+const tagged = { fg: (role: string, value: string) => `<${role}>${value}</>`, bold: (value: string) => value };
+const themed: unknown[] = [];
+for (const width of [5, 30, 60]) {
+	for (const data of entries) themed.push({ kind: "box", data, width, rows: display.buildBtwBoxRows(tagged, data, width) });
+	const answered = { phase: "answered", question: entries[3]!.question, answer: entries[3]!.answer, answeredAt: NOW, dismissAt: NOW + 59_500 };
+	const pending = { phase: "pending", question: "what now?", model: "openai/gpt-x", startedAt: NOW - 3_700 };
+	for (const card of [answered, pending]) themed.push({ kind: "card", card, width, now: NOW, rows: display.buildBtwCardRows(tagged, card, width, NOW) });
+}
 const statusLines = [undefined, "claude-x"].map((id) => ({ id: id ?? null, out: display.statusAskingLine(id) }));
 
 // ---- snapshot ----
@@ -244,6 +253,13 @@ try {
 			registerCommand: (n: string, command: unknown) => commands.set(n, command),
 			on: (event: string, handler: (event: unknown, ctx: unknown) => unknown) => handlers.set(event, [...(handlers.get(event) ?? []), handler]),
 			appendEntry: (customType: string, data: unknown) => log.push({ op: "append", customType, data }),
+			// Notification protocol signals (emitNotification). The frame
+			// capability probe is Go package state, not a bus event.
+			events: {
+				emit: (name: string, payload: unknown) => {
+					if (name.startsWith("aio:notification")) log.push({ op: "event", name, payload });
+				},
+			},
 		};
 		const makeCtx = (step: { streaming?: boolean; noModel?: boolean }) => ({
 			cwd: join(root, "ws"),
@@ -251,7 +267,7 @@ try {
 			hasUI: options.hasUI,
 			signal: step.streaming ? new AbortController().signal : undefined,
 			model: step.noModel ? undefined : { provider: "anthropic", id: "claude-x" },
-			sessionManager: { getBranch: () => BASE },
+			sessionManager: { getBranch: () => BASE, getSessionId: () => "s" },
 			modelRegistry: {
 				complete: async (_model: unknown, ctx: { systemPrompt: string; messages: Array<{ content: string }> }) => {
 					log.push({ op: "complete", systemPrompt: ctx.systemPrompt, prompt: ctx.messages[0].content });
@@ -344,6 +360,7 @@ const output = `${JSON.stringify(
 		toasts,
 		boxes,
 		cards,
+		themed,
 		statusLines,
 		fixture: FIXTURE,
 		snapshots: placeholders(snapshots),

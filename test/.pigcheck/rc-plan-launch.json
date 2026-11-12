@@ -1,0 +1,1 @@
+{"answers": [], "steps": [{"sleep": 2}, {"prompt": "/recipe trust"}, {"prompt": "/recipe-status"}], "stderr": "rc-rpc-launch.err"}

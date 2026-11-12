@@ -1,0 +1,225 @@
+===== init picker =====
+
+    ▄▄▄▄  ▄▄▄▄    v0.7.0+1.5.0
+   ▄▀▀▀▀▄▄▀▀▀▀▄   escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  Press ctrl+o to show full startup help and loaded resources.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  PiG can explain its own features and look up its docs. Ask it how to use or extend PiG.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts, rc-listener.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'ctrl+p' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts
+with built-in shortcut. Skipping.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Create .pi-recipe — start from:
+
+ → Blank recipe (current model)
+   Copy plain — Nothing but a name
+   Copy work — Work setup with the fixture model
+
+ ↑↓ navigate  enter select  escape/ctrl+c cancel
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+===== picker on Copy work =====
+
+    ▄▄▄▄  ▄▄▄▄    v0.7.0+1.5.0
+   ▄▀▀▀▀▄▄▀▀▀▀▄   escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  Press ctrl+o to show full startup help and loaded resources.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  PiG can explain its own features and look up its docs. Ask it how to use or extend PiG.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts, rc-listener.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'ctrl+p' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts
+with built-in shortcut. Skipping.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Create .pi-recipe — start from:
+
+   Blank recipe (current model)
+   Copy plain — Nothing but a name
+ → Copy work — Work setup with the fixture model
+
+ ↑↓ navigate  enter select  escape/ctrl+c cancel
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+===== name input =====
+
+    ▄▄▄▄  ▄▄▄▄    v0.7.0+1.5.0
+   ▄▀▀▀▀▄▄▀▀▀▀▄   escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  Press ctrl+o to show full startup help and loaded resources.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  PiG can explain its own features and look up its docs. Ask it how to use or extend PiG.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts, rc-listener.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'ctrl+p' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts
+with built-in shortcut. Skipping.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+
+
+
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Recipe name for this folder's .pi-recipe
+
+>
+
+ enter submit  escape/ctrl+c cancel
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+===== created =====
+
+    ▄▄▄▄  ▄▄▄▄    v0.7.0+1.5.0
+   ▄▀▀▀▀▄▄▀▀▀▀▄   escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  Press ctrl+o to show full startup help and loaded resources.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  PiG can explain its own features and look up its docs. Ask it how to use or extend PiG.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+    ▀▀▀▀▀▀▀▀▀▀
+
+
+[Context]
+  ~/projects/work/danielboothcloud/pi-aio/AGENTS.md
+
+[Skills]
+  aio11y, debug-with-grafana, explore-datasources, gcx, gcx-observability, generate-resource-stubs,
+import-dashboards, investigate-alert, manage-dashboards, scaffold-project, setup-gcx, slo-check-status,
+slo-investigate, slo-manage, slo-optimize, synth-check-status, synth-investigate-check, synth-manage-checks
+
+[Extensions]
+  aio, fixture-provider.ts, rc-listener.ts
+
+[Extension issues]
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'ctrl+p' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio conflicts
+with built-in shortcut. Skipping.
+  path (temp) ~/projects/work/danielboothcloud/pi-aio/go/aio
+    Extension shortcut 'shift+tab' from /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio
+conflicts with built-in shortcut. Skipping.
+
+
+ Created /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/rc-work/tui-init/.pi-recipe
+ with recipe "tuisvc" copied from your "work" recipe (trusted). Fill in the fields you need; after you edit
+ it, the next start asks once to trust the new version. /recipe tuisvc switches now.
+
+ Warning: .pi-recipe includes MCP server configs copied verbatim from "work" — remove any tokens or headers
+ before committing it
+
+
+
+
+
+╭─ ● Default · 0% ───────────────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ feature/pig * ───────────────────────────────────────────────────────────────────────────────── tui-init ─╯
+===== recipe-status entry =====
+
+ Created /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/rc-work/tui-init/.pi-recipe
+ with recipe "tuisvc" copied from your "work" recipe (trusted). Fill in the fields you need; after you edit
+ it, the next start asks once to trust the new version. /recipe tuisvc switches now.
+
+ Warning: .pi-recipe includes MCP server configs copied verbatim from "work" — remove any tokens or headers
+ before committing it
+
+╭─ RECIPE STATUS ────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Snapshot: 2026-11-11T21:15:37.739Z                                                                         │
+│ Recipe: off (selected by none)                                                                             │
+│ Config source: none                                                                                        │
+│ Model — runtime: fixture/m1                                                                                │
+│ API — runtime: openai-completions                                                                          │
+│ Thinking — runtime: off                                                                                    │
+│ Model — configured: inherited                                                                              │
+│ Model matches recipe: unverified                                                                           │
+│ Thinking — configured: inherited                                                                           │
+│ Scope — runtime: ALL available models                                                                      │
+│ Scope — configured patterns: inherited                                                                     │
+│ Scope — launch CLI: not supplied                                                                           │
+│ Extensions — launch policy: explicit-only                                                                  │
+│   /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio                                          │
+│   /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/fixture-provider.ts              │
+│   /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/rc-listener.ts                   │
+│ Extensions — configured: inherited                                                                         │
+│ Permission mode — runtime: default; configured: inherited                                                  │
+│ Style — runtime: none; configured: inherited                                                               │
+│ Observed extension sources (runtime registrations):                                                        │
+│   cli — /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go                                        │
+│     32 commands, 21 tools registered                                                                       │
+│ Registered provider IDs: fixture                                                                           │
+│ Tools declared to model: 21                                                                                │
+│ Note: Observed sources come from actual tool/command registrations; passive or provider-only extensions    │
+│ may be absent. This is not a complete loaded-extension inventory.                                          │
+│ Note: pi list and package-update banners describe saved packages, not this runtime's extension selection.  │
+│ Note: No provider request or authentication refresh was performed.                                         │
+│ Note: Active tools are declarations to the model; registered deferred/codemode tools may remain callable   │
+│ through other tools. Provider IDs are not an extension inventory.                                          │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+╭─ ● Default · 0% ───────────────────────────────────────────────────────────────────────────── $0.000 – m1 ─╮
+│                                                                                                            │
+╰─ feature/pig * ───────────────────────────────────────────────────────────────────────────────── tui-init ─╯

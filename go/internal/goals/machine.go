@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/danielboothcloud/pi-aio/go/internal/btw"
+	notify "github.com/danielboothcloud/pi-aio/go/internal/notifications"
 )
 
 // Host is what the state machine needs from PiG. go/aio adapts sdk.Context.
@@ -29,6 +30,12 @@ type Host interface {
 	HasModel() bool
 	Complete(systemPrompt, prompt string) (map[string]any, error)
 	Exec(command string, args []string) (string, int, error)
+	// Notification protocol: the run mode, the session id, an event on the
+	// extension event bus, and withAgentPrompt's next prompt id.
+	Mode() string
+	SessionID() string
+	Emit(event string, payload map[string]any)
+	NextPromptID() int
 }
 
 // MessageDetails are the details of an aio-goal-message.
@@ -84,10 +91,52 @@ func (m *Machine) refresh(h Host) {
 	h.SetStatus(text, tone)
 }
 
-// persist appends the goal state and refreshes. The caller holds m.mu.
-func (m *Machine) persist(h Host) {
-	_ = h.Persist(copyGoal(m.goal))
+// publish refreshes the status and tells observers about the goal
+// activity (goals/index.ts publish and emitGoalActivity). The caller holds m.mu.
+func (m *Machine) publish(h Host, quietSettle bool) {
 	m.refresh(h)
+	status := "none"
+	if m.goal != nil {
+		status = string(m.goal.Status)
+	}
+	h.Emit(notify.GoalActivityEvent, notify.GoalActivityPayload(h.SessionID(), status, quietSettle))
+}
+
+// persist appends the goal state and publishes it (goals/index.ts persist).
+// The caller holds m.mu.
+func (m *Machine) persist(h Host, quietSettle bool) {
+	_ = h.Persist(copyGoal(m.goal))
+	m.publish(h, quietSettle)
+}
+
+// signal is emitNotification for a goal signal.
+func signal(h Host, id, title, body string, preview string) {
+	if !notify.SignalAllowed(h.Mode()) {
+		return
+	}
+	replaces := true
+	h.Emit(notify.NotificationEvent, notify.SignalPayload("goal", id, h.SessionID(), title, body, &preview, &replaces))
+}
+
+// attention is goals/index.ts attention: the paused goal needs the user.
+// The caller holds m.mu.
+func (m *Machine) attention(h Host, reason string) {
+	if m.goal == nil {
+		return
+	}
+	signal(h, m.goal.ID+":paused:"+m.goal.UpdatedAt, "Goal needs attention",
+		"The goal is paused. Return to Pi to review the next action.", reason)
+}
+
+// agentConfirm is withAgentPrompt around h.Confirm.
+func agentConfirm(h Host, kind, promptTitle, promptBody, preview, title, body string) bool {
+	id := h.NextPromptID()
+	emit := func(active bool) {
+		h.Emit(notify.AgentPromptEvent, notify.AgentPromptPayload(kind, promptTitle, promptBody, &preview, id, h.SessionID(), active))
+	}
+	emit(true)
+	defer emit(false)
+	return h.Confirm(title, body)
 }
 
 func (m *Machine) markPaused(reason string) {
@@ -104,7 +153,10 @@ func (m *Machine) pause(h Host, reason string, notify bool) {
 		return
 	}
 	m.markPaused(reason)
-	m.persist(h)
+	m.persist(h, true)
+	if notify {
+		m.attention(h, reason)
+	}
 	if h.HasUI() {
 		level := "info"
 		if notify {
@@ -126,7 +178,7 @@ func (m *Machine) sendContinuation(h Host) {
 	g.Continuations++
 	g.UpdatedAt = m.iso()
 	m.goal = &g
-	m.persist(h)
+	m.persist(h, false)
 	m.mu.Unlock()
 	if err := h.Send(ContinuationPrompt(g), false, MessageDetails{Kind: "continue"}); err != nil {
 		m.mu.Lock()
@@ -157,7 +209,8 @@ func (m *Machine) Propose(h Host, objective, doneWhen string) (string, error) {
 		return "", ToolError("The objective is empty.")
 	}
 	if h.HasUI() {
-		if !h.Confirm("Start this goal?", objective+"\n\nDone when:\n"+orNotSpecified(doneWhen)) {
+		if !agentConfirm(h, "confirm", "Confirm goal", "The agent is waiting for you to confirm the goal.", objective,
+			"Start this goal?", objective+"\n\nDone when:\n"+orNotSpecified(doneWhen)) {
 			return "The user did not start this goal. Ask the user what to change, then call goal_propose again. Stop if they no longer want the goal.", nil
 		}
 	}
@@ -166,7 +219,7 @@ func (m *Machine) Propose(h Host, objective, doneWhen string) (string, error) {
 	m.drafting = nil
 	g := NewGoal(objective, doneWhen, m.now())
 	m.goal = &g
-	m.persist(h)
+	m.persist(h, false)
 	if h.HasUI() {
 		h.Notify("Goal started: "+OneLine(objective, 70), "info")
 	}
@@ -211,7 +264,8 @@ func (m *Machine) Done(h Host, summary string, aborted func() bool, update func(
 	if verdict.Approved {
 		g.Status, g.Summary, g.LastReview, g.Rejections, g.PauseReason, g.UpdatedAt = Done, &summary, verdict.Reason, 0, "", m.iso()
 		m.goal = &g
-		m.persist(h)
+		m.persist(h, false)
+		signal(h, g.ID+":complete", "Goal complete", "The goal has been marked complete.", g.Objective)
 		if h.HasUI() {
 			h.Notify("Goal complete: "+OneLine(g.Objective, 70), "info")
 		}
@@ -223,13 +277,14 @@ func (m *Machine) Done(h Host, summary string, aborted func() bool, update func(
 	if g.Rejections >= MaxRejections {
 		reason := fmt.Sprintf("the review rejected the completion %d times", MaxRejections)
 		m.markPaused(reason)
-		m.persist(h)
+		m.persist(h, true)
+		m.attention(h, reason)
 		if h.HasUI() {
 			h.Notify("Goal paused: "+reason+". Run /goal resume to continue.", "warning")
 		}
 		return fmt.Sprintf("Review rejected: %s\nThe goal is paused after %d rejected reviews. Explain the open points to the user and stop.", verdict.Reason, MaxRejections), nil
 	}
-	m.persist(h)
+	m.persist(h, false)
 	return "Review rejected: " + verdict.Reason + "\nContinue working on the open points, then call goal_done again.", nil
 }
 
@@ -275,7 +330,7 @@ func (m *Machine) Command(h Host, args string) error {
 			return nil
 		}
 		m.markPaused("paused by the user")
-		m.persist(h)
+		m.persist(h, true)
 		m.mu.Unlock()
 		if !h.IsIdle() {
 			h.Abort()
@@ -295,7 +350,7 @@ func (m *Machine) Command(h Host, args string) error {
 		g := *m.goal
 		g.Status, g.PauseReason, g.Continuations, g.Rejections, g.UpdatedAt = Active, "", 0, 0, m.iso()
 		m.goal = &g
-		m.persist(h)
+		m.persist(h, false)
 		m.mu.Unlock()
 		h.Notify("Goal resumed: "+OneLine(g.Objective, 70), "info")
 		// A running turn continues through agent_before_settle; an idle
@@ -311,7 +366,7 @@ func (m *Machine) Command(h Host, args string) error {
 		}
 		wasActive := m.isActive()
 		m.goal, m.drafting = nil, nil
-		m.persist(h)
+		m.persist(h, true)
 		m.mu.Unlock()
 		if wasActive && !h.IsIdle() {
 			h.Abort()
@@ -330,11 +385,11 @@ func (m *Machine) Command(h Host, args string) error {
 				}
 			}
 			m.goal = nil
-			m.persist(h)
+			m.persist(h, true)
 		}
 		text := command.Text
 		m.drafting = &text
-		m.refresh(h)
+		m.publish(h, false)
 		m.mu.Unlock()
 		return h.Send(DraftPrompt(text), true, MessageDetails{Kind: "draft", Text: text})
 	default:
@@ -371,7 +426,8 @@ func (m *Machine) BeforeSettle(h Host, outcome string, entries []any) BoundaryRe
 	stop := func(reason string) BoundaryResult {
 		m.markPaused(reason)
 		out = append(out, stateEntry(*m.goal))
-		m.refresh(h)
+		m.publish(h, true)
+		m.attention(h, reason)
 		if h.HasUI() {
 			h.Notify("Goal paused: "+reason+". Run /goal resume to continue.", "warning")
 		}
@@ -394,7 +450,7 @@ func (m *Machine) BeforeSettle(h Host, outcome string, entries []any) BoundaryRe
 		"display":    false,
 		"details":    MessageDetails{Kind: "continue"},
 	})
-	m.refresh(h)
+	m.publish(h, false)
 	return BoundaryResult{Handled: true, Entries: out, Continue: true}
 }
 
@@ -415,13 +471,13 @@ func (m *Machine) SessionStart(h Host, entries []json.RawMessage) {
 	m.goal = LatestGoal(entries)
 	if m.isActive() {
 		m.markPaused("session reopened")
-		m.persist(h)
+		m.persist(h, true)
 		if h.HasUI() {
 			h.Notify("Goal paused: "+OneLine(m.goal.Objective, 70)+". Run /goal resume to continue.", "info")
 		}
 		return
 	}
-	m.refresh(h)
+	m.publish(h, false)
 }
 
 // Shutdown forgets the state and clears the status.

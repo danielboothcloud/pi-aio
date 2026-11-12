@@ -1,0 +1,3 @@
+{"answers": [{"match": "Start this goal?", "confirmed": true}, {"match": "Allow bash", "value": "Block"}],
+ "steps": [{"prompt": "/recipe status"}, {"prompt": "/recipe-status"}, {"prompt": "/goal ship it", "after": 1}, {"wait_end": 40}, {"prompt": "please run it", "after": 1}, {"wait_end": 40}],
+ "stderr": "rc-rpc-events.err"}

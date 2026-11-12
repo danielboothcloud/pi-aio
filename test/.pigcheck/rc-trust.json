@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "files": {
+    "/Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/rc-work/tui-trust/.pi-recipe": {
+      "sha256": "34bc0165d8704b5883dba3fff27c2d20f37d2471ded1358f998e6a20366083ba",
+      "trusted": true,
+      "decidedAt": "2026-11-11T21:28:29.032Z"
+    }
+  }
+}

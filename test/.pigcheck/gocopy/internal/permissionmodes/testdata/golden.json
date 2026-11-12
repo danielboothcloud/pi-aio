@@ -815,6 +815,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -832,6 +833,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -849,6 +851,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -866,6 +869,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -883,6 +887,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -900,6 +905,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -917,6 +923,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -934,6 +941,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -951,6 +959,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -968,6 +977,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -985,6 +995,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -1002,6 +1013,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -1025,6 +1037,56 @@
     "Allow bash \"rm -rf build\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 1,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 1,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 2,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 2,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1051,6 +1113,56 @@
     "Allow bash \"rm -rf build\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 3,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 3,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 4,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 4,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1077,6 +1189,56 @@
     "Allow bash \"rm -rf build\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 5,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 5,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 6,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 6,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1103,6 +1265,56 @@
     "Allow bash \"rm -rf build\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 7,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 7,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 8,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 8,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1129,6 +1341,56 @@
     "Allow bash \"rm -rf build\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 9,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 9,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 10,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 10,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1155,6 +1417,56 @@
     "Allow bash \"rm -rf build\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 11,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 11,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 12,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "rm -rf build",
+      "id": 12,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1178,6 +1490,56 @@
     "Allow hypa_shell \"git push\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 13,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 13,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 14,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 14,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1204,6 +1566,56 @@
     "Allow hypa_shell \"git push\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 15,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 15,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 16,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 16,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1230,6 +1642,56 @@
     "Allow hypa_shell \"git push\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 17,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 17,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 18,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 18,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1256,6 +1718,56 @@
     "Allow hypa_shell \"git push\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 19,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 19,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 20,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 20,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1282,6 +1794,56 @@
     "Allow hypa_shell \"git push\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 21,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 21,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 22,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 22,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1308,6 +1870,56 @@
     "Allow hypa_shell \"git push\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 23,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 23,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 24,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "git push",
+      "id": 24,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1329,6 +1941,56 @@
     "Allow bash \"\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 25,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 25,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 26,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 26,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1353,6 +2015,56 @@
     "Allow bash \"\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 27,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 27,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 28,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 28,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1377,6 +2089,56 @@
     "Allow bash \"\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 29,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 29,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 30,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 30,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1401,6 +2163,56 @@
     "Allow bash \"\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 31,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 31,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 32,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 32,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1425,6 +2237,56 @@
     "Allow bash \"\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 33,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 33,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 34,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 34,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1449,6 +2311,56 @@
     "Allow bash \"\"?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 35,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 35,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 36,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to run a command.",
+      "preview": "",
+      "id": 36,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1474,6 +2386,56 @@
     "Allow edit on src/a.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 37,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 37,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 38,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 38,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1495,6 +2457,32 @@
     "Allow edit on src/a.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 39,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 39,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -1523,6 +2511,56 @@
     "Allow edit on src/a.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 40,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 40,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 41,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 41,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1551,6 +2589,56 @@
     "Allow edit on src/a.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 42,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 42,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 43,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 43,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1579,6 +2667,56 @@
     "Allow edit on src/a.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 44,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 44,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 45,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 45,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1607,6 +2745,56 @@
     "Allow edit on src/a.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 46,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 46,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 47,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts",
+      "id": 47,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1631,6 +2819,56 @@
     "Allow write on src/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 48,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 48,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 49,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 49,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1651,6 +2889,32 @@
     "Allow write on src/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 50,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 50,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -1678,6 +2942,56 @@
     "Allow write on src/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 51,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 51,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 52,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 52,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1705,6 +3019,56 @@
     "Allow write on src/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 53,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 53,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 54,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 54,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1732,6 +3096,56 @@
     "Allow write on src/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 55,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 55,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 56,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 56,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1759,6 +3173,56 @@
     "Allow write on src/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 57,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 57,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 58,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/new.ts",
+      "id": 58,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1786,6 +3250,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow write on @@ROOT@@/outside/x.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 59,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 59,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 60,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 60,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1813,6 +3327,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow write on @@ROOT@@/outside/x.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 61,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 61,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 62,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 62,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1840,6 +3404,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow write on @@ROOT@@/outside/x.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 63,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 63,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 64,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 64,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1867,6 +3481,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow write on @@ROOT@@/outside/x.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 65,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 65,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 66,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 66,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1891,6 +3555,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow write on @@ROOT@@/outside/x.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 67,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 67,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 68,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 68,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1915,6 +3629,56 @@
     "Allow write on ../outside/x.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 69,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 69,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "../outside/x.ts",
+      "id": 70,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "../outside/x.ts",
+      "id": 70,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1957,6 +3721,56 @@
     "Allow apply_patch on src/a.ts, c, d (+1 more)?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 71,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 71,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 72,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 72,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -1995,6 +3809,32 @@
     "Allow apply_patch on src/a.ts, c, d (+1 more)?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 73,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 73,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -2040,6 +3880,56 @@
     "Allow apply_patch on src/a.ts, c, d (+1 more)?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 74,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 74,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 75,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 75,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -2085,6 +3975,56 @@
     "Allow apply_patch on src/a.ts, c, d (+1 more)?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 76,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 76,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 77,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 77,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -2130,6 +4070,56 @@
     "Allow apply_patch on src/a.ts, c, d (+1 more)?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 78,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 78,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 79,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 79,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -2175,6 +4165,56 @@
     "Allow apply_patch on src/a.ts, c, d (+1 more)?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 80,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 80,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 81,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "src/a.ts, c, d (+1 more)",
+      "id": 81,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -2201,6 +4241,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow apply_patch on @@ROOT@@/outside/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 82,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 82,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 83,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 83,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -2227,6 +4317,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow apply_patch on @@ROOT@@/outside/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 84,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 84,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 85,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 85,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -2253,6 +4393,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow apply_patch on @@ROOT@@/outside/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 86,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 86,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 87,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 87,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -2279,6 +4469,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow apply_patch on @@ROOT@@/outside/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 88,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 88,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 89,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 89,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -2302,6 +4542,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow apply_patch on @@ROOT@@/outside/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 90,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 90,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 91,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 91,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -2325,6 +4615,56 @@
     "Allow apply_patch on (unknown)?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 92,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 92,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "(unknown)",
+      "id": 93,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent is waiting for permission to change files.",
+      "preview": "(unknown)",
+      "id": 93,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "default"
   },
   {
@@ -2345,6 +4685,7 @@
     "Cursor host edit bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2365,6 +4706,7 @@
     "Cursor host edit bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2385,6 +4727,7 @@
     "Cursor host edit bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2405,6 +4748,7 @@
     "Cursor host edit bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2425,6 +4769,7 @@
     "Cursor host edit bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2445,6 +4790,7 @@
     "Cursor host edit bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2466,6 +4812,7 @@
     "Cursor host shell bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2487,6 +4834,7 @@
     "Cursor host shell bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2508,6 +4856,7 @@
     "Cursor host shell bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2529,6 +4878,7 @@
     "Cursor host shell bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2550,6 +4900,7 @@
     "Cursor host shell bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2571,6 +4922,7 @@
     "Cursor host shell bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed default mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2588,6 +4940,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2605,6 +4958,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2622,6 +4976,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2639,6 +4994,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2656,6 +5012,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2673,6 +5030,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2690,6 +5048,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2707,6 +5066,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2724,6 +5084,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2741,6 +5102,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2758,6 +5120,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2775,6 +5138,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2790,6 +5154,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2805,6 +5170,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2826,6 +5192,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2847,6 +5214,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2866,6 +5234,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2889,6 +5258,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2911,6 +5281,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2933,6 +5304,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2973,6 +5345,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -2994,6 +5367,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -3009,6 +5383,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -3025,6 +5400,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -3040,6 +5416,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -3055,6 +5432,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "default"
   },
   {
@@ -3072,6 +5450,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3089,6 +5468,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3106,6 +5486,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3123,6 +5504,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3140,6 +5522,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3157,6 +5540,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3174,6 +5558,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3191,6 +5576,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3208,6 +5594,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3225,6 +5612,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3242,6 +5630,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3259,6 +5648,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3282,6 +5672,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3305,6 +5696,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3328,6 +5720,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3351,6 +5744,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3374,6 +5768,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3397,6 +5792,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3420,6 +5816,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3443,6 +5840,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3466,6 +5864,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3489,6 +5888,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3512,6 +5912,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3535,6 +5936,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3556,6 +5958,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3577,6 +5980,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3598,6 +6002,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3619,6 +6024,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3640,6 +6046,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3661,6 +6068,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3686,6 +6094,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3711,6 +6120,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3736,6 +6146,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3761,6 +6172,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3786,6 +6198,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3811,6 +6224,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3835,6 +6249,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3859,6 +6274,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3883,6 +6299,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3907,6 +6324,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3931,6 +6349,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3955,6 +6374,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -3979,6 +6399,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4003,6 +6424,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4027,6 +6449,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4051,6 +6474,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4075,6 +6499,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4099,6 +6524,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4141,6 +6567,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4183,6 +6610,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4225,6 +6653,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4267,6 +6696,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4309,6 +6739,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4351,6 +6782,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4374,6 +6806,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4397,6 +6830,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4420,6 +6854,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4443,6 +6878,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4466,6 +6902,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4489,6 +6926,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4509,6 +6947,7 @@
     "Cursor host edit bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4529,6 +6968,7 @@
     "Cursor host edit bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4549,6 +6989,7 @@
     "Cursor host edit bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4569,6 +7010,7 @@
     "Cursor host edit bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4589,6 +7031,7 @@
     "Cursor host edit bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4609,6 +7052,7 @@
     "Cursor host edit bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4630,6 +7074,7 @@
     "Cursor host shell bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4651,6 +7096,7 @@
     "Cursor host shell bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4672,6 +7118,7 @@
     "Cursor host shell bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4693,6 +7140,7 @@
     "Cursor host shell bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4714,6 +7162,7 @@
     "Cursor host shell bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4735,6 +7184,7 @@
     "Cursor host shell bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed ask mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4752,6 +7202,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4769,6 +7220,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4786,6 +7238,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4803,6 +7256,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4820,6 +7274,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4837,6 +7292,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4854,6 +7310,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4871,6 +7328,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4888,6 +7346,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4905,6 +7364,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4922,6 +7382,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4939,6 +7400,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4954,6 +7416,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4969,6 +7432,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -4990,6 +7454,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -5011,6 +7476,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -5030,6 +7496,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -5053,6 +7520,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -5075,6 +7543,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -5097,6 +7566,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -5137,6 +7607,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -5158,6 +7629,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -5173,6 +7645,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -5189,6 +7662,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -5204,6 +7678,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -5219,6 +7694,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "ask"
   },
   {
@@ -5236,6 +7712,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5253,6 +7730,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5270,6 +7748,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5287,6 +7766,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5304,6 +7784,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5321,6 +7802,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5338,6 +7820,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5355,6 +7838,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5372,6 +7856,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5389,6 +7874,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5406,6 +7892,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5423,6 +7910,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5446,6 +7934,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5469,6 +7958,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5492,6 +7982,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5515,6 +8006,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5538,6 +8030,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5561,6 +8054,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5584,6 +8078,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5607,6 +8102,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5630,6 +8126,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5653,6 +8150,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5676,6 +8174,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5699,6 +8198,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5720,6 +8220,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5741,6 +8242,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5762,6 +8264,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5783,6 +8286,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5804,6 +8308,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5825,6 +8330,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5850,6 +8356,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5875,6 +8382,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5900,6 +8408,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5925,6 +8434,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5950,6 +8460,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5975,6 +8486,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -5999,6 +8511,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6023,6 +8536,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6047,6 +8561,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6071,6 +8586,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6095,6 +8611,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6119,6 +8636,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6143,6 +8661,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6167,6 +8686,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6191,6 +8711,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6215,6 +8736,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6239,6 +8761,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6263,6 +8786,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6305,6 +8829,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6347,6 +8872,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6389,6 +8915,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6431,6 +8958,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6473,6 +9001,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6515,6 +9044,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6538,6 +9068,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6561,6 +9092,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6584,6 +9116,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6607,6 +9140,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6630,6 +9164,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6653,6 +9188,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6673,6 +9209,7 @@
     "Cursor host edit bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6693,6 +9230,7 @@
     "Cursor host edit bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6713,6 +9251,7 @@
     "Cursor host edit bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6733,6 +9272,7 @@
     "Cursor host edit bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6753,6 +9293,7 @@
     "Cursor host edit bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6773,6 +9314,7 @@
     "Cursor host edit bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host edit bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6794,6 +9336,7 @@
     "Cursor host shell bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6815,6 +9358,7 @@
     "Cursor host shell bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6836,6 +9380,7 @@
     "Cursor host shell bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6857,6 +9402,7 @@
     "Cursor host shell bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6878,6 +9424,7 @@
     "Cursor host shell bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6899,6 +9446,7 @@
     "Cursor host shell bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution.",
     "Cursor host shell bypassed plan mode; the action already ran outside Pi's permission gate. Use pi__edit, pi__write, pi__apply_patch, or pi__bash so Pi can show the diff and prompt before execution."
    ],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6916,6 +9464,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6933,6 +9482,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6950,6 +9500,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6967,6 +9518,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -6984,6 +9536,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7001,6 +9554,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7018,6 +9572,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7035,6 +9590,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7052,6 +9608,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7069,6 +9626,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7086,6 +9644,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7103,6 +9662,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7118,6 +9678,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7133,6 +9694,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7154,6 +9716,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7175,6 +9738,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7194,6 +9758,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7217,6 +9782,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7239,6 +9805,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7261,6 +9828,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7301,6 +9869,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7322,6 +9891,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7337,6 +9907,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7353,6 +9924,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7368,6 +9940,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7383,6 +9956,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "plan"
   },
   {
@@ -7400,6 +9974,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7417,6 +9992,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7434,6 +10010,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7451,6 +10028,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7468,6 +10046,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7485,6 +10064,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7502,6 +10082,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7519,6 +10100,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7536,6 +10118,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7553,6 +10136,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7570,6 +10154,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7587,6 +10172,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7604,6 +10190,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7621,6 +10208,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7638,6 +10226,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7655,6 +10244,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7672,6 +10262,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7689,6 +10280,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7706,6 +10298,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7723,6 +10316,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7740,6 +10334,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7757,6 +10352,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7774,6 +10370,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7791,6 +10388,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7806,6 +10404,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7821,6 +10420,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7836,6 +10436,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7851,6 +10452,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7866,6 +10468,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7881,6 +10484,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7900,6 +10504,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7919,6 +10524,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7938,6 +10544,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7957,6 +10564,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7976,6 +10584,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -7995,6 +10604,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8013,6 +10623,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8031,6 +10642,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8049,6 +10661,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8067,6 +10680,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8085,6 +10699,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8103,6 +10718,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8130,6 +10746,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow write on @@ROOT@@/outside/x.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 94,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 94,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 95,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 95,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -8157,6 +10823,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow write on @@ROOT@@/outside/x.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 96,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 96,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 97,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 97,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -8184,6 +10900,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow write on @@ROOT@@/outside/x.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 98,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 98,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 99,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 99,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -8211,6 +10977,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow write on @@ROOT@@/outside/x.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 100,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 100,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 101,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 101,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -8235,6 +11051,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow write on @@ROOT@@/outside/x.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 102,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 102,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 103,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 103,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -8255,6 +11121,32 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow write on @@ROOT@@/outside/x.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 104,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/x.ts",
+      "id": 104,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -8291,6 +11183,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8327,6 +11220,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8363,6 +11257,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8399,6 +11294,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8435,6 +11331,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8471,6 +11368,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8497,6 +11395,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow apply_patch on @@ROOT@@/outside/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 105,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 105,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 106,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 106,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -8523,6 +11471,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow apply_patch on @@ROOT@@/outside/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 107,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 107,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 108,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 108,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -8549,6 +11547,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow apply_patch on @@ROOT@@/outside/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 109,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 109,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 110,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 110,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -8575,6 +11623,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow apply_patch on @@ROOT@@/outside/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 111,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 111,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 112,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 112,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -8598,6 +11696,56 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow apply_patch on @@ROOT@@/outside/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 113,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 113,
+      "sessionId": "s",
+      "active": false
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 114,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 114,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -8617,6 +11765,32 @@
     "⚠ Outside the working directory @@ROOT@@/repo. \"Allow this folder for the session\" allows further changes under: @@ROOT@@/outside\nAllow apply_patch on @@ROOT@@/outside/new.ts?"
    ],
    "notes": [],
+   "events": [
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 115,
+      "sessionId": "s",
+      "active": true
+     }
+    },
+    {
+     "name": "aio:notification:agent-prompt",
+     "payload": {
+      "kind": "select",
+      "title": "Approval needed",
+      "body": "The agent wants to change files outside its working directory.",
+      "preview": "@@ROOT@@/outside/new.ts",
+      "id": 115,
+      "sessionId": "s",
+      "active": false
+     }
+    }
+   ],
    "modeAfter": "auto"
   },
   {
@@ -8634,6 +11808,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8651,6 +11826,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8668,6 +11844,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8685,6 +11862,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8702,6 +11880,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8719,6 +11898,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8737,6 +11917,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8755,6 +11936,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8773,6 +11955,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8791,6 +11974,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8809,6 +11993,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8827,6 +12012,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8844,6 +12030,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8861,6 +12048,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8878,6 +12066,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8895,6 +12084,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8912,6 +12102,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8929,6 +12120,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8946,6 +12138,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8963,6 +12156,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8980,6 +12174,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -8997,6 +12192,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9014,6 +12210,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9031,6 +12228,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9046,6 +12244,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9061,6 +12260,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9076,6 +12276,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9091,6 +12292,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9104,6 +12306,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9121,6 +12324,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9137,6 +12341,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9159,6 +12364,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9193,6 +12399,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9214,6 +12421,7 @@
    },
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9229,6 +12437,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9245,6 +12454,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9260,6 +12470,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   },
   {
@@ -9275,6 +12486,7 @@
    "again": null,
    "prompts": [],
    "notes": [],
+   "events": [],
    "modeAfter": "auto"
   }
  ],

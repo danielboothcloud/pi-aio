@@ -353,7 +353,23 @@ func (h *fakeHost) Confirm(title, body string) bool {
 	return answer
 }
 func (h *fakeHost) IsIdle() bool { return h.idle }
-func (h *fakeHost) Abort()       { h.log = append(h.log, map[string]any{"op": "abort"}) }
+func (h *fakeHost) Mode() string { return "tui" }
+func (h *fakeHost) SessionID() string {
+	return "s"
+}
+func (h *fakeHost) Emit(event string, payload map[string]any) {
+	h.log = append(h.log, map[string]any{"op": "event", "name": event, "payload": payload})
+}
+
+// promptIDs is withAgentPrompt's module-level counter: the generator runs
+// every scenario in one process, so ids continue across scenarios.
+var promptIDs int
+
+func (h *fakeHost) NextPromptID() int {
+	promptIDs++
+	return promptIDs
+}
+func (h *fakeHost) Abort() { h.log = append(h.log, map[string]any{"op": "abort"}) }
 func (h *fakeHost) Branch() []json.RawMessage {
 	return h.branch
 }
@@ -488,6 +504,7 @@ func (s step) raw(t *testing.T) any {
 }
 
 func TestGoldenScenarios(t *testing.T) {
+	t.Setenv("AIO_SUBAGENT_CHILD", "") // the generator runs as a parent session
 	g := loadGolden(t)
 	clock := func() time.Time { return time.Date(2025, 5, 6, 7, 8, 9, 0, time.UTC) }
 	steps := 0
@@ -558,5 +575,38 @@ func TestReviewDigestUsesReviewBudget(t *testing.T) {
 	}
 	if !strings.Contains(prompt, "…[20 messages trimmed]") || strings.Count(prompt, "USER: message") != ReviewTranscriptMessages {
 		t.Fatalf("review digest did not keep %d messages:\n%s", ReviewTranscriptMessages, prompt)
+	}
+}
+
+type taggedTheme struct{}
+
+func (taggedTheme) Fg(role, text string) string { return "<" + role + ">" + text + "</>" }
+func (taggedTheme) Bold(text string) string     { return "*" + text + "*" }
+func (taggedTheme) Bg(_, text string) string    { return text }
+
+// The draft card matches the real goals/index.ts message renderer.
+func TestDraftCardMatchesTypeScript(t *testing.T) {
+	data, err := os.ReadFile("testdata/golden.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var g struct {
+		DraftCards []struct {
+			Text  string   `json:"text"`
+			Width int      `json:"width"`
+			Rows  []string `json:"rows"`
+		} `json:"draftCards"`
+		OtherKind any `json:"otherKind"`
+	}
+	if err := json.Unmarshal(data, &g); err != nil {
+		t.Fatal(err)
+	}
+	if len(g.DraftCards) == 0 || g.OtherKind != nil {
+		t.Fatalf("draft cards: %d, other kind %v", len(g.DraftCards), g.OtherKind)
+	}
+	for _, c := range g.DraftCards {
+		if got := DraftCard(taggedTheme{}, c.Text, c.Width); !reflect.DeepEqual(got, c.Rows) {
+			t.Errorf("%q at %d:\n go %q\n ts %q", c.Text, c.Width, got, c.Rows)
+		}
 	}
 }

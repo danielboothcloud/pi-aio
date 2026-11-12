@@ -1,0 +1,5 @@
+{"recipes": {
+  "scoped": {"description": "Scoped to the fixture model", "models": ["fixture/m1"], "thinkingLevel": "low"},
+  "ghost": {"description": "Scoped to a model that does not exist", "models": ["nope/none"]},
+  "exts": {"description": "With an extension", "extensions": ["npm:pi-nothing"]}
+}}

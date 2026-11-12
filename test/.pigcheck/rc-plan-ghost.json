@@ -1,0 +1,1 @@
+{"answers": [], "steps": [{"sleep": 2}, {"prompt": "/recipe-status --json"}], "stderr": "rc-rpc-ghost.err"}

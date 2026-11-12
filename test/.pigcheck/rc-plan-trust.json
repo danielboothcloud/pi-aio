@@ -1,0 +1,3 @@
+{"answers": [{"match": "Trust this recipe file?", "value": "Trust this recipe file"}],
+ "steps": [{"sleep": 3}, {"prompt": "/recipe status"}, {"prompt": "/recipe init"}, {"prompt": "/recipe untrust"}, {"prompt": "/recipe trust"}],
+ "stderr": "rc-rpc-trust.err"}

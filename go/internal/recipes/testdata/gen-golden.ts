@@ -40,6 +40,21 @@ const FIXTURES: Record<string, string> = {
 	"broken/.pi-recipe": "{ not json",
 	"arrayrecipes/.pi-recipe": JSON.stringify({ defaultRecipe: "0", recipes: [{ model: "first" }] }),
 	"empty/.keep": "",
+	// Home recipes that `/recipe init --from` copies: raw text, because the
+	// copy must keep JavaScript's key order (array-index keys first, a
+	// repeated key at its first position with its last value).
+	"templates/aio-recipes.json": `{"recipes":{
+ "work":{"description":"Work subscriptions with a description longer than forty-two chars","model":"openai/gpt-5:high","models":["openai/*"," anthropic/claude-x "],
+  "mcpServers":{"zeta":{"url":"https://z","headers":{"b":"2","a":"1","10":"ten","2":"two"}},"alpha":{"command":"npx","args":["-y","x"],"env":{"TOKEN":"secret"}}," ":{"url":"skip"},"bad":1,"10":{"url":"ten"},"list":[1,{"b":1,"a":2}],"zeta":{"url":"https://z2","b":1,"b":2,"q":"<&>\u2028"}},
+  "extensions":["npm:pi-lens","./local.ts"," "],
+  "blocklist":{"match":"command","entries":["vault",{"pattern":" ^git push ","regex":true,"reason":"  no  ","match":"text"},{"pattern":"x"},{"pattern":"y","reason":"  "},{"pattern":"z","match":"command"},"  ",3,{"pattern":7}]},
+  "permissionMode":"Plan","style":"humanised","junk":1},
+ "plain":{},
+ "home":{"description":"Home","model":"anthropic/claude-x","thinkingLevel":"low","blocklist":["rm -rf",{"pattern":"p"}],"mode":"ask"},
+ "Ünï":{"description":"unicode name","model":"m:max"},
+ "blockoff":{"blocklist":{"enabled":false,"entries":["x"]}}
+}}`,
+	"notemplates/aio-recipes.json": JSON.stringify({ recipes: {} }),
 };
 for (const [path, text] of Object.entries(FIXTURES)) {
 	mkdirSync(dirname(join(root, path)), { recursive: true });
@@ -117,9 +132,12 @@ const descriptions = ["project/.pi-recipe", "broken/.pi-recipe", "baddefault/.pi
 }));
 const trustStore = readFileSync(process.env.AIO_RECIPE_TRUST_FILE, "utf8").replace(/"decidedAt": "[^"]*"/g, '"decidedAt": "@@TIME@@"');
 
+const extra = await import(join(here, "gen-golden-commands.ts"));
+const commands = await extra.generate({ repo, root, placeholders, setStderr: (write: typeof process.stderr.write) => { process.stderr.write = write; } });
+
 process.stderr.write = savedStderr;
 rmSync(root, { recursive: true, force: true });
-const output = `${JSON.stringify({ fixtures: FIXTURES, loads: placeholders(loads), specs, branches, trustStates, descriptions: placeholders(descriptions), trustStore: placeholders(trustStore) }, null, 1)}\n`;
+const output = `${JSON.stringify({ fixtures: FIXTURES, loads: placeholders(loads), specs, branches, trustStates, descriptions: placeholders(descriptions), trustStore: placeholders(trustStore), ...commands.golden }, null, 1)}\n`;
 const goldenPath = join(here, "golden.json");
 if (process.argv.includes("--check")) {
 	let current = "";
@@ -132,8 +150,8 @@ if (process.argv.includes("--check")) {
 		console.error("recipes golden.json is stale: run npx tsx go/internal/recipes/testdata/gen-golden.ts");
 		process.exit(1);
 	}
-	console.log(`recipes golden.json is current (${loads.length} loads)`);
+	console.log(`recipes golden.json is current (${loads.length} loads, ${commands.counts})`);
 } else {
 	writeFileSync(goldenPath, output);
-	console.log(`recipes golden.json: ${loads.length} loads`);
+	console.log(`recipes golden.json: ${loads.length} loads, ${commands.counts}`);
 }

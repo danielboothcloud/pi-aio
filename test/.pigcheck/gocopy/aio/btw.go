@@ -5,11 +5,12 @@ package aio
 // sdk.Context to its Host, runs each question on its own goroutine, and keeps
 // the above-editor card current.
 //
-// Not ported: AIO notification events. The "btw asking" pill rides the
-// frame's top border (the footer status without the frame). The box and
-// card are plain text without theme
-// colors. Each question has its own abort, as in btw/index.ts: a newer
-// question or a shutdown aborts the older question's provider request.
+// The runner emits the AIO notification signals of btw/index.ts ("Side
+// answer ready", "Side question failed") on the extension event bus. The
+// "btw asking" pill rides the frame's top border (the footer status without
+// the frame). The box and the card use the shared chrome colors. Each
+// question has its own abort, as in btw/index.ts: a newer question or a
+// shutdown aborts the older question's provider request.
 
 import (
 	"context"
@@ -54,12 +55,13 @@ func (c *btwCard) paint() {
 	if c.card == nil {
 		return
 	}
-	width := c.ctx.Width()
-	if width <= 0 {
-		width = 80
-	}
-	rows := btw.CardRows(sdkLayout{}, *c.card, width, float64(time.Now().UnixMilli()))
-	_ = c.ctx.SetWidget(btw.WidgetKey, rows, sdk.WidgetOptions{"placement": "aboveEditor"})
+	// The renderer gets the widget's own width (the TypeScript widget's
+	// render(width)); it reads a copy, because the SDK may call it while
+	// c.mu is held.
+	card, ctx := *c.card, c.ctx
+	_ = ctx.SetWidgetRenderer(btw.WidgetKey, func(width int) []string {
+		return btw.ThemedCardRows(sdkLayout{}, ctx.UITheme(), card, width, float64(time.Now().UnixMilli()))
+	}, sdk.WidgetOptions{"placement": "aboveEditor"})
 }
 
 // stopTickerLocked ends the repaint loop. The caller holds c.mu.
@@ -217,6 +219,13 @@ func (h btwHost) ClearCard()                { h.card.clear(h.ctx) }
 func (h btwHost) StartCardTimer(ms float64) { h.card.startTimer(h.ctx, ms) }
 func (h btwHost) StopCardTimer()            { h.card.stopTimer() }
 func (h btwHost) Now() float64              { return float64(time.Now().UnixMilli()) }
+func (h btwHost) SessionID() string         { return sessionID(h.ctx) }
+
+// Emit is pi.events.emit: observers must never change the producer.
+func (h btwHost) Emit(event string, payload map[string]any) {
+	defer func() { _ = recover() }()
+	_ = h.ctx.Events().Emit(event, payload)
+}
 
 func (h btwHost) AppendEntry(data btw.EntryData) error {
 	return h.ctx.AppendEntry(btw.EntryType, data)
@@ -224,7 +233,7 @@ func (h btwHost) AppendEntry(data btw.EntryData) error {
 
 func registerBtw(e *sdk.Extension) {
 	// Custom entries render for humans in parents and children alike.
-	e.EntryRenderer(btw.EntryType, func(_ sdk.Context, entry map[string]any, _ sdk.EntryRenderOptions, width int) ([]string, error) {
+	e.EntryRenderer(btw.EntryType, func(ctx sdk.Context, entry map[string]any, _ sdk.EntryRenderOptions, width int) ([]string, error) {
 		raw, err := json.Marshal(entry["data"])
 		if err != nil {
 			return nil, nil
@@ -233,7 +242,7 @@ func registerBtw(e *sdk.Extension) {
 		if json.Unmarshal(raw, &data) != nil || data.Answer == "" {
 			return nil, nil
 		}
-		return btw.BoxRows(sdkLayout{}, data, width), nil
+		return btw.ThemedBoxRows(sdkLayout{}, ctx.UITheme(), data, width), nil
 	})
 
 	// Subagent children run headless: no command surface.

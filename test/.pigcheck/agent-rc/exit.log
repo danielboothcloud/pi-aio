@@ -1,0 +1,15 @@
+2026-11-11T21:01:26.214Z pid=80084 ppid=80079 received SIGTERM
+2026-11-11T21:04:33.411Z pid=80084 ppid=80079 session started 2026-11-11T21:00:25Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/rc-work/tui-trust ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T21:05:33.355Z pid=88129 ppid=88121 received SIGTERM
+2026-11-11T21:05:43.131Z pid=88129 ppid=88121 session started 2026-11-11T21:04:33Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/rc-work/tui-trust ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T21:06:48.804Z pid=90399 ppid=90392 received SIGTERM
+2026-11-11T21:09:59.427Z pid=90399 ppid=90392 session started 2026-11-11T21:05:43Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/rc-work/tui-trust ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T21:11:02.889Z pid=1417 ppid=1411 received SIGTERM
+2026-11-11T21:15:24.135Z pid=1417 ppid=1411 session started 2026-11-11T21:09:59Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/rc-work/tui-trust ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T21:15:42.772Z pid=59168 ppid=59136 received SIGTERM
+2026-11-11T21:26:55.412Z pid=59168 ppid=59136 session started 2026-11-11T21:15:24Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/rc-work/tui-init ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T21:27:30.087Z pid=6430 ppid=6429 received SIGTERM
+2026-11-11T21:27:57.919Z pid=6430 ppid=6429 session started 2026-11-11T21:26:55Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/rc-work/tui-trust ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T21:28:15.522Z pid=9516 ppid=9515 received SIGTERM
+2026-11-11T21:28:26.893Z pid=9516 ppid=9515 session started 2026-11-11T21:27:57Z in /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/rc-work/tui-trust ended without recording an exit: the OS killed it (SIGKILL, memory pressure, power loss) or it died where Go could not report
+2026-11-11T21:28:47.550Z pid=10520 ppid=10519 received SIGTERM

@@ -1,0 +1,3 @@
+mcp list --json
+mcp invoke --server fresh --tool q --arguments {"b":1,"a":2} --json --hint summary
+mcp schema --server fresh --json

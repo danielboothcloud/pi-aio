@@ -1,0 +1,18 @@
+PROMPT /recipe status
+UI {"method": "notify", "message": "Recipe \"status\" active", "notifyType": "info"}
+PROMPT /recipe-status
+UI {"method": "notify", "message": "Snapshot: 2026-11-11T20:55:55.732Z\nRecipe: status (selected by command)\nConfig source: global: /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck\nModel — runtime: fixture/m1\nAPI — runtime: openai-completions\nThinking — runtime: off\nModel — configured: inherited\nModel matches recipe: unverified\nThinking — configured: inherited\nScope — runtime: ALL available models\nScope — configured patterns: inherited\nScope — launch CLI: not supplied\nExtensions — launch policy: explicit-only\n  /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go/aio\n  /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/fixture-provider.ts\n  /Users/danielbooth/projects/work/danielboothcloud/pi-aio/test/.pigcheck/rc-listener.ts\nExtensions — configured: inherited\nPermission mode — runtime: default; configured: inherited\nStyle — runtime: none; configured: inherited\nObserved extension sources (runtime registrations):\n  cli — /Users/danielbooth/projects/work/danielboothcloud/pi-aio/go\n    32 commands, 21 tools registered\nRegistered provider IDs: fixture\nTools declared to model: 21\n  read, bash, edit, write, ask_user_question, goal_propose, goal_done, goal_blocked, ast_grep, fetch_content, apply_patch, todo, subagent, hypa_shell, hypa_read, hypa_grep, hypa_find, hypa_ls, ls, find, grep\nNote: Observed sources come from actual tool/command registrations; passive or provider-only extensions may be absent. This is n
+PROMPT /goal ship it
+UI {"method": "confirm", "title": "Start this goal?", "message": "Ship it\n\nDone when:\ntests pass"}
+ANSWER {"type": "extension_ui_response", "id": "2dc5be63-150f-4fc1-9526-221192561d7a", "confirmed": true}
+UI {"method": "notify", "message": "Goal started: Ship it", "notifyType": "info"}
+TOOL_END {"type": "tool_execution_end", "toolCallId": "call_1", "toolName": "goal_propose", "result": {"content": [{"type": "text", "text": "Goal confirmed and active. Start the work now.\nObjective: Ship it\nDone when: tests pass\n\nWork through the goal end to end without stopping to ask for permission. When every done criterion is met and verified, call goal_done with a summary and the evidence (tests, commands, changed files). If you cannot continue without the user, call goal_blocked with the reason."}], "details": {}}, "isError": false, "durationMs": 33}
+UI {"method": "notify", "message": "Goal paused: need a decision. Run /goal resume to continue.", "notifyType": "warning"}
+TOOL_END {"type": "tool_execution_end", "toolCallId": "call_2", "toolName": "goal_blocked", "result": {"content": [{"type": "text", "text": "The goal is paused. Ask the user for what you need, then stop. The user runs /goal resume to continue."}], "details": {}}, "isError": false, "durationMs": 11}
+AGENT_END
+PROMPT please run it
+UI {"method": "select", "title": "Allow bash \"rm -rf rc-nothing-here\"?", "options": ["Allow", "Block"]}
+ANSWER {"type": "extension_ui_response", "id": "1d4e2605-77ce-4caa-af6c-d54f4dce4322", "value": "Block"}
+TOOL_END {"type": "tool_execution_end", "toolCallId": "call_4", "toolName": "bash", "result": {"content": [{"type": "text", "text": "bash blocked by user"}], "details": {}}, "isError": true}
+AGENT_END
+EXIT 0

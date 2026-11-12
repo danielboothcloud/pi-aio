@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/danielboothcloud/pi-aio/go/internal/blocklist"
+	"github.com/danielboothcloud/pi-aio/go/internal/jsstr"
 )
 
 // Names shared with the TypeScript version (env vars, files, entries).
@@ -62,6 +63,17 @@ type Definition struct {
 	Source  string `json:"source"` // "global", "project", or "directory"
 	BaseDir string `json:"baseDir"`
 	Config  Config `json:"config"`
+	// copy holds the values a `.pi-recipe` scaffold copies verbatim, as
+	// TypeScript holds them after JSON.parse (see Scaffold).
+	copy templateCopy
+}
+
+// templateCopy is the JSON text of the parsed mcpServers object (its
+// servers in JavaScript key order) and of each parsed blocklist entry (a
+// string, or {pattern, regex?, reason?, match?}).
+type templateCopy struct {
+	mcpServers string
+	blocklist  []string
 }
 
 // Loaded is the effective recipe set for a cwd.
@@ -184,6 +196,84 @@ func ParseStyle(value any) string {
 	return ""
 }
 
+// ParseRecipeRaw is ParseRecipe for the entry's raw JSON. It also keeps the
+// mcpServers and blocklist values in the form a scaffold copies.
+func ParseRecipeRaw(name, source, baseDir string, raw json.RawMessage) (*Definition, bool) {
+	var decoded any
+	if json.Unmarshal(raw, &decoded) != nil {
+		return nil, false
+	}
+	def, ok := ParseRecipe(name, source, baseDir, decoded)
+	if !ok {
+		return nil, false
+	}
+	def.copy.mcpServers = "{}"
+	if entry, isObject := decodeObject(raw); isObject {
+		if servers, present := entry.Values["mcpServers"]; present && isJSONObject(servers) {
+			if obj, isObj := decodeObject(servers); isObj {
+				def.copy.mcpServers = obj.Stringify(func(key string, value json.RawMessage) bool {
+					return jsTrim(key) != "" && isJSONObject(value)
+				})
+			}
+		}
+	}
+	if len(def.Config.Blocklist) > 0 {
+		def.copy.blocklist = blocklistCopy(decoded.(map[string]any)["blocklist"])
+	}
+	return def, true
+}
+
+// blocklistCopy is parseBlocklistConfig's entries as JSON text: a string
+// entry stays a string unless its file default is "command"; an object
+// entry keeps pattern, regex: true, a non-empty reason, and match "command".
+func blocklistCopy(raw any) []string {
+	if list, ok := raw.([]any); ok {
+		raw = map[string]any{"entries": list}
+	}
+	obj, _ := raw.(map[string]any)
+	fileCommand := obj["match"] == "command"
+	list, _ := obj["entries"].([]any)
+	var out []string
+	quote := func(s string) string { return jsstr.QuoteJS(s) }
+	for _, item := range list {
+		if s, ok := item.(string); ok {
+			pattern := jsTrim(s)
+			switch {
+			case pattern == "":
+			case fileCommand:
+				out = append(out, `{"pattern":`+quote(pattern)+`,"match":"command"}`)
+			default:
+				out = append(out, quote(pattern))
+			}
+			continue
+		}
+		entry, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		s, ok := entry["pattern"].(string)
+		if !ok || jsTrim(s) == "" {
+			continue
+		}
+		text := `{"pattern":` + quote(jsTrim(s))
+		if entry["regex"] == true {
+			text += `,"regex":true`
+		}
+		if reason, ok := entry["reason"].(string); ok && jsTrim(reason) != "" {
+			text += `,"reason":` + quote(jsTrim(reason))
+		}
+		command := fileCommand
+		if match, present := entry["match"]; present {
+			command = match == "command"
+		}
+		if command {
+			text += `,"match":"command"`
+		}
+		out = append(out, text+"}")
+	}
+	return out
+}
+
 // ParseRecipe parses one `recipes.<name>` entry. Unknown keys are dropped
 // and malformed values count as absent. A non-object entry is ok=false.
 func ParseRecipe(name, source, baseDir string, raw any) (*Definition, bool) {
@@ -241,7 +331,7 @@ func ParseModelSpec(spec string) (model, thinking string) {
 func IsRestartScoped(c Config) bool { return len(c.Models) > 0 || len(c.Extensions) > 0 }
 
 type rawFile struct {
-	recipes       map[string]any
+	recipes       map[string]json.RawMessage
 	defaultRecipe any
 	ok            bool
 }
@@ -263,10 +353,18 @@ func readFile(path string, warnings *[]string, source string) rawFile {
 	if !ok {
 		return rawFile{}
 	}
-	recipes, _ := obj["recipes"].(map[string]any)
-	if list, isList := obj["recipes"].([]any); isList {
+	var top map[string]json.RawMessage
+	_ = json.Unmarshal(data, &top)
+	recipes := map[string]json.RawMessage{}
+	switch obj["recipes"].(type) {
+	case map[string]any:
+		if parsedRecipes, isObject := decodeObject(top["recipes"]); isObject {
+			recipes = parsedRecipes.Values
+		}
+	case []any:
 		// JavaScript's Object.entries on an array keys the items "0", "1", ...
-		recipes = make(map[string]any, len(list))
+		var list []json.RawMessage
+		_ = json.Unmarshal(top["recipes"], &list)
 		for i, item := range list {
 			recipes[strconv.Itoa(i)] = item
 		}
@@ -277,7 +375,7 @@ func readFile(path string, warnings *[]string, source string) rawFile {
 func collect(file rawFile, source, baseDir string) map[string]*Definition {
 	out := map[string]*Definition{}
 	for name, entry := range file.recipes {
-		if def, ok := ParseRecipe(name, source, baseDir, entry); ok {
+		if def, ok := ParseRecipeRaw(name, source, baseDir, entry); ok {
 			out[name] = def
 		}
 	}
