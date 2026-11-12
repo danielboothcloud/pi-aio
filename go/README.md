@@ -17,18 +17,28 @@ native Pi. Pi cannot load Go extensions.
   PiG.
 
 PiG resolves the SDK requirement (`v0.0.0`) to its staged SDK at build time.
-The extension needs a `pig` whose SDK has `Context.SetSharedEnv` (PiG
-divergence D234, after 0.7.0). Under PiG 0.7.0 the build fails in
-`aio/permissionmodes.go`. It also needs `ModelRegistry.CompleteContext`
-and `StreamSimpleContext` (PiG divergence D235), which abort a model call
-when their `context.Context` is cancelled. Without them the build fails in
-`aio/goals.go` and `aio/sessionnaming.go`.
+The extension needs a `pig` built from the PiG fork (`danielboothcloud/PiG`,
+branch `feature/fork`, commit `0ac0afaaf` or later). It does not build
+under PiG 0.7.0. `PIG-LIMITS.md` ("Use the fork") gives the build steps.
+The extension uses these fork SDK calls:
 
-The Go editors need the PiG fork (`danielboothcloud/PiG`, commit
-f46b9ab2c): the user-bash editor (group 7) and the queue, frame, and
-session-nav editor features (group 11) override editor methods, and
-`pig` 0.7.0 crashes on the first key then (`PIG-LIMITS.md`, limit 2).
-Groups 8 to 10 use overlays, not editors, and do not need the fix.
+- `Context.SetSharedEnv` and `UnsetSharedEnv` (PiG divergence D234), in
+  `aio/permissionmodes.go`.
+- `ModelRegistry.CompleteContext` and `StreamSimpleContext` (PiG
+  divergence D235), in `aio/goals.go` and `aio/sessionnaming.go`. They
+  abort a model call when their `context.Context` is cancelled.
+- `Context.RunForeground` and `sdk.ForegroundOptions` (fork commit
+  `5c9fdda0d`, no divergence number), in `aio/tuicr.go`. They give the
+  terminal to tuicr and redraw the TUI when tuicr exits
+  (`PIG-LIMITS.md`, limit 1).
+- `Context.ShutdownWithCode` (PiG divergence D236), in `aio/recipes.go`.
+  The call is optional: an older SDK gets `ctx.Shutdown()`.
+
+The Go editors also need the fork's editor fix (commit `f46b9ab2c`).
+The user-bash editor (group 7) and the queue, frame, and session-nav
+editor features (group 11) override editor methods. `pig` 0.7.0 crashes
+on the first key then (`PIG-LIMITS.md`, limit 2). Groups 8 to 10 use
+overlays, not editors, and do not need the fix.
 Third-party modules (for example `regexp2`) are downloaded through
 `GOPROXY` when PiG builds the extension.
 
@@ -403,3 +413,11 @@ the `pi-lens` language servers:
 
 Other TypeScript extensions (`pi-lens`, `context7`, `pi-anthropic-auth`)
 still need a Node extension process.
+
+
+## Separate Anthropic auth port
+
+`anthropic-auth/` is a separate extension alongside `aio/`. It ports `@gotgenes/pi-anthropic-auth` 3.4.4, MIT by Christopher D. Lasher (gotgenes), at commit `fcc2003ca57df5b841edcdd27da58e428cded743`. AIO does not import or activate it.
+
+It needs a `pig` built from the PiG fork with `sdk.AnthropicMessagesAPI` and the legacy provider callback bridge; PiG 0.7.0 cannot load it. Remove the TypeScript `npm:@gotgenes/pi-anthropic-auth`, then run `pig install ./go/anthropic-auth`. Real-pig tests prove the main turn, auxiliary `ModelRegistry` calls, the version retry and learned floor, API-key passthrough, and other extensions' request callbacks. [anthropic-auth/UPSTREAM.md](anthropic-auth/UPSTREAM.md) lists the evidence and the remaining gaps (compaction and the status command are not host-tested).
+

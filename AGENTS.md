@@ -627,11 +627,15 @@ generated `dist/` tree without changing the package contract.
   the invoke arguments in the model's key order from `ctx.ToolInput()`.
   Go producers (goals, btw, permission and plan prompts, subagents) emit
   the `notifications/protocol.ts` events through `go/aio/notifications.go`
-  (`emitNotification`, `withAgentPrompt`). PiG 0.7.0 panics when a Go editor
-  component overrides any method; the PiG fork fixes it, and the Go
-  user-bash, queue, and frame editors need that fork. The Go SDK cannot
-  suspend the host TUI, so
-  Go `/tuicr` opens tuicr in a pane and `/tuicr done` loads the comments. `go/` is
+  (`emitNotification`, `withAgentPrompt`). The Go port needs a `pig`
+  built from the PiG fork (`danielboothcloud/PiG`, commit `0ac0afaaf` or
+  later); it does not build under PiG 0.7.0 (`go/PIG-LIMITS.md`, "Use the
+  fork"). PiG 0.7.0 also panics when a Go editor component overrides any
+  method; the fork fixes it, and the Go user-bash, queue, and frame
+  editors need that fix. Go `/tuicr` runs tuicr in the foreground with
+  the fork's `ctx.RunForeground` (the host stops its TUI, gives tuicr the
+  terminal, and redraws when tuicr exits), then loads the new comments
+  into the editor, as `tuicr/runner.ts` does. `go/` is
   not in the npm `files` allowlist; PiG loads it from the git checkout.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.

@@ -5,11 +5,52 @@ change how the Go port of AIO works. Each limit has a workaround in the
 port. When a later PiG version removes a limit, remove the workaround and
 the related entry in the "Known gaps" section of `README.md`.
 
-The PiG fork (`danielboothcloud/PiG`) fixes limit 2. Build its binary with
-`CGO_ENABLED=0 go build -buildvcs=false -trimpath -o <out>/pig ./cmd/pig`
-in the fork checkout. The Go editors (user-bash, queue, frame, and the
-session-nav editor intercepts) need the fork. Limits 4 to 7 are also in
-the fork.
+The PiG fork (`danielboothcloud/PiG`, branch `feature/fork`) fixes limits
+1 and 2 and adds the host calls in "Limits addressed in the PiG fork".
+Limits 4 to 7 are also in the fork. The Go port needs the fork: it does
+not build against the PiG 0.7.0 SDK (see "Use the fork").
+
+## Use the fork
+
+The port needs fork commit `0ac0afaaf` or later. That commit has all the
+host calls that `go/aio` uses.
+
+1. In the fork checkout, build the binary:
+
+   ```sh
+   CGO_ENABLED=0 go build -buildvcs=false -trimpath -o bin/pig ./cmd/pig
+   ```
+
+   The fork's `.gitignore` excludes `bin/`.
+2. Copy `bin/pig` over the `pig` on your `PATH` (for example
+   `~/go/bin/pig`).
+3. If pig reports `cached build failure (inputs unchanged)` for
+   `go/aio`, run `pig extensions cache prune --failures`.
+4. Run `pig diagnose` and make sure that the staged Go SDK path changed.
+
+With PiG 0.7.0, the `go/aio` build fails with these errors:
+
+- `ctx.SetSharedEnv` and `ctx.UnsetSharedEnv` are undefined
+  (`permissionmodes.go`, D234).
+- `ModelRegistry.CompleteContext` and `StreamSimpleContext` are undefined
+  (`goals.go`, `sessionnaming.go`, D235).
+- `ctx.RunForeground` and `sdk.ForegroundOptions` are undefined
+  (`tuicr.go`, limit 1).
+
+`test/.pigcheck/mkcopy.sh` builds a scratch copy against the 0.7.0 SDK.
+It replaces these calls with stubs and uses the old pane version of
+`tuicr.go`. Use it only for type checks.
+
+**Checked with fork commit `0ac0afaaf`:**
+
+- `go vet` and `go build` of `go/...` against the fork SDK pass.
+- `pig -ne -e go/aio --mode json -p "/recipe status"` exits with status 0
+  and writes the `recipe-status-report` entry.
+- In RPC mode, `get_commands` lists every AIO command.
+- A recipe whose model scope matches no model makes pig exit with
+  status 1 before any model request (D236, limit 9).
+- The TUI (editors, frame, foreground `/tuicr`) was not checked by hand
+  with this commit.
 
 The PiG Go SDK is the module `github.com/MichaelKinsy/PiG/extensions/sdk`.
 PiG stages a copy that matches the `pig` binary. Run `pig diagnose` to see
@@ -20,7 +61,7 @@ its path. With `PIG_HOME=~/.config/pi`, the path is
 
 | Limit | Source | Workaround in the port |
 |---|---|---|
-| No call to suspend the host TUI | The SDK has no equivalent of Pi's `tui.stop()` | `/tuicr` opens tuicr in a pane, then `/tuicr done` loads the comments |
+| No call to suspend the host TUI (fixed in the PiG fork) | PiG 0.7.0 has no equivalent of Pi's `tui.stop()` | None with the fork: `/tuicr` uses `ctx.RunForeground` |
 | Crash on a custom Go editor | A bug in the `pig` 0.7.0 host, fixed in the PiG fork | None with the fork; PiG 0.7.0 crashes on the first key |
 | Request context ends when the handler returns | SDK design | Background work uses the context from `OnLoaded` |
 | No call to repaint an installed editor | The SDK renders an editor only after host events | The frame changes the base editor's autocomplete size and back |
@@ -28,28 +69,34 @@ its path. With `PIG_HOME=~/.config/pi`, the path is
 | `ctx.Abort` is not Pi's TUI abort | The host keeps the queued messages and waits until idle | The queue sends the host's interrupt key through the base editor |
 | JSON-only event bus, private editor factories | SDK design | The frame protocol is package state; no selector frames |
 | Go extension stderr is not shown | PiG divergence D56 | Notices that must be seen also go into the tool result or a session entry |
-| No exit status in an older pig | `Context.ShutdownWithCode` is PiG divergence D236 | The recipe empty-scope stop falls back to `ctx.Shutdown()` |
+| No exit status in an older pig (fixed in the PiG fork) | `Context.ShutdownWithCode` is PiG divergence D236 | None with the fork; the `ctx.Shutdown()` fallback stays in the code |
 | No terminal before the TUI starts | The extension's stdin and stdout are the wire to pig | The `.pi-recipe` trust question is a session select; the launcher asks on the terminal |
 
-## 1. No call to suspend the host TUI
+## 1. No call to suspend the host TUI (fixed in the PiG fork)
 
 **Problem:** In Pi, an extension can call `ctx.ui.custom()`, then
 `tui.stop()`. The extension then runs a program that uses the terminal
-directly, and calls `tui.start()` when the program exits. The PiG Go SDK
-has no call that stops and restarts the host TUI. `Context.Custom` only
-shows a component inside the host TUI.
+directly, and calls `tui.start()` when the program exits. The PiG 0.7.0
+Go SDK has no call that stops and restarts the host TUI.
+`Context.Custom` only shows a component inside the host TUI.
 
-**Effect:** Go features cannot give the terminal to another program.
+**Fix:** The PiG fork adds `ctx.RunForeground(command, args,
+sdk.ForegroundOptions{Cwd, Env})` (commit `5c9fdda0d`, "open tui in
+overlay"). The host stops rendering and gives the terminal to the
+program. When the program exits, the host redraws the TUI. The call
+returns the exit code, or -1 when a signal ended the program. It fails
+at once in print, JSON and RPC mode. The fork has no divergence document
+for this call, and its agent docs do not name it yet.
 
-**Workaround:** `go/aio/tuicr.go` opens tuicr in a new pane. It uses the
-`/nvim` launchers: Otty split, tmux, Otty tab, Terminal.app, or a printed
-command. It records the comment IDs that exist before the review. The
-command `/tuicr done` loads the new comments into the editor.
+**Port:** `go/aio/tuicr.go` runs tuicr in the foreground, as
+`tuicr/runner.ts` does. It records the comment IDs that exist before the
+review and loads the new comments into the editor. The pane launcher and
+`/tuicr done` are removed. A start error gives "Could not start tuicr",
+and a non-zero exit gives a status notice, as in TypeScript.
 
-**When PiG adds the call:** Run tuicr in the foreground, as
-`tuicr/runner.ts` does. Remove `/tuicr done` and the pane launcher code.
-The PiG fork adds `ctx.RunForeground`; the tuicr port does not use it
-yet.
+**Check:** Start `pig -ne -e go/aio` in a git repository with a change.
+Run `/tuicr`, add a comment, and quit tuicr. Make sure that the TUI
+comes back and the editor contains the comment.
 
 ## 2. Crash on a custom Go editor (fixed in the PiG fork)
 
@@ -72,9 +119,10 @@ TypeScript does. The spacing and status logic is in `HandleInput`, as in
 `user-bash/bash-hint-editor.ts`. The queue editor extends it, and the
 frame wraps the queue editor.
 
-**Effect with PiG 0.7.0:** The extension still builds against the 0.7.0
-SDK (`test/.pigcheck/mkcopy.sh` prints `build-ok`), but `pig` 0.7.0
-crashes on the first key in the editor. Use the fork.
+**Effect with PiG 0.7.0:** The extension does not build against the
+0.7.0 SDK (see "Use the fork"). The scratch copy from
+`test/.pigcheck/mkcopy.sh` builds, but `pig` 0.7.0 crashes on the first
+key in its editor. Use the fork.
 
 **Check the fix:**
 
@@ -203,25 +251,29 @@ print and JSON mode, as TypeScript does. The status report is also a
 **Check:** Run `pig --mode json` with a Go extension that writes to
 stderr. Look for the line on pig's stderr.
 
-## 9. No exit status in an older pig
+## 9. No exit status in an older pig (fixed in the PiG fork)
 
 **Problem:** TypeScript recipes stop a scoped startup whose `--models`
 scope matches no model with `process.exit(1)`, before any prompt reaches a
 provider. `ctx.shutdown()` is not enough: print and JSON mode ignore it. A
-Go extension cannot end the pig process. The PiG fork adds
-`Context.ShutdownWithCode` (D236) for this, but the fork binary at
-`test/.pigcheck/pigfork/pig` (commit f46b9ab2c) does not have it yet.
+Go extension cannot end the pig process in PiG 0.7.0.
 
-**Workaround:** `go/aio/recipes.go` (`exitWithCode`) calls
+**Fix:** Fork commit `0ac0afaaf` adds `Context.ShutdownWithCode` (D236).
+The old fork binary at `test/.pigcheck/pigfork/pig` (commit `f46b9ab2c`)
+does not have it.
+
+**Port:** `go/aio/recipes.go` (`exitWithCode`) calls
 `ShutdownWithCode(1)` when the pig's SDK has it, and `ctx.Shutdown()`
-otherwise. The extension builds against both SDKs.
+otherwise. The fallback is now used only by the `mkcopy.sh` scratch
+copy, because the real tree needs the fork. Remove it with the D236 steps
+below.
 
-**Reproduction:** In a folder with no `.pi-recipe`, run
-`pig --mode json --recipe ghost --models nope/none -p hello` with a
-recipe `ghost` whose `models` is `["nope/none"]` (scratch recipes file in
-`AIO_RECIPES_FILE`). With `pigfork/pig`, the prompt runs. With a pig built
-from the fork tree that has D236, pig exits with status 1 and sends no
-model request. In RPC and TUI mode both stop.
+**Check:** In a folder with no `.pi-recipe`, run
+`pig -ne -e go/aio --mode json --recipe ghost --models nope/none -p hello`
+with a recipe `ghost` whose `models` is `["nope/none"]` (scratch recipes
+file in `AIO_RECIPES_FILE`). With a pig from fork commit `0ac0afaaf`,
+pig exits with status 1 and sends no model request. With
+`pigfork/pig`, the prompt runs. In RPC and TUI mode both stop.
 
 ## 10. No terminal before the TUI starts
 
@@ -246,17 +298,37 @@ select in the TUI after startup, not as a terminal prompt.
 The PiG fork adds host calls for the limits below. Each one is a
 numbered PiG divergence (`docs/parity/divergences/D<N>.md` in the fork)
 and is documented in the fork's agent docs
-(`internal/pigdocs/content/extension-api.md`). Fork commit `37aa2de0e`
-has D234 and `b4007a7e0` has D235. D236 to D238, the re-entry docs and
-the working-directory test are in the fork worktree and not committed
-yet. Build `pig` from a fork tree that has them before you remove a
-workaround.
+(`internal/pigdocs/content/extension-api.md`). `RunForeground` is the
+exception: it has neither.
+
+| Fork commit | Contents |
+|---|---|
+| `5c9fdda0d` | `ctx.RunForeground` (limit 1) |
+| `f46b9ab2c` | Editor crash fix (limit 2) |
+| `37aa2de0e` | D234 |
+| `b4007a7e0` | D235 |
+| `0ac0afaaf` | D236 to D238, the re-entry docs and test, and the working-directory test |
+
+Build `pig` from `0ac0afaaf` or later before you remove a workaround.
+
+**Known fork test failure:** In `0ac0afaaf`,
+`TestRPCModeBindsEveryHostCallback`
+(`coding/cli/extension_host_wiring_guard_test.go`) fails. The test makes
+an `rpcHost` without `requestShutdownWithCode`, so the guard reports
+`ShutdownWithCode` as unbound. The real RPC mode sets it
+(`coding/cli/rpc_mode.go`), and the binary works. To fix the test, set
+`requestShutdownWithCode: func(int) {}` in that `rpcHost`. The other
+failures in `coding/cli`, `coding/extension` and `internal/codingagent`
+also occur in `b4007a7e0`. They need the `.upstream` mirror, `cargo`, or
+the pinned Pi oracle. The full `coding/cli` package needs more than the
+default 10-minute limit: use `-timeout 30m`.
 
 | Limit | PiG change | Port status |
 |---|---|---|
+| No call to suspend the host TUI | `ctx.RunForeground` (no divergence number) | Used by `go/aio/tuicr.go` |
 | A Node provider cannot see an env value set by a Go extension | D234 `ctx.SetSharedEnv` / `ctx.UnsetSharedEnv` | Used by `go/aio/permissionmodes.go` |
 | A model call cannot be cancelled | D235 `ModelRegistry.CompleteContext`, `StreamContext`, `StreamSimpleContext` | Used by btw, session naming and goals |
-| No pig argv and no exit status | D236 `ctx.HostLaunch()` and `ctx.ShutdownWithCode(code)` | Limit 9: partly used; argv still comes from `PIG_HARNESS_ARGV_FILE` |
+| No pig argv and no exit status | D236 `ctx.HostLaunch()` and `ctx.ShutdownWithCode(code)` | Limit 9: `ShutdownWithCode` is used through a fallback; argv still comes from `PIG_HARNESS_ARGV_FILE` |
 | Terminal sequences go to `/dev/tty` | D237 `ctx.WriteTerminal(data)` | Not used yet |
 | A relaunch starts a second pig | D238 `ctx.Relaunch(sdk.RelaunchOptions{Args, Env})` | Limit 10: not used yet |
 | Relative tool paths | No new call: the built-in tools use `ctx.Cwd()` | `workspace.go` comment is out of date |
@@ -421,3 +493,15 @@ mode in PiG, where Pi has one behavior.
   the PiG host. With a pig that has D237, use `ctx.WriteTerminal`;
   otherwise write them to `/dev/tty`.
 - Do not stop `pig` processes that you did not start during tests.
+
+
+## Separate Anthropic auth port: raw built-in transport (fixed in the PiG fork)
+
+This limit concerns `go/anthropic-auth`, not AIO.
+
+**Problem:** Upstream `@gotgenes/pi-anthropic-auth` wraps the direct built-in `anthropicMessagesApi().streamSimple`. PiG 0.7.0's Go SDK has no raw built-in delegate: `ModelRegistry.GetProvider("anthropic")` returns `builtin/composed Provider object carrier is unavailable (D78)`, and calling the registry from the override recurses. PiG 0.7.0 also drops the caller's `onPayload`, `onResponse` and `fetch` before a `registerProvider({streamSimple})` wrapper sees them, so a wrapper would break other extensions' request hooks.
+
+**Fix:** The PiG fork adds `sdk.AnthropicMessagesAPI(ctx)` (the existing `modelStream` call with `apiRequest: true`) and forwards the caller's callbacks to legacy `streamSimple` wrappers. Both are uncommitted in the fork worktree at the time of writing.
+
+**Port:** `go/anthropic-auth/extension.go` wraps `sdk.AnthropicMessagesAPI(ctx).StreamSimple`. `go/anthropic-auth/integration_test.go` proves it through a real fork pig (`AIO_ANTHROPIC_AUTH_PIG`). Compaction and the status command are not host-tested yet (see [anthropic-auth/UPSTREAM.md](anthropic-auth/UPSTREAM.md)).
+
