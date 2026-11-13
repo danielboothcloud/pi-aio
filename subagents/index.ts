@@ -21,6 +21,10 @@ import { SubagentInspector } from "./inspector.js";
 import { publicRun, runsFromBranch, SUBAGENT_STATE_ENTRY } from "./history.js";
 import { clearRuns, getRun, isOwnedRun, listRuns, reconcileRuns, restoreRun, stopRun } from "./registry.js";
 import { loadSavedTranscript } from "./saved-transcript.js";
+import { registerChildResultTool } from "./result-schema.js";
+import { resolveRepo } from "./workspace.js";
+import { resolveProjectHookResolution } from "../yaml-hooks/paths.js";
+import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
 import { suspendImagesUnderOverlays } from "../ui/overlay-images.js";
 import {
 	executeSubagentRun,
@@ -48,6 +52,14 @@ const THINKING_VALUES = [
 	"max",
 ] as const;
 
+const OutputSchemaParam = (description: string) =>
+	Type.Optional(
+		Type.Unsafe<Record<string, unknown>>({
+			type: "object",
+			description,
+		}),
+	);
+
 const TaskSchema = Type.Object({
 	agent: Type.String({ minLength: 1, description: "Configured agent name" }),
 	task: Type.String({
@@ -62,6 +74,9 @@ const TaskSchema = Type.Object({
 		}),
 	),
 	thinking: Type.Optional(StringEnum(THINKING_VALUES)),
+	outputSchema: OutputSchemaParam(
+		"Per-task JSON Schema for a typed result; overrides the run-wide outputSchema",
+	),
 });
 
 const SubagentSchema = Type.Object({
@@ -81,6 +96,21 @@ const SubagentSchema = Type.Object({
 		}),
 	),
 	context: Type.Optional(StringEnum(["fresh", "fork"] as const)),
+	isolation: Type.Optional(
+		StringEnum(["none", "worktree"] as const, {
+			description:
+				"none (default): children share the parent checkout. worktree: each child edits its own git worktree seeded with the parent's current files; its changes return as a patch that is applied to the parent checkout after the run",
+		}),
+	),
+	applyChanges: Type.Optional(
+		Type.Boolean({
+			description:
+				"isolation=worktree only. Default true: apply each completed child's patch to the parent checkout. false: keep the patches on disk and report their paths",
+		}),
+	),
+	outputSchema: OutputSchemaParam(
+		"JSON Schema for a typed result. Each child must submit a value that matches it; the validated value is returned as JSON",
+	),
 	async: Type.Optional(
 		Type.Boolean({
 			description: "Run in the background and return a run id immediately",
@@ -123,6 +153,7 @@ function parentContext(
 		model,
 		modelProvider,
 		thinking,
+		projectTrusted: ctx.isProjectTrusted(),
 		parentSessionFile: ctx.sessionManager.getSessionFile(),
 		extensionLaunch: resolveChildExtensionLaunch({ modelProvider }),
 	};
@@ -248,6 +279,26 @@ function runActivitySuffix(run: SubagentRun): string {
 		.join("");
 }
 
+/** yaml-hooks trust for cwd; a worktree child cannot derive it itself. */
+function projectHooksTrusted(cwd: string): boolean {
+	try {
+		return resolveProjectHookResolution({ projectDir: cwd })?.trusted === true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Worktree patches change the parent checkout, so they are never applied
+ * while the parent is in a passive (read-only) permission mode.
+ */
+function workspaceApplyGate(): string | undefined {
+	const mode = getPermissionModeAccess()?.getMode();
+	return mode === "ask" || mode === "plan"
+		? `the parent session is in ${mode} mode`
+		: undefined;
+}
+
 function toolResult(text: string, details: Record<string, unknown> = {}) {
 	return { content: [{ type: "text" as const, text }], details };
 }
@@ -267,6 +318,8 @@ export function registerSubagents(
 	pi: ExtensionAPI,
 	deps: SubagentExtensionDeps = {},
 ): void {
+	// In a child launched with outputSchema, expose submit_result.
+	registerChildResultTool(pi);
 	let shuttingDown = false;
 	let sessionEpoch = 0;
 	let closeInspector: (() => void) | undefined;
@@ -335,6 +388,7 @@ export function registerSubagents(
 								run,
 								child,
 								deps: deps.runner,
+								applyGate: workspaceApplyGate,
 								onUpdate: (continuation) => {
 									if (shuttingDown || epoch !== sessionEpoch) return;
 									if (hiddenRuns.has(continuation.id)) {
@@ -422,11 +476,12 @@ export function registerSubagents(
 	pi.registerTool({
 		name: "subagent",
 		label: "Subagent",
-		description: `Delegate a focused task to a configured child Pi agent. Supports one child or a bounded parallel group, fresh or forked context, foreground or background execution, and basic list/status/stop control. Omit model and thinking to inherit the active parent session values at launch. Use fresh context for independent review. Keep parallel tasks read-only unless their filesystems are deliberately isolated; this reduced runtime does not provide worktrees or nested delegation. A child killed by a stall, timeout, or crash is retried automatically and resumes its own session, so completed work is preserved; a final failure reports the preserved session file.`,
+		description: `Delegate a focused task to a configured child Pi agent. Supports one child or a bounded parallel group, fresh or forked context, foreground or background execution, and basic list/status/stop control. Omit model and thinking to inherit the active parent session values at launch. Use fresh context for independent review. Without isolation, children share the parent checkout, so parallel children must not edit files. With isolation=worktree (git repositories only), each child edits its own git worktree that starts from the parent's current files, including uncommitted and untracked ones. Other ignored files (for example .env or build output) are not copied, except that node_modules, .venv, and venv are linked from the parent (shared, not isolated) and missing .pi files are copied; changes to ignored paths are not returned. After the run, the patch of each completed child is applied to the parent checkout in task order. A patch that no longer applies, a failed or stopped child, applyChanges=false, or a parent in ask/plan mode keeps the patch on disk and reports its path. A background run applies its patches when it ends, so do not edit the same files in the parent meanwhile. Set outputSchema (JSON Schema, run-wide or per task) to get a typed result: the child must call submit_result with a matching value, the parent validates it again, and the result text shows it as JSON (details.run.children[].result holds the value). A child that ends without a valid result is asked once more and otherwise fails. There is no nested delegation. A child killed by a stall, timeout, or crash is retried automatically and resumes its own session, so completed work is preserved; a final failure reports the preserved session file.`,
 		promptSnippet: "Delegate focused work to one or more isolated child agents",
 		promptGuidelines: [
 			"Use subagent for focused, self-contained delegation and independent parallel review.",
-			"Keep one writer in the shared checkout; parallel subagent tasks should normally be read-only.",
+			"Without isolation, keep one writer in the shared checkout. For parallel subagent tasks that edit files, use isolation=worktree and give each child a separate area of the code; check the reported workspace state after the run.",
+			"Use outputSchema when you need machine-readable results from children (for example findings or file lists), instead of parsing their prose.",
 			"Use subagent action=list before choosing an unfamiliar configured agent.",
 			"Use async=true only when you have other independent work to do meanwhile; its result arrives as a message after your current tool calls finish. If you would just wait for it, run in the foreground instead.",
 			"If a child fails after its automatic retry, narrow or split the task instead of re-sending it unchanged.",
@@ -491,9 +546,17 @@ export function registerSubagents(
 				model: params.model,
 				thinking: params.thinking,
 				timeoutMs: params.timeoutMs,
+				isolation: params.isolation,
+				applyChanges: params.applyChanges,
+				outputSchema: params.outputSchema,
 			};
 			const agents = discoverAgents(ctx.cwd, { includeProject });
 			const parent = parentContext(ctx, pi);
+			if (params.isolation === "worktree") {
+				// Fail before launch: the async path must create its run at once.
+				await resolveRepo(ctx.cwd);
+				parent.projectHooksTrusted = projectHooksTrusted(ctx.cwd);
+			}
 			const epoch = sessionEpoch;
 			const updateWidget = (run?: SubagentRun) => {
 				if (shuttingDown || epoch !== sessionEpoch) return;
@@ -527,6 +590,7 @@ export function registerSubagents(
 						updateWidget(run);
 					},
 					deps: deps.runner,
+					applyGate: workspaceApplyGate,
 				});
 				void promise.catch(() => undefined);
 				if (!launchedRun) {
@@ -583,6 +647,7 @@ export function registerSubagents(
 					signal,
 					onUpdate: updateForeground,
 					deps: deps.runner,
+					applyGate: workspaceApplyGate,
 				});
 			} finally {
 				clearInterval(foregroundTicker);

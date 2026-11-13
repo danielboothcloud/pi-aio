@@ -572,6 +572,90 @@ Parallel independent review:
 }
 ```
 
+### Isolated worktrees for parallel edits
+
+Set `isolation: "worktree"` when parallel children must edit files. This
+works only in a git repository with at least one commit. Each child then
+works in its own git worktree, not in the parent checkout:
+
+```ts
+{
+  tasks: [
+    { agent: "worker", task: "Add tests for the parser in parser/." },
+    { agent: "worker", task: "Add tests for the renderer in render/." }
+  ],
+  isolation: "worktree",
+  concurrency: 2
+}
+```
+
+- The worktree starts at the parent's `HEAD` plus the parent's uncommitted
+  tracked changes and untracked (not ignored) files. Ignored `node_modules`,
+  `.venv`, and `venv` directories are symlinked from the parent, so they are
+  shared, not isolated. Missing files of the project `.pi/` directory
+  (for example a local `aio-blocklist.json`) are copied in.
+- The child runs in the worktree directory that matches the parent's cwd. The
+  workspace guard keeps its edit tools inside that directory. A child gets
+  `--approve` or `--no-approve` to match the parent's project trust.
+- After each child, its changes become a patch (`changes.patch` in the child's
+  run directory) and the worktree is removed. When all children are done, the
+  patches of completed children are applied to the parent checkout in task
+  order (`git apply`, working tree only, never the index).
+- A patch is kept on disk and NOT applied when the child failed or stopped,
+  the run was stopped, the patch no longer applies (`conflict`, for example two
+  siblings edited the same lines), the parent is in ask or plan mode, or the
+  call set `applyChanges: false`. The result reports each child's workspace
+  state, changed files, and patch path.
+- Pressing `r` on a failed or stopped worktree child recreates its worktree at
+  the same path and replays its unapplied partial patch before it continues.
+
+Other ignored files (for example `.env` or build output) are not in the
+worktree, and changes to ignored paths are not returned. Worktree isolation does
+not isolate shell side effects outside the worktree, such as installs into the
+linked `node_modules`. A background (`async`) run applies its patches when it
+ends, so do not edit the same files in the parent while it runs. If the parent
+process exits during a run, the exit hook saves each live worktree's changes as
+a patch and removes the worktree, so `r` can still resume the child.
+
+### Typed results
+
+Set `outputSchema` (a JSON Schema object) to get validated, machine-readable
+results instead of prose. Set it for the whole run or per task in `tasks[]`:
+
+```ts
+{
+  tasks: [
+    { agent: "reviewer", task: "Review parser/ for defects. Do not edit files." },
+    { agent: "reviewer", task: "Review render/ for defects. Do not edit files." }
+  ],
+  outputSchema: {
+    type: "object",
+    properties: {
+      verdict: { type: "string", enum: ["pass", "fail"] },
+      findings: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: { path: { type: "string" }, line: { type: "integer" }, issue: { type: "string" } },
+          required: ["path", "issue"]
+        }
+      }
+    },
+    required: ["verdict", "findings"]
+  }
+}
+```
+
+The child gets a `submit_result` tool whose `result` argument uses the
+schema, so Pi rejects a value that does not match it. The parent validates the
+value again. A final message that is only JSON, or ends with a fenced JSON
+block, is also accepted. If a child ends without a valid result, its session is
+asked once more for the result (this reminder does not use up the crash-retry
+budget); otherwise the child fails. The result text
+shows the value as JSON, and `details.run.children[].result` holds it.
+
+### Background runs
+
 Background runs return an id immediately and publish their result back into the
 originating session when complete:
 
@@ -678,9 +762,10 @@ AIO launches child sessions through `pi` on `PATH`. Wrappers and custom
 installations can set `AIO_SUBAGENT_PI_BINARY` to an alternate Pi executable.
 
 This intentionally reduced runtime does not include chains, dynamic fanout,
-structured-output contracts, worktrees, agent-driven resume/steer, scheduling,
-acceptance gates, persistent agent memory, or automatic model fallbacks. Keep parallel
-children read-only in a shared checkout and use one writer for changes.
+agent-driven resume/steer, scheduling, acceptance gates, persistent agent
+memory, or automatic model fallbacks. Without `isolation: "worktree"`, keep
+parallel children read-only in a shared checkout and use one writer for
+changes.
 
 Do not load standalone `pi-subagents` alongside AIO because both packages
 register a tool named `subagent`.

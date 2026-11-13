@@ -2,3 +2,4 @@
 .pi-subagents/
 .pi/.pi-rules/recommendations.json
 node_modules/
+!todo.txt

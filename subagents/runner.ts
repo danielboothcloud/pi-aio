@@ -7,6 +7,7 @@ import {
 	mkdirSync,
 	readFileSync,
 	readdirSync,
+	rmSync,
 	statSync,
 	writeFileSync,
 } from "node:fs";
@@ -35,13 +36,33 @@ import { childSessionOwner, claimChildSession, createRun, getRun } from "./regis
 import { pigHarnessBinary } from "../recipes/pig-host.js";
 import { ADVISOR_ENV, ADVISOR_TOOL_NAME } from "../advisor/config.js";
 import { loadSavedTranscript } from "./saved-transcript.js";
+import {
+	assertResultSchema,
+	checkResult,
+	missingResultPrompt,
+	RESULT_SCHEMA_ENV,
+	resultFromText,
+	resultInstructions,
+	submittedResult,
+	SUBMIT_RESULT_TOOL,
+} from "./result-schema.js";
+import {
+	applyWorkspacePatch,
+	captureWorkspaceChanges,
+	prepareWorkspace,
+	removeWorkspace,
+	workspacePatchFile,
+	type PreparedWorkspace,
+} from "./workspace.js";
 import type {
 	AgentConfig,
 	ChildRunResult,
+	ChildWorkspaceResult,
 	ChildRunStatus,
 	ChildLaunchSnapshot,
 	ChildUsage,
 	ParentLaunchContext,
+	ResultSchema,
 	SpawnSpec,
 	SubagentRun,
 	SubagentRunRequest,
@@ -61,6 +82,8 @@ const DEFAULT_CONCURRENCY = 4;
 const DEFAULT_MAX_ATTEMPTS = 2;
 const MAX_ATTEMPTS_CAP = 5;
 const DEFAULT_RETRY_BACKOFF_MS = 1_000;
+/** Extra attempts that only ask a finished child for its typed result. */
+const MAX_RESULT_REMINDERS = 1;
 // Prompt sent to the CHILD agent (not the orchestrator) on a retry attempt:
 // it replaces the original task argument, which already lives in the resumed
 // child session history.
@@ -106,6 +129,12 @@ interface RunInput {
 	signal?: AbortSignal;
 	onUpdate?: (run: SubagentRun) => void;
 	deps?: RunnerDeps;
+	/**
+	 * Worktree isolation: a reason not to apply patches to the parent
+	 * checkout now (for example a passive permission mode), or undefined.
+	 * Checked at merge time, so a mode change during a run counts.
+	 */
+	applyGate?: () => string | undefined;
 }
 
 // Private launch snapshots never enter tool details/model context. Weak keys
@@ -149,6 +178,10 @@ interface SavedChildSession {
 	sessionFile: string;
 	transcript?: ChildTranscript;
 	from: { runId: string; index: number };
+	/** Worktree children: the previous unapplied partial patch to replay. */
+	seedPatchFile?: string;
+	/** Worktree children: the removed worktree path the session stores as cwd. */
+	worktreePath?: string;
 }
 
 interface ParsedChildOutput {
@@ -158,6 +191,8 @@ interface ParsedChildOutput {
 	assistantError?: string;
 	/** agent_settled was received: pi will not continue this run. */
 	settled?: { aborted: boolean };
+	/** The last successful submit_result value (typed results). */
+	submitted?: { value: unknown };
 }
 
 function emptyUsage(): ChildUsage {
@@ -198,6 +233,11 @@ function applyOutputEvent(
 ): void {
 	if (event.type === "agent_settled") {
 		parsed.settled = { aborted: event.aborted === true };
+		return;
+	}
+	const submitted = submittedResult(event);
+	if (submitted.found) {
+		parsed.submitted = { value: submitted.value };
 		return;
 	}
 	if (
@@ -270,8 +310,37 @@ function resolvedThinking(
 	return task.thinking ?? request.thinking ?? agent.thinking ?? parent.thinking;
 }
 
-function childSystemPrompt(agent: AgentConfig): string {
-	return `[CHILD AGENT BOUNDARY]\nYou are a focused child agent working for a parent Pi session. Complete only the assigned task. Do not launch or propose additional subagents. Return a concise, evidence-backed result to the parent. Follow the tool and repository constraints supplied to this child.\n\n${agent.systemPrompt}`;
+function worktreeNote(workspace: WorkspacePaths): string {
+	return [
+		"[ISOLATED WORKTREE]",
+		"You work in an isolated git worktree that contains the parent's current files. Edit files here as needed. Your changes return to the parent as a patch after you finish.",
+		`The parent checkout ${workspace.repoRoot} is mirrored here at ${workspace.worktreePath}. When the task or the conversation names a path under ${workspace.repoRoot}, use the same relative path under ${workspace.worktreePath} instead. Never read or write the parent checkout directly, also not with shell commands.`,
+		"Do not commit, push, or change branches. Files in ignored paths (except linked dependency directories such as node_modules) are not in the worktree, and changes to ignored paths are not returned.",
+	].join("\n");
+}
+
+/** Worktree locations a spawn needs (a PreparedWorkspace satisfies this). */
+interface WorkspacePaths {
+	repoRoot: string;
+	worktreePath: string;
+	childCwd: string;
+}
+
+function childSystemPrompt(
+	agent: AgentConfig,
+	options: { resultSchema?: ResultSchema; workspace?: WorkspacePaths } = {},
+): string {
+	const sections = [
+		"[CHILD AGENT BOUNDARY]\nYou are a focused child agent working for a parent Pi session. Complete only the assigned task. Do not launch or propose additional subagents. Return a concise, evidence-backed result to the parent. Follow the tool and repository constraints supplied to this child.",
+	];
+	if (options.workspace) sections.push(worktreeNote(options.workspace));
+	if (options.resultSchema) sections.push(resultInstructions(options.resultSchema));
+	sections.push(agent.systemPrompt);
+	return sections.join("\n\n");
+}
+
+function childStateDir(runId: string, index: number, deps?: RunnerDeps): string {
+	return join(resolveRunsBaseDir(deps), runId, `child-${index}`);
 }
 
 function findSessionFile(
@@ -299,18 +368,30 @@ export function buildSpawnSpec(input: {
 	resumeSessionFile?: string;
 	/** Replacement prompt for retries (the task already lives in the resumed session). */
 	promptOverride?: string;
+	/** Worktree isolation: the child's worktree (its cwd is `childCwd`). */
+	workspace?: WorkspacePaths;
+	/** Typed result schema: registers submit_result in the child. */
+	resultSchema?: ResultSchema;
 }): SpawnSpec {
-	const childDir = join(
-		resolveRunsBaseDir(input.deps),
-		input.runId,
-		`child-${input.index}`,
-	);
+	const childDir = childStateDir(input.runId, input.index, input.deps);
 	mkdirSync(childDir, { recursive: true });
 	const promptPath = join(childDir, "system-prompt.md");
-	writeFileSync(promptPath, childSystemPrompt(input.agent), {
-		encoding: "utf8",
-		mode: 0o600,
-	});
+	writeFileSync(
+		promptPath,
+		childSystemPrompt(input.agent, {
+			resultSchema: input.resultSchema,
+			workspace: input.workspace,
+		}),
+		{ encoding: "utf8", mode: 0o600 },
+	);
+	let resultSchemaFile: string | undefined;
+	if (input.resultSchema) {
+		resultSchemaFile = join(childDir, "result-schema.json");
+		writeFileSync(resultSchemaFile, JSON.stringify(input.resultSchema), {
+			encoding: "utf8",
+			mode: 0o600,
+		});
+	}
 
 	const args = [...(input.deps?.piArgsPrefix ?? []), "--mode", "json", "-p"];
 	// Mirror the parent's extension set: provider/auth extensions (e.g. an
@@ -361,6 +442,10 @@ export function buildSpawnSpec(input: {
 	// Children are headless: any other mode would block every edit and
 	// non-read-only command. permission-modes also pins auto for children.
 	args.push("--permission-mode", "auto");
+	// A worktree is a new directory to Pi's trust store. It holds the same
+	// project, so mirror the parent's decision instead of an implicit "no".
+	if (input.workspace)
+		args.push(input.parent.projectTrusted ? "--approve" : "--no-approve");
 	args.push(
 		input.agent.systemPromptMode === "append"
 			? "--append-system-prompt"
@@ -375,6 +460,8 @@ export function buildSpawnSpec(input: {
 	if (tools?.length && process.env[ADVISOR_ENV] && !tools.includes(ADVISOR_TOOL_NAME)) {
 		tools.push(ADVISOR_TOOL_NAME);
 	}
+	if (tools?.length && input.resultSchema && !tools.includes(SUBMIT_RESULT_TOOL))
+		tools.push(SUBMIT_RESULT_TOOL);
 	if (tools?.length) args.push("--tools", tools.join(","));
 	args.push("--exclude-tools", "subagent");
 	const prompt = input.promptOverride ?? `Task: ${input.task.task}`;
@@ -392,12 +479,17 @@ export function buildSpawnSpec(input: {
 	return {
 		command: input.deps?.piBinary ?? childAgentBinary(),
 		args,
-		cwd: input.parent.cwd,
+		cwd: input.workspace?.childCwd ?? input.parent.cwd,
 		env: {
 			...childBaseEnv(),
 			AIO_SUBAGENT_CHILD: "1",
 			AIO_SUBAGENT_RUN_ID: input.runId,
 			AIO_SUBAGENT_AGENT: input.agent.name,
+			...(resultSchemaFile ? { [RESULT_SCHEMA_ENV]: resultSchemaFile } : {}),
+			// yaml-hooks keys trust by worktree root; carry the parent's decision.
+			...(input.workspace && input.parent.projectHooksTrusted
+				? { PI_YAML_HOOKS_TRUST_PROJECT: "1" }
+				: {}),
 		},
 		sessionDir: childDir,
 		requestedSessionFile,
@@ -425,7 +517,10 @@ export function childBaseEnv(
 ): Record<string, string | undefined> {
 	return Object.fromEntries(
 		Object.entries(env).filter(
-			([key]) => !key.startsWith("PIG_EXT_") && !key.startsWith("PIG_HARNESS_"),
+			([key]) =>
+				!key.startsWith("PIG_EXT_") &&
+				!key.startsWith("PIG_HARNESS_") &&
+				key !== RESULT_SCHEMA_ENV,
 		),
 	);
 }
@@ -516,6 +611,7 @@ function describedFailure(input: {
 
 function composedChildState(input: {
 	specError?: string;
+	resultError?: string;
 	outcome?: AttemptOutcome;
 	wasStopped: boolean;
 	timeoutMs: number;
@@ -524,9 +620,9 @@ function composedChildState(input: {
 }): { state: ChildRunResult["state"]; error?: string } {
 	if (input.specError !== undefined)
 		return { state: "failed", error: input.specError };
+	if (input.wasStopped) return { state: "stopped" };
 	if (!input.outcome)
 		return { state: "failed", error: "Subagent child did not run." };
-	if (input.wasStopped) return { state: "stopped" };
 	if (attemptFailed(input.outcome)) {
 		return {
 			state: "failed",
@@ -538,6 +634,11 @@ function composedChildState(input: {
 			}),
 		};
 	}
+	if (input.resultError !== undefined)
+		return {
+			state: "failed",
+			error: `Subagent did not return a valid typed result after ${input.attempts} attempt(s): ${input.resultError}.${preservedSessionNote(input.outcome)}`,
+		};
 	return { state: "completed" };
 }
 
@@ -553,6 +654,58 @@ function nextRetryInputs(outcome: AttemptOutcome, task: string): {
 			? continuationPrompt(task)
 			: undefined,
 	};
+}
+
+/** Validate the attempt's typed result: a submit_result call, else JSON text. */
+function resolveTypedResult(
+	schema: ResultSchema,
+	parsed: ParsedChildOutput,
+): { ok: true; value: unknown } | { ok: false; error: string } {
+	const candidate = parsed.submitted
+		? { found: true as const, value: parsed.submitted.value }
+		: resultFromText(parsed.finalOutput);
+	if (!candidate.found)
+		return { ok: false, error: `the child did not call ${SUBMIT_RESULT_TOOL}` };
+	const check = checkResult(schema, candidate.value);
+	return check.ok
+		? { ok: true, value: candidate.value }
+		: { ok: false, error: `the result does not match outputSchema (${check.errors})` };
+}
+
+function workspaceMessage(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
+}
+
+/** Capture the child's patch, then remove its worktree (always). */
+async function finishWorkspace(
+	workspace: PreparedWorkspace,
+	childState: ChildRunResult["state"],
+): Promise<ChildWorkspaceResult> {
+	const summary: ChildWorkspaceResult = {
+		isolation: "worktree",
+		state: "empty",
+		files: [],
+		repoRoot: workspace.repoRoot,
+		worktreePath: workspace.worktreePath,
+	};
+	// A capture that fails after a partial write must not leave a stale patch.
+	rmSync(workspacePatchFile(workspace.stateDir), { force: true });
+	try {
+		const changes = await captureWorkspaceChanges(workspace);
+		summary.files = changes.files;
+		summary.patchFile = changes.patchFile;
+		if (changes.patchFile) {
+			summary.state = childState === "completed" ? "pending" : "kept";
+			if (childState !== "completed")
+				summary.message = `The child ${childState}, so its partial changes were not applied.`;
+		}
+	} catch (error) {
+		summary.state = "error";
+		summary.message = `Could not capture the worktree changes: ${workspaceMessage(error)}`;
+	} finally {
+		await removeWorkspace(workspace);
+	}
+	return summary;
 }
 
 function accumulateUsage(total: ChildUsage, delta: ChildUsage): void {
@@ -767,8 +920,46 @@ async function runChild(input: {
 	const totalUsage = emptyUsage();
 	let lastOutput = "";
 	let lastModel: string | undefined;
+	const resultSchema = input.task.outputSchema ?? input.request.outputSchema;
+	let typedResult: { value: unknown } | undefined;
+	let resultError: string | undefined;
+	// Result reminders have their own budget: a crash retry never uses it up.
+	let reminders = 0;
 
-	while (attempts < maxAttempts) {
+	// Worktree isolation: one worktree per child, reused across retries.
+	let workspace: PreparedWorkspace | undefined;
+	let workspaceSummary: ChildWorkspaceResult | undefined;
+	if (input.request.isolation === "worktree") {
+		try {
+			workspace = await prepareWorkspace({
+				cwd: input.parent.cwd,
+				stateDir: childStateDir(input.run.id, input.status.index, input.deps),
+				name: `aio-${input.run.id.slice(0, 8)}-${input.status.index}`,
+				seedPatchFile: input.resume?.seedPatchFile,
+				worktreePath: input.resume?.worktreePath,
+			});
+			pushTranscriptNotice(transcript, `isolated worktree · ${workspace.childCwd}`, "muted");
+			// Publish the location now: a checkpoint written while the child
+			// runs (or a parent shutdown) must still allow a resume later.
+			workspaceSummary = {
+				isolation: "worktree",
+				state: "active",
+				files: [],
+				repoRoot: workspace.repoRoot,
+				worktreePath: workspace.worktreePath,
+				patchFile: workspacePatchFile(workspace.stateDir),
+			};
+			input.status.workspace = workspaceSummary;
+		} catch (error) {
+			specError = `Could not prepare the isolated worktree: ${workspaceMessage(error)}`;
+			workspaceSummary = { isolation: "worktree", state: "error", files: [], message: specError };
+		}
+	}
+
+	while (specError === undefined && attempts < maxAttempts + reminders) {
+		// A stop during worktree preparation or a retry backoff has no process
+		// to kill yet, so check before every spawn.
+		if (input.run.stopRequested || input.signal?.aborted) break;
 		attempts++;
 		input.status.attempts = attempts;
 		if (attempts > 1)
@@ -791,6 +982,8 @@ async function runChild(input: {
 				deps: input.deps,
 				resumeSessionFile,
 				promptOverride,
+				workspace,
+				resultSchema,
 			});
 		} catch (error) {
 			specError = error instanceof Error ? error.message : String(error);
@@ -818,17 +1011,32 @@ async function runChild(input: {
 
 		const wasStopped =
 			input.run.stopRequested || input.signal?.aborted === true;
-		if (wasStopped || !attemptFailed(outcome) || attempts >= maxAttempts)
-			break;
-		pushTranscriptNotice(
-			transcript,
-			describedFailure({ outcome, timeoutMs, attempts, maxAttempts }),
-			"warning",
-		);
-
-		// Resume the child's preserved session so completed turns survive the
-		// failed attempt instead of being discarded.
-		({ resumeSessionFile, promptOverride } = nextRetryInputs(outcome, input.task.task));
+		resultError = undefined;
+		if (resultSchema && !wasStopped && !attemptFailed(outcome)) {
+			const typed = resolveTypedResult(resultSchema, outcome.parsed);
+			if (typed.ok) typedResult = { value: typed.value };
+			else resultError = typed.error;
+		}
+		if (wasStopped || (!attemptFailed(outcome) && resultError === undefined)) break;
+		if (resultError !== undefined) {
+			// The work is done; only the typed result is missing. Ask the same
+			// child session for it once instead of starting over.
+			if (reminders >= MAX_RESULT_REMINDERS || !outcome.sessionFile) break;
+			reminders++;
+			pushTranscriptNotice(transcript, `typed result missing: ${resultError}`, "warning");
+			resumeSessionFile = outcome.sessionFile;
+			promptOverride = missingResultPrompt(resultError);
+		} else {
+			if (attempts >= maxAttempts + reminders) break;
+			pushTranscriptNotice(
+				transcript,
+				describedFailure({ outcome, timeoutMs, attempts, maxAttempts }),
+				"warning",
+			);
+			// Resume the child's preserved session so completed turns survive the
+			// failed attempt instead of being discarded.
+			({ resumeSessionFile, promptOverride } = nextRetryInputs(outcome, input.task.task));
+		}
 		if (retryBackoffMs > 0)
 			await new Promise((resolve) => setTimeout(resolve, retryBackoffMs));
 		if (input.run.stopRequested || input.signal?.aborted) break;
@@ -838,6 +1046,7 @@ async function runChild(input: {
 	const wasStopped = input.run.stopRequested || input.signal?.aborted === true;
 	const { state, error } = composedChildState({
 		specError,
+		resultError,
 		outcome,
 		wasStopped,
 		timeoutMs,
@@ -853,6 +1062,8 @@ async function runChild(input: {
 	let output = lastOutput;
 	if (!output && !error)
 		output = "(Subagent completed without a textual result.)";
+	if (workspace) workspaceSummary = await finishWorkspace(workspace, state);
+	const result = state === "completed" ? typedResult?.value : undefined;
 	Object.assign(input.status, {
 		state,
 		output,
@@ -862,6 +1073,8 @@ async function runChild(input: {
 		attempts,
 		reapedAfterSettle,
 		model: lastModel ?? input.status.model,
+		result,
+		workspace: workspaceSummary,
 	});
 	input.onUpdate?.(input.run);
 	return {
@@ -880,6 +1093,9 @@ async function runChild(input: {
 		usage: totalUsage,
 		attempts,
 		reapedAfterSettle,
+		result,
+		// Shared with the status row: the merge step updates both at once.
+		workspace: workspaceSummary,
 	};
 }
 
@@ -892,6 +1108,12 @@ export async function executeSubagentRun(
 		findAgent(input.agents, task.agent),
 	);
 	const context = input.request.context ?? "fresh";
+	const isolation = input.request.isolation ?? "none";
+	if (input.request.outputSchema !== undefined)
+		assertResultSchema(input.request.outputSchema);
+	for (const [index, task] of tasks.entries())
+		if (task.outputSchema !== undefined)
+			assertResultSchema(task.outputSchema, `tasks[${index}].outputSchema`);
 	const children: ChildRunStatus[] = tasks.map((task, index) => ({
 		index,
 		agent: task.agent,
@@ -904,10 +1126,17 @@ export async function executeSubagentRun(
 	const run = createRun({ mode, context, cwd: input.parent.cwd, children });
 	run.state = "running";
 	run.resumedFrom = resume?.from;
+	if (isolation === "worktree") run.isolation = isolation;
 	for (const [index, child] of children.entries()) {
+		const outputSchema = tasks[index].outputSchema ?? input.request.outputSchema;
 		childLaunches.set(child, {
-			task: { ...tasks[index], model: child.model, thinking: child.thinking },
-			request: { context, timeoutMs: input.request.timeoutMs },
+			task: { ...tasks[index], model: child.model, thinking: child.thinking, outputSchema },
+			request: {
+				context,
+				timeoutMs: input.request.timeoutMs,
+				isolation: input.request.isolation,
+				applyChanges: input.request.applyChanges,
+			},
 			agent: structuredClone(resolvedAgents[index]),
 			parent: {
 				...input.parent,
@@ -949,6 +1178,7 @@ export async function executeSubagentRun(
 	for (const child of children) {
 		if (child.state === "queued") child.state = "stopped";
 	}
+	if (isolation === "worktree") await mergeWorkspaces(run, input);
 	run.endedAt = Date.now();
 	if (run.stopRequested || input.signal?.aborted) run.state = "stopped";
 	else if (run.results.some((result) => result.state === "failed")) {
@@ -957,6 +1187,62 @@ export async function executeSubagentRun(
 	} else run.state = "completed";
 	input.onUpdate?.(run);
 	return run;
+}
+
+/**
+ * Apply completed worktree children's patches to the parent checkout, in task
+ * order. Each patch is checked first; a conflicting patch changes nothing and
+ * stays on disk for the parent to inspect.
+ */
+async function mergeWorkspaces(run: SubagentRun, input: RunInput): Promise<void> {
+	const stopped = run.stopRequested || input.signal?.aborted === true;
+	for (const child of [...run.children].sort((a, b) => a.index - b.index)) {
+		const workspace = child.workspace;
+		if (!workspace || workspace.state !== "pending" || !workspace.patchFile || !workspace.repoRoot)
+			continue;
+		const gate = stopped
+			? "the run was stopped"
+			: input.request.applyChanges === false
+				? "applyChanges=false"
+				: input.applyGate?.();
+		if (gate) {
+			workspace.state = "kept";
+			workspace.message = `Not applied: ${gate}.`;
+			continue;
+		}
+		try {
+			const outcome = await applyWorkspacePatch({
+				repoRoot: workspace.repoRoot,
+				patchFile: workspace.patchFile,
+			});
+			if (outcome.applied) {
+				workspace.state = "applied";
+				workspace.message = undefined;
+			} else {
+				workspace.state = "conflict";
+				workspace.message = `The patch no longer applies to the parent checkout: ${outcome.message}`;
+			}
+		} catch (error) {
+			workspace.state = "error";
+			workspace.message = `Could not apply the patch: ${workspaceMessage(error)}`;
+		}
+		input.onUpdate?.(run);
+	}
+}
+
+/** A worktree child resumes only when its earlier edits can be replayed. */
+function worktreeResumeIssue(launch: ChildLaunchSnapshot, child: ChildRunStatus): string | undefined {
+	if (launch.request.isolation !== "worktree") return undefined;
+	const workspace = child.workspace;
+	if (!workspace?.worktreePath)
+		return "The worktree location was not recorded, so the child session cannot reopen in it.";
+	if (existsSync(workspace.worktreePath))
+		return `The previous worktree still exists at ${workspace.worktreePath}. Inspect it, then remove it (git worktree remove --force <path>) before resuming.`;
+	if (workspace.state === "error")
+		return "The child's worktree changes could not be captured, so a resume would lose them.";
+	if (workspace.state !== "empty" && workspace.state !== "applied" && (!workspace.patchFile || !existsSync(workspace.patchFile)))
+		return "The child's saved partial patch is missing, so a resume would lose its earlier edits.";
+	return undefined;
 }
 
 /** Explain why recovery is unavailable; undefined means it can resume now. */
@@ -985,6 +1271,8 @@ export function childResumeUnavailable(
 				return "Could not confirm that the previous child process has exited.";
 		}
 	}
+	const isolationIssue = worktreeResumeIssue(launch, child);
+	if (isolationIssue) return isolationIssue;
 	try {
 		if (child.sessionFile && statSync(child.sessionFile).isFile()) return undefined;
 	} catch {
@@ -999,6 +1287,7 @@ export async function resumeSubagentChild(input: {
 	child: ChildRunStatus;
 	onUpdate?: (run: SubagentRun) => void;
 	deps?: RunnerDeps;
+	applyGate?: () => string | undefined;
 }): Promise<SubagentRun> {
 	const reason = childResumeUnavailable(input.run, input.child);
 	if (reason) throw new Error(reason);
@@ -1010,6 +1299,14 @@ export async function resumeSubagentChild(input: {
 	const transcript = input.child.transcript
 		? structuredClone(input.child.transcript)
 		: loadSavedTranscript(sessionFile);
+	// A worktree child resumes in a recreated worktree at the same path (its
+	// session stores that cwd) with its unapplied partial patch replayed.
+	const workspace = input.child.workspace;
+	const isolated = launch.request.isolation === "worktree";
+	const seedPatchFile =
+		isolated && workspace?.patchFile && workspace.state !== "applied" && workspace.state !== "empty"
+			? workspace.patchFile
+			: undefined;
 	// Claim synchronously before spawning: repeated r cannot create competing
 	// writers to the same saved session, even after a continuation finishes.
 	launch.resumed = true;
@@ -1024,20 +1321,67 @@ export async function resumeSubagentChild(input: {
 				input.onUpdate?.(continuation);
 			},
 			deps: input.deps,
+			applyGate: input.applyGate,
 		},
 		{
 			sessionFile,
 			transcript,
 			from: { runId: input.run.id, index: input.child.index },
+			seedPatchFile,
+			worktreePath: isolated ? workspace?.worktreePath : undefined,
 		},
 	);
+}
+
+const MAX_LISTED_FILES = 20;
+const MAX_RESULT_JSON_CHARS = 20_000;
+
+function formatFileChange(file: { path: string; added: number | null; deleted: number | null }): string {
+	return file.added === null || file.deleted === null
+		? `${file.path} (binary)`
+		: `${file.path} +${file.added} -${file.deleted}`;
+}
+
+/** One block describing a worktree child's changes and their merge state. */
+export function formatWorkspace(workspace: ChildWorkspaceResult): string {
+	const count = workspace.files.length;
+	const files = workspace.files.slice(0, MAX_LISTED_FILES).map((file) => `  ${formatFileChange(file)}`);
+	if (count > MAX_LISTED_FILES) files.push(`  … ${count - MAX_LISTED_FILES} more file(s)`);
+	const fileWord = `${count} file${count === 1 ? "" : "s"}`;
+	const patch = workspace.patchFile ? ` Patch: ${workspace.patchFile}` : "";
+	const lines = (() => {
+		switch (workspace.state) {
+			case "applied":
+				return [`Workspace: applied ${fileWord} to ${workspace.repoRoot}.`];
+			case "empty":
+				return ["Workspace: no file changes."];
+			case "pending":
+				return [`Workspace: ${fileWord} changed; not merged yet.${patch}`];
+			case "active":
+				return [`Workspace: child still running in ${workspace.worktreePath}.`];
+			case "kept":
+			case "conflict":
+				return [`Workspace ${workspace.state}: ${fileWord} NOT applied. ${workspace.message ?? ""}${patch}`.trim()];
+			default:
+				return [`Workspace error: ${workspace.message ?? "unknown error"}${patch}`];
+		}
+	})();
+	return [...lines, ...(workspace.state === "empty" ? [] : files)].join("\n");
+}
+
+function formatTypedResult(value: unknown): string {
+	let json = JSON.stringify(value, null, 2) ?? "null";
+	if (json.length > MAX_RESULT_JSON_CHARS)
+		json = `${json.slice(0, MAX_RESULT_JSON_CHARS)}\n… [typed result truncated in this text; the full value is in the tool details]`;
+	return `Typed result (validated against outputSchema):\n\`\`\`json\n${json}\n\`\`\``;
 }
 
 export function formatRunResult(run: SubagentRun): string {
 	const continuation = run.resumedFrom
 		? ` Resumed child #${run.resumedFrom.index + 1} from run ${run.resumedFrom.runId}.`
 		: "";
-	const header = `Subagent run ${run.id} ${run.state} (${run.mode}, ${run.context} context).${continuation}`;
+	const isolation = run.isolation === "worktree" ? ", worktree isolation" : "";
+	const header = `Subagent run ${run.id} ${run.state} (${run.mode}, ${run.context} context${isolation}).${continuation}`;
 	const results = run.results.map((result) => {
 		const attemptsNote = result.attempts > 1 ? ` (${result.attempts} attempts)` : "";
 		const title = `=== ${result.agent} [${result.state}]${attemptsNote} ===`;
@@ -1048,6 +1392,8 @@ export function formatRunResult(run: SubagentRun): string {
 				: result.error;
 		if (result.reapedAfterSettle)
 			body = `${body}\n\n(Note: the child finished but its process did not exit on its own — a loaded extension likely kept it alive — so it was terminated.)`;
+		if (result.result !== undefined) body = `${formatTypedResult(result.result)}\n\n${body}`;
+		if (result.workspace) body = `${body}\n\n${formatWorkspace(result.workspace)}`;
 		return `${title}\n${body}`;
 	});
 	return [header, ...results].join("\n\n");

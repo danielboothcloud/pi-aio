@@ -1,0 +1,2 @@
+2026-11-13 make all navigation work with hjkl and / to search then esc bakc to normal
+2026-11-13 Add more commands for the slash recipe. I should be able to use “slash recipe add”. If I type “slash recipe add model”, it will open a modal showing my enabled models from my global configuration and allow me to import one into my recipe. It will then automatically reload the session with the modelling, the recipe, etc. and add more recipe tools like that

@@ -124,7 +124,45 @@ if (effectiveTask.includes("always-hang")) {
 	hang();
 }
 
-if (!lingering)
+// Worktree isolation: "edit-<name>" writes <name>.txt in the child's cwd;
+// "clash-<value>" writes shared.txt (siblings conflict on it). A resumed
+// child does not edit again: its earlier edits must come from the replay.
+for (const match of effectiveTask.matchAll(/edit-(\w+)/g))
+	if (!resumed) writeFileSync(join(process.cwd(), `${match[1]}.txt`), `edited by ${match[1]}\n`);
+const clash = effectiveTask.match(/clash-(\w+)/);
+if (clash && !resumed) writeFileSync(join(process.cwd(), "shared.txt"), `${clash[1]}\n`);
+
+// Typed results: "typed-ok" calls submit_result; "typed-text" answers with
+// JSON text; "typed-late" submits only when asked again for the result;
+// "typed-wrong" always submits a value that does not match the schema.
+const typed = effectiveTask.includes("typed-");
+if (typed) {
+	const askedForResult = task.includes("valid typed result");
+	const value = { status: "ok", files: ["a.txt"] };
+	const submit = (result) =>
+		emit({
+			type: "tool_execution_end",
+			toolCallId: "submit-1",
+			toolName: "submit_result",
+			isError: false,
+			result: { content: [{ type: "text", text: "Result submitted." }], details: { result } },
+		});
+	if (sessionFile && !existsSync(sessionFile)) writeSessionStub(sessionFile);
+	setTimeout(() => {
+		if (effectiveTask.includes("quota-once") && !resumed) {
+			emitCompletion("partial work saved", "429 quota exhausted");
+			emit({ type: "agent_settled", aborted: false });
+			return;
+		}
+		if (effectiveTask.includes("typed-ok") || (effectiveTask.includes("typed-late") && askedForResult))
+			submit(value);
+		if (effectiveTask.includes("typed-wrong")) submit({ status: 42 });
+		emitCompletion(effectiveTask.includes("typed-text") ? JSON.stringify(value) : `done:${effectiveTask}`);
+		emit({ type: "agent_settled", aborted: false });
+	}, 5);
+}
+
+if (!lingering && !typed)
 	setTimeout(() => {
 		if (sessionDir && task.includes("fork-parent-only")) {
 			// Startup failed after copying parent history but before persisting the

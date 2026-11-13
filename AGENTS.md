@@ -412,7 +412,43 @@ generated `dist/` tree without changing the package contract.
   any other mode blocks every edit and non-read-only command): the runner
   passes `--permission-mode auto` and permission-modes pins `auto` under
   `AIO_SUBAGENT_CHILD=1`, overriding a forked transcript's persisted mode.
-  Hard blocklists still apply in children. A child
+  Hard blocklists still apply in children. `isolation: "worktree"`
+  (`workspace.ts`) gives each child a detached git worktree under its run
+  directory: parent HEAD + `git diff HEAD` + untracked non-ignored files,
+  ignored `node_modules`/`.venv`/`venv` symlinked (shared), and missing `.pi/`
+  files copied so the project blocklist tier still applies. A private
+  `GIT_INDEX_FILE` records the baseline tree (the child's own index stays at
+  HEAD; private indexes are seeded from stat-carrying indexes, so unchanged
+  files are not rehashed); hooks are disabled for `worktree add`, and AIO
+  never runs `git worktree prune`. The tool checks the repository BEFORE
+  calling the runner (an async launch must create its run synchronously). The
+  child runs in the matching subdirectory with `--approve`/`--no-approve`
+  mirroring Pi project trust and `PI_YAML_HOOKS_TRUST_PROJECT=1` when the
+  parent's yaml-hooks project is trusted (that trust is keyed by worktree
+  root); its system prompt maps parent paths to the worktree. The workspace
+  (`state: "active"`, path, expected patch) is published as soon as it exists;
+  a stop before spawn spawns nothing. After the child, its diff is saved as
+  `changes.patch` and the worktree removed; a process `exit` hook captures
+  live worktrees synchronously (an empty patch means no changes) and removes
+  them. After all
+  children, completed children's patches are `git apply --check`ed then
+  applied to the parent working tree (never the index) in task order, under
+  a per-repo lock. Failed/stopped children, stopped runs,
+  `applyChanges: false`, conflicts, and ask/plan parents keep the patch
+  (`workspace.state` kept/conflict). Inspector `r` recreates the worktree at
+  the SAME path (Pi print mode exits when a session's stored cwd is missing;
+  `worktree add --force` covers stale metadata) and replays the unapplied
+  partial patch above the new baseline. It refuses when the old worktree still
+  exists, its location was not recorded, capture failed, or the patch is
+  missing — never a silent loss of earlier edits.
+  `outputSchema` (run-wide or per task; validated with typebox `Compile`)
+  writes `result-schema.json` and sets `AIO_SUBAGENT_RESULT_SCHEMA_FILE`;
+  `result-schema.ts` registers `submit_result` in that child only, with
+  `{ result: <schema> }` parameters, and the parent reads its
+  `tool_execution_end` details (fallback: JSON final text), re-validates, and
+  resumes the session once with a reminder when the result is missing or
+  invalid (`MAX_RESULT_REMINDERS`, separate from the crash-retry budget). Typed results and workspace summaries are in public details and
+  history checkpoints; a decoded `active`/`pending` workspace becomes `kept`. A child
   that dies from a provider stall, hard timeout, or crash is retried
   automatically (`RunnerDeps.maxAttempts`, default 2) by resuming the child's
   own session file with a continuation prompt — completed turns and usage

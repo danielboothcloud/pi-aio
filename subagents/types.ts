@@ -3,6 +3,14 @@ import type { ChildExtensionLaunch } from "./extensions.js";
 import type { ChildTranscript } from "./transcript.js";
 
 export type SubagentContext = "fresh" | "fork";
+/**
+ * `none`: the child works in the parent's checkout. `worktree`: the child
+ * works in its own git worktree seeded with the parent's current working
+ * tree; its changes return as a patch that is applied after the run.
+ */
+export type SubagentIsolation = "none" | "worktree";
+/** A JSON Schema object that a child's typed result must match. */
+export type ResultSchema = Record<string, unknown>;
 export type SubagentThinking =
 	| "off"
 	| "minimal"
@@ -32,6 +40,8 @@ export interface SubagentTask {
 	task: string;
 	model?: string;
 	thinking?: SubagentThinking;
+	/** Per-task typed result schema; overrides the run-wide outputSchema. */
+	outputSchema?: ResultSchema;
 }
 
 export interface SubagentRunRequest {
@@ -44,6 +54,53 @@ export interface SubagentRunRequest {
 	model?: string;
 	thinking?: SubagentThinking;
 	timeoutMs?: number;
+	isolation?: SubagentIsolation;
+	/** Run-wide typed result schema (JSON Schema object). */
+	outputSchema?: ResultSchema;
+	/**
+	 * Worktree isolation only: apply each completed child's patch to the
+	 * parent checkout after the run (default true). False keeps the patches.
+	 */
+	applyChanges?: boolean;
+}
+
+/** One changed path in a child's worktree patch (null counts: binary). */
+export interface WorkspaceFileChange {
+	path: string;
+	added: number | null;
+	deleted: number | null;
+}
+
+/**
+ * `active`: the child is still working in its worktree. `pending`: patch captured, merge not done yet. `applied`: patch applied to
+ * the parent checkout. `kept`: patch saved but deliberately not applied.
+ * `conflict`: the patch no longer applies to the parent checkout. `empty`:
+ * no changes. `error`: the workspace could not be prepared or captured.
+ */
+export type WorkspaceState =
+	| "active"
+	| "pending"
+	| "applied"
+	| "kept"
+	| "conflict"
+	| "empty"
+	| "error";
+
+/** JSON-safe summary of a worktree child's changes. */
+export interface ChildWorkspaceResult {
+	isolation: "worktree";
+	state: WorkspaceState;
+	files: WorkspaceFileChange[];
+	/** Saved unified diff (git apply format), relative to the repository root. */
+	patchFile?: string;
+	/** Repository root the patch applies to. */
+	repoRoot?: string;
+	/**
+	 * Where the (now removed) worktree was. The child session stores this as
+	 * its cwd, so a manual resume recreates the worktree at the same path.
+	 */
+	worktreePath?: string;
+	message?: string;
 }
 
 type SubagentRunState =
@@ -113,6 +170,9 @@ export interface ChildRunResult {
 	 * handle in the headless child.
 	 */
 	reapedAfterSettle?: boolean;
+	/** Validated typed result (only when an outputSchema applied). */
+	result?: unknown;
+	workspace?: ChildWorkspaceResult;
 }
 
 export interface ChildRunStatus {
@@ -136,6 +196,9 @@ export interface ChildRunStatus {
 	 */
 	transcript?: ChildTranscript;
 	reapedAfterSettle?: boolean;
+	/** Validated typed result (only when an outputSchema applied). */
+	result?: unknown;
+	workspace?: ChildWorkspaceResult;
 	process?: ChildProcessWithoutNullStreams;
 }
 
@@ -144,6 +207,7 @@ export interface SubagentRun {
 	state: SubagentRunState;
 	mode: "single" | "parallel";
 	context: SubagentContext;
+	isolation?: SubagentIsolation;
 	cwd: string;
 	startedAt: number;
 	endedAt?: number;
@@ -161,6 +225,13 @@ export interface ParentLaunchContext {
 	thinking?: SubagentThinking;
 	parentSessionFile?: string;
 	/**
+	 * The parent's project trust decision. A worktree child runs in another
+	 * directory, so the runner passes this decision on explicitly.
+	 */
+	projectTrusted?: boolean;
+	/** yaml-hooks project trust for the parent cwd (keyed by worktree root). */
+	projectHooksTrusted?: boolean;
+	/**
 	 * The parent's resolved extension set (see resolveChildExtensionLaunch).
 	 * There is no opt-out: the runner always normalizes this so a child can
 	 * never start with fewer extensions than its parent.
@@ -172,7 +243,10 @@ export interface ParentLaunchContext {
 /** Durable private launch data, stored outside model context for recovery. */
 export interface ChildLaunchSnapshot {
 	task: SubagentTask;
-	request: Pick<SubagentRunRequest, "context" | "timeoutMs">;
+	request: Pick<
+		SubagentRunRequest,
+		"context" | "timeoutMs" | "isolation" | "applyChanges"
+	>;
 	agent: AgentConfig;
 	parent: ParentLaunchContext;
 	resumed: boolean;

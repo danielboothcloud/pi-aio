@@ -1,6 +1,6 @@
 import { Type } from "typebox";
 import { Value } from "typebox/value";
-import type { ChildLaunchSnapshot, ChildRunStatus, SubagentRun } from "./types.js";
+import type { ChildLaunchSnapshot, ChildRunStatus, ChildWorkspaceResult, SubagentRun } from "./types.js";
 
 /** Durable, non-context checkpoint. Tool details remain the legacy fallback. */
 export const SUBAGENT_STATE_ENTRY = "aio-subagent-state";
@@ -8,6 +8,13 @@ const State = Type.Union((["queued", "running", "completed", "failed", "stopped"
 const Thinking = Type.Union((["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const).map((level) => Type.Literal(level)));
 const OptionalText = Type.Optional(Type.String());
 const OptionalNumber = Type.Optional(Type.Number());
+const Count = Type.Union([Type.Integer({ minimum: 0 }), Type.Null()]);
+const WorkspaceSchema = Type.Object({
+	isolation: Type.Literal("worktree"),
+	state: Type.Union((["active", "pending", "applied", "kept", "conflict", "empty", "error"] as const).map((state) => Type.Literal(state))),
+	files: Type.Array(Type.Object({ path: Type.String(), added: Count, deleted: Count })),
+	patchFile: OptionalText, repoRoot: OptionalText, worktreePath: OptionalText, message: OptionalText,
+});
 const ChildSchema = Type.Object({
 	index: Type.Integer({ minimum: 0, maximum: 11 }),
 	agent: Type.String(), task: Type.String(), state: State,
@@ -16,11 +23,14 @@ const ChildSchema = Type.Object({
 	output: OptionalText, error: OptionalText, sessionFile: OptionalText,
 	attempts: Type.Optional(Type.Integer({ minimum: 0 })),
 	reapedAfterSettle: Type.Optional(Type.Boolean()),
+	result: Type.Optional(Type.Unknown()),
+	workspace: Type.Optional(WorkspaceSchema),
 });
 const RunSchema = Type.Object({
 	id: Type.String({ minLength: 1 }), state: State,
 	mode: Type.Union([Type.Literal("single"), Type.Literal("parallel")]),
 	context: Type.Union([Type.Literal("fresh"), Type.Literal("fork")]),
+	isolation: Type.Optional(Type.Union([Type.Literal("none"), Type.Literal("worktree")])),
 	cwd: Type.String(), startedAt: Type.Number(), endedAt: OptionalNumber,
 	error: OptionalText, children: Type.Array(ChildSchema, { minItems: 1, maxItems: 12 }),
 	resumedFrom: Type.Optional(Type.Object({ runId: Type.String(), index: Type.Integer({ minimum: 0, maximum: 11 }) })),
@@ -46,10 +56,15 @@ const LaunchSchema = Type.Object({
 	pid: Type.Optional(Type.Integer({ minimum: 1 })),
 });
 
+function cloneWorkspace(workspace: ChildWorkspaceResult | undefined): ChildWorkspaceResult | undefined {
+	return workspace ? { ...workspace, files: workspace.files.map((file) => ({ ...file })) } : undefined;
+}
+
 /** Explicit public projection: never serialize process handles or private prompts. */
 export function publicRun(run: SubagentRun): Record<string, unknown> {
 	return {
 		id: run.id, state: run.state, mode: run.mode, context: run.context,
+		isolation: run.isolation,
 		cwd: run.cwd, startedAt: run.startedAt, endedAt: run.endedAt,
 		error: run.error,
 		resumedFrom: run.resumedFrom ? { runId: run.resumedFrom.runId, index: run.resumedFrom.index } : undefined,
@@ -61,6 +76,8 @@ export function publicRun(run: SubagentRun): Record<string, unknown> {
 			attempts: child.attempts ?? 1,
 			activity: child.activity ? { ...child.activity, runningTools: child.activity.runningTools.map((tool) => ({ ...tool })) } : undefined,
 			reapedAfterSettle: child.reapedAfterSettle,
+			result: child.result === undefined ? undefined : structuredClone(child.result),
+			workspace: cloneWorkspace(child.workspace),
 		})),
 	};
 }
@@ -73,6 +90,20 @@ export interface RestoredRun {
 function record(value: unknown): Record<string, unknown> | undefined {
 	return value !== null && typeof value === "object" && !Array.isArray(value)
 		? value as Record<string, unknown> : undefined;
+}
+
+/**
+ * A worktree interrupted mid-run never merged: its patch was not applied. An
+ * `active` worktree's patch exists only when the exit capture succeeded (an
+ * empty file means no changes); resume checks for it.
+ */
+function decodedWorkspace(workspace: ChildWorkspaceResult | undefined): ChildWorkspaceResult | undefined {
+	const copy = cloneWorkspace(workspace);
+	if (copy?.state === "pending" || copy?.state === "active") {
+		copy.state = "kept";
+		copy.message ??= "Not applied: the run was interrupted before the merge.";
+	}
+	return copy;
 }
 
 /** Decode only known fields; old running/queued records are NOT live processes. */
@@ -88,10 +119,13 @@ export function decodeHistoricalRun(value: unknown, recordedAt?: number): Subage
 		output: child.output, sessionFile: child.sessionFile, attempts: child.attempts,
 		error: child.error ?? (child.state === "running" || child.state === "queued" ? "Interrupted when the parent session ended." : undefined),
 		reapedAfterSettle: child.reapedAfterSettle,
+		result: child.result === undefined ? undefined : structuredClone(child.result),
+		workspace: decodedWorkspace(child.workspace),
 	}));
 	const state = value.state === "running" || value.state === "queued" ? "stopped" : value.state;
 	return {
 		id: value.id, state, mode: value.mode, context: value.context,
+		isolation: value.isolation,
 		cwd: value.cwd, startedAt: value.startedAt, endedAt: value.endedAt ?? recordedAt ?? value.startedAt,
 		error: value.error,
 		resumedFrom: value.resumedFrom ? { runId: value.resumedFrom.runId, index: value.resumedFrom.index } : undefined,
@@ -105,6 +139,7 @@ export function decodeHistoricalRun(value: unknown, recordedAt?: number): Subage
 			attempts: child.attempts ?? 1,
 			usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 },
 			reapedAfterSettle: child.reapedAfterSettle,
+			result: child.result, workspace: child.workspace,
 		})),
 	};
 }
