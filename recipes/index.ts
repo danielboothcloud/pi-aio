@@ -315,6 +315,8 @@ export function recipeScaffold(
 	// Copied only: a blank scaffold must not pick a mode or style for the repo.
 	if (template?.permissionMode) recipe.permissionMode = template.permissionMode;
 	if (template?.style) recipe.style = template.style;
+	// Copied only, like mode/style: a blank scaffold leaves the advisor off.
+	if (template?.advisor) recipe.advisor = template.advisor;
 	return `${JSON.stringify({ defaultRecipe: name, recipes: { [name]: recipe } }, null, 2)}\n`;
 }
 
@@ -881,7 +883,7 @@ export async function registerRecipes(
 				);
 				if (!choice) return;
 				if (choice.startsWith("off — ")) {
-					deactivateRecipe(pi, ctx, { persist: true });
+					deactivateRecipe(pi, ctx, { persist: true, live: true });
 					notify(
 						ctx,
 						"Recipe: off — MCP servers cleared; model keeps its current state",
@@ -896,7 +898,7 @@ export async function registerRecipes(
 
 			const normalized = requested.toLowerCase();
 			if (normalized === "off" || normalized === "none") {
-				deactivateRecipe(pi, ctx, { persist: true });
+				deactivateRecipe(pi, ctx, { persist: true, live: true });
 				notify(
 					ctx,
 					"Recipe: off — MCP servers cleared; model keeps its current state",

@@ -12,6 +12,7 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { registerAdvisor } from "./advisor/index.js";
 import registerAskUserQuestion from "./ask-user-question/index.js";
 import { registerAstGrep } from "./ast-grep/index.js";
 import { registerBlocklist } from "./blocklist/index.js";
@@ -58,6 +59,11 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	await registerRecipes(pi);
 	registerAskUserQuestion(pi);
 	registerGoals(pi);
+	// The advisor tool follows the active recipe's `advisor` key (read at
+	// session_start, after recipes applied) and reconciles its active-tool
+	// slot before every run; it registers before permission-modes takes its
+	// passive-mode snapshot.
+	registerAdvisor(pi);
 	registerAstGrep(pi);
 	registerBrowserSearch(pi);
 	registerCopyWidget(pi);

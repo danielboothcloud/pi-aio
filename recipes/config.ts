@@ -33,7 +33,11 @@
 //                                            // same shape as aio-blocklist.json
 //                                            // (or a bare entries array)
 //       "permissionMode": "plan",            // default|ask|plan|auto; starting mode
-//       "style": "concise"                   // none|collaborate|tutor|concise|ste
+//       "style": "concise",                  // none|collaborate|tutor|concise|ste
+//       "advisor": "anthropic/claude-opus-4-5:high" // session-scoped; absent = off.
+//                                            // Object form: { model, reasoning,
+//                                            // maxUsesPerRun, maxTokens,
+//                                            // maxContextMessages } (advisor/config.ts)
 //     }
 //   }
 // }
@@ -52,6 +56,7 @@ import {
 	getAgentDir,
 	type McpServerConfig,
 } from "@earendil-works/pi-coding-agent";
+import { parseAdvisorSetting, type AdvisorSettings } from "../advisor/config.js";
 import { parseBlocklistConfig, type BlocklistEntry } from "../blocklist/config.js";
 import { type PermissionMode, parsePermissionMode } from "../permission-modes/mode-access.js";
 import { parseStyle, type Style } from "../styles/style-access.js";
@@ -129,6 +134,11 @@ export interface RecipeConfig {
 	permissionMode?: PermissionMode;
 	/** Starting interaction style (session-scoped), same rules as permissionMode. */
 	style?: Style;
+	/**
+	 * Advisor model (session-scoped). Absent = advisor off; set = always on
+	 * while the recipe is active (`/advisor` can override per session).
+	 */
+	advisor?: AdvisorSettings;
 }
 
 /** A recipe merged across the two config tiers, with provenance. */
@@ -277,6 +287,8 @@ export function parseRecipeConfig(
 	if (permissionMode) config.permissionMode = permissionMode;
 	const style = parseStyle(entry.style);
 	if (style) config.style = style;
+	const advisor = parseAdvisorSetting(entry.advisor);
+	if (advisor) config.advisor = advisor;
 
 	return { name, source, baseDir, config };
 }

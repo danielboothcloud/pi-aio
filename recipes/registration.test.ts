@@ -1042,6 +1042,10 @@ test("/recipe init copies a home recipe as a self-contained template (picker or 
 	}
 
 	assert.deepEqual(JSON.parse(recipeScaffold("x")).recipes.x.blocklist, { entries: [] });
+	// The advisor is copied from a template only; a blank scaffold leaves it off.
+	assert.equal(Object.hasOwn(JSON.parse(recipeScaffold("x")).recipes.x, "advisor"), false);
+	const advisor = { model: "anthropic/claude-opus", reasoning: "high", maxUsesPerRun: 3, maxTokens: 16384, maxContextMessages: 18 };
+	assert.deepEqual(JSON.parse(recipeScaffold("x", {}, { advisor: advisor as never })).recipes.x.advisor, advisor);
 	// A template without its own scope gets scoped to its model (suffix stripped).
 	assert.deepEqual(
 		JSON.parse(recipeScaffold("x", {}, { model: "openai-codex/gpt-5:medium" })).recipes.x.models,

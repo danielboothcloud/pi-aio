@@ -25,6 +25,8 @@
 		"subagents",
 		"delegation",
 		"parallel-agents",
+		"advisor",
+		"strategic-guidance",
 		"goal",
 		"isolated-auditor",
 		"by-the-way",
@@ -150,6 +152,10 @@
 		"yaml-hooks/LICENSE",
 		"session-naming/**/*.ts",
 		"!session-naming/**/*.test.ts",
+		"advisor/**/*.ts",
+		"!advisor/**/*.test.ts",
+		"advisor/LICENSE",
+		"advisor/UPSTREAM.md",
 		"btw/**/*.ts",
 		"!btw/**/*.test.ts",
 		"README.md"
@@ -157,7 +163,7 @@
 	"scripts": {
 		"test": "npm run test:node && npm run test:diff && npm run test:upstream",
 		"test:diff": "vitest run --config vitest.diff.config.ts",
-		"test:node": "tsx --test notifications/*.test.ts session-naming/*.test.ts ast-grep/*.test.ts btw/*.test.ts blocklist/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts effort/*.test.ts git-commit/*.test.ts goals/*.test.ts tuicr/*.test.ts hypa/*.test.ts init/*.test.ts nvim/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts recipes/*.test.ts recipes/pig-launch/*.test.ts session-nav/*.test.ts rtk/*.test.ts status-line/*.test.ts styles/*.test.ts subagents/*.test.ts ui/*.test.ts user-bash/*.test.ts yaml-hooks/*.test.ts frame/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts ask-user-question/tool/sanitize-questionnaire.test.ts",
+		"test:node": "tsx --test advisor/*.test.ts notifications/*.test.ts session-naming/*.test.ts ast-grep/*.test.ts btw/*.test.ts blocklist/*.test.ts browser-search/*.test.ts copy-widget/*.test.ts effort/*.test.ts git-commit/*.test.ts goals/*.test.ts tuicr/*.test.ts hypa/*.test.ts init/*.test.ts nvim/*.test.ts permission-modes/*.test.ts pretty-tools/*.test.ts queue/*.test.ts recipes/*.test.ts recipes/pig-launch/*.test.ts session-nav/*.test.ts rtk/*.test.ts status-line/*.test.ts styles/*.test.ts subagents/*.test.ts ui/*.test.ts user-bash/*.test.ts yaml-hooks/*.test.ts frame/*.test.ts ask-user-question/registration.test.ts ask-user-question/rpc-fallback.test.ts ask-user-question/tool/questionnaire.test.ts ask-user-question/tool/sanitize-questionnaire.test.ts",
 		"test:upstream": "vitest run --config vitest.config.ts",
 		"postinstall": "node hypa/scripts/postinstall.js"
 	},

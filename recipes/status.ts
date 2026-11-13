@@ -6,6 +6,7 @@ import { ACTIVE_RECIPE_ENV, RECIPE_FLAG, RECIPE_STAGE_ENV, parseModelSpec } from
 import { findRecipeModel, recipeRuntime } from "./apply.js";
 import { getPermissionModeAccess } from "../permission-modes/mode-access.js";
 import { getStyleAccess } from "../styles/style-access.js";
+import { ADVISOR_TOOL_NAME, describeAdvisor } from "../advisor/config.js";
 
 /** Custom session entries never enter model context or start a model call. */
 export const RECIPE_STATUS_ENTRY = "recipe-status-report";
@@ -31,6 +32,8 @@ export interface RecipeStatusReport {
 		extensions: string[] | null;
 		permissionMode: string | null;
 		style: string | null;
+		/** "provider/model:reasoning"; null = the recipe leaves the advisor off. */
+		advisor?: string | null;
 	};
 	runtime: {
 		model: string | null;
@@ -44,6 +47,8 @@ export interface RecipeStatusReport {
 		/** null when permission modes or styles are not loaded. */
 		permissionMode: string | null;
 		style: string | null;
+		/** Whether the advisor tool is declared to the model right now. */
+		advisorActive?: boolean;
 	};
 	launch: {
 		recipe: string | null;
@@ -144,6 +149,7 @@ export function buildRecipeStatus(
 			extensions: def?.config.extensions?.map(safeText) ?? null,
 			permissionMode: def?.config.permissionMode ?? null,
 			style: def?.config.style ?? null,
+			advisor: def?.config.advisor ? describeAdvisor(def.config.advisor) : null,
 		},
 		runtime: {
 			model: canonical,
@@ -156,6 +162,7 @@ export function buildRecipeStatus(
 			registeredProviders: ctx.modelRegistry.getRegisteredProviderIds?.().map(safeText) ?? null,
 			permissionMode: getPermissionModeAccess()?.getMode() ?? null,
 			style: getStyleAccess()?.getStyle() ?? null,
+			advisorActive: pi.getActiveTools().includes(ADVISOR_TOOL_NAME),
 		},
 		launch: {
 			recipe: launchRecipe,
@@ -167,6 +174,11 @@ export function buildRecipeStatus(
 		observedExtensionSources: [...sources.values()].sort((a, b) => a.path.localeCompare(b.path)),
 		notes,
 	};
+}
+
+function advisorRuntimeText(active: boolean | undefined): string {
+	if (active === undefined) return "unknown";
+	return active ? "on" : "off";
 }
 
 export function formatRecipeStatus(report: RecipeStatusReport, view: "summary" | "full" = "full"): string {
@@ -189,6 +201,7 @@ export function formatRecipeStatus(report: RecipeStatusReport, view: "summary" |
 		`Extensions — configured: ${report.configured.extensions?.join(", ") ?? "inherited"}`,
 		`Permission mode — runtime: ${report.runtime.permissionMode ?? "unavailable"}; configured: ${report.configured.permissionMode ?? "inherited"}`,
 		`Style — runtime: ${report.runtime.style ?? "unavailable"}; configured: ${report.configured.style ?? "inherited"}`,
+		`Advisor — runtime: ${advisorRuntimeText(report.runtime.advisorActive)}; configured: ${report.configured.advisor ?? "off"}`,
 		"Observed extension sources (runtime registrations):",
 	];
 	for (const source of report.observedExtensionSources) {

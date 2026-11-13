@@ -188,7 +188,10 @@ generated `dist/` tree without changing the package contract.
   (never global/project ones; otherwise ignored with a warning);
   `/recipe trust` / `/recipe untrust` record or forget the decision.
   Recipes support only description/model/thinkingLevel/models/mcpServers/extensions/blocklist/
-  permissionMode/style; unknown keys are ignored. `permissionMode`
+  permissionMode/style/advisor; unknown keys are ignored. `advisor`
+  (session-scoped; see `advisor/`) is published via `setRecipeAdvisor`;
+  live switches/off call `getAdvisorAccess()?.followRecipe(ctx)`, which
+  drops a `/advisor` session override. `permissionMode`
   (`default|ask|plan|auto`, alias `mode`) and `style` (the `/style` names,
   legacy aliases accepted) are session-scoped starting values: `applyRecipe`
   publishes them through `permission-modes/mode-access.ts` and
@@ -465,6 +468,21 @@ generated `dist/` tree without changing the package contract.
   eviction. Detached lifecycle changes (including explicit stops) stay dirty,
   exempt from every pruning path, until reattachment checkpoints them on their
   own branch without stale follow-ups; session epochs guard replacements.
+- `advisor/` is based on pi-advisor (MIT, RimuruW — see `advisor/LICENSE`
+  and `advisor/UPSTREAM.md`). It owns the `advisor` tool and `/advisor`
+  (`status | on [provider/model[:reasoning]] | off | reset`; no `ask` —
+  `/btw` covers manual side questions). The active recipe's `advisor` key
+  (string `provider/model[:reasoning]` or object with `maxUsesPerRun`/
+  `maxTokens`/`maxContextMessages`) switches it: absent = off, set = on.
+  Precedence: `/advisor` session override (an `advisor-state` branch entry)
+  > recipe > inherited `AIO_ADVISOR` (children only) > off. The tool stays
+  registered; `before_agent_start`/`session_start`/changes add or remove it
+  from the active set (never fight permission-modes' snapshot). One
+  isolated `ctx.modelRegistry.streamSimple` call per consultation, capped
+  per agent run; failures throw. A top-level pi clears a stray
+  `AIO_ADVISOR` at registration and mirrors its effective settings there;
+  the subagent runner then adds `advisor` to agent `--tools` allowlists.
+  Children register no command. Tests inject `complete`.
 - `btw/` owns the `/btw` command — "by the way" side questions: pi executes
   extension commands immediately even while streaming, so a mid-flow question
   runs its handler without interrupting, queuing, or steering the run, and

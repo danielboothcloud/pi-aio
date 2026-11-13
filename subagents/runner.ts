@@ -33,6 +33,7 @@ import {
 } from "./extensions.js";
 import { childSessionOwner, claimChildSession, createRun, getRun } from "./registry.js";
 import { pigHarnessBinary } from "../recipes/pig-host.js";
+import { ADVISOR_ENV, ADVISOR_TOOL_NAME } from "../advisor/config.js";
 import { loadSavedTranscript } from "./saved-transcript.js";
 import type {
 	AgentConfig,
@@ -369,6 +370,11 @@ export function buildSpawnSpec(input: {
 	if (!input.agent.inheritProjectContext) args.push("--no-context-files");
 	if (!input.agent.inheritSkills) args.push("--no-skills");
 	const tools = input.agent.tools?.filter((tool) => tool !== "subagent");
+	// The parent's advisor is inherited (AIO_ADVISOR travels in the env), so
+	// an agent's tool allowlist must also admit the advisor tool.
+	if (tools?.length && process.env[ADVISOR_ENV] && !tools.includes(ADVISOR_TOOL_NAME)) {
+		tools.push(ADVISOR_TOOL_NAME);
+	}
 	if (tools?.length) args.push("--tools", tools.join(","));
 	args.push("--exclude-tools", "subagent");
 	const prompt = input.promptOverride ?? `Task: ${input.task.task}`;

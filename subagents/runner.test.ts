@@ -154,6 +154,32 @@ test("spawn specification inherits the active parent model and thinking level", 
 	assert.equal(spec.args[spec.args.indexOf("--tools") + 1], "read,grep");
 });
 
+test("an inherited advisor (AIO_ADVISOR) is admitted into the agent tool allowlist", () => {
+	const previous = process.env.AIO_ADVISOR;
+	const build = () =>
+		buildSpawnSpec({
+			runId: "run-1",
+			index: 0,
+			task: { agent: "reviewer", task: "review this" },
+			request: { agent: "reviewer", task: "review this" },
+			agent: agent(),
+			parent: parent({ extensionLaunch: { noExtensions: false, paths: [] } }),
+			deps: { runsBaseDir: temporaryDirectory() },
+		});
+	try {
+		delete process.env.AIO_ADVISOR;
+		assert.equal(build().args[build().args.indexOf("--tools") + 1], "read,grep");
+		process.env.AIO_ADVISOR = JSON.stringify({ model: "anthropic/claude-opus" });
+		const spec = build();
+		assert.equal(spec.args[spec.args.indexOf("--tools") + 1], "read,grep,advisor");
+		// The agent's own config is never mutated.
+		assert.equal(agent().tools?.includes("advisor"), false);
+	} finally {
+		if (previous === undefined) delete process.env.AIO_ADVISOR;
+		else process.env.AIO_ADVISOR = previous;
+	}
+});
+
 test("spawn specification inherits configured packages when the parent did", () => {
 	const spec = buildSpawnSpec({
 		runId: "run-1",

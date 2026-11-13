@@ -135,7 +135,8 @@ Trusted projects may override or add recipes in `<project>/.pi/aio-recipes.json`
 ```
 
 Recipes support only `description`, `model`, `thinkingLevel`, `models`,
-`mcpServers`, `extensions`, and `blocklist`; other keys are ignored.
+`mcpServers`, `extensions`, `blocklist`, `permissionMode`, `style`, and
+`advisor`; other keys are ignored.
 
 Key semantics:
 
@@ -159,6 +160,11 @@ Key semantics:
   `/recipe off` clears them, and subagent children inherit them. A committed
   `.pi-recipe` therefore gives a repo its own hard blocklist without anything
   in the home directory:
+
+- **`advisor`** — the [advisor](#advisor) model. If the key is absent, the
+  advisor is off. If you set a model, the advisor is always on while the
+  recipe is active. Session-scoped: `/recipe` switches apply the new value,
+  and subagent children inherit it.
 
   ```json
   {
@@ -1313,6 +1319,67 @@ Commands:
 - `/btw <question>` — ask the side question
 - `/btw` — usage plus in-flight state
 
+## Advisor
+
+The `advisor` tool lets the working model consult a stronger model for
+strategic guidance. The advisor reads a curated transcript and returns a
+verdict (`On track`, `Course-correct`, or `Not done yet`) and up to five
+action items. It cannot call tools. The design comes from
+[pi-advisor](https://github.com/RimuruW/pi-advisor) (MIT).
+
+The active recipe controls the advisor. If the recipe has no `advisor` key,
+the advisor is off. If the key names a model, the advisor is always on:
+
+```json
+{
+  "recipes": {
+    "work": {
+      "model": "anthropic/claude-sonnet-4-5",
+      "advisor": "anthropic/claude-opus-4-5:high"
+    },
+    "deep": {
+      "advisor": {
+        "model": "openai/gpt-5",
+        "reasoning": "xhigh",
+        "maxUsesPerRun": 3,
+        "maxTokens": 16384,
+        "maxContextMessages": 18
+      }
+    }
+  }
+}
+```
+
+- The string form is `provider/model[:reasoning]`. The reasoning level
+  defaults to `high`. `false`, `"off"`, and `null` also mean off.
+- The object form also sets limits. `maxUsesPerRun` (default 3) caps
+  consultations per agent run. `maxTokens` (default 16384) caps the advisor
+  output, thinking included. `maxContextMessages` (default 18) caps the
+  transcript messages that the advisor reads.
+- The working model decides when to call the advisor. Typical points are
+  after the first exploration (`initial`), when stuck (`recovery`), and
+  before it reports completion (`final-check`). Without a stage, the tool
+  detects the stage from recent tool activity.
+- The advisor sees user and assistant text, short summaries of recent tool
+  results, the working model's system prompt (bounded), and the active tool
+  list. It does not see full tool outputs or images.
+- Subagent children inherit the parent's advisor through `AIO_ADVISOR`.
+  AIO adds `advisor` to the agent's tool allowlist while it is on.
+
+Commands (a session override of the recipe):
+
+| Command | Effect |
+| --- | --- |
+| `/advisor` or `/advisor status` | Show the state, the model, the source, and the uses in this run |
+| `/advisor on [provider/model[:reasoning]]` | Turn the advisor on for this session. Without a model, it uses the recipe model. A given model keeps the recipe limits. |
+| `/advisor off` | Turn the advisor off for this session |
+| `/advisor reset` | Remove the override and follow the recipe again |
+
+The override is saved on the session branch, so a resumed session keeps it.
+A `/recipe` switch or `/recipe off` removes the override. There is no
+`/advisor ask`: use `/btw` for a manual side question to the session model.
+`/recipe status` shows the configured advisor and whether the tool is on.
+
 ## Pretty built-in tools
 
 `aio` replaces Pi's built-in `read`, `bash`, `ls`, `find`, and `grep` tool
@@ -1654,6 +1721,7 @@ view). `path:line` and `path:line:col` shorthand work.
 ```text
 .
 ├── index.ts                 # wires all aio features
+├── advisor/                 # advisor tool + /advisor (based on pi-advisor)
 ├── ask-user-question/       # structured question tool + TUI/RPC implementations
 ├── copy-widget/             # /pick parser + TUI overlay
 ├── diff-tools/              # write/edit/apply_patch diff rendering

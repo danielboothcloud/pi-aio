@@ -5,6 +5,7 @@ import { parseRecipeConfig, RECIPE_STATE_ENTRY } from "./config.ts";
 import { RECIPE_BLOCKLIST_ENV, recipeBlocklist } from "../blocklist/config.ts";
 import { getRecipePermissionMode, type PermissionMode, setPermissionModeAccess } from "../permission-modes/mode-access.ts";
 import { getRecipeStyle, setStyleAccess, type Style } from "../styles/style-access.ts";
+import { getRecipeAdvisor, setAdvisorAccess } from "../advisor/config.ts";
 import {
 	applyRecipe,
 	deactivateRecipe,
@@ -427,6 +428,44 @@ test("recipe permissionMode/style: parsed, published as starting values, cleared
 	await applyRecipe(h.pi as never, h.ctx as never, recipe({ permissionMode: "plan" }), { source: "session", persist: false });
 	deactivateRecipe(h.pi as never, h.ctx as never, { persist: false });
 	assert.equal(getRecipePermissionMode(), undefined);
+});
+
+test("recipe advisor: absent = off, published while active, live switches drop the override", async () => {
+	assert.equal(parseRecipeConfig("x", "global", "/b", {})?.config.advisor, undefined);
+	assert.equal(parseRecipeConfig("x", "global", "/b", { advisor: "off" })?.config.advisor, undefined);
+	assert.deepEqual(parseRecipeConfig("x", "global", "/b", { advisor: "anthropic/claude-opus:xhigh" })?.config.advisor, {
+		model: "anthropic/claude-opus",
+		reasoning: "xhigh",
+		maxUsesPerRun: 3,
+		maxTokens: 16384,
+		maxContextMessages: 18,
+	});
+
+	const h = makeHarness();
+	const follows: string[] = [];
+	setAdvisorAccess({ followRecipe: () => follows.push("follow") });
+	try {
+		const result = await applyRecipe(h.pi as never, h.ctx as never, recipe({ advisor: { model: "openai/gpt-x", maxUsesPerRun: 2 } }), {
+			source: "session",
+			persist: false,
+		});
+		assert.equal(result.applied.includes("advisor"), true);
+		assert.equal(getRecipeAdvisor()?.settings.maxUsesPerRun, 2);
+		assert.deepEqual(follows, [], "startup restore keeps a session override");
+
+		await applyRecipe(h.pi as never, h.ctx as never, recipe({}), { source: "command", persist: false, live: true });
+		assert.equal(getRecipeAdvisor(), undefined);
+		assert.deepEqual(follows, ["follow"]);
+
+		await applyRecipe(h.pi as never, h.ctx as never, recipe({ advisor: "openai/gpt-x" }), { source: "session", persist: false });
+		deactivateRecipe(h.pi as never, h.ctx as never, { persist: false });
+		assert.equal(getRecipeAdvisor(), undefined);
+		assert.deepEqual(follows, ["follow"]);
+		deactivateRecipe(h.pi as never, h.ctx as never, { persist: true, live: true });
+		assert.deepEqual(follows, ["follow", "follow"]);
+	} finally {
+		setAdvisorAccess(undefined);
+	}
 });
 
 test("a live /recipe switch sets the mode and style now; missing features warn", async () => {

@@ -11,6 +11,8 @@
 //   permissionMode/style -> published as the starting mode/style (read by
 //                           permission-modes and styles at their session_start);
 //                           a live /recipe switch sets them immediately
+//   advisor              -> advisor/config.ts setRecipeAdvisor; a live switch
+//                           also drops any /advisor session override
 //
 // The module keeps runtime state (active recipe, provenance, launch notice,
 // recipes registered by this feature) with a test reset hook, and exports
@@ -20,6 +22,7 @@
 
 import type { AgentMessage, ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { getAdvisorAccess, setRecipeAdvisor } from "../advisor/config.js";
 import { setRecipeBlocklist } from "../blocklist/config.js";
 import { getPermissionModeAccess, setRecipePermissionMode } from "../permission-modes/mode-access.js";
 import { getStyleAccess, setRecipeStyle } from "../styles/style-access.js";
@@ -106,6 +109,7 @@ export function resetRecipeRuntimeForTests(): void {
 function publishRecipePreferences(def: RecipeDefinition | undefined): void {
 	setRecipePermissionMode(def?.config.permissionMode);
 	setRecipeStyle(def?.config.style);
+	setRecipeAdvisor(def?.config.advisor ? { recipe: def.name, settings: def.config.advisor } : undefined);
 }
 
 /** Publish the recipe's hard-blocklist entries (or clear them). */
@@ -394,6 +398,10 @@ export async function applyRecipe(
 		}
 	}
 
+	if (config.advisor) applied.push("advisor");
+	// A deliberate switch follows the new recipe's advisor (drops /advisor overrides).
+	if (options.live) getAdvisorAccess()?.followRecipe(ctx);
+
 	updateRecipeStatus(pi, ctx);
 	if (options.persist) {
 		pi.appendEntry(RECIPE_STATE_ENTRY, { name: def.name });
@@ -405,7 +413,7 @@ export async function applyRecipe(
 export function deactivateRecipe(
 	pi: ExtensionAPI,
 	ctx: ExtensionContext,
-	options: { persist: boolean } = { persist: true },
+	options: { persist: boolean; live?: boolean } = { persist: true },
 ): void {
 	runtimeState.activeName = undefined;
 	runtimeState.active = undefined;
@@ -422,6 +430,7 @@ export function deactivateRecipe(
 		}
 	}
 	runtimeState.registeredMcp.clear();
+	if (options.live) getAdvisorAccess()?.followRecipe(ctx);
 	updateRecipeStatus(pi, ctx);
 	if (options.persist) {
 		pi.appendEntry(RECIPE_STATE_ENTRY, { name: null });
