@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { CONFIG_DIR_NAME, getAgentDir } from "@earendil-works/pi-coding-agent";
 
 export type SearchProvider = "searxng" | "exa";
+/** What `fetch_content` tries first: the local browsers, or Exa's contents API. */
+export type FetchProvider = "browser" | "exa";
 export type ExaSearchType =
 	| "auto"
 	| "keyword"
@@ -28,6 +30,7 @@ export interface ExaProviderConfig {
 
 export interface BrowserSearchConfig {
 	provider?: SearchProvider;
+	fetchProvider?: FetchProvider;
 	searxng?: SearxngProviderConfig;
 	exa?: ExaProviderConfig;
 }
@@ -85,6 +88,7 @@ export function resolveBrowserSearchConfig(
 		...globalConfig,
 		...projectConfig,
 		provider: projectConfig.provider ?? globalConfig.provider,
+		fetchProvider: projectConfig.fetchProvider ?? globalConfig.fetchProvider,
 		searxng: {
 			...(plainObject(globalConfig.searxng) ?? {}),
 			...(plainObject(projectConfig.searxng) ?? {}),
@@ -114,6 +118,10 @@ export function resolveBrowserSearchConfig(
 
 	return {
 		provider,
+		fetchProvider:
+			merged.fetchProvider === "exa" || merged.fetchProvider === "browser"
+				? merged.fetchProvider
+				: undefined,
 		searxng: {
 			baseUrl: optionalString(merged.searxng.baseUrl)?.replace(/\/+$/, ""),
 		},

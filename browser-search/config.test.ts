@@ -41,6 +41,23 @@ test("missing or invalid provider leaves web search disabled", () => {
 	);
 });
 
+test("fetchProvider accepts exa or browser and ignores anything else", () => {
+	const resolve = (fetchProvider: unknown) =>
+		resolveBrowserSearchConfig({ aio: { browserSearch: { fetchProvider } } })
+			.fetchProvider;
+	assert.equal(resolve("exa"), "exa");
+	assert.equal(resolve("browser"), "browser");
+	assert.equal(resolve("automatic"), undefined);
+	assert.equal(resolveBrowserSearchConfig({}).fetchProvider, undefined);
+	assert.equal(
+		resolveBrowserSearchConfig(
+			{ aio: { browserSearch: { fetchProvider: "exa" } } },
+			{ aio: { browserSearch: { fetchProvider: "browser" } } },
+		).fetchProvider,
+		"browser",
+	);
+});
+
 test("invalid nested settings are ignored safely", () => {
 	const config = resolveBrowserSearchConfig({
 		aio: {

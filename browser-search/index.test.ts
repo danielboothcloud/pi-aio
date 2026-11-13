@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createServer } from "node:http";
 import { test } from "node:test";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { detectChallenge, waitForChallenge } from "./challenges.ts";
@@ -341,6 +342,53 @@ test("fetchSingleUrl blocks loopback before contacting browser backends", async 
 		fetchSingleUrl("http://127.0.0.1/private", "markdown"),
 		/URL blocked: Blocked IP/,
 	);
+});
+
+test("fetchSingleUrl returns Exa content without a browser when Exa is the fetch provider", async () => {
+	let requested: Record<string, any> = {};
+	const server = createServer(async (request, response) => {
+		const chunks: Buffer[] = [];
+		for await (const chunk of request) chunks.push(Buffer.from(chunk));
+		requested = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+		response.setHeader("content-type", "application/json");
+		response.end(
+			JSON.stringify({
+				results: [{ url: requested.urls[0], title: "Docs", text: "# Docs\n\nBody" }],
+			}),
+		);
+	});
+	await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+	const address = server.address();
+	assert.ok(address && typeof address === "object");
+	process.env.TEST_FETCH_EXA_KEY = "test-key";
+	try {
+		// An IP literal, so validation needs no DNS lookup.
+		const url = "https://93.184.216.34/docs";
+		const result = await fetchSingleUrl(url, "markdown", undefined, {
+			fetchProvider: "exa",
+			exa: {
+				baseUrl: `http://127.0.0.1:${address.port}`,
+				apiKeyEnv: "TEST_FETCH_EXA_KEY",
+			},
+		});
+		assert.deepEqual(requested.urls, [url]);
+		assert.equal(result.tier, "exa");
+		assert.equal(result.title, "Docs");
+		assert.equal(result.content, "# Docs\n\nBody");
+		// Blocked URLs are refused before they are sent to Exa.
+		requested = {};
+		await assert.rejects(
+			fetchSingleUrl("http://127.0.0.1/private", "markdown", undefined, {
+				fetchProvider: "exa",
+				exa: { baseUrl: `http://127.0.0.1:${address.port}`, apiKeyEnv: "TEST_FETCH_EXA_KEY" },
+			}),
+			/URL blocked/,
+		);
+		assert.deepEqual(requested, {});
+	} finally {
+		delete process.env.TEST_FETCH_EXA_KEY;
+		await new Promise<void>((resolve) => server.close(() => resolve()));
+	}
 });
 
 test("challenge detection recognizes anti-bot pages and ignores articles", () => {

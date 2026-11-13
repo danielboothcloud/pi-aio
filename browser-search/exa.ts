@@ -1,4 +1,4 @@
-/** Exa Search API adapter with the same normalized output as SearXNG. */
+/** Exa API adapter: search normalized like SearXNG, and page contents for fetch_content. */
 
 import { abortError, throwIfAborted, withTimeoutSignal } from "./abort.js";
 import {
@@ -6,7 +6,12 @@ import {
 	EXA_REQUEST_TIMEOUT_MS,
 	type ExaProviderConfig,
 } from "./config.js";
-import type { SearchOptions, SearchOutcome, SearchResult } from "./types.js";
+import type {
+	FetchResult,
+	SearchOptions,
+	SearchOutcome,
+	SearchResult,
+} from "./types.js";
 
 interface ExaRawResult {
 	title?: string | null;
@@ -61,13 +66,15 @@ function snippet(result: ExaRawResult): string | null {
 	return null;
 }
 
-/** Search Exa and normalize its results for the shared `web_search` tool. */
-export async function exaSearch(
-	query: string,
-	opts: SearchOptions = {},
-	signal?: AbortSignal,
-	config: ExaProviderConfig = {},
-): Promise<SearchOutcome> {
+/** POST a JSON body to an Exa endpoint and return its parsed JSON response. */
+async function exaPost<T>(
+	path: string,
+	body: Record<string, unknown>,
+	label: string,
+	signal: AbortSignal | undefined,
+	config: ExaProviderConfig,
+	fallbackBaseUrl?: string,
+): Promise<T> {
 	throwIfAborted(signal);
 	const apiKeyEnv = config.apiKeyEnv ?? "EXA_API_KEY";
 	const apiKey = process.env[apiKeyEnv]?.trim();
@@ -77,7 +84,96 @@ export async function exaSearch(
 		);
 	}
 
+	const base = config.baseUrl ?? fallbackBaseUrl ?? EXA_BASE;
 	const requestSignal = withTimeoutSignal(signal, EXA_REQUEST_TIMEOUT_MS);
+	let response: Response;
+	try {
+		response = await fetch(`${base}${path}`, {
+			method: "POST",
+			headers: {
+				"content-type": "application/json",
+				"x-api-key": apiKey,
+			},
+			body: JSON.stringify(body),
+			signal: requestSignal,
+		});
+	} catch (error) {
+		if (signal?.aborted) throw abortError(signal);
+		if (requestSignal.aborted) {
+			throw new ExaError(`Exa ${label} timed out after ${EXA_REQUEST_TIMEOUT_MS}ms`);
+		}
+		throw new ExaError(
+			`Connection to Exa failed at ${base}: ${error instanceof Error ? error.message : String(error)}`,
+		);
+	}
+
+	if (!response.ok) {
+		throw new ExaError(`Exa returned HTTP ${response.status}`, response.status);
+	}
+
+	try {
+		return (await response.json()) as T;
+	} catch {
+		if (signal?.aborted) throw abortError(signal);
+		if (requestSignal.aborted) {
+			throw new ExaError(
+				`Exa response timed out after ${EXA_REQUEST_TIMEOUT_MS}ms`,
+			);
+		}
+		throw new ExaError("Exa returned a non-JSON response");
+	}
+}
+
+interface ExaContentsResponse {
+	results?: { url?: string; title?: string | null; text?: string }[];
+	statuses?: { id?: string; status?: string; error?: { tag?: string } }[];
+}
+
+/**
+ * Fetch one page through Exa's contents API. Exa crawls the page itself (or
+ * serves its cached copy), so no local browser is involved. `html` returns
+ * Exa's simplified HTML, not the page's original markup.
+ */
+export async function exaContents(
+	url: string,
+	format: FetchResult["format"],
+	signal?: AbortSignal,
+	config: ExaProviderConfig = {},
+): Promise<FetchResult> {
+	const data = await exaPost<ExaContentsResponse>(
+		"/contents",
+		{ urls: [url], text: format === "html" ? { includeHtmlTags: true } : true },
+		"contents",
+		signal,
+		config,
+	);
+	const page = data.results?.[0];
+	const content = page?.text ?? "";
+	if (!content.trim()) {
+		const tag = data.statuses?.find((entry) => entry.status === "error")?.error?.tag;
+		throw new ExaError(
+			tag ? `Exa could not fetch the page (${tag})` : "Exa returned no content for the page",
+		);
+	}
+	return {
+		url,
+		finalUrl: page?.url,
+		title: page?.title ?? undefined,
+		content,
+		format,
+		chars: content.length,
+		truncated: false,
+		tier: "exa",
+	};
+}
+
+/** Search Exa and normalize its results for the shared `web_search` tool. */
+export async function exaSearch(
+	query: string,
+	opts: SearchOptions = {},
+	signal?: AbortSignal,
+	config: ExaProviderConfig = {},
+): Promise<SearchOutcome> {
 	const body: Record<string, unknown> = {
 		query,
 		type: config.searchType ?? "auto",
@@ -91,46 +187,14 @@ export async function exaSearch(
 	const publishedAfter = startPublishedDate(opts.timeRange);
 	if (publishedAfter) body.startPublishedDate = publishedAfter;
 
-	let response: Response;
-	try {
-		response = await fetch(
-			`${config.baseUrl ?? opts.baseUrl ?? EXA_BASE}/search`,
-			{
-				method: "POST",
-				headers: {
-					"content-type": "application/json",
-					"x-api-key": apiKey,
-				},
-				body: JSON.stringify(body),
-				signal: requestSignal,
-			},
-		);
-	} catch (error) {
-		if (signal?.aborted) throw abortError(signal);
-		if (requestSignal.aborted) {
-			throw new ExaError(`Exa search timed out after ${EXA_REQUEST_TIMEOUT_MS}ms`);
-		}
-		throw new ExaError(
-			`Connection to Exa failed at ${config.baseUrl ?? EXA_BASE}: ${error instanceof Error ? error.message : String(error)}`,
-		);
-	}
-
-	if (!response.ok) {
-		throw new ExaError(`Exa returned HTTP ${response.status}`, response.status);
-	}
-
-	let data: ExaRawResponse;
-	try {
-		data = (await response.json()) as ExaRawResponse;
-	} catch {
-		if (signal?.aborted) throw abortError(signal);
-		if (requestSignal.aborted) {
-			throw new ExaError(
-				`Exa response timed out after ${EXA_REQUEST_TIMEOUT_MS}ms`,
-			);
-		}
-		throw new ExaError("Exa returned a non-JSON response");
-	}
+	const data = await exaPost<ExaRawResponse>(
+		"/search",
+		body,
+		"search",
+		signal,
+		config,
+		opts.baseUrl,
+	);
 
 	const results: SearchResult[] = [];
 	for (const result of data.results ?? []) {

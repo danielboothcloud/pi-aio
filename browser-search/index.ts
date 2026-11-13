@@ -4,7 +4,8 @@
  * `web_search` routes to the SearXNG or Exa provider selected in Pi settings.
  * `fetch_content` validates each initial URL, then tries Camofox
  * Readability/snapshot extraction before escalating blocked or empty pages to
- * CloakBrowser. Results are returned inline; this intentionally does not provide
+ * CloakBrowser. With `fetchProvider: "exa"` it asks Exa's contents API first
+ * and only falls back to the browsers when Exa cannot return the page. Results are returned inline; this intentionally does not provide
  * pi-web-access's curator or response-id storage workflow.
  */
 
@@ -26,7 +27,7 @@ import {
 	MAX_INLINE_CONTENT,
 	type SearchProvider,
 } from "./config.js";
-import { exaSearch } from "./exa.js";
+import { exaContents, exaSearch } from "./exa.js";
 import { searxngSearch } from "./searxng.js";
 import type {
 	FetchResult,
@@ -174,16 +175,30 @@ function failedFetch(
 	};
 }
 
-/** Fetch one URL through Camofox, escalating blocked/empty pages to CloakBrowser. */
+/**
+ * Fetch one URL through Camofox, escalating blocked/empty pages to
+ * CloakBrowser. When `config.fetchProvider` is "exa", Exa is tried first.
+ */
 export async function fetchSingleUrl(
 	url: string,
 	format: OutputFormat,
 	signal?: AbortSignal,
+	config: BrowserSearchConfig = {},
 ): Promise<FetchResult> {
 	throwIfAborted(signal);
 	const validation = await validateUrlWithDns(url);
 	throwIfAborted(signal);
 	if (!validation.valid) throw new Error(`URL blocked: ${validation.reason}`);
+
+	let exaFailure = "";
+	if (config.fetchProvider === "exa") {
+		try {
+			return await exaContents(url, format, signal, config.exa);
+		} catch (error) {
+			if (signal?.aborted) throw abortError(signal);
+			exaFailure = `Exa failed: ${errorMessage(error)}. `;
+		}
+	}
 
 	let camofoxFailure = "Camofox returned no usable content";
 	try {
@@ -268,7 +283,7 @@ export async function fetchSingleUrl(
 		return failedFetch(
 			url,
 			format,
-			`Camofox failed: ${camofoxFailure}. CloakBrowser failed: ${errorMessage(error)}`,
+			`${exaFailure}Camofox failed: ${camofoxFailure}. CloakBrowser failed: ${errorMessage(error)}`,
 		);
 	}
 }
@@ -345,7 +360,11 @@ export function registerBrowserSearch(
 	pi: ExtensionAPI,
 	dependencies: BrowserSearchDependencies = {},
 ): void {
-	const fetchUrl = dependencies.fetchUrl ?? fetchSingleUrl;
+	// Replaced at session start, when Pi settings are read.
+	let fetchConfig: BrowserSearchConfig = dependencies.config ?? {};
+	const fetchUrl: FetchUrlFn =
+		dependencies.fetchUrl ??
+		((url, format, signal) => fetchSingleUrl(url, format, signal, fetchConfig));
 	let webSearchRegistered = false;
 
 	const registerSearchProvider = (
@@ -594,6 +613,7 @@ export function registerBrowserSearch(
 		const loadConfig = dependencies.loadConfig ?? loadBrowserSearchConfig;
 		pi.on("session_start", (_event, ctx) => {
 			const config = loadConfig(ctx.cwd, ctx.isProjectTrusted());
+			fetchConfig = config;
 			if (!config.provider) return;
 			registerSearchProvider(
 				config.provider,
@@ -606,7 +626,7 @@ export function registerBrowserSearch(
 		name: "fetch_content",
 		label: "Fetch Content",
 		description:
-			"Fetch HTTP(S) URL(s) with a self-hosted browser and return content inline. The initial URL is SSRF-validated, Camofox provides Readability or accessibility-snapshot extraction, and blocked/empty pages escalate to optional CloakBrowser. This lean backend does not support video frame analysis, repository cloning, response IDs, or get_search_content.",
+			"Fetch HTTP(S) URL(s) and return content inline. The initial URL is SSRF-validated, Camofox provides Readability or accessibility-snapshot extraction, and blocked/empty pages escalate to optional CloakBrowser. When Pi settings select Exa for fetching, Exa's contents API is tried before the browsers. This lean backend does not support video frame analysis, repository cloning, response IDs, or get_search_content.",
 		promptSnippet:
 			"Use to extract readable content from HTTP(S) URL(s) through Camofox with CloakBrowser fallback.",
 		promptGuidelines: [
@@ -683,7 +703,7 @@ export function registerBrowserSearch(
 				content: [
 					{
 						type: "text",
-						text: `Fetching ${urlList.length} URL(s) via Camofox → CloakBrowser…`,
+						text: `Fetching ${urlList.length} URL(s) via ${fetchConfig.fetchProvider === "exa" ? "Exa → " : ""}Camofox → CloakBrowser…`,
 					},
 				],
 				details: { phase: "fetch", urlCount: urlList.length },

@@ -38,6 +38,17 @@ and `searchType` (`auto`, `keyword`, `neural`, `hybrid`, `fast`, `instant`,
 `deep-lite`, `deep`, or `deep-reasoning`). AIO calls Exa's REST API directly so requests retain Pi's
 cancellation behavior without another runtime SDK dependency.
 
+### Fetch pages through Exa
+
+`fetch_content` uses the local browsers by default. Set
+`"fetchProvider": "exa"` beside `provider` to ask Exa's contents API first; it
+uses the same `exa` settings and key and needs no Camofox or CloakBrowser. The
+browsers are tried only when Exa cannot return the page. Trade-offs: each URL is
+sent to Exa and billed per page, Exa may serve a cached copy, pages behind a
+login are not reachable, and `format: "html"` returns Exa's simplified HTML, not
+the page's own markup. URLs are still SSRF-validated before they are sent.
+`"browser"` (or leaving it unset) keeps the default.
+
 Use a self-hosted SearXNG instance instead:
 
 ```json
@@ -84,12 +95,13 @@ Playwright/Chromium never launch inside Pi (including Bun-hosted Pi), so a
 browser crash becomes a per-URL error rather than terminating the session.
 Node.js and npm must be on PATH; missing executables do not prevent AIO loading.
 
-Every worker checks the public npm registry's `latest` tags for `cloakbrowser`
-and `playwright-core` using a fresh, disposable metadata cache (npm cannot
-silently fall back to stale metadata). The same explicit public registry is
+Every worker checks the public npm registry for the `latest` `cloakbrowser` and
+the newest stable `playwright-core` inside that release's declared peer range
+(`latest` when it declares none), using a fresh, disposable metadata cache (npm
+cannot silently fall back to stale metadata). The same explicit public registry is
 used for installation, regardless of project `.npmrc` settings. It installs that
 exact version pair into `~/.cache/aio/cloakbrowser/<registry-hash>-<versions>/` on first use,
-then reuses it only while it remains latest. Installs are staged atomically,
+then reuses it only while it remains current. Installs are staged atomically,
 with npm lifecycle scripts disabled. AIO's lockfile does not pin these browser
 packages. Registry/installation failures report an error: there is **no stale
 or offline fallback**. CloakBrowser downloads its Chromium binary on first use.

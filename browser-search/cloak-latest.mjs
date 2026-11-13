@@ -1,4 +1,7 @@
-/** Resolve npm latest on every invocation; reuse only that exact version pair. */
+/**
+ * Resolve the latest CloakBrowser and the newest playwright-core it accepts on
+ * every invocation; reuse only that exact version pair.
+ */
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
@@ -55,24 +58,52 @@ export async function runNpm(args, { cwd, timeout = 30_000, signal, env = proces
 	return stdout;
 }
 
-async function latestVersion(name, run, signal, registry, metadataCache) {
-	const response = await run(
-		[
-			"view", name, "dist-tags.latest", "--json", ...ONLINE_FLAGS,
-			"--registry", registry, "--cache", metadataCache,
-		],
-		{ signal },
-	);
-	let version;
-	try {
-		version = JSON.parse(response);
-	} catch {
-		throw new Error(`Invalid npm registry response for ${name}`);
-	}
-	if (typeof version !== "string" || !/^\d+\.\d+\.\d+(?:-[\w.-]+)?(?:\+[\w.-]+)?$/.test(version)) {
+const PLAYWRIGHT_PEER = "peerDependencies.playwright-core";
+const VERSION = /^\d+\.\d+\.\d+(?:-[\w.-]+)?(?:\+[\w.-]+)?$/;
+const STABLE_VERSION = /^(\d+)\.(\d+)\.(\d+)$/;
+const PEER_RANGE = /^[\w.<>=~^|* -]+$/;
+
+function checkedVersion(name, version) {
+	if (typeof version !== "string" || !VERSION.test(version)) {
 		throw new Error(`Invalid npm latest version for ${name}`);
 	}
 	return version;
+}
+
+/** Latest CloakBrowser and the playwright-core range it declares as a peer, if any. */
+async function latestCloak(view) {
+	const response = await view("cloakbrowser", "cloakbrowser", "dist-tags.latest", PLAYWRIGHT_PEER);
+	// npm prints a bare value when only one of the requested fields exists.
+	if (response === null || typeof response !== "object") {
+		return { version: checkedVersion("cloakbrowser", response) };
+	}
+	const range = response[PLAYWRIGHT_PEER];
+	if (range !== undefined && (typeof range !== "string" || !PEER_RANGE.test(range))) {
+		throw new Error("Invalid playwright-core peer range for cloakbrowser");
+	}
+	return { version: checkedVersion("cloakbrowser", response["dist-tags.latest"]), range };
+}
+
+/**
+ * Newest stable playwright-core that CloakBrowser accepts. Taking npm latest
+ * regardless of the peer range makes the install fail with ERESOLVE whenever
+ * playwright-core releases ahead of CloakBrowser's supported range.
+ */
+async function compatiblePlaywright(view, range) {
+	if (!range) {
+		return checkedVersion("playwright-core", await view("playwright-core", "playwright-core", "dist-tags.latest"));
+	}
+	// npm prints one matching version as a string and several as an array.
+	const matches = [await view("playwright-core", `playwright-core@${range}`, "version")].flat();
+	let newest;
+	for (const version of matches) {
+		const parts = typeof version === "string" ? STABLE_VERSION.exec(version)?.slice(1).map(Number) : undefined;
+		if (!parts) continue;
+		const order = newest ? parts.findIndex((part, index) => part !== newest.parts[index]) : 0;
+		if (!newest || (order >= 0 && parts[order] > newest.parts[order])) newest = { version, parts };
+	}
+	if (!newest) throw new Error(`No stable playwright-core release satisfies cloakbrowser's peer range ${range}`);
+	return newest.version;
 }
 
 async function installedEntry(directory, cloakVersion, playwrightVersion) {
@@ -106,23 +137,27 @@ export async function latestCloakEntry({
 } = {}) {
 	let cloakVersion;
 	let playwrightVersion;
-	const metadataCache = await mkdtemp(join(tmpdir(), "aio-cloak-metadata-"));
-	const lookupController = new AbortController();
-	const lookupSignal = signal
-		? AbortSignal.any([signal, lookupController.signal])
-		: lookupController.signal;
 	// prefer-online alone allows npm's stale-on-network-error fallback.
 	// A fresh cache has no stale packument to fall back to.
-	const lookups = [
-		latestVersion("cloakbrowser", run, lookupSignal, registry, metadataCache),
-		latestVersion("playwright-core", run, lookupSignal, registry, metadataCache),
-	];
+	const metadataCache = await mkdtemp(join(tmpdir(), "aio-cloak-metadata-"));
+	const view = async (name, spec, ...fields) => {
+		const response = await run(
+			["view", spec, ...fields, "--json", ...ONLINE_FLAGS, "--registry", registry, "--cache", metadataCache],
+			{ signal },
+		);
+		try {
+			return JSON.parse(response);
+		} catch {
+			throw new Error(`Invalid npm registry response for ${name}`);
+		}
+	};
 	try {
-		[cloakVersion, playwrightVersion] = await Promise.all(lookups);
+		// Sequential: the playwright-core lookup depends on CloakBrowser's
+		// peer range, and no npm child outlives the temporary cache.
+		const cloak = await latestCloak(view);
+		cloakVersion = cloak.version;
+		playwrightVersion = await compatiblePlaywright(view, cloak.range);
 	} catch (error) {
-		lookupController.abort();
-		// Reap both npm children before deleting their temporary cache.
-		await Promise.allSettled(lookups);
 		throw new Error(`Cannot verify latest CloakBrowser from npm (no stale fallback): ${error.message}`);
 	} finally {
 		await rm(metadataCache, { recursive: true, force: true });

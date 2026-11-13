@@ -52,7 +52,7 @@ export interface ReadabilityArticle {
 	htmlLength: number;
 }
 
-/** Result of browsing a single URL through Camofox + Cloak fallback. */
+/** Result of fetching a single URL through Exa, Camofox, or the Cloak fallback. */
 export interface FetchResult {
 	url: string;
 	/** Final URL after redirects, when known. */
@@ -64,7 +64,7 @@ export interface FetchResult {
 	chars: number;
 	truncated: boolean;
 	/** Which tier produced the content, or none when every backend failed. */
-	tier: "camofox" | "cloak" | "none";
+	tier: "exa" | "camofox" | "cloak" | "none";
 	/** If the cloak tier handled an anti-bot challenge. */
 	challengeStrategy?: string | null;
 	challengeResolved?: boolean;

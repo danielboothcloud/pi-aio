@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { after, test } from "node:test";
-import { exaSearch } from "./exa.ts";
+import { exaContents, exaSearch } from "./exa.ts";
 
 let delayMs = 0;
 let lastApiKey = "";
@@ -13,6 +13,20 @@ const server = createServer(async (request, response) => {
 	lastBody = JSON.parse(Buffer.concat(chunks).toString("utf8"));
 	if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));
 	response.setHeader("content-type", "application/json");
+	if (request.url === "/contents") {
+		const url = lastBody.urls[0];
+		response.end(
+			JSON.stringify(
+				url.includes("unreachable")
+					? { results: [], statuses: [{ id: url, status: "error", error: { tag: "CRAWL_NOT_FOUND" } }] }
+					: {
+							results: [{ url, title: "Docs", text: "# Docs\n\nBody" }],
+							statuses: [{ id: url, status: "success" }],
+						},
+			),
+		);
+		return;
+	}
 	response.end(
 		JSON.stringify({
 			results: [
@@ -96,4 +110,22 @@ test("exaSearch honors cancellation while awaiting the backend", async () => {
 	setTimeout(() => controller.abort(), 20);
 	await assert.rejects(pending, (error: any) => error?.name === "AbortError");
 	delayMs = 0;
+});
+
+test("exaContents returns the page text and reports crawl failures", async () => {
+	const config = { baseUrl, apiKeyEnv: "TEST_EXA_API_KEY" };
+	const page = await exaContents("https://example.com/docs", "markdown", undefined, config);
+	assert.deepEqual(lastBody, { urls: ["https://example.com/docs"], text: true });
+	assert.equal(page.tier, "exa");
+	assert.equal(page.title, "Docs");
+	assert.equal(page.content, "# Docs\n\nBody");
+	assert.equal(page.chars, page.content.length);
+
+	await exaContents("https://example.com/docs", "html", undefined, config);
+	assert.deepEqual(lastBody.text, { includeHtmlTags: true });
+
+	await assert.rejects(
+		exaContents("https://unreachable.example.com/", "markdown", undefined, config),
+		/Exa could not fetch the page \(CRAWL_NOT_FOUND\)/,
+	);
 });

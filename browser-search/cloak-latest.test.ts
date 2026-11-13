@@ -73,6 +73,47 @@ test("each worker revalidates latest, reuses only matching versions, and upgrade
 	}
 });
 
+test("playwright-core is the newest stable release inside CloakBrowser's peer range", async () => {
+	const cacheRoot = await mkdtemp(join(tmpdir(), "aio-cloak-peer-"));
+	const range = ">=1.53.0 <1.65.0";
+	let matches: unknown = ["1.9.0", "1.63.0", "1.64.1", "1.64.0", "1.64.2-beta-1"];
+	const specs: string[] = [];
+	let installed: string | undefined;
+	const run = async (args: string[], options: { cwd?: string } = {}) => {
+		if (args[0] === "view") {
+			specs.push(args[1]);
+			if (args[1] === "cloakbrowser") {
+				return JSON.stringify({ "dist-tags.latest": "0.7.2", "peerDependencies.playwright-core": range });
+			}
+			assert.ok(args.includes("version"));
+			return JSON.stringify(matches);
+		}
+		installed = args.find((arg) => arg.startsWith("playwright-core@"))?.slice("playwright-core@".length);
+		assert.ok(options.cwd && installed);
+		for (const [name, version] of [["cloakbrowser", "0.7.2"], ["playwright-core", installed]]) {
+			const dir = join(options.cwd, "node_modules", name);
+			await mkdir(dir, { recursive: true });
+			await writeFile(join(dir, "package.json"), JSON.stringify({
+				name, version, exports: { ".": { import: "./index.mjs" } },
+			}));
+			await writeFile(join(dir, "index.mjs"), "export const mock = true;\n");
+		}
+		return "installed";
+	};
+	try {
+		assert.match(await latestCloakEntry({ cacheRoot, run }), /0\.7\.2-1\.64\.1/);
+		assert.equal(installed, "1.64.1");
+		assert.deepEqual(specs, ["cloakbrowser", `playwright-core@${range}`]);
+		// npm prints a single match as a bare string.
+		matches = "1.64.0";
+		assert.match(await latestCloakEntry({ cacheRoot, run }), /0\.7\.2-1\.64\.0/);
+		matches = ["1.64.2-beta-1"];
+		await assert.rejects(latestCloakEntry({ cacheRoot, run }), /No stable playwright-core release satisfies/);
+	} finally {
+		await rm(cacheRoot, { recursive: true, force: true });
+	}
+});
+
 test("concurrent installs publish a complete immutable version pair", async () => {
 	const cacheRoot = await mkdtemp(join(tmpdir(), "aio-cloak-concurrent-"));
 	const npm = npmFixture();
