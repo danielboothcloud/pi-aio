@@ -1380,6 +1380,46 @@ A `/recipe` switch or `/recipe off` removes the override. There is no
 `/advisor ask`: use `/btw` for a manual side question to the session model.
 `/recipe status` shows the configured advisor and whether the tool is on.
 
+## Handoff (`/handoff`)
+
+`/handoff` moves your work to a new, focused session. It does not compact
+the current session. The session model writes a prompt for the next task
+from the conversation, and you edit it before the new session starts. The
+design comes from [pi-handoff](https://github.com/jalbarrang/pi-handoff)
+(MIT).
+
+```text
+/handoff now implement this for teams as well
+/handoff execute phase one of the plan
+/handoff check other places that need this fix
+```
+
+1. Type `/handoff` and the goal for the new session. Without a goal, AIO
+   asks for one.
+2. Wait for the prompt. In the TUI, press `esc` to cancel.
+3. Edit the prompt in the editor dialog, then save it. An empty or
+   cancelled draft stops the handoff.
+4. Review the prompt in the editor of the new session, then press `Enter`.
+
+- The prompt includes the context, the files, and the next task. It also
+  includes a link to the previous session JSONL file. The next agent can
+  use `read` or `rg` on this file to find a detail that the summary does not
+  contain. An unsaved session has no link.
+- After a compaction, the prompt uses the compaction summary and the newer
+  messages. Hidden AIO instructions are not included. A very long history
+  keeps its start and its newest part (60% of the model context window).
+- The new session records the previous session as its parent. It keeps the
+  model, the thinking level, the recipe (`off` included), the `/advisor`
+  override, and the `/style`. The permission mode starts as in any new
+  session. A launch `--recipe` flag still wins, as with `/new`.
+- A `HANDOFF` note at the top of the new session shows the goal and the
+  source. The note is not part of the model context.
+- Run `/handoff` only when the agent is idle. A new session stops a running
+  turn, so AIO refuses while the agent works.
+- `/handoff` needs the TUI or an RPC host. RPC hosts get no loader. Use
+  `/handoff` instead of a separately installed pi-handoff package, because
+  both register the same command.
+
 ## Pretty built-in tools
 
 `aio` replaces Pi's built-in `read`, `bash`, `ls`, `find`, and `grep` tool
@@ -1722,6 +1762,7 @@ view). `path:line` and `path:line:col` shorthand work.
 .
 ├── index.ts                 # wires all aio features
 ├── advisor/                 # advisor tool + /advisor (based on pi-advisor)
+├── handoff/                 # /handoff to a new focused session (based on pi-handoff)
 ├── ask-user-question/       # structured question tool + TUI/RPC implementations
 ├── copy-widget/             # /pick parser + TUI overlay
 ├── diff-tools/              # write/edit/apply_patch diff rendering

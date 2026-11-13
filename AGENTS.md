@@ -483,6 +483,22 @@ generated `dist/` tree without changing the package contract.
   `AIO_ADVISOR` at registration and mirrors its effective settings there;
   the subagent runner then adds `advisor` to agent `--tools` allowlists.
   Children register no command. Tests inject `complete`.
+- `handoff/` is based on pi-handoff (MIT, jalbarrang — see `handoff/LICENSE`
+  and `handoff/UPSTREAM.md`). It owns `/handoff <goal>`: one isolated
+  `ctx.modelRegistry.complete()` call (session model, `cacheRetention:
+  "none"`, TUI `BorderedLoader`, RPC without a loader) turns the branch —
+  compaction-aware, branch summaries included, custom messages excluded,
+  bounded to 60% of the context window — into an editable prompt with a
+  previous-transcript link, then `ctx.newSession({ parentSession })`.
+  Pi re-evaluates extensions for the replacement session (jiti
+  `moduleCache: false`), so NOTHING crosses the switch in module memory:
+  `setup` (which runs before the new session_start) copies the newest
+  `recipe-state`/`advisor-state`/`styles` entries and writes an
+  `aio-handoff` entry; the new instance's session_start (reason `new`, no
+  messages yet) restores model + thinking. It registers after recipes so
+  that model wins. Refuses while the agent is busy (newSession aborts the
+  run). Permission mode is not carried. Children register only the
+  `HANDOFF` entry renderer. Tests inject `complete`.
 - `btw/` owns the `/btw` command — "by the way" side questions: pi executes
   extension commands immediately even while streaming, so a mid-flow question
   runs its handler without interrupting, queuing, or steering the run, and
