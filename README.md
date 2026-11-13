@@ -740,8 +740,11 @@ matches either form of any segment:
   assignments (and `export VAR=…`);
 - `program` — from the real program name on, after stripping assignments
   and wrappers: `env`, `sudo`, `command`, `exec`, `time`, `nice`, `nohup`,
-  `timeout DURATION`, `xargs`, `npx --yes`/`-y` (keeping `npx`), and the
-  `perl -e 'alarm N; exec @ARGV' <cmd>` timeout idiom.
+  `timeout DURATION`, `xargs`, `npx --yes`/`-y` (keeping `npx`), the
+  `perl -e 'alarm N; exec @ARGV' <cmd>` timeout idiom, and
+  `mise x|exec [flags] [tool@version…] -- <cmd>`. The script of
+  `mise x -c '<script>'` is segmented like `bash -c`; other mise subcommands
+  (`mise run`, `mise install`) stay `mise`.
 
 Write command-mode patterns **anchored at the program**: `^vault\b`,
 `^git\s+(commit|push)(?![\w-])`, `^(npx\s+)?playwright\b`,
@@ -756,7 +759,9 @@ command-mode rule blocks it outright, because nothing hidden in an unreadable
 command is ever let through. That covers unbalanced quotes, an unterminated
 `$(`/backtick/`${`, a heredoc whose terminator never appears, a shell that
 reads its script from a pipe or redirect (`curl … | sh`, `bash < x.sh`),
-`source`/`.` of a file, and `env -S`. Rewrite such a command so each step
+`source`/`.` of a file, `env -S`, and a program name built from an expansion
+(`$TOOL args`, `"$HOME"/bin/x`, `$(which x)`, backticks), since expansions
+are never evaluated. Rewrite such a command so each step
 is visible (for example, run the script's commands directly). A specific
 `text`-rule hit is reported first when one exists.
 

@@ -171,6 +171,12 @@ test("full keeps assignments; program strips assignments and wrappers", () => {
 		["npx -y -y vitest run", "npx vitest run"],
 		["perl -e 'alarm 20; exec @ARGV' npx vitest run", "npx vitest run"],
 		["perl -we 'alarm 5; exec(@ARGV)' -- vault", "vault"],
+		["mise x jj@0.47.1 -- jj bookmark set main", "jj bookmark set main"],
+		["mise exec -- brew --version", "brew --version"],
+		["mise -C /tmp -q x node@24 python@3.13 -- vault login", "vault login"],
+		["mise x -j 4 --allow-env=X --deny-net node -- vault", "vault"],
+		["/opt/bin/mise -Cdir exec -- sudo -u root vault", "vault"],
+		["mise x -- mise x -- vault", "vault"],
 	];
 	for (const [command, program] of cases) {
 		assert.deepEqual(programs(command), [program], command);
@@ -182,6 +188,45 @@ test("wrappers that do not run their operand are left alone", () => {
 	assert.deepEqual(programs("perl -e 'print 1' vault"), ["perl -e print 1 vault"]);
 	assert.deepEqual(programs("env"), ["env"]);
 	assert.deepEqual(programs("timeout 10"), ["timeout 10"]);
+	// mise only wraps exec; other subcommands and an exec without a command stay mise.
+	assert.deepEqual(programs("mise install jj@0.47.1"), ["mise install jj@0.47.1"]);
+	assert.deepEqual(programs("mise run lint"), ["mise run lint"]);
+	assert.deepEqual(programs("mise x node@24"), ["mise x node@24"]);
+	assert.deepEqual(programs("mise x node@24 --"), ["mise x node@24 --"]);
+});
+
+test("mise x -c scripts are segmented recursively", () => {
+	assert.deepEqual(programs("mise x -c 'vault login && ls'"), [
+		"mise x -c vault login && ls",
+		"vault login",
+		"ls",
+	]);
+	assert.deepEqual(programs("mise exec node@24 --command='brew up'"), [
+		"mise exec node@24 --command=brew up",
+		"brew up",
+	]);
+	assert.deepEqual(programs("mise x -c\"git push\""), ["mise x -cgit push", "git push"]);
+	assert.match(failure("mise x -c"), /no script/);
+});
+
+test("a program name built from an expansion fails closed", () => {
+	assert.match(failure("B=brew; $B --version"), /only known at run time/);
+	assert.match(failure('JJ="mise x jj@0.47.1 -- jj"; $JJ bookmark set main'), /run time/);
+	assert.match(failure('"$HOME/bin/vault" login'), /run time/);
+	assert.match(failure("${TOOL:-vault} login"), /run time/);
+	assert.match(failure("$(which vault) login"), /run time/);
+	assert.match(failure("`which vault` login"), /run time/);
+	assert.match(failure("sudo $CMD"), /run time/);
+	assert.match(failure("bash -c '$X'"), /run time/);
+	assert.match(failure("mise x -- $X"), /run time/);
+	// Expansions in arguments are fine; so are literal dollars in single quotes.
+	assert.deepEqual(programs('echo "$HOME" $(id -u) ${X:-y}'), [
+		"id -u",
+		'echo $HOME $(id -u) ${X:-y}',
+	]);
+	assert.deepEqual(programs("'$weird' arg"), ["$weird arg"]);
+	assert.deepEqual(programs("FOO=$BAR vault"), ["vault"]);
+	assert.deepEqual(programs("echo $(echo $X)"), ["echo $X", "echo $(echo $X)"]);
 });
 
 test("wrapper list is a named constant covering the documented wrappers", () => {
@@ -197,6 +242,7 @@ test("wrapper list is a named constant covering the documented wrappers", () => 
 		"xargs",
 		"npx",
 		"perl",
+		"mise",
 	]) {
 		assert.ok(COMMAND_WRAPPERS[name], `${name} wrapper missing`);
 	}

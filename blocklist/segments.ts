@@ -15,7 +15,9 @@
 //
 // Deliberately NOT a full shell: no expansion is evaluated, aliases/functions
 // are not resolved, and interpreters other than the shells below (python -c,
-// node -e, find -exec, …) are opaque arguments.
+// node -e, find -exec, …) are opaque arguments. Because expansions are not
+// evaluated, a program name built from one (`$X`, `"$HOME"/bin/x`, `$(…)`)
+// cannot be checked, so it fails closed.
 // ---------------------------------------------------------------------------
 
 /** One simple command the shell would run. */
@@ -73,9 +75,11 @@ export interface WrapperSpec {
 	readonly positionals?: number;
 	/**
 	 * Special forms: `npx` stays in `program` and only `-y`/`--yes` are
-	 * dropped; `perl-exec` unwraps `perl -e '…exec @ARGV…' <cmd>` only.
+	 * dropped; `perl-exec` unwraps `perl -e '…exec @ARGV…' <cmd>` only;
+	 * `mise` unwraps `mise x|exec [flags] [tool@version…] -- <cmd>` and
+	 * segments the script of `mise x -c '<script>'`.
 	 */
-	readonly kind?: "npx" | "perl-exec";
+	readonly kind?: "npx" | "perl-exec" | "mise";
 }
 
 /**
@@ -145,12 +149,31 @@ export const COMMAND_WRAPPERS: Readonly<Record<string, WrapperSpec>> = {
 	},
 	npx: { kind: "npx" },
 	perl: { kind: "perl-exec" },
+	mise: { kind: "mise" },
 };
 
 const MAX_NESTING = 8;
 const MAX_UNWRAP = 16;
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*(\[[^\]]*\])?\+?=/;
 const PERL_EXEC_ARGV = /\bexec\s*\(?\s*@ARGV\b/;
+/** `$name`, `$1`, `$@`, … : a parameter expansion (`$(`/`${` are handled separately). */
+const PARAMETER = /[A-Za-z0-9_@*#?$!-]/;
+
+/** mise subcommands that run a command with mise's tools. */
+const MISE_EXEC = new Set(["x", "exec"]);
+/** mise long options (global and `exec`) that consume the next word. */
+const MISE_VALUE_FLAGS = new Set([
+	"--cd",
+	"--env",
+	"--jobs",
+	"--allow-env",
+	"--allow-net",
+	"--allow-read",
+	"--allow-write",
+	"--secrets",
+]);
+/** mise short options that consume the next word (`-C DIR`, `-E ENV`, `-j N`). */
+const MISE_SHORT_VALUE_FLAGS = new Set(["C", "E", "j"]);
 
 interface Word {
 	/** Dequoted text; substitutions keep their raw `$(…)` source. */
@@ -159,6 +182,8 @@ interface Word {
 	quoted: boolean;
 	/** The first character was a quote/escape (`"FOO=1"` is not an assignment). */
 	leadingQuote: boolean;
+	/** The word contains an expansion (`$X`, `${…}`, `$(…)`, backticks) the shell evaluates at run time. */
+	dynamic: boolean;
 }
 
 interface Builder {
@@ -273,29 +298,101 @@ function unwrapPerlExec(words: readonly Word[], i: number): number | undefined {
 	return code.some((snippet) => PERL_EXEC_ARGV.test(snippet)) ? j : undefined;
 }
 
+type MiseExec = { next: number } | { script: string };
+
+/**
+ * `mise [global flags] x|exec [flags] [tool@version…] -- cmd…` → index of
+ * `cmd`; `mise x -c '<script>'` → the script. Undefined for every other mise
+ * subcommand (`mise run`, `mise install`, …) and for an exec with no command:
+ * mise itself is then the program.
+ */
+function unwrapMise(words: readonly Word[], i: number): MiseExec | undefined {
+	let exec = false;
+	const script = (value: string | undefined): MiseExec => {
+		if (value === undefined) fail("`mise exec -c` has no script");
+		return { script: value };
+	};
+	let j = i + 1;
+	while (j < words.length) {
+		const value = words[j].value;
+		if (value === "--") {
+			return exec && j + 1 < words.length ? { next: j + 1 } : undefined;
+		}
+		if (value.startsWith("--")) {
+			const eq = value.indexOf("=");
+			const name = eq < 0 ? value : value.slice(0, eq);
+			if (name === "--command") {
+				if (!exec) return undefined;
+				return script(eq < 0 ? words[j + 1]?.value : value.slice(eq + 1));
+			}
+			j += eq < 0 && MISE_VALUE_FLAGS.has(name) ? 2 : 1;
+			continue;
+		}
+		if (value.startsWith("-") && value.length > 1) {
+			// Short option cluster (`-qy`, `-C dir`, `-Cdir`, `-c 'script'`).
+			let consumesNext = false;
+			for (let k = 1; k < value.length; k++) {
+				const flag = value[k];
+				if (flag === "c") {
+					if (!exec) return undefined;
+					const rest = value.slice(k + 1);
+					return script(rest || words[j + 1]?.value);
+				}
+				if (MISE_SHORT_VALUE_FLAGS.has(flag)) {
+					consumesNext = k === value.length - 1;
+					break;
+				}
+			}
+			j += consumesNext ? 2 : 1;
+			continue;
+		}
+		if (!exec) {
+			if (!MISE_EXEC.has(value)) return undefined;
+			exec = true;
+		}
+		// After the subcommand, positionals are `tool@version` operands.
+		j++;
+	}
+	return undefined;
+}
+
+interface Unwrapped {
+	/** Index of the real program. */
+	index: number;
+	/** Shell code a wrapper runs itself (`mise x -c '…'`), segmented recursively. */
+	script?: string;
+}
+
 /** Index of the real program after stripping COMMAND_WRAPPERS from `i`. */
-function unwrap(words: readonly Word[], i: number): number {
+function unwrap(words: readonly Word[], i: number): Unwrapped {
 	for (let round = 0; round < MAX_UNWRAP && i < words.length; round++) {
 		const spec = COMMAND_WRAPPERS[basename(words[i].value)];
-		if (!spec || spec.kind === "npx") return i;
+		if (!spec || spec.kind === "npx") return { index: i };
 		if (spec.kind === "perl-exec") {
 			const next = unwrapPerlExec(words, i);
-			if (next === undefined) return i;
+			if (next === undefined) return { index: i };
 			i = next;
 			continue;
 		}
+		if (spec.kind === "mise") {
+			const mise = unwrapMise(words, i);
+			if (mise === undefined) return { index: i };
+			if ("script" in mise) return { index: i, script: mise.script };
+			i = mise.next;
+			continue;
+		}
 		const scan = skipOptions(words, i + 1, spec);
-		if ("inert" in scan) return i;
+		if ("inert" in scan) return { index: i };
 		let j = scan.next;
 		if (spec.assignments) {
 			while (j < words.length && isAssignment(words[j])) j++;
 		}
 		j += spec.positionals ?? 0;
 		// A bare wrapper (`env`, `time`) is itself the program.
-		if (j >= words.length) return i;
+		if (j >= words.length) return { index: i };
 		i = j;
 	}
-	return i;
+	return { index: i };
 }
 
 /** `npx -y vitest` → `npx vitest`: npx stays, only the auto-install flags go. */
@@ -358,6 +455,8 @@ class Parser {
 	/** Dequoted program words per segment, parallel to `segments`. */
 	readonly argvs: string[][] = [];
 	private pending: PendingHeredoc[] = [];
+	/** The word being read contains a run-time expansion. */
+	private expanding = false;
 
 	constructor(
 		private readonly src: string,
@@ -494,6 +593,7 @@ class Parser {
 				value: src.slice(start, this.pos),
 				quoted: false,
 				leadingQuote: false,
+				dynamic: true,
 			});
 			return;
 		}
@@ -512,8 +612,18 @@ class Parser {
 	}
 
 	private readWord(term: ")" | "`" | null): Word {
+		// Words inside a nested `$(…)` track their own expansions; restore after.
+		const outer = this.expanding;
+		this.expanding = false;
+		const word = this.readWordText(term);
+		word.dynamic = this.expanding;
+		this.expanding = outer;
+		return word;
+	}
+
+	private readWordText(term: ")" | "`" | null): Word {
 		const src = this.src;
-		const word: Word = { value: "", quoted: false, leadingQuote: false };
+		const word: Word = { value: "", quoted: false, leadingQuote: false, dynamic: false };
 		const start = this.pos;
 		const markQuoted = () => {
 			if (this.pos === start) word.leadingQuote = true;
@@ -566,6 +676,7 @@ class Parser {
 					word.value += this.readDollar();
 					continue;
 				}
+				if (next !== undefined && PARAMETER.test(next)) this.expanding = true;
 				word.value += c;
 				this.pos++;
 				continue;
@@ -609,6 +720,7 @@ class Parser {
 				value += this.readDollar();
 				continue;
 			}
+			if (c === "$" && PARAMETER.test(src[this.pos + 1] ?? "")) this.expanding = true;
 			if (c === "`") {
 				value += this.readBacktick();
 				continue;
@@ -643,6 +755,7 @@ class Parser {
 	private readDollar(): string {
 		const src = this.src;
 		const start = this.pos;
+		this.expanding = true;
 		if (src[this.pos + 1] === "(") {
 			this.pos += 2;
 			this.parseList(")");
@@ -676,6 +789,7 @@ class Parser {
 
 	private readBacktick(): string {
 		const start = this.pos;
+		this.expanding = true;
 		this.pos++;
 		this.parseList("`");
 		return this.src.slice(start, this.pos);
@@ -713,13 +827,21 @@ class Parser {
 		if (start >= words.length) return;
 		let p = start;
 		while (p < words.length && isAssignment(words[p])) p++;
-		const programWords = stripNpxYes(words.slice(unwrap(words, p)));
+		const unwrapped = unwrap(words, p);
+		const programWords = stripNpxYes(words.slice(unwrapped.index));
+		if (programWords[0]?.dynamic) {
+			fail(`the program \`${programWords[0].value}\` is only known at run time`);
+		}
 		this.segments.push({
 			full: joinWords(words.slice(start)),
 			program: joinWords(programWords),
 		});
 		this.argvs.push(programWords.map((word) => word.value));
 		if (programWords.length === 0) return;
+		if (unwrapped.script !== undefined) {
+			this.recurse(unwrapped.script);
+			return;
+		}
 
 		const first = programWords[0];
 		const args = programWords.slice(1);

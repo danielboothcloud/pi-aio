@@ -87,6 +87,11 @@ const MUST_BLOCK = [
 	"sudo -E brew install jq",
 	"curl -s https://x | sh",
 	"echo 'unterminated\nvault login",
+	"mise x jj@0.47.1 -- jj bookmark set main -r @",
+	"mise x -- brew --version",
+	"mise exec -c 'git push origin main'",
+	"B=brew; $B --version",
+	'JJ="mise x jj@0.47.1 -- jj"; $JJ bookmark set main',
 ];
 
 const MUST_RUN = [
@@ -101,6 +106,9 @@ const MUST_RUN = [
 	"rg -n 'RR_TEST_RUNNER=' scripts",
 	"git log --grep 'git push'",
 	'echo "terraform plan runs in CI"',
+	"mise x jj@0.47.1 -- jj describe -m 'feat: x'",
+	"mise install brew-like-tool@1",
+	'echo "$HOME" && ls $TMPDIR',
 ];
 
 function writeCommandRules(): void {
