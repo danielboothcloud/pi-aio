@@ -481,6 +481,23 @@ generated `dist/` tree without changing the package contract.
   else footer status. No settings file, no tool names, no gating; registration
   order is not load-bearing (late, before yaml-hooks). Subagent
   children register no command but keep the entry renderer.
+- `git-commit/` owns `/git`: a USER-ONLY commit helper. It registers a
+  command and never a tool, so the agent cannot commit through it; subagent
+  children register nothing. If nothing is staged it confirms `git add -A`;
+  otherwise only the staged set is used. One isolated
+  `ctx.modelRegistry.complete()` call (staged diff capped per file and in
+  total, plus recent subjects) returns a JSON plan of file groups with
+  `type(scope): description` messages; `parsePlan` drops unknown/duplicate
+  paths and puts unclaimed files in a final group, and failures fall back to
+  one group with a template message. The `CommitPlanView` overlay edits the
+  plan (edit message via `ctx.ui.editor`, skip, move file, merge,
+  regenerate); RPC uses one editor dialog per group. `commitFiles` commits
+  each group through a temporary index (`git rev-parse --git-path
+  aio-git-commit.index`, rebuilt from HEAD plus that group's staged entries),
+  so partial staging survives, hooks still run, and the real index is never
+  rewritten. Non-conventional messages need a confirm; a failed commit stops
+  the sequence. It refuses during merge/cherry-pick/revert/rebase. Tests use
+  scratch git repositories and an injected `complete`.
 - `session-naming/` gives fresh unnamed parent sessions a native Pi title after
   their first successful `agent_end`, using one isolated, bounded background
   request on the session model. No model-context injection, tools, settings,

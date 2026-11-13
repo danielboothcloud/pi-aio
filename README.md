@@ -2,7 +2,7 @@
 
 Combined Pi extension with **recipes** (`--recipe`/`/recipe`), a **minimalist editor
 frame**, structured **`ask_user_question`** dialogs, a **`/pick`** code picker,
-**`/init`** AGENTS.md bootstrap, **`/effort`** thinking control, generic **subagent delegation**,
+**`/init`** AGENTS.md bootstrap, a **`/git`** commit helper, **`/effort`** thinking control, generic **subagent delegation**,
 configurable **`web_search`** and **`fetch_content`**, **`!` bash shortcuts**,
 **Shift+Tab** permission modes, opt-in **`/style`** interaction styles, enhanced
 built-in output with FFF-backed search, **rtk** shell-command rewriting, and
@@ -451,6 +451,40 @@ also listed on its own. The command only searches the latest assistant response
 and ignores inline or indented code. Pi does not expose focusable renderers for existing assistant
 transcript entries, so selection happens in the overlay rather than directly in
 the transcript. Pi's existing Ctrl+X whole-message copy remains unchanged.
+
+## `/git` command
+
+Run `/git` to commit with AI suggestions. The command is for you only: it
+registers no agent tool, so the agent cannot commit through it. The session
+model only suggests the commit plan, in one isolated call that does not enter
+the conversation context.
+
+1. If nothing is staged, `/git` lists the changed files and asks before it runs
+   `git add -A`. If some files are staged, only the staged changes are used.
+2. The model reads the staged diff and recent commit subjects. It groups the
+   files into one or more commits, each with a `type(scope): description`
+   message (Conventional Commits with a scope).
+3. An overlay shows each commit and its files. Edit the plan, then commit.
+
+Overlay keys:
+
+- **Up/Down** or **j/k** — move between commit and file rows
+- **Enter** or **e** — edit the message of the selected commit
+- **Space** — skip or include the selected commit (skipped files stay staged)
+- **Left/Right** — move the selected file to the previous or next commit
+- **m** — merge the selected commit with the next commit
+- **r** — ask the model for a new suggestion
+- **c** — make the commits, in order
+- **Escape/q** — close without a commit
+
+Each commit contains exactly the staged state of its files, so partial
+(hunk-level) staging is kept and unstaged edits are not committed. Git hooks
+run as normal. A message that does not match `type(scope): description` is
+marked, and `/git` asks before it commits it. If a commit fails, `/git` stops,
+and the files of later commits stay staged. If the model is not available, the
+overlay starts with one commit and a template message. `/git` refuses to run
+during a merge, cherry-pick, revert, or rebase. Outside the TUI (RPC), each
+suggested commit opens in an editor dialog.
 
 ## `/effort` command
 

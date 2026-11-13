@@ -36,6 +36,7 @@ import { registerUserBash } from "./user-bash/index.js";
 import { registerFrameEditor } from "./frame/index.js";
 import registerYamlHooks from "./yaml-hooks/index.js";
 import { registerBtw } from "./btw/index.js";
+import { registerGitCommit } from "./git-commit/index.js";
 import { registerSessionNaming } from "./session-naming/index.js";
 import { registerSessionNav } from "./session-nav/index.js";
 import { registerNotifications } from "./notifications/index.js";
@@ -107,6 +108,10 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// no editor ownership, so its place is not load-bearing. Runs
 	// after the visual publishers, before yaml-hooks.
 	registerBtw(pi);
+	// /git is a user-only command (no agent tool): the session model suggests
+	// grouped type(scope): description commits in one isolated call, and the
+	// user edits and commits them in an overlay. No gating, no editor surface.
+	registerGitCommit(pi);
 	registerSessionNaming(pi);
 	// Human-only desktop observer; stays inert in child/headless processes.
 	registerNotifications(pi);
