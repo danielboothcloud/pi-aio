@@ -515,23 +515,28 @@ generated `dist/` tree without changing the package contract.
   else footer status. No settings file, no tool names, no gating; registration
   order is not load-bearing (late, before yaml-hooks). Subagent
   children register no command but keep the entry renderer.
-- `git-commit/` owns `/git`: a USER-ONLY commit helper. It registers a
-  command and never a tool, so the agent cannot commit through it; subagent
-  children register nothing. If nothing is staged it confirms `git add -A`;
-  otherwise only the staged set is used. One isolated
+- `git-commit/` owns `/commit`: a USER-ONLY commit helper. It registers a
+  command and never a tool, so the agent cannot commit or push through it;
+  subagent children register nothing. If nothing is staged it confirms
+  `git add -A`; otherwise only the staged set is used. One isolated
   `ctx.modelRegistry.complete()` call (staged diff capped per file and in
-  total, plus recent subjects) returns a JSON plan of file groups with
-  `type(scope): description` messages; `parsePlan` drops unknown/duplicate
-  paths and puts unclaimed files in a final group, and failures fall back to
-  one group with a template message. The `CommitPlanView` overlay edits the
-  plan (edit message via `ctx.ui.editor`, skip, move file, merge,
-  regenerate); RPC uses one editor dialog per group. `commitFiles` commits
-  each group through a temporary index (`git rev-parse --git-path
-  aio-git-commit.index`, rebuilt from HEAD plus that group's staged entries),
-  so partial staging survives, hooks still run, and the real index is never
-  rewritten. Non-conventional messages need a confirm; a failed commit stops
-  the sequence. It refuses during merge/cherry-pick/revert/rebase. Tests use
-  scratch git repositories and an injected `complete`.
+  total, plus recent subjects) returns ONE plain-text
+  `type(scope): description` message; `parseMessage` tolerates fences,
+  quotes, labels, and JSON wrappers, and failures fall back to a template
+  message with a notice. All instructions live in the USER message, not
+  only the system prompt: Pi sends a reasoning model's system prompt as the
+  `developer` role, which some OpenAI-compatible providers (Synthetic)
+  silently drop. The `CommitView` overlay keys: `c` commit, `e`/Enter edit
+  (`ctx.ui.editor`), `p` commit and push after a `ctx.ui.confirm` ("Are you
+  sure you want to commit and push?"), `r` regenerate, Esc cancel. RPC uses
+  an editor dialog plus a Commit / Commit and push / Cancel select.
+  `commitStaged` is a plain `git commit -F -` of the real index (hooks run,
+  partial staging kept). `resolvePushTarget` uses the upstream, else
+  `push -u` to `origin` or the only remote, and refuses a detached HEAD; a
+  push failure after a successful commit keeps the commit and reports it.
+  Non-conventional subjects are marked, not blocked. It refuses during
+  merge/cherry-pick/revert/rebase. Tests use scratch git repositories (a
+  local bare remote for push) and an injected `complete`.
 - `session-naming/` gives fresh unnamed parent sessions a native Pi title after
   their first successful `agent_end`, using one isolated, bounded background
   request on the session model. No model-context injection, tools, settings,

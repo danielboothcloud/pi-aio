@@ -38,7 +38,7 @@ import { registerFrameEditor } from "./frame/index.js";
 import registerYamlHooks from "./yaml-hooks/index.js";
 import { registerBtw } from "./btw/index.js";
 import { registerHandoff } from "./handoff/index.js";
-import { registerGitCommit } from "./git-commit/index.js";
+import { registerCommit } from "./git-commit/index.js";
 import { registerSessionNaming } from "./session-naming/index.js";
 import { registerSessionNav } from "./session-nav/index.js";
 import { registerNotifications } from "./notifications/index.js";
@@ -119,10 +119,11 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// Its session_start restores the previous model in the new session, so it
 	// must register after recipes (whose model it overrides there).
 	registerHandoff(pi);
-	// /git is a user-only command (no agent tool): the session model suggests
-	// grouped type(scope): description commits in one isolated call, and the
-	// user edits and commits them in an overlay. No gating, no editor surface.
-	registerGitCommit(pi);
+	// /commit is a user-only command (no agent tool): the session model
+	// suggests one type(scope): description message in one isolated call, and
+	// the user commits, edits, or commits and pushes it from an overlay. No
+	// gating, no editor surface.
+	registerCommit(pi);
 	registerSessionNaming(pi);
 	// Human-only desktop observer; stays inert in child/headless processes.
 	registerNotifications(pi);

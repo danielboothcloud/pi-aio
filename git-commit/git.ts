@@ -1,17 +1,13 @@
 /**
- * Git plumbing for /git. Every call goes through an injected `GitRunner`
+ * Git plumbing for /commit. Every call goes through an injected `GitRunner`
  * so tests can run against a scratch repository (or a fake). Commands run
  * from the repository root so every path is root-relative.
  *
- * Grouped commits use a temporary index file: for each group the index is
- * rebuilt from HEAD plus that group's STAGED entries, then `git commit`
- * runs against it (hooks still run). The real index is never rewritten, so
- * partial (hunk-level) staging and the staged state of other groups survive.
+ * The commit is a plain `git commit` of the real index: exactly the staged
+ * state is committed, partial (hunk-level) staging is kept, and hooks run.
  */
 
 import { spawn } from "node:child_process";
-import { rm } from "node:fs/promises";
-import { isAbsolute, join } from "node:path";
 
 export interface GitResult {
 	code: number;
@@ -22,6 +18,8 @@ export interface GitResult {
 export interface GitRunOptions {
 	env?: Record<string, string>;
 	input?: string;
+	/** Aborting kills the git process; the result then has code -1. */
+	signal?: AbortSignal;
 }
 
 export type GitRunner = (args: string[], options?: GitRunOptions) => Promise<GitResult>;
@@ -38,6 +36,7 @@ export function createGitRunner(cwd: string): GitRunner {
 					...options.env,
 				},
 				stdio: ["pipe", "pipe", "pipe"],
+				signal: options.signal,
 			});
 			let stdout = "";
 			let stderr = "";
@@ -204,48 +203,36 @@ export async function stagedDiff(git: GitRunner, options: { perFile?: number; to
 	return out;
 }
 
-/** Every index path a group touches: new paths plus rename sources. */
-export function groupPaths(files: readonly ChangedFile[]): string[] {
-	const paths = new Set<string>();
-	for (const file of files) {
-		paths.add(file.path);
-		if (file.oldPath && file.status === "R") paths.add(file.oldPath);
-	}
-	return [...paths];
+/** Commits the staged state with `message`. Returns the new short hash. */
+export async function commitStaged(git: GitRunner, message: string): Promise<string> {
+	await must(git, ["commit", "--quiet", "--cleanup=whitespace", "-F", "-"], { input: message });
+	return (await must(git, ["rev-parse", "--short", "HEAD"])).trim();
 }
 
-const LITERAL = { GIT_LITERAL_PATHSPECS: "1" };
+export interface PushTarget {
+	args: string[];
+	/** Where the push goes, for the confirmation and the result note. */
+	label: string;
+}
 
 /**
- * Commits exactly the staged state of `files` with `message`, leaving every
- * other staged change in the real index. Returns the new short hash.
+ * How to push the current branch: plain `git push` when an upstream is set,
+ * else `git push -u <remote> HEAD` to `origin` (or the only remote).
  */
-export async function commitFiles(git: GitRunner, files: readonly ChangedFile[], message: string): Promise<string> {
-	const paths = groupPaths(files);
-	if (paths.length === 0) throw new GitError("the commit group has no files");
-	let indexFile = (await must(git, ["rev-parse", "--git-path", "aio-git-commit.index"])).trim();
-	if (!isAbsolute(indexFile)) {
-		const root = (await must(git, ["rev-parse", "--show-toplevel"])).trim();
-		indexFile = join(root, indexFile);
+export async function resolvePushTarget(git: GitRunner): Promise<PushTarget | { error: string }> {
+	const branch = (await git(["branch", "--show-current"])).stdout.trim();
+	if (!branch) return { error: "HEAD is detached, so there is no branch to push" };
+	const upstream = await git(["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"]);
+	const name = upstream.stdout.trim();
+	if (upstream.code === 0 && name) return { args: ["push"], label: name };
+	const remotes = (await git(["remote"])).stdout.split("\n").map((line) => line.trim()).filter(Boolean);
+	const remote = remotes.includes("origin") ? "origin" : remotes.length === 1 ? remotes[0] : undefined;
+	if (!remote) {
+		return { error: remotes.length === 0 ? "the repository has no remote" : `${branch} has no upstream and there is no origin remote` };
 	}
-	const temp = { ...LITERAL, GIT_INDEX_FILE: indexFile };
-	await rm(indexFile, { force: true });
-	try {
-		const hasHead = (await git(["rev-parse", "-q", "--verify", "HEAD"])).code === 0;
-		await must(git, hasHead ? ["read-tree", "HEAD"] : ["read-tree", "--empty"], { env: temp });
-		const staged = await must(git, ["ls-files", "-s", "-z", "--", ...paths], { env: LITERAL });
-		const present = new Set(splitZ(staged).map((entry) => entry.slice(entry.indexOf("\t") + 1)));
-		if (staged) await must(git, ["update-index", "-z", "--index-info"], { env: temp, input: staged });
-		const removed = paths.filter((path) => !present.has(path));
-		if (removed.length > 0) {
-			await must(git, ["update-index", "-z", "--force-remove", "--stdin"], {
-				env: temp,
-				input: `${removed.join("\0")}\0`,
-			});
-		}
-		await must(git, ["commit", "--quiet", "--cleanup=whitespace", "-F", "-"], { env: temp, input: message });
-		return (await must(git, ["rev-parse", "--short", "HEAD"])).trim();
-	} finally {
-		await rm(indexFile, { force: true });
-	}
+	return { args: ["push", "-u", remote, "HEAD"], label: `${remote}/${branch} (new upstream)` };
+}
+
+export async function pushCommits(git: GitRunner, target: PushTarget, signal?: AbortSignal): Promise<void> {
+	await must(git, target.args, { signal });
 }

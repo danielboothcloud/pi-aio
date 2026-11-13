@@ -6,12 +6,14 @@ import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 
 import {
-	commitFiles,
+	commitStaged,
 	createGitRunner,
 	findRepoRoot,
 	parseNameStatus,
 	parseNumstat,
 	pendingOperation,
+	pushCommits,
+	resolvePushTarget,
 	stagedFiles,
 	unstagedPaths,
 } from "./git.js";
@@ -45,14 +47,19 @@ describe("parsers", () => {
 	});
 });
 
-describe("grouped commits in a scratch repository", () => {
+describe("commits and pushes in a scratch repository", () => {
+	let dir: string;
 	let repo: string;
+	let remote: string;
 	const savedEnv = { ...process.env };
 
 	before(() => {
 		Object.assign(process.env, ENV);
-		repo = mkdtempSync(join(tmpdir(), "aio-git-commit-"));
-		sh(repo, "init", "-q", "-b", "main");
+		dir = mkdtempSync(join(tmpdir(), "aio-commit-"));
+		repo = join(dir, "work");
+		remote = join(dir, "remote.git");
+		execFileSync("git", ["init", "-q", "--bare", remote], { env: ENV });
+		execFileSync("git", ["init", "-q", "-b", "main", repo], { env: ENV });
 		writeFileSync(join(repo, "keep.txt"), "one\n");
 		writeFileSync(join(repo, "gone.txt"), "bye\n");
 		writeFileSync(join(repo, "old.txt"), "rename me\n");
@@ -61,12 +68,12 @@ describe("grouped commits in a scratch repository", () => {
 	});
 
 	after(() => {
-		rmSync(repo, { recursive: true, force: true });
+		rmSync(dir, { recursive: true, force: true });
 		for (const key of Object.keys(process.env)) if (!(key in savedEnv)) delete process.env[key];
 		Object.assign(process.env, savedEnv);
 	});
 
-	it("commits each group from the staged state only", async () => {
+	it("commits exactly the staged state", async () => {
 		const git = createGitRunner(repo);
 		assert.equal(await findRepoRoot(repo), execFileSync("git", ["rev-parse", "--show-toplevel"], { cwd: repo, encoding: "utf8" }).trim());
 
@@ -84,21 +91,30 @@ describe("grouped commits in a scratch repository", () => {
 		assert.equal(byPath.get("gone.txt")?.status, "D");
 		assert.deepEqual(await unstagedPaths(git), ["keep.txt"]);
 
-		const first = [byPath.get("keep.txt")!, byPath.get("gone.txt")!];
-		const second = [byPath.get("new file.txt")!, byPath.get("renamed.txt")!];
-		await commitFiles(git, first, "fix(keep): add a line\n");
-
-		assert.deepEqual(sh(repo, "show", "--name-status", "--format=%s", "HEAD").trim().split("\n").filter(Boolean),
-			["fix(keep): add a line", "D\tgone.txt", "M\tkeep.txt"]);
+		const hash = await commitStaged(git, "feat(files): change files\n\nBody line.\n");
+		assert.equal(hash, sh(repo, "rev-parse", "--short", "HEAD").trim());
+		assert.equal(sh(repo, "log", "-1", "--format=%B").trim(), "feat(files): change files\n\nBody line.");
 		assert.equal(sh(repo, "show", "HEAD:keep.txt"), "one\ntwo\n");
-		// The second group stays staged in the real index.
-		assert.deepEqual((await stagedFiles(git)).map((file) => file.path).sort(), ["new file.txt", "renamed.txt"]);
-
-		await commitFiles(git, second, "feat(files): add and rename\n\nBody line.\n");
-		assert.equal(sh(repo, "log", "-1", "--format=%B").trim(), "feat(files): add and rename\n\nBody line.");
 		assert.equal(sh(repo, "diff", "--cached", "--name-only").trim(), "");
-		assert.match(sh(repo, "show", "--name-status", "--format=", "-M", "HEAD"), /R\d*\told\.txt\trenamed\.txt/);
 		assert.equal(sh(repo, "status", "--porcelain").trim(), "M keep.txt");
 		assert.equal(await pendingOperation(git), undefined);
+	});
+
+	it("resolves the push target and pushes, setting an upstream once", async () => {
+		const git = createGitRunner(repo);
+		assert.deepEqual(await resolvePushTarget(git), { error: "the repository has no remote" });
+
+		sh(repo, "remote", "add", "backup", remote);
+		const first = await resolvePushTarget(git);
+		assert.deepEqual(first, { args: ["push", "-u", "backup", "HEAD"], label: "backup/main (new upstream)" });
+		await pushCommits(git, first as { args: string[]; label: string });
+		assert.equal(execFileSync("git", ["--git-dir", remote, "log", "-1", "--format=%s", "main"], { encoding: "utf8" }).trim(),
+			"feat(files): change files");
+
+		assert.deepEqual(await resolvePushTarget(git), { args: ["push"], label: "backup/main" });
+
+		sh(repo, "checkout", "-q", "--detach");
+		assert.deepEqual(await resolvePushTarget(git), { error: "HEAD is detached, so there is no branch to push" });
+		sh(repo, "checkout", "-q", "main");
 	});
 });

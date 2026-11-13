@@ -1,12 +1,12 @@
 /**
- * /git — user-only commit helper. The session model suggests a commit plan
- * (files grouped into one or more `type(scope): description` commits) in one
- * isolated call; the user reviews, edits, and commits it in an overlay.
+ * /commit — user-only commit helper. The session model suggests one commit
+ * message for the staged changes in one isolated call; the user commits it
+ * (c), edits it (e), or commits and pushes it after a confirmation (p).
  *
  * Deliberately NOT an agent surface: it registers a command only, never a
- * tool, so the agent cannot commit through it. The model only suggests;
- * nothing enters the conversation context. Subagent children register
- * nothing.
+ * tool, so the agent cannot commit or push through it. The model only
+ * suggests; nothing enters the conversation context. Subagent children
+ * register nothing.
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -14,68 +14,75 @@ import { BorderedLoader } from "@earendil-works/pi-coding-agent";
 
 import { plural } from "../ui/chrome.js";
 import {
-	commitFiles,
+	commitStaged,
 	createGitRunner,
 	currentBranch,
 	findRepoRoot,
 	GitError,
 	pendingOperation,
+	pushCommits,
 	recentSubjects,
+	resolvePushTarget,
 	stageAll,
 	stagedDiff,
 	stagedFiles,
 	unstagedPaths,
 	type ChangedFile,
 	type GitRunner,
+	type PushTarget,
 } from "./git.js";
 import {
-	buildPlanPrompt,
+	buildMessagePrompt,
 	cleanMessage,
-	isConventional,
-	parsePlan,
-	PLAN_SYSTEM_PROMPT,
-	singleGroup,
+	FALLBACK_MESSAGE,
+	MESSAGE_SYSTEM_PROMPT,
+	parseMessage,
 	subjectOf,
-	type CommitGroup,
-} from "./plan.js";
-import { CommitPlanView, type PlanAction, type PlanCursor } from "./view.js";
+} from "./message.js";
+import { CommitView, type CommitAction } from "./view.js";
 
-/** ctx.modelRegistry.complete() narrowed to what /git uses. */
-export type PlanCompleteFn = (
+/** ctx.modelRegistry.complete() narrowed to what /commit uses. */
+export type MessageCompleteFn = (
 	model: unknown,
 	context: { systemPrompt: string; messages: Array<{ role: "user"; content: string; timestamp: number }> },
 	options?: { signal?: AbortSignal; maxTokens?: number },
 ) => Promise<{ content: Array<Record<string, unknown>>; stopReason: string; errorMessage?: string }>;
 
 export interface Suggestion {
-	groups: CommitGroup[];
-	/** Why the plan is a fallback (no model, failed or unusable reply). */
+	message: string;
+	/** Why the message is a template (no model, failed or unusable reply). */
 	notice?: string;
 }
 
-export interface GitCommitOptions {
+export interface CommitOptions {
 	/** Test seam: git runner factory for a repository root. */
 	makeRunner?: (cwd: string) => GitRunner;
 	/** Test seam: replaces ctx.modelRegistry.complete. */
-	complete?: PlanCompleteFn;
+	complete?: MessageCompleteFn;
 	timeoutMs?: number;
 }
+
+/** Reasoning models spend part of this budget on thinking before the message. */
+const MAX_TOKENS = 16_384;
 
 function replyText(content: Array<Record<string, unknown>>): string {
 	return content.flatMap((block) => block.type === "text" && typeof block.text === "string" ? [block.text] : []).join("\n");
 }
 
-/** One isolated model call. Never throws: failures become a fallback plan with a notice. */
-export async function suggestPlan(input: {
+function shortReason(text: string): string {
+	return cleanMessage(text).slice(0, 160);
+}
+
+/** One isolated model call. Never throws: failures become the template message with a notice. */
+export async function suggestMessage(input: {
 	git: GitRunner;
 	files: readonly ChangedFile[];
 	model: unknown;
-	complete: PlanCompleteFn | undefined;
+	complete: MessageCompleteFn | undefined;
 	signal: AbortSignal;
 }): Promise<Suggestion> {
-	if (!input.model || !input.complete) {
-		return { groups: singleGroup(input.files), notice: "No model is active: write the message yourself" };
-	}
+	const fallback = (notice: string): Suggestion => ({ message: FALLBACK_MESSAGE, notice });
+	if (!input.model || !input.complete) return fallback("No model is active: write the message yourself");
 	try {
 		const [branch, diff, subjects] = await Promise.all([
 			currentBranch(input.git),
@@ -83,27 +90,26 @@ export async function suggestPlan(input: {
 			recentSubjects(input.git),
 		]);
 		const response = await input.complete(input.model, {
-			systemPrompt: PLAN_SYSTEM_PROMPT,
+			systemPrompt: MESSAGE_SYSTEM_PROMPT,
 			messages: [{
 				role: "user",
-				content: buildPlanPrompt({ branch, files: input.files, diff, recentSubjects: subjects }),
+				content: buildMessagePrompt({ branch, files: input.files, diff, recentSubjects: subjects }),
 				timestamp: Date.now(),
 			}],
-		}, { signal: input.signal, maxTokens: 4096 });
-		if (input.signal.aborted || response.stopReason === "aborted") {
-			return { groups: singleGroup(input.files), notice: "Suggestion cancelled" };
-		}
+		}, { signal: input.signal, maxTokens: MAX_TOKENS });
+		if (input.signal.aborted || response.stopReason === "aborted") return fallback("Suggestion cancelled");
 		if (response.stopReason === "error") {
-			const reason = cleanMessage(response.errorMessage ?? "").slice(0, 160);
-			return { groups: singleGroup(input.files), notice: `Suggestion failed${reason ? `: ${reason}` : ""}` };
+			const reason = shortReason(response.errorMessage ?? "");
+			return fallback(`Suggestion failed${reason ? `: ${reason}` : ""}`);
 		}
-		const groups = parsePlan(replyText(response.content), input.files);
-		return groups
-			? { groups }
-			: { groups: singleGroup(input.files), notice: "The model reply was not a usable plan" };
+		const message = parseMessage(replyText(response.content));
+		if (message) return { message };
+		return fallback(response.stopReason === "length"
+			? "The model used its whole output budget before it wrote a message"
+			: "The model reply did not contain a commit message");
 	} catch (error) {
-		const reason = cleanMessage(error instanceof Error ? error.message : String(error)).slice(0, 160);
-		return { groups: singleGroup(input.files), notice: `Suggestion failed${reason ? `: ${reason}` : ""}` };
+		const reason = shortReason(error instanceof Error ? error.message : String(error));
+		return fallback(`Suggestion failed${reason ? `: ${reason}` : ""}`);
 	}
 }
 
@@ -134,16 +140,15 @@ function describeFiles(paths: readonly string[], limit = 8): string {
 	return shown.join("\n");
 }
 
-async function openPlanView(
+async function openCommitView(
 	ctx: ExtensionContext,
-	state: { branch: string; groups: CommitGroup[]; files: readonly ChangedFile[]; cursor?: PlanCursor; notice?: string; unstagedCount: number },
-): Promise<PlanAction> {
-	return ctx.ui.custom<PlanAction>(
+	state: { branch: string; message: string; files: readonly ChangedFile[]; notice?: string; unstagedCount: number },
+): Promise<CommitAction> {
+	return ctx.ui.custom<CommitAction>(
 		(tui, theme, _keys, done) =>
-			new CommitPlanView({
+			new CommitView({
 				theme,
 				...state,
-				requestRender: () => tui.requestRender(),
 				getMaxRows: () => Math.floor(tui.terminal.rows * 0.9),
 				done,
 			}),
@@ -154,111 +159,165 @@ async function openPlanView(
 	);
 }
 
-/** Non-TUI (RPC) review: one editor dialog per group. Undefined = cancel. */
-async function reviewInDialogs(ctx: ExtensionContext, groups: CommitGroup[]): Promise<CommitGroup[] | undefined> {
-	const out: CommitGroup[] = [];
-	for (const [index, group] of groups.entries()) {
-		const edited = await ctx.ui.editor(
-			`Commit ${index + 1}/${groups.length} (empty message skips it): ${group.files.join(", ")}`,
-			group.message,
-		);
-		if (edited === undefined) return undefined;
-		const message = edited.trim();
-		out.push({ ...group, message: message || group.message, include: message.length > 0 });
-	}
-	return out;
-}
-
-async function confirmCommit(ctx: ExtensionContext, groups: readonly CommitGroup[]): Promise<boolean> {
-	const invalid = groups.filter((group) => !isConventional(group.message));
-	const empty = groups.some((group) => !subjectOf(group.message));
-	if (empty) {
-		ctx.ui.notify("Every commit needs a message", "warning");
-		return false;
-	}
-	if (invalid.length === 0) return true;
-	return ctx.ui.confirm(
-		"Commit anyway?",
-		`${plural(invalid.length, "message")} do not match type(scope): description:\n${
-			invalid.map((group) => `  ${subjectOf(group.message)}`).join("\n")
-		}`,
+/** Resolves the push target and asks the user. Returns the target, or a reason it is not used. */
+async function confirmPush(ctx: ExtensionContext, git: GitRunner): Promise<PushTarget | { notice?: string }> {
+	const target = await resolvePushTarget(git);
+	if ("error" in target) return { notice: `Cannot push: ${target.error}` };
+	const ok = await ctx.ui.confirm(
+		"Are you sure you want to commit and push?",
+		`The commit is made, then pushed to ${target.label}.`,
 	);
+	return ok ? target : {};
 }
 
-async function commitGroups(
+/** Non-TUI (RPC) review: an editor dialog, then a choice. Undefined = cancel. */
+async function reviewInDialogs(
+	ctx: ExtensionContext,
 	git: GitRunner,
-	groups: readonly CommitGroup[],
-	files: readonly ChangedFile[],
-): Promise<{ done: string[]; error?: string }> {
-	const byPath = new Map(files.map((file) => [file.path, file]));
-	const done: string[] = [];
-	for (const group of groups) {
-		const groupFiles = group.files.flatMap((path) => byPath.get(path) ?? []);
-		try {
-			const hash = await commitFiles(git, groupFiles, `${group.message.trim()}\n`);
-			done.push(`${hash} ${subjectOf(group.message)}`);
-		} catch (error) {
-			const reason = error instanceof GitError ? error.message : String(error);
-			return { done, error: `Commit ${done.length + 1} failed (${subjectOf(group.message)}): ${reason}` };
-		}
-	}
-	return { done };
+	message: string,
+): Promise<Chosen | undefined> {
+	const edited = (await ctx.ui.editor("Commit message (empty cancels)", message))?.trim();
+	if (!edited || !subjectOf(edited)) return undefined;
+	const choice = await ctx.ui.select("Commit", ["Commit", "Commit and push", "Cancel"]);
+	if (choice === "Commit") return { message: edited };
+	if (choice !== "Commit and push") return undefined;
+	const push = await confirmPush(ctx, git);
+	if ("args" in push) return { message: edited, push };
+	if (push.notice) ctx.ui.notify(`/commit: ${push.notice}`, "warning");
+	return undefined;
 }
 
-export async function runGitCommit(ctx: ExtensionContext, options: GitCommitOptions = {}): Promise<void> {
-	if (!ctx.hasUI) return;
-	const makeRunner = options.makeRunner ?? createGitRunner;
+interface StagedState {
+	git: GitRunner;
+	files: ChangedFile[];
+	unstaged: string[];
+}
+
+/** Finds the repository and the staged set (staging all after a confirmation). Undefined = stop. */
+async function prepareStaged(ctx: ExtensionContext, makeRunner: (cwd: string) => GitRunner): Promise<StagedState | undefined> {
 	const root = await findRepoRoot(ctx.cwd, makeRunner);
 	if (!root) {
-		ctx.ui.notify("/git: the current directory is not inside a git repository", "warning");
-		return;
+		ctx.ui.notify("/commit: the current directory is not inside a git repository", "warning");
+		return undefined;
 	}
 	const git = makeRunner(root);
-	try {
-		const pending = await pendingOperation(git);
-		if (pending) {
-			ctx.ui.notify(`/git: finish ${pending} with plain git first`, "warning");
-			return;
+	const pending = await pendingOperation(git);
+	if (pending) {
+		ctx.ui.notify(`/commit: finish ${pending} with plain git first`, "warning");
+		return undefined;
+	}
+	let files = await stagedFiles(git);
+	let unstaged = await unstagedPaths(git);
+	if (files.length === 0) {
+		if (unstaged.length === 0) {
+			ctx.ui.notify("/commit: nothing to commit, the working tree is clean", "info");
+			return undefined;
 		}
-
-		let files = await stagedFiles(git);
-		let unstaged = await unstagedPaths(git);
+		const ok = await ctx.ui.confirm(
+			"Nothing is staged. Stage all changes?",
+			`git add -A will stage ${plural(unstaged.length, "file")}:\n${describeFiles(unstaged)}`,
+		);
+		if (!ok) return undefined;
+		await stageAll(git);
+		files = await stagedFiles(git);
+		unstaged = await unstagedPaths(git);
 		if (files.length === 0) {
-			if (unstaged.length === 0) {
-				ctx.ui.notify("/git: nothing to commit, the working tree is clean", "info");
-				return;
-			}
-			const ok = await ctx.ui.confirm(
-				"Nothing is staged. Stage all changes?",
-				`git add -A will stage ${plural(unstaged.length, "file")}:\n${describeFiles(unstaged)}`,
-			);
-			if (!ok) return;
-			await stageAll(git);
-			files = await stagedFiles(git);
-			unstaged = await unstagedPaths(git);
-			if (files.length === 0) {
-				ctx.ui.notify("/git: nothing to commit after staging", "info");
-				return;
-			}
+			ctx.ui.notify("/commit: nothing to commit after staging", "info");
+			return undefined;
 		}
-		if (files.some((file) => file.status === "U")) {
-			ctx.ui.notify("/git: resolve the merge conflicts first", "warning");
-			return;
-		}
+	}
+	if (files.some((file) => file.status === "U")) {
+		ctx.ui.notify("/commit: resolve the merge conflicts first", "warning");
+		return undefined;
+	}
+	return { git, files, unstaged };
+}
 
+interface Chosen {
+	message: string;
+	push?: PushTarget;
+}
+
+/** The TUI loop: the overlay reports an action until the user commits, pushes, or cancels. */
+async function reviewInOverlay(
+	ctx: ExtensionContext,
+	state: StagedState & { branch: string },
+	first: Suggestion,
+	suggest: () => Promise<Suggestion>,
+): Promise<Chosen | undefined> {
+	let { message, notice } = first;
+	for (;;) {
+		const action = await openCommitView(ctx, {
+			branch: state.branch,
+			message,
+			files: state.files,
+			notice,
+			unstagedCount: state.unstaged.length,
+		});
+		if (action.type === "cancel") return undefined;
+		if (action.type === "edit") {
+			const edited = await ctx.ui.editor(`Commit message · ${plural(state.files.length, "file")}`, message);
+			if (edited !== undefined && edited.trim()) message = edited.trim();
+		} else if (action.type === "regenerate") {
+			({ message, notice } = await suggest());
+		} else if (!subjectOf(message)) {
+			notice = "The commit needs a message: press e to write one";
+		} else if (action.type === "commit") {
+			return { message };
+		} else {
+			const push = await confirmPush(ctx, state.git);
+			if ("args" in push) return { message, push };
+			if (push.notice) notice = push.notice;
+		}
+	}
+}
+
+function errorText(error: unknown): string {
+	return error instanceof GitError || error instanceof Error ? error.message : String(error);
+}
+
+/** Commits, then pushes when asked, and reports the result. */
+async function commitAndPush(ctx: ExtensionContext, git: GitRunner, branch: string, chosen: Chosen): Promise<void> {
+	let hash: string;
+	try {
+		hash = await withLoader(ctx, "Committing…", false, () => commitStaged(git, `${chosen.message}\n`));
+	} catch (error) {
+		ctx.ui.notify(`/commit: the commit failed: ${errorText(error)}. Your changes stay staged.`, "error");
+		return;
+	}
+	const made = `${hash} ${subjectOf(chosen.message)}`;
+	const push = chosen.push;
+	if (!push) {
+		ctx.ui.notify(`Committed on ${branch}: ${made}`, "info");
+		return;
+	}
+	try {
+		await withLoader(ctx, `Pushing to ${push.label}…`, true, (signal) => pushCommits(git, push, signal));
+		ctx.ui.notify(`Committed and pushed to ${push.label}: ${made}`, "info");
+	} catch (error) {
+		ctx.ui.notify(`/commit: committed ${made}, but the push failed: ${errorText(error)}`, "error");
+	}
+}
+
+export async function runCommit(ctx: ExtensionContext, options: CommitOptions = {}): Promise<void> {
+	if (!ctx.hasUI) return;
+	try {
+		const state = await prepareStaged(ctx, options.makeRunner ?? createGitRunner);
+		if (!state) return;
+		const { git, files } = state;
 		const complete = options.complete ?? (
 			// SAFETY: the registry's complete() fulfills the narrowed seam; its
 			// generic SDK types are erased only here.
-			ctx.modelRegistry.complete.bind(ctx.modelRegistry) as unknown as PlanCompleteFn
+			ctx.modelRegistry.complete.bind(ctx.modelRegistry) as unknown as MessageCompleteFn
 		);
 		const suggest = async (): Promise<Suggestion> => {
 			const run = new AbortController();
 			const timer = setTimeout(() => run.abort(), options.timeoutMs ?? 90_000);
 			timer.unref?.();
 			try {
-				return await withLoader(ctx, "Suggesting commits…", true, (signal) => {
+				return await withLoader(ctx, "Writing a commit message…", true, (signal) => {
 					signal.addEventListener("abort", () => run.abort(), { once: true });
-					return suggestPlan({ git, files, model: ctx.model, complete, signal: run.signal });
+					return suggestMessage({ git, files, model: ctx.model, complete, signal: run.signal });
 				});
 			} finally {
 				clearTimeout(timer);
@@ -266,57 +325,20 @@ export async function runGitCommit(ctx: ExtensionContext, options: GitCommitOpti
 		};
 
 		const branch = await currentBranch(git);
-		let suggestion = await suggest();
-		let groups = suggestion.groups;
-		let notice = suggestion.notice;
-		let cursor: PlanCursor | undefined;
-		let chosen: CommitGroup[] | undefined;
-
-		if (ctx.mode !== "tui") {
-			const reviewed = await reviewInDialogs(ctx, groups);
-			chosen = reviewed?.filter((group) => group.include);
-			if (!chosen || chosen.length === 0 || !(await confirmCommit(ctx, chosen))) return;
-		}
-		while (!chosen) {
-			const action = await openPlanView(ctx, { branch, groups, files, cursor, notice, unstagedCount: unstaged.length });
-			if (action.type === "cancel") return;
-			groups = action.groups;
-			if (action.type === "edit") {
-				cursor = action.cursor;
-				const group = groups[cursor.group];
-				if (!group) continue;
-				const edited = await ctx.ui.editor(`Commit message · ${plural(group.files.length, "file")}`, group.message);
-				if (edited !== undefined && edited.trim()) groups[cursor.group] = { ...group, message: edited.trim() };
-			} else if (action.type === "regenerate") {
-				suggestion = await suggest();
-				groups = suggestion.groups;
-				notice = suggestion.notice;
-				cursor = undefined;
-			} else {
-				const included = groups.filter((group) => group.include);
-				if (included.length === 0) {
-					notice = "Every commit is skipped: press space to include one";
-					continue;
-				}
-				if (await confirmCommit(ctx, included)) chosen = included;
-			}
-		}
-
-		const result = await withLoader(ctx, `Committing ${plural(chosen.length, "commit")}…`, false, () =>
-			commitGroups(git, chosen, files));
-		if (result.done.length > 0) {
-			ctx.ui.notify(`Committed on ${branch}:\n${result.done.map((line) => `  ${line}`).join("\n")}`, "info");
-		}
-		if (result.error) ctx.ui.notify(`/git: ${result.error}. Later commits were not made; their files stay staged.`, "error");
+		const first = await suggest();
+		const chosen = ctx.mode === "tui"
+			? await reviewInOverlay(ctx, { ...state, branch }, first, suggest)
+			: await reviewInDialogs(ctx, git, first.message);
+		if (chosen) await commitAndPush(ctx, git, branch, chosen);
 	} catch (error) {
-		ctx.ui.notify(`/git: ${error instanceof Error ? error.message : String(error)}`, "error");
+		ctx.ui.notify(`/commit: ${errorText(error)}`, "error");
 	}
 }
 
-export function registerGitCommit(pi: ExtensionAPI, options: GitCommitOptions = {}): void {
+export function registerCommit(pi: ExtensionAPI, options: CommitOptions = {}): void {
 	if (process.env.AIO_SUBAGENT_CHILD === "1") return;
-	pi.registerCommand("git", {
-		description: "Commit staged changes: the AI suggests commit groups and type(scope): description messages for you to edit",
-		handler: async (_args, ctx) => runGitCommit(ctx, options),
+	pi.registerCommand("commit", {
+		description: "Commit staged changes with an AI-suggested type(scope): description message (c commit · e edit · p commit and push)",
+		handler: async (_args, ctx) => runCommit(ctx, options),
 	});
 }

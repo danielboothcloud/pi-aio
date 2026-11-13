@@ -2,7 +2,7 @@
 
 Combined Pi extension with **recipes** (`--recipe`/`/recipe`), a **minimalist editor
 frame**, structured **`ask_user_question`** dialogs, a **`/pick`** code picker,
-**`/init`** AGENTS.md bootstrap, a **`/git`** commit helper, **`/effort`** thinking control, generic **subagent delegation**,
+**`/init`** AGENTS.md bootstrap, a **`/commit`** commit helper, **`/effort`** thinking control, generic **subagent delegation**,
 configurable **`web_search`** and **`fetch_content`**, **`!` bash shortcuts**,
 **Shift+Tab** permission modes, opt-in **`/style`** interaction styles, enhanced
 built-in output with FFF-backed search, **rtk** shell-command rewriting, and
@@ -458,39 +458,39 @@ and ignores inline or indented code. Pi does not expose focusable renderers for 
 transcript entries, so selection happens in the overlay rather than directly in
 the transcript. Pi's existing Ctrl+X whole-message copy remains unchanged.
 
-## `/git` command
+## `/commit` command
 
-Run `/git` to commit with AI suggestions. The command is for you only: it
-registers no agent tool, so the agent cannot commit through it. The session
-model only suggests the commit plan, in one isolated call that does not enter
-the conversation context.
+Run `/commit` to commit with an AI-suggested message. The command is for you
+only: it registers no agent tool, so the agent cannot commit or push through
+it. The session model only suggests the message, in one isolated call that
+does not enter the conversation context.
 
-1. If nothing is staged, `/git` lists the changed files and asks before it runs
-   `git add -A`. If some files are staged, only the staged changes are used.
-2. The model reads the staged diff and recent commit subjects. It groups the
-   files into one or more commits, each with a `type(scope): description`
-   message (Conventional Commits with a scope).
-3. An overlay shows each commit and its files. Edit the plan, then commit.
+1. If nothing is staged, `/commit` lists the changed files and asks before it
+   runs `git add -A`. If some files are staged, only the staged changes are
+   used.
+2. The model reads the staged diff and recent commit subjects. It writes one
+   `type(scope): description` message (Conventional Commits with a scope).
+3. An overlay shows the message and the staged files.
 
 Overlay keys:
 
-- **Up/Down** or **j/k** — move between commit and file rows
-- **Enter** or **e** — edit the message of the selected commit
-- **Space** — skip or include the selected commit (skipped files stay staged)
-- **Left/Right** — move the selected file to the previous or next commit
-- **m** — merge the selected commit with the next commit
-- **r** — ask the model for a new suggestion
-- **c** — make the commits, in order
+- **c** — commit with the message
+- **e** or **Enter** — edit the message
+- **p** — commit and push. `/commit` first asks "Are you sure you want to
+  commit and push?" and shows the push target.
+- **r** — ask the model for a new message
 - **Escape/q** — close without a commit
 
-Each commit contains exactly the staged state of its files, so partial
-(hunk-level) staging is kept and unstaged edits are not committed. Git hooks
-run as normal. A message that does not match `type(scope): description` is
-marked, and `/git` asks before it commits it. If a commit fails, `/git` stops,
-and the files of later commits stay staged. If the model is not available, the
-overlay starts with one commit and a template message. `/git` refuses to run
-during a merge, cherry-pick, revert, or rebase. Outside the TUI (RPC), each
-suggested commit opens in an editor dialog.
+The commit contains exactly the staged state, so partial (hunk-level) staging
+is kept and unstaged edits are not committed. Git hooks run as normal. A
+subject that does not match `type(scope): description` is marked, but you can
+still commit it. The push uses the upstream of the current branch. If the
+branch has no upstream, `/commit` runs `git push -u` to `origin`, or to the
+only remote. If the commit succeeds and the push fails, the commit stays and
+`/commit` shows the push error. If the model is not available, the overlay
+starts with a template message. `/commit` refuses to run during a merge,
+cherry-pick, revert, or rebase. Outside the TUI (RPC), the message opens in an
+editor dialog, then you choose Commit, Commit and push, or Cancel.
 
 ## `/effort` command
 
