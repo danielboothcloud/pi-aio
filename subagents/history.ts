@@ -14,6 +14,7 @@ const WorkspaceSchema = Type.Object({
 	state: Type.Union((["active", "pending", "applied", "kept", "conflict", "empty", "error"] as const).map((state) => Type.Literal(state))),
 	files: Type.Array(Type.Object({ path: Type.String(), added: Count, deleted: Count })),
 	patchFile: OptionalText, repoRoot: OptionalText, worktreePath: OptionalText, message: OptionalText,
+	vcs: Type.Optional(Type.Union([Type.Literal("git"), Type.Literal("jj")])), workspaceName: OptionalText,
 });
 const ChildSchema = Type.Object({
 	index: Type.Integer({ minimum: 0, maximum: 11 }),

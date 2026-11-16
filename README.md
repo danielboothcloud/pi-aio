@@ -489,7 +489,13 @@ branch has no upstream, `/commit` runs `git push -u` to `origin`, or to the
 only remote. If the commit succeeds and the push fails, the commit stays and
 `/commit` shows the push error. If the model is not available, the overlay
 starts with a template message. `/commit` refuses to run during a merge,
-cherry-pick, revert, or rebase. Outside the TUI (RPC), the message opens in an
+cherry-pick, revert, or rebase.
+
+`/commit` supports git only. In a Jujutsu (jj) repository, also a colocated
+one with `.jj` next to `.git`, it shows a warning and stops before any git
+command runs. jj has no staging area, and `git add`/`git commit` would bypass
+jj. Use `jj describe` or `jj commit` there. The nearest `.jj` or `.git` folder
+decides. Outside the TUI (RPC), the message opens in an
 editor dialog, then you choose Commit, Commit and push, or Cancel.
 
 ## `/effort` command
@@ -574,9 +580,14 @@ Parallel independent review:
 
 ### Isolated worktrees for parallel edits
 
-Set `isolation: "worktree"` when parallel children must edit files. This
-works only in a git repository with at least one commit. Each child then
-works in its own git worktree, not in the parent checkout:
+Set `isolation: "worktree"` when parallel children must edit files. Each
+child then works in its own isolated copy, not in the parent checkout. The
+nearest `.jj` or `.git` folder decides the kind of copy:
+
+- In a Jujutsu (jj) repository, also a colocated one, each child gets a jj
+  workspace. See [Jujutsu (jj) repositories](#jujutsu-jj-repositories).
+- In any other git repository with at least one commit, each child gets a git
+  worktree.
 
 ```ts
 {
@@ -589,7 +600,7 @@ works in its own git worktree, not in the parent checkout:
 }
 ```
 
-- The worktree starts at the parent's `HEAD` plus the parent's uncommitted
+- A git worktree starts at the parent's `HEAD` plus the parent's uncommitted
   tracked changes and untracked (not ignored) files. Ignored `node_modules`,
   `.venv`, and `venv` directories are symlinked from the parent, so they are
   shared, not isolated. Missing files of the project `.pi/` directory
@@ -608,6 +619,9 @@ works in its own git worktree, not in the parent checkout:
   state, changed files, and patch path.
 - Pressing `r` on a failed or stopped worktree child recreates its worktree at
   the same path and replays its unapplied partial patch before it continues.
+- If AIO cannot capture a child's changes, it keeps the worktree on disk so
+  that no edits are lost. The result gives the path and the command that
+  removes it.
 
 Other ignored files (for example `.env` or build output) are not in the
 worktree, and changes to ignored paths are not returned. Worktree isolation does
@@ -616,6 +630,38 @@ linked `node_modules`. A background (`async`) run applies its patches when it
 ends, so do not edit the same files in the parent while it runs. If the parent
 process exits during a run, the exit hook saves each live worktree's changes as
 a patch and removes the worktree, so `r` can still resume the child.
+
+### Jujutsu (jj) repositories
+
+In a jj repository, `isolation: "worktree"` uses jj workspaces:
+
+1. AIO makes a frozen copy of your working-copy commit (`@`). The copy has
+   the same files as `@`, sits directly on the root commit, and has the
+   description `aio-subagent-base …`. Nothing that you do in the parent
+   rebases it: not later edits, and not `jj squash`, `jj describe @-`, or a
+   rebase. In the child, `jj log` therefore shows no project history.
+   If `@` has unresolved conflicts, the call fails: resolve them first.
+2. AIO runs `jj workspace add --no-colocate` on top of that copy. The child
+   edits its own working-copy commit. A colocated repository gets no extra git
+   worktree.
+3. After the child, AIO takes a snapshot of the child workspace (all new files,
+   also with `snapshot.auto-track = "none()"` in your config). jj commit IDs
+   are git commit IDs, so `git diff --binary` on jj's git store makes the
+   patch. Binary files are kept.
+4. AIO runs `jj workspace forget`, abandons the temporary commits, and deletes
+   the folder. The patch is applied to your files with `git apply`. Your next
+   jj command records the changes in `@`. If the child's working-copy commit
+   has jj conflicts, the patch is not made and the workspace is kept.
+
+The child is told that git commands do not work in its workspace. It must use
+`jj status` and `jj diff` only, and must not change history. AIO runs `jj`
+from `PATH` in the repository folder; set `AIO_JJ_BINARY` to use another
+executable. If `jj` does not run, the call fails with a clear error and does
+not fall back to git. Only jj repositories with the git backend are
+supported. While a run is active, `jj log` shows the temporary commits.
+Missing `.pi/` files that AIO copies into the child are never returned in the
+patch. The child's git commands cannot reach a repository above its
+workspace.
 
 ### Typed results
 

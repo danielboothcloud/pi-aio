@@ -7,6 +7,9 @@
  * tool, so the agent cannot commit or push through it. The model only
  * suggests; nothing enters the conversation context. Subagent children
  * register nothing.
+ *
+ * Git only: in a Jujutsu (jj) repository, also a colocated one, it refuses
+ * before any git command runs. git add/commit there would bypass jj.
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -40,6 +43,11 @@ import {
 	subjectOf,
 } from "./message.js";
 import { CommitView, type CommitAction } from "./view.js";
+import { findVcs } from "./vcs.js";
+
+/** Shown when /commit runs in a jj repository. */
+export const JJ_REFUSAL =
+	"/commit supports git only. This is a Jujutsu (jj) repository: describe or commit the change with jj (for example jj describe or jj commit).";
 
 /** ctx.modelRegistry.complete() narrowed to what /commit uses. */
 export type MessageCompleteFn = (
@@ -195,6 +203,10 @@ interface StagedState {
 
 /** Finds the repository and the staged set (staging all after a confirmation). Undefined = stop. */
 async function prepareStaged(ctx: ExtensionContext, makeRunner: (cwd: string) => GitRunner): Promise<StagedState | undefined> {
+	if (findVcs(ctx.cwd)?.kind === "jj") {
+		ctx.ui.notify(JJ_REFUSAL, "warning");
+		return undefined;
+	}
 	const root = await findRepoRoot(ctx.cwd, makeRunner);
 	if (!root) {
 		ctx.ui.notify("/commit: the current directory is not inside a git repository", "warning");

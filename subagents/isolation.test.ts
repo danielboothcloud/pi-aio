@@ -25,6 +25,7 @@ import {
 	applyWorkspacePatch,
 	captureWorkspaceChanges,
 	prepareWorkspace,
+	removeLiveWorkspacesSync,
 	removeWorkspace,
 	resolveRepo,
 } from "./workspace.ts";
@@ -136,7 +137,7 @@ const schema = {
 
 test("resolveRepo rejects directories outside a repository and empty repositories", async () => {
 	const outside = scratch("not-a-repo-");
-	await outsideRepo(() => assert.rejects(resolveRepo(outside), /requires a git repository/));
+	await outsideRepo(() => assert.rejects(resolveRepo(outside), /requires a git or Jujutsu \(jj\) repository/));
 	const empty = scratch("empty-repo-");
 	git(empty, "init", "-q");
 	await assert.rejects(resolveRepo(empty), /at least one commit/);
@@ -345,7 +346,7 @@ test("a failed worktree child keeps its partial patch and resumes in a recreated
 
 	assert.match(child.error ?? "", /429 quota exhausted/);
 	const continuation = await resumeSubagentChild({ run, child, deps: runnerDeps });
-	assert.equal(continuation.state, "completed", continuation.children[0].error);
+	assert.equal(continuation.state, "completed", continuation.children[0].error ?? "");
 	const workspace = continuation.children[0].workspace;
 	assert.equal(workspace?.worktreePath, child.workspace?.worktreePath, "same worktree path as the saved session cwd");
 	assert.equal(workspace?.state, "applied");
@@ -366,7 +367,7 @@ test("isolation=worktree outside a repository fails the child without spawning i
 	);
 	assert.equal(run.results[0].state, "failed");
 	assert.equal(run.results[0].attempts, 0);
-	assert.match(run.results[0].error ?? "", /requires a git repository/);
+	assert.match(run.results[0].error ?? "", /requires a git or Jujutsu \(jj\) repository/);
 	assert.equal(run.results[0].workspace?.state, "error");
 	assert.equal(existsSync(join(outside, "x.txt")), false);
 });
@@ -416,6 +417,48 @@ test("the workspace location is published while the child runs and survives a ch
 	assert.equal(seen.at(-1), "applied");
 });
 
+test("a failed capture keeps the worktree on disk and tells the user how to remove it", async () => {
+	const repo = makeRepo();
+	const runnerDeps = deps();
+	let corrupted = false;
+	const run = await executeSubagentRun({
+		request: { agent: "worker", task: "edit-precious", isolation: "worktree" },
+		agents: [agent()],
+		parent: parent(repo),
+		deps: runnerDeps,
+		onUpdate: (current) => {
+			// Once the child has run, break the private baseline index.
+			if (!corrupted && current.children[0].attempts === 1 && current.children[0].output) {
+				corrupted = true;
+				writeFileSync(join(runnerDeps.runsBaseDir, current.id, "child-0", "base.index"), "not an index");
+			}
+		},
+	});
+	assert.ok(corrupted);
+	const child = run.children[0];
+	const workspace = child.workspace;
+	assert.equal(workspace?.state, "error");
+	assert.equal(workspace?.vcs, "git");
+	assert.ok(workspace?.worktreePath && existsSync(join(workspace.worktreePath, "precious.txt")), "the child's edit is still on disk");
+	assert.match(workspace?.message ?? "", /kept at .* worktree remove --force/);
+	assert.equal(existsSync(join(repo, "precious.txt")), false);
+	git(repo, "worktree", "remove", "--force", workspace?.worktreePath ?? "");
+});
+
+test("process exit keeps a workspace whose capture fails, and removes one that captures", async () => {
+	const repo = makeRepo();
+	const broken = await prepareWorkspace({ cwd: repo, stateDir: scratch("isolation-state-"), name: "broken" });
+	const healthy = await prepareWorkspace({ cwd: repo, stateDir: scratch("isolation-state-"), name: "healthy" });
+	writeFileSync(join(broken.worktreePath, "precious.txt"), "x\n");
+	writeFileSync(join(healthy.worktreePath, "saved.txt"), "y\n");
+	writeFileSync(join(broken.stateDir, "base.index"), "not an index");
+	removeLiveWorkspacesSync();
+	assert.ok(existsSync(join(broken.worktreePath, "precious.txt")), "the failed capture keeps the child's edit on disk");
+	assert.equal(existsSync(healthy.worktreePath), false);
+	assert.match(readFileSync(join(healthy.stateDir, "changes.patch"), "utf8"), /saved\.txt/);
+	git(repo, "worktree", "remove", "--force", broken.worktreePath);
+});
+
 test("the typed-result reminder has its own budget after a crash retry", async () => {
 	const run = await executeSubagentRun({
 		request: { agent: "worker", task: "typed-late quota-once", outputSchema: schema },
@@ -423,7 +466,7 @@ test("the typed-result reminder has its own budget after a crash retry", async (
 		parent: parent(process.cwd()),
 		deps: deps(),
 	});
-	assert.equal(run.results[0].state, "completed", run.results[0].error);
+	assert.equal(run.results[0].state, "completed", run.results[0].error ?? "");
 	assert.equal(run.results[0].attempts, 3);
 });
 

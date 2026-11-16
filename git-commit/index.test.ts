@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, afterEach, before, describe, it } from "node:test";
 import { initTheme, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 
-import { registerCommit, runCommit, suggestMessage, type MessageCompleteFn } from "./index.js";
+import { JJ_REFUSAL, registerCommit, runCommit, suggestMessage, type MessageCompleteFn } from "./index.js";
 import { createGitRunner } from "./git.js";
 import { FALLBACK_MESSAGE, MESSAGE_INSTRUCTIONS } from "./message.js";
 
@@ -211,6 +211,62 @@ describe("/commit flow in a scratch repository", () => {
 		await runCommit(ctx("rpc", { confirm: [false] }, seen), { complete: reply("x") });
 		assert.equal(sh(repo, "diff", "--cached", "--name-only").trim(), "");
 		sh(repo, "checkout", "--", "a.txt");
+	});
+});
+
+describe("/commit in a Jujutsu (jj) repository", () => {
+	let repo: string;
+	const saved = { ...process.env };
+
+	before(() => {
+		Object.assign(process.env, GIT_ENV);
+		repo = mkdtempSync(join(tmpdir(), "aio-commit-jj-"));
+		sh(repo, "init", "-q", "-b", "main");
+		writeFileSync(join(repo, "a.txt"), "a\n");
+		sh(repo, "add", "-A");
+		sh(repo, "commit", "-q", "-m", "chore: init");
+		// Colocated: jj keeps .jj next to .git. Only existence matters here.
+		mkdirSync(join(repo, ".jj"));
+	});
+
+	after(() => {
+		rmSync(repo, { recursive: true, force: true });
+		for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key];
+		Object.assign(process.env, saved);
+	});
+
+	it("refuses with a warning before any git command, dialog, or model call", async () => {
+		writeFileSync(join(repo, "a.txt"), "changed\n");
+		mkdirSync(join(repo, "sub"), { recursive: true });
+		const notes: Array<[string, string]> = [];
+		let asked = 0;
+		let gitCalls = 0;
+		const ctx = {
+			cwd: join(repo, "sub"),
+			hasUI: true,
+			mode: "tui",
+			model: { provider: "test", id: "m" },
+			modelRegistry: { complete: () => { throw new Error("unused"); } },
+			ui: {
+				notify: (message: string, level: string) => notes.push([message, level]),
+				confirm: async () => { asked++; return true; },
+				select: async () => { asked++; return undefined; },
+				editor: async () => { asked++; return undefined; },
+				custom: async () => { asked++; return undefined; },
+			},
+		} as unknown as ExtensionContext;
+		await runCommit(ctx, {
+			complete: async () => { throw new Error("the model must not be called"); },
+			makeRunner: (cwd) => {
+				const git = createGitRunner(cwd);
+				return (args, options) => { gitCalls++; return git(args, options); };
+			},
+		});
+		assert.deepEqual(notes, [[JJ_REFUSAL, "warning"]]);
+		assert.equal(asked, 0);
+		assert.equal(gitCalls, 0);
+		assert.equal(sh(repo, "log", "--format=%s").trim(), "chore: init");
+		assert.equal(sh(repo, "diff", "--cached", "--name-only").trim(), "");
 	});
 });
 

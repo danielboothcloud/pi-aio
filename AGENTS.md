@@ -413,8 +413,27 @@ generated `dist/` tree without changing the package contract.
   passes `--permission-mode auto` and permission-modes pins `auto` under
   `AIO_SUBAGENT_CHILD=1`, overriding a forked transcript's persisted mode.
   Hard blocklists still apply in children. `isolation: "worktree"`
-  (`workspace.ts`) gives each child a detached git worktree under its run
-  directory: parent HEAD + `git diff HEAD` + untracked non-ignored files,
+  picks a backend by `findVcs` (`git-commit/vcs.ts`: the nearest `.jj` or
+  `.git` folder; `.jj` wins, also colocated). Shared helpers live in
+  `workspace-common.ts`; `workspace.ts` dispatches. jj (`jj-workspace.ts`,
+  verified against jj 0.47): a frozen base ON `root()` with `@`'s content
+  (`jj new --no-edit -m <token> 'root()'` + `jj restore --from @ --into`;
+  a child of `@` follows parent snapshots, a sibling follows rewrites of
+  `@-` and goes stale), then `jj workspace add --no-colocate` on it. A
+  conflicted `@` or child `@` is refused (its git tree holds
+  `.jjconflict-*` folders). Copied `.pi` files are excluded from the diff,
+  and jj children get `GIT_CEILING_DIRECTORIES`. Capture snapshots the child with
+  forced `snapshot.auto-track="all()"` and a large max-new-file-size, then
+  `git diff --binary <baseCommit> <wc>` on jj's git store (`jj diff --git`
+  drops binary content). Linked dependency symlinks are excluded (jj tracks
+  them). Removal: `workspace forget` + `abandon <base>::`, both
+  `--ignore-working-copy`, under the repo lock. `git apply` into a jj root
+  sets `GIT_CEILING_DIRECTORIES` (non-colocated roots have no `.git`). The
+  binary is `AIO_JJ_BINARY` else `jj`; a non-running jj fails, never falls
+  back to git. jj tests skip without a working jj. A failed capture (both
+  backends, also in the exit hook) KEEPS the worktree and reports a removal
+  hint. Git gives each
+  child a detached git worktree under its run directory: parent HEAD + `git diff HEAD` + untracked non-ignored files,
   ignored `node_modules`/`.venv`/`venv` symlinked (shared), and missing `.pi/`
   files copied so the project blocklist tier still applies. A private
   `GIT_INDEX_FILE` records the baseline tree (the child's own index stays at
@@ -571,7 +590,10 @@ generated `dist/` tree without changing the package contract.
   `push -u` to `origin` or the only remote, and refuses a detached HEAD; a
   push failure after a successful commit keeps the commit and reports it.
   Non-conventional subjects are marked, not blocked. It refuses during
-  merge/cherry-pick/revert/rebase. Tests use scratch git repositories (a
+  merge/cherry-pick/revert/rebase. Git only: when `findVcs` (`vcs.ts`,
+  filesystem walk, nearest `.jj`/`.git`, `.jj` wins) reports jj — also a
+  colocated repo — it warns `JJ_REFUSAL` and stops before ANY git command,
+  dialog, or model call (git add/commit would bypass jj). Tests use scratch git repositories (a
   local bare remote for push) and an injected `complete`.
 - `session-naming/` gives fresh unnamed parent sessions a native Pi title after
   their first successful `agent_end`, using one isolated, bounded background

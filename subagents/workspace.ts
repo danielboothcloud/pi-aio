@@ -1,10 +1,7 @@
-import { execFile, execFileSync } from "node:child_process";
 import {
 	chmodSync,
 	copyFileSync,
-	cpSync,
 	existsSync,
-	statSync,
 	lstatSync,
 	mkdirSync,
 	readlinkSync,
@@ -12,128 +9,78 @@ import {
 	symlinkSync,
 	writeFileSync,
 } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
-import type { WorkspaceFileChange } from "./types.js";
+import { dirname, join, resolve } from "node:path";
+import { findVcs } from "../git-commit/vcs.js";
+import {
+	baseToken,
+	captureJjWorkspace,
+	prepareJjWorkspace,
+	removeJjWorkspace,
+	resolveJjRepo,
+	type JjRepoInfo,
+} from "./jj-workspace.js";
+import {
+	APPLY_FLAGS,
+	ceilingEnv,
+	copyProjectConfig,
+	DIFF_FLAGS,
+	excludePathspecs,
+	git,
+	gitSync,
+	linkDependencyDirs,
+	NUMSTAT_FLAGS,
+	parseNumstat,
+	replaySeedPatch,
+	splitNul,
+	trackLiveWorkspace,
+	untrackLiveWorkspace,
+	withRepoLock,
+	workspacePatchFile,
+	WorkspaceError,
+	type CapturedChanges,
+	type GitWorkspace,
+	type PreparedWorkspace,
+} from "./workspace-common.js";
+
+export {
+	removeLiveWorkspacesSync,
+	untrackLiveWorkspace,
+	withRepoLock,
+	workspacePatchFile,
+	WorkspaceError,
+	type CapturedChanges,
+	type PreparedWorkspace,
+} from "./workspace-common.js";
 
 /**
- * Git worktree isolation for subagent children.
+ * Workspace isolation for subagent children, for two version control
+ * systems. The nearest `.jj` or `.git` folder decides (see findVcs): a
+ * Jujutsu (jj) repository, also a colocated one, gets a jj workspace
+ * (jj-workspace.ts); any other git repository gets a git worktree.
  *
- * A child gets a detached worktree at the parent's HEAD, plus the parent's
- * uncommitted tracked changes and untracked (not ignored) files. A baseline
- * tree is recorded through a private index, so the child's own git index
- * still matches HEAD, as in the parent. After the child, the worktree is
- * hashed again and the difference becomes a patch for `git apply`.
+ * Git: a child gets a detached worktree at the parent's HEAD, plus the
+ * parent's uncommitted tracked changes and untracked (not ignored) files. A
+ * baseline tree is recorded through a private index, so the child's own git
+ * index still matches HEAD, as in the parent. After the child, the worktree
+ * is hashed again and the difference becomes a patch for `git apply`.
  *
  * Ignored dependency directories (node_modules, virtual environments) are
  * symlinked from the parent so tests can run. They are shared, not isolated.
  */
 
-/** Ignored directories linked (not copied) into the worktree. */
-export const LINKED_DEPENDENCY_DIRS: readonly string[] = [
-	"node_modules",
-	".venv",
-	"venv",
-];
-/** Project config directory copied in when the worktree does not have it. */
-const PROJECT_CONFIG_DIR = ".pi";
-const MAX_GIT_OUTPUT = 512 * 1024 * 1024;
+export { LINKED_DEPENDENCY_DIRS } from "./workspace-common.js";
 
-export interface PreparedWorkspace {
-	repoRoot: string;
-	worktreePath: string;
-	/** The worktree directory that corresponds to the parent's cwd. */
-	childCwd: string;
-	baseTree: string;
-	/** Worktree-relative paths of the linked dependency directories. */
-	linkedPaths: string[];
-	/** Private directory for index files and patches. */
-	stateDir: string;
-}
-
-export interface CapturedChanges {
-	files: WorkspaceFileChange[];
-	patchFile?: string;
-}
-
-export class WorkspaceError extends Error {}
-
-/** Git environment without inherited repository overrides. */
-function gitEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
-	const env: NodeJS.ProcessEnv = { ...process.env };
-	for (const key of [
-		"GIT_DIR",
-		"GIT_WORK_TREE",
-		"GIT_INDEX_FILE",
-		"GIT_PREFIX",
-		"GIT_COMMON_DIR",
-		"GIT_OBJECT_DIRECTORY",
-		"GIT_NAMESPACE",
-	])
-		delete env[key];
-	return { ...env, GIT_TERMINAL_PROMPT: "0", LC_ALL: "C", ...extra };
-}
-
-interface GitOptions {
-	cwd: string;
-	env?: Record<string, string>;
-	encoding?: "utf8" | "buffer";
-	/** A nonexistent hooks directory: worktree/checkout hooks never run. */
-	noHooksDir?: string;
-}
-
-function git(args: string[], options: GitOptions & { encoding: "buffer" }): Promise<Buffer>;
-function git(args: string[], options: GitOptions): Promise<string>;
-function git(args: string[], options: GitOptions): Promise<string | Buffer> {
-	const prefix = options.noHooksDir
-		? ["-c", `core.hooksPath=${options.noHooksDir}`]
-		: [];
-	return new Promise((resolve, reject) => {
-		execFile(
-			"git",
-			[...prefix, "-C", options.cwd, ...args],
-			{
-				env: gitEnv(options.env),
-				encoding: options.encoding === "buffer" ? "buffer" : "utf8",
-				maxBuffer: MAX_GIT_OUTPUT,
-				windowsHide: true,
-			},
-			(error, stdout, stderr) => {
-				if (error) {
-					const detail = String(stderr ?? "").trim() || error.message;
-					reject(new WorkspaceError(`git ${args[0]} failed: ${detail}`));
-					return;
-				}
-				resolve(stdout);
-			},
-		);
-	});
-}
-
-// One git writer per repository at a time: worktree metadata, and the parent
-// checkout during merges, must never see concurrent writers from this process.
-const repoLocks = new Map<string, Promise<unknown>>();
-
-export async function withRepoLock<T>(repoRoot: string, work: () => Promise<T>): Promise<T> {
-	const previous = repoLocks.get(repoRoot) ?? Promise.resolve();
-	const next = previous.then(work, work);
-	const settled = next.catch(() => undefined);
-	repoLocks.set(repoRoot, settled);
-	try {
-		return await next;
-	} finally {
-		if (repoLocks.get(repoRoot) === settled) repoLocks.delete(repoRoot);
-	}
-}
-
-export interface RepoInfo {
+export interface GitRepoInfo {
+	vcs: "git";
 	repoRoot: string;
 	/** cwd relative to the repository root, with a trailing slash or empty. */
 	prefix: string;
 	head: string;
 }
 
-/** Resolve the repository for a cwd; throws a clear error when isolation is impossible. */
-export async function resolveRepo(cwd: string): Promise<RepoInfo> {
+export type RepoInfo = GitRepoInfo | JjRepoInfo;
+
+async function resolveGitRepo(cwd: string): Promise<GitRepoInfo> {
 	let repoRoot: string;
 	let prefix: string;
 	try {
@@ -141,7 +88,7 @@ export async function resolveRepo(cwd: string): Promise<RepoInfo> {
 		prefix = (await git(["rev-parse", "--show-prefix"], { cwd })).trim();
 	} catch {
 		throw new WorkspaceError(
-			`isolation=worktree requires a git repository, but ${cwd} is not inside one.`,
+			`isolation=worktree requires a git or Jujutsu (jj) repository, but ${cwd} is not inside one.`,
 		);
 	}
 	let head: string;
@@ -149,16 +96,21 @@ export async function resolveRepo(cwd: string): Promise<RepoInfo> {
 		head = (await git(["rev-parse", "--verify", "-q", "HEAD^{commit}"], { cwd: repoRoot })).trim();
 	} catch {
 		throw new WorkspaceError(
-			"isolation=worktree requires a repository with at least one commit.",
+			"isolation=worktree requires a git repository with at least one commit.",
 		);
 	}
 	if (!repoRoot || !head)
 		throw new WorkspaceError("isolation=worktree could not resolve the repository HEAD.");
-	return { repoRoot, prefix, head };
+	return { vcs: "git", repoRoot, prefix, head };
 }
 
-function splitNul(output: string): string[] {
-	return output.split("\0").filter(Boolean);
+/**
+ * Resolve the repository for a cwd; throws a clear error when isolation is
+ * impossible (no repository, an empty git repository, or a jj repository
+ * whose `jj` command does not run).
+ */
+export async function resolveRepo(cwd: string): Promise<RepoInfo> {
+	return findVcs(cwd)?.kind === "jj" ? resolveJjRepo(cwd) : resolveGitRepo(cwd);
 }
 
 function copyEntry(source: string, target: string): void {
@@ -172,10 +124,6 @@ function copyEntry(source: string, target: string): void {
 	if (!stat.isFile()) return;
 	copyFileSync(source, target);
 	chmodSync(target, stat.mode & 0o777);
-}
-
-function excludePathspecs(linkedPaths: readonly string[]): string[] {
-	return linkedPaths.map((path) => `:(exclude,literal)${path}`);
 }
 
 /**
@@ -201,49 +149,11 @@ async function snapshotTree(input: {
 	return (await git(["write-tree"], { cwd: input.worktreePath, env })).trim();
 }
 
-const DIFF_FLAGS = [
-	"--binary",
-	"--no-color",
-	"--no-ext-diff",
-	"--no-textconv",
-	"--no-renames",
-	"--no-relative",
-	"--ignore-submodules",
-	"--src-prefix=a/",
-	"--dst-prefix=b/",
-];
-
-const APPLY_FLAGS = ["apply", "--binary", "--whitespace=nowarn"];
-
-/** Where a child's patch is saved. Written even when empty at process exit. */
-export function workspacePatchFile(stateDir: string): string {
-	return join(stateDir, "changes.patch");
-}
-
-/** Track live worktrees so a process exit does not leave them behind. */
-const liveWorkspaces = new Map<string, PreparedWorkspace>();
-let exitHookInstalled = false;
-
-function installExitHook(): void {
-	if (exitHookInstalled) return;
-	exitHookInstalled = true;
-	process.once("exit", () => removeLiveWorkspacesSync());
-}
-
-function gitSync(args: string[], cwd: string, env: Record<string, string> = {}): Buffer {
-	return execFileSync("git", ["-C", cwd, ...args], {
-		env: gitEnv(env),
-		maxBuffer: MAX_GIT_OUTPUT,
-		stdio: ["ignore", "pipe", "ignore"],
-		windowsHide: true,
-	});
-}
-
 /**
  * Synchronous capture for process exit: save the patch (an empty file means
  * "no changes"), so a later resume can replay the interrupted child's edits.
  */
-function captureWorkspaceSync(workspace: PreparedWorkspace): void {
+function captureGitWorkspaceSync(workspace: GitWorkspace): void {
 	const indexFile = join(workspace.stateDir, "exit.index");
 	const env = { GIT_INDEX_FILE: indexFile };
 	rmSync(indexFile, { force: true });
@@ -258,28 +168,12 @@ function captureWorkspaceSync(workspace: PreparedWorkspace): void {
 	writeFileSync(workspacePatchFile(workspace.stateDir), patch, { mode: 0o600 });
 }
 
-/**
- * Process exit with children still running: save each live worktree's
- * changes as a patch, then remove the worktree. Best effort and synchronous.
- */
-export function removeLiveWorkspacesSync(): void {
-	for (const workspace of liveWorkspaces.values()) {
-		try {
-			captureWorkspaceSync(workspace);
-		} catch {
-			// The worktree is still removed; resume refuses without a patch.
-		}
-		try {
-			gitSync(["worktree", "remove", "--force", "--force", workspace.worktreePath], workspace.repoRoot);
-		} catch {
-			try {
-				rmSync(workspace.worktreePath, { recursive: true, force: true });
-			} catch {
-				// ignore
-			}
-		}
+function removeGitWorkspaceSync(workspace: GitWorkspace): void {
+	try {
+		gitSync(["worktree", "remove", "--force", "--force", workspace.worktreePath], workspace.repoRoot);
+	} catch {
+		rmSync(workspace.worktreePath, { recursive: true, force: true });
 	}
-	liveWorkspaces.clear();
 }
 
 /** Replay the parent's uncommitted tracked changes in the worktree. */
@@ -290,43 +184,7 @@ async function writeParentState(stateDir: string, worktreePath: string, parentDi
 	await git([...APPLY_FLAGS, parentPatch], { cwd: worktreePath });
 }
 
-/** Symlink ignored dependency directories so the child can build and test. */
-function linkDependencyDirs(repoRoot: string, worktreePath: string, ignoredDirs: readonly string[]): string[] {
-	const linkedPaths: string[] = [];
-	for (const entry of ignoredDirs) {
-		if (!entry.endsWith("/")) continue;
-		const path = entry.slice(0, -1);
-		if (!LINKED_DEPENDENCY_DIRS.includes(basename(path))) continue;
-		const target = join(worktreePath, path);
-		if (existsSync(target) || !existsSync(dirname(target))) continue;
-		symlinkSync(join(repoRoot, path), target, process.platform === "win32" ? "junction" : "dir");
-		linkedPaths.push(path);
-	}
-	return linkedPaths;
-}
-
-/**
- * Project config (.pi: blocklist, settings, hooks) is often partly ignored or
- * local. The child must see the same project rules as the parent, so copy
- * only the files the worktree does not have yet (those are ignored files;
- * tracked and untracked ones are already present).
- */
-function copyProjectConfig(parentCwd: string, childCwd: string): void {
-	const parentConfig = join(parentCwd, PROJECT_CONFIG_DIR);
-	if (!existsSync(parentConfig)) return;
-	cpSync(parentConfig, join(childCwd, PROJECT_CONFIG_DIR), {
-		recursive: true,
-		force: false,
-		errorOnExist: false,
-		verbatimSymlinks: true,
-	});
-}
-
-/**
- * Create an isolated worktree for one child. `stateDir` is runner-owned and
- * holds the worktree, private index files, and patches.
- */
-export async function prepareWorkspace(input: {
+interface PrepareInput {
 	cwd: string;
 	stateDir: string;
 	name: string;
@@ -335,15 +193,30 @@ export async function prepareWorkspace(input: {
 	/** Reuse an exact (removed) worktree path; a resumed session stores it as cwd. */
 	worktreePath?: string;
 	repo?: RepoInfo;
-}): Promise<PreparedWorkspace> {
+}
+
+/**
+ * Create an isolated workspace for one child: a jj workspace in a Jujutsu
+ * repository, else a git worktree. `stateDir` is runner-owned and holds the
+ * workspace, private index files, and patches.
+ */
+export async function prepareWorkspace(input: PrepareInput): Promise<PreparedWorkspace> {
 	const repo = input.repo ?? (await resolveRepo(input.cwd));
 	mkdirSync(input.stateDir, { recursive: true });
 	const worktreePath = input.worktreePath ?? join(input.stateDir, input.name);
 	mkdirSync(dirname(worktreePath), { recursive: true });
-	const noHooksDir = join(input.stateDir, "no-hooks");
 	if (existsSync(worktreePath))
 		throw new WorkspaceError(`Worktree path already exists: ${worktreePath}`);
+	if (repo.vcs === "jj")
+		return prepareJjWorkspace({ ...input, repo, worktreePath });
+	return prepareGitWorkspace({ ...input, repo, worktreePath });
+}
 
+async function prepareGitWorkspace(
+	input: PrepareInput & { repo: GitRepoInfo; worktreePath: string },
+): Promise<GitWorkspace> {
+	const { repo, worktreePath } = input;
+	const noHooksDir = join(input.stateDir, "no-hooks");
 	// Read the parent's state before creating the worktree, under the lock.
 	const { parentDiff, untracked, ignoredDirs } = await withRepoLock(repo.repoRoot, async () => {
 		const [parentDiff, untracked, ignored] = await Promise.all([
@@ -362,7 +235,6 @@ export async function prepareWorkspace(input: {
 		});
 		return { parentDiff, untracked: splitNul(untracked), ignoredDirs: splitNul(ignored) };
 	});
-	installExitHook();
 
 	try {
 		await writeParentState(input.stateDir, worktreePath, parentDiff);
@@ -382,7 +254,8 @@ export async function prepareWorkspace(input: {
 			seedIndex: resolve(worktreePath, ownIndex),
 			linkedPaths,
 		});
-		const workspace: PreparedWorkspace = {
+		const workspace: GitWorkspace = {
+			vcs: "git",
 			repoRoot: repo.repoRoot,
 			worktreePath,
 			childCwd,
@@ -390,44 +263,25 @@ export async function prepareWorkspace(input: {
 			linkedPaths,
 			stateDir: input.stateDir,
 		};
-		liveWorkspaces.set(worktreePath, workspace);
-		if (input.seedPatchFile && statSync(input.seedPatchFile).size > 0) {
-			try {
-				await git([...APPLY_FLAGS, input.seedPatchFile], { cwd: worktreePath });
-			} catch (error) {
-				throw new WorkspaceError(
-					`Could not replay the previous child changes (${input.seedPatchFile}) on the current checkout: ${error instanceof Error ? error.message : String(error)}`,
-				);
-			}
-		}
+		trackLiveWorkspace(worktreePath, {
+			captureSync: () => captureGitWorkspaceSync(workspace),
+			removeSync: () => removeGitWorkspaceSync(workspace),
+		});
+		await replaySeedPatch(worktreePath, input.seedPatchFile);
 		return workspace;
 	} catch (error) {
-		await removeWorkspace({ repoRoot: repo.repoRoot, worktreePath });
+		await removeGitWorkspace({ repoRoot: repo.repoRoot, worktreePath });
 		throw error;
 	}
 }
 
-/** Parse `--numstat -z` (renames are off, so every record is one field). */
-function parseNumstat(output: string): WorkspaceFileChange[] {
-	const changes: WorkspaceFileChange[] = [];
-	for (const record of output.split("\0")) {
-		const match = /^(-|\d+)\t(-|\d+)\t([\s\S]+)$/.exec(record.replace(/^\n/, ""));
-		if (!match) continue;
-		changes.push({
-			path: match[3],
-			added: match[1] === "-" ? null : Number(match[1]),
-			deleted: match[2] === "-" ? null : Number(match[2]),
-		});
-	}
-	return changes;
-}
-
-/** Diff the worktree against its baseline and save the patch. */
+/** Diff the workspace against its baseline and save the patch. */
 export async function captureWorkspaceChanges(
 	workspace: PreparedWorkspace,
 ): Promise<CapturedChanges> {
 	if (!existsSync(workspace.worktreePath))
 		throw new WorkspaceError("The worktree was removed before its changes were captured.");
+	if (workspace.vcs === "jj") return captureJjWorkspace(workspace);
 	const resultTree = await snapshotTree({
 		worktreePath: workspace.worktreePath,
 		indexFile: join(workspace.stateDir, "result.index"),
@@ -441,7 +295,7 @@ export async function captureWorkspaceChanges(
 			cwd: workspace.worktreePath,
 			encoding: "buffer",
 		}),
-		git(["diff", "--numstat", "-z", "--no-renames", "--no-relative", "--ignore-submodules", workspace.baseTree, resultTree], {
+		git(["diff", ...NUMSTAT_FLAGS, workspace.baseTree, resultTree], {
 			cwd: workspace.worktreePath,
 		}),
 	]);
@@ -451,8 +305,7 @@ export async function captureWorkspaceChanges(
 	return { files: parseNumstat(numstat), patchFile };
 }
 
-/** Remove a worktree and its git metadata. Never throws. */
-export async function removeWorkspace(input: { repoRoot: string; worktreePath: string }): Promise<void> {
+async function removeGitWorkspace(input: { repoRoot: string; worktreePath: string }): Promise<void> {
 	try {
 		await withRepoLock(input.repoRoot, () =>
 			git(["worktree", "remove", "--force", "--force", input.worktreePath], { cwd: input.repoRoot }),
@@ -466,27 +319,50 @@ export async function removeWorkspace(input: { repoRoot: string; worktreePath: s
 			// Best effort.
 		}
 	}
-	liveWorkspaces.delete(input.worktreePath);
+	untrackLiveWorkspace(input.worktreePath);
+}
+
+/** Remove a workspace and its metadata. Never throws. */
+export async function removeWorkspace(workspace: PreparedWorkspace): Promise<void> {
+	if (workspace.vcs === "jj") return removeJjWorkspace(workspace);
+	return removeGitWorkspace(workspace);
+}
+
+/** How a user removes a workspace that was kept on disk. */
+export function workspaceRemovalHint(input: {
+	vcs?: "git" | "jj";
+	repoRoot?: string;
+	worktreePath?: string;
+	workspaceName?: string;
+}): string {
+	const path = input.worktreePath ?? "<path>";
+	const name = input.workspaceName ?? "<name>";
+	return input.vcs === "jj"
+		? `jj workspace forget ${name} && jj abandon '${`description(substring:${JSON.stringify(`${baseToken(name)} `)})::`}' (in ${input.repoRoot ?? "the repository"}), then delete ${path}`
+		: `git -C ${input.repoRoot ?? "<repo>"} worktree remove --force ${path}`;
 }
 
 /**
  * Apply a saved patch to the parent checkout (working tree only, not the
- * index). The patch is checked first, so a conflict changes nothing.
+ * index). The patch is checked first, so a conflict changes nothing. In a
+ * jj repository without `.git`, git discovery stops at the repository root.
  */
 export async function applyWorkspacePatch(input: {
 	repoRoot: string;
 	patchFile: string;
+	vcs?: "git" | "jj";
 }): Promise<{ applied: true } | { applied: false; message: string }> {
+	const env = input.vcs === "jj" ? ceilingEnv(input.repoRoot) : undefined;
 	return withRepoLock(input.repoRoot, async () => {
 		try {
-			await git([...APPLY_FLAGS, "--check", input.patchFile], { cwd: input.repoRoot });
+			await git([...APPLY_FLAGS, "--check", input.patchFile], { cwd: input.repoRoot, env });
 		} catch (error) {
 			return {
 				applied: false as const,
 				message: error instanceof Error ? error.message : String(error),
 			};
 		}
-		await git([...APPLY_FLAGS, input.patchFile], { cwd: input.repoRoot });
+		await git([...APPLY_FLAGS, input.patchFile], { cwd: input.repoRoot, env });
 		return { applied: true as const };
 	});
 }

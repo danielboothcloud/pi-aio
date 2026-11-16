@@ -11,7 +11,7 @@ import {
 	statSync,
 	writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
 import {
 	applyActivityEvent,
@@ -51,6 +51,8 @@ import {
 	captureWorkspaceChanges,
 	prepareWorkspace,
 	removeWorkspace,
+	untrackLiveWorkspace,
+	workspaceRemovalHint,
 	workspacePatchFile,
 	type PreparedWorkspace,
 } from "./workspace.js";
@@ -310,17 +312,25 @@ function resolvedThinking(
 	return task.thinking ?? request.thinking ?? agent.thinking ?? parent.thinking;
 }
 
+const JJ_WORKSPACE_RULES =
+	"This is a Jujutsu (jj) workspace, not a git checkout: git commands do not work here. Use jj status and jj diff to inspect your changes. Do not run jj commands that change history or other workspaces: jj new, jj commit, jj describe, jj edit, jj squash, jj split, jj rebase, jj abandon, jj restore, jj workspace, jj bookmark, or jj git push. Your edits stay in this workspace's working-copy commit.";
+
 function worktreeNote(workspace: WorkspacePaths): string {
+	const jj = workspace.vcs === "jj";
 	return [
 		"[ISOLATED WORKTREE]",
-		"You work in an isolated git worktree that contains the parent's current files. Edit files here as needed. Your changes return to the parent as a patch after you finish.",
+		`You work in an isolated ${jj ? "Jujutsu (jj) workspace" : "git worktree"} that contains the parent's current files. Edit files here as needed. Your changes return to the parent as a patch after you finish.`,
 		`The parent checkout ${workspace.repoRoot} is mirrored here at ${workspace.worktreePath}. When the task or the conversation names a path under ${workspace.repoRoot}, use the same relative path under ${workspace.worktreePath} instead. Never read or write the parent checkout directly, also not with shell commands.`,
-		"Do not commit, push, or change branches. Files in ignored paths (except linked dependency directories such as node_modules) are not in the worktree, and changes to ignored paths are not returned.",
+		jj
+			? JJ_WORKSPACE_RULES
+			: "Do not commit, push, or change branches.",
+		"Files in ignored paths (except linked dependency directories such as node_modules) are not in the worktree, and changes to ignored paths are not returned.",
 	].join("\n");
 }
 
 /** Worktree locations a spawn needs (a PreparedWorkspace satisfies this). */
 interface WorkspacePaths {
+	vcs?: "git" | "jj";
 	repoRoot: string;
 	worktreePath: string;
 	childCwd: string;
@@ -486,6 +496,11 @@ export function buildSpawnSpec(input: {
 			AIO_SUBAGENT_RUN_ID: input.runId,
 			AIO_SUBAGENT_AGENT: input.agent.name,
 			...(resultSchemaFile ? { [RESULT_SCHEMA_ENV]: resultSchemaFile } : {}),
+			// A jj workspace has no .git: keep the child's git commands from
+			// finding an unrelated repository above the run directory.
+			...(input.workspace?.vcs === "jj"
+				? { GIT_CEILING_DIRECTORIES: dirname(input.workspace.worktreePath) }
+				: {}),
 			// yaml-hooks keys trust by worktree root; carry the parent's decision.
 			...(input.workspace && input.parent.projectHooksTrusted
 				? { PI_YAML_HOOKS_TRUST_PROJECT: "1" }
@@ -676,7 +691,19 @@ function workspaceMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-/** Capture the child's patch, then remove its worktree (always). */
+function workspaceIdentity(workspace: PreparedWorkspace): Pick<ChildWorkspaceResult, "vcs" | "repoRoot" | "worktreePath" | "workspaceName"> {
+	return {
+		vcs: workspace.vcs,
+		repoRoot: workspace.repoRoot,
+		worktreePath: workspace.worktreePath,
+		...(workspace.vcs === "jj" ? { workspaceName: workspace.name } : {}),
+	};
+}
+
+/**
+ * Capture the child's patch, then remove its workspace. A failed capture
+ * keeps the workspace on disk: removing it would lose the child's edits.
+ */
 async function finishWorkspace(
 	workspace: PreparedWorkspace,
 	childState: ChildRunResult["state"],
@@ -685,8 +712,7 @@ async function finishWorkspace(
 		isolation: "worktree",
 		state: "empty",
 		files: [],
-		repoRoot: workspace.repoRoot,
-		worktreePath: workspace.worktreePath,
+		...workspaceIdentity(workspace),
 	};
 	// A capture that fails after a partial write must not leave a stale patch.
 	rmSync(workspacePatchFile(workspace.stateDir), { force: true });
@@ -700,11 +726,13 @@ async function finishWorkspace(
 				summary.message = `The child ${childState}, so its partial changes were not applied.`;
 		}
 	} catch (error) {
+		rmSync(workspacePatchFile(workspace.stateDir), { force: true });
+		untrackLiveWorkspace(workspace.worktreePath);
 		summary.state = "error";
-		summary.message = `Could not capture the worktree changes: ${workspaceMessage(error)}`;
-	} finally {
-		await removeWorkspace(workspace);
+		summary.message = `Could not capture the worktree changes: ${workspaceMessage(error)}. The worktree was kept at ${workspace.worktreePath} so no edits are lost; inspect it, then remove it with: ${workspaceRemovalHint(summary)}.`;
+		return summary;
 	}
+	await removeWorkspace(workspace);
 	return summary;
 }
 
@@ -938,15 +966,14 @@ async function runChild(input: {
 				seedPatchFile: input.resume?.seedPatchFile,
 				worktreePath: input.resume?.worktreePath,
 			});
-			pushTranscriptNotice(transcript, `isolated worktree · ${workspace.childCwd}`, "muted");
+			pushTranscriptNotice(transcript, `isolated ${workspace.vcs === "jj" ? "jj workspace" : "git worktree"} · ${workspace.childCwd}`, "muted");
 			// Publish the location now: a checkpoint written while the child
 			// runs (or a parent shutdown) must still allow a resume later.
 			workspaceSummary = {
 				isolation: "worktree",
 				state: "active",
 				files: [],
-				repoRoot: workspace.repoRoot,
-				worktreePath: workspace.worktreePath,
+				...workspaceIdentity(workspace),
 				patchFile: workspacePatchFile(workspace.stateDir),
 			};
 			input.status.workspace = workspaceSummary;
@@ -1214,6 +1241,7 @@ async function mergeWorkspaces(run: SubagentRun, input: RunInput): Promise<void>
 			const outcome = await applyWorkspacePatch({
 				repoRoot: workspace.repoRoot,
 				patchFile: workspace.patchFile,
+				vcs: workspace.vcs,
 			});
 			if (outcome.applied) {
 				workspace.state = "applied";
@@ -1237,7 +1265,7 @@ function worktreeResumeIssue(launch: ChildLaunchSnapshot, child: ChildRunStatus)
 	if (!workspace?.worktreePath)
 		return "The worktree location was not recorded, so the child session cannot reopen in it.";
 	if (existsSync(workspace.worktreePath))
-		return `The previous worktree still exists at ${workspace.worktreePath}. Inspect it, then remove it (git worktree remove --force <path>) before resuming.`;
+		return `The previous worktree still exists at ${workspace.worktreePath}. Inspect it, then remove it (${workspaceRemovalHint(workspace)}) before resuming.`;
 	if (workspace.state === "error")
 		return "The child's worktree changes could not be captured, so a resume would lose them.";
 	if (workspace.state !== "empty" && workspace.state !== "applied" && (!workspace.patchFile || !existsSync(workspace.patchFile)))

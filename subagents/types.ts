@@ -89,6 +89,10 @@ export type WorkspaceState =
 /** JSON-safe summary of a worktree child's changes. */
 export interface ChildWorkspaceResult {
 	isolation: "worktree";
+	/** Which backend made the workspace (absent in records before jj support: git). */
+	vcs?: "git" | "jj";
+	/** jj only: the workspace name, needed to `jj workspace forget` a kept one. */
+	workspaceName?: string;
 	state: WorkspaceState;
 	files: WorkspaceFileChange[];
 	/** Saved unified diff (git apply format), relative to the repository root. */
