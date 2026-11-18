@@ -1515,9 +1515,9 @@ A `/recipe` switch or `/recipe off` removes the override. There is no
 
 `/handoff` moves your work to a new, focused session. It does not compact
 the current session. The session model writes a prompt for the next task
-from the conversation, and you edit it before the new session starts. The
-design comes from [pi-handoff](https://github.com/jalbarrang/pi-handoff)
-(MIT).
+from the conversation. AIO shows it as a proposal, as plan mode does, and the
+new session starts only when you confirm. The design comes from
+[pi-handoff](https://github.com/jalbarrang/pi-handoff) (MIT).
 
 ```text
 /handoff now implement this for teams as well
@@ -1527,10 +1527,18 @@ design comes from [pi-handoff](https://github.com/jalbarrang/pi-handoff)
 
 1. Type `/handoff` and the goal for the new session. Without a goal, AIO
    asks for one.
-2. Wait for the prompt. In the TUI, press `esc` to cancel.
-3. Edit the prompt in the editor dialog, then save it. An empty or
-   cancelled draft stops the handoff.
-4. Review the prompt in the editor of the new session, then press `Enter`.
+2. If the folder has a `.pi-recipe` that is not trusted yet, answer the
+   trust question.
+3. Wait for the prompt. In the TUI, press `esc` to cancel.
+4. Read the `HANDOFF PROPOSAL` card in the transcript. Then choose one item
+   from the menu:
+   - **Start the new session** — create the session with this prompt.
+   - **Edit the prompt** — change the prompt in the editor dialog. A changed
+     prompt shows as a new card revision.
+   - **Refine with feedback** — tell the model what to change. The model
+     writes a new revision. A failed refinement keeps the previous draft.
+   - **Cancel** (or `esc`) — stop. The current session does not change.
+5. Review the prompt in the editor of the new session, then press `Enter`.
 
 - The prompt includes the context, the files, and the next task. It also
   includes a link to the previous session JSONL file. The next agent can
@@ -1539,12 +1547,25 @@ design comes from [pi-handoff](https://github.com/jalbarrang/pi-handoff)
 - After a compaction, the prompt uses the compaction summary and the newer
   messages. Hidden AIO instructions are not included. A very long history
   keeps its start and its newest part (60% of the model context window).
+- The proposal cards are not part of the model context. The card also shows
+  the recipe, model, and settings that the new session gets.
 - The new session records the previous session as its parent. It keeps the
   model, the thinking level, the recipe (`off` included), the `/advisor`
   override, and the `/style`. The permission mode starts as in any new
-  session. A launch `--recipe` flag still wins, as with `/new`.
-- A `HANDOFF` note at the top of the new session shows the goal and the
-  source. The note is not part of the model context.
+  session.
+- A trusted `.pi-recipe` default in the current folder is enforced in the
+  new session. It replaces the old recipe and wins over a launch `--recipe`
+  flag. The recipe values for model, thinking level, style, and advisor
+  replace the old values. The old values carry over only for keys that the
+  recipe does not set.
+- A running pi cannot change its extension set or model scope. If the
+  `.pi-recipe` recipe sets them and this launch did not start with that
+  recipe, AIO shows a warning. After the first reply, restart with the
+  `pi --session <file>` command in the warning.
+- An untrusted, denied, or invalid `.pi-recipe` is not enforced. The card
+  shows why, and the old settings carry over. `--no-approve` skips the file.
+- A `HANDOFF` note at the top of the new session shows the goal, the source,
+  and the enforced recipe. The note is not part of the model context.
 - Run `/handoff` only when the agent is idle. A new session stops a running
   turn, so AIO refuses while the agent works.
 - `/handoff` needs the TUI or an RPC host. RPC hosts get no loader. Use

@@ -115,9 +115,9 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// no editor ownership, so its place is not load-bearing. Runs
 	// after the visual publishers, before yaml-hooks.
 	registerBtw(pi);
-	// /handoff starts a new focused session from a generated, editable prompt.
-	// Its session_start restores the previous model in the new session, so it
-	// must register after recipes (whose model it overrides there).
+	// /handoff proposes a generated prompt, then starts a new focused session on
+	// confirm. Its session_start restores the previous model unless the enforced
+	// .pi-recipe sets one, so it must register after recipes.
 	registerHandoff(pi);
 	// /commit is a user-only command (no agent tool): the session model
 	// suggests one type(scope): description message in one isolated call, and

@@ -543,17 +543,35 @@ generated `dist/` tree without changing the package contract.
   `ctx.modelRegistry.complete()` call (session model, `cacheRetention:
   "none"`, TUI `BorderedLoader`, RPC without a loader) turns the branch —
   compaction-aware, branch summaries included, custom messages excluded,
-  bounded to 60% of the context window — into an editable prompt with a
-  previous-transcript link, then `ctx.newSession({ parentSession })`.
+  bounded to 60% of the context window — into a prompt with a
+  previous-transcript link. Propose → confirm → execute, like plan mode:
+  each draft is an `aio-handoff-proposal` custom entry card (never in
+  context) followed by a `ctx.ui.select` menu (start / edit / refine with
+  feedback, which regenerates with the draft + feedback / cancel); only
+  "start" calls `ctx.newSession({ parentSession })`, and the prompt is
+  prefilled in the new editor (never auto-sent).
   Pi re-evaluates extensions for the replacement session (jiti
   `moduleCache: false`), so NOTHING crosses the switch in module memory:
   `setup` (which runs before the new session_start) copies the newest
   `recipe-state`/`advisor-state`/`styles` entries and writes an
   `aio-handoff` entry; the new instance's session_start (reason `new`, no
   messages yet) restores model + thinking. It registers after recipes so
-  that model wins. Refuses while the agent is busy (newSession aborts the
-  run). Permission mode is not carried. Children register only the
-  `HANDOFF` entry renderer. Tests inject `complete`.
+  that model wins. `.pi-recipe` enforcement (`handoff/recipe.ts`): before
+  generation, a cwd `.pi-recipe` of unknown trust is asked once through
+  `recipes/trust.ts`; a trusted, valid `defaultRecipe` is never replaced by
+  the old `recipe-state` (setup pins `{ name }` instead), and its set keys
+  (model, thinking incl. a `:level` spec suffix, style, advisor) drop the
+  matching carried entry / model restore. recipes' session_start treats a
+  pre-session_start pin of the current trusted directory default on `new`
+  as outranking the launch flag and bridge env. Pi only writes a session
+  file after the first conversation message, so no in-place relaunch is
+  possible: when the launch is not bridged for that recipe and it (or the
+  launch's recipe) is restart-scoped, the card and the new session warn
+  with a `pi --session <file>` hint. Untrusted/denied/`--no-approve`/no
+  default: a card note, old state carried. Refuses while the agent is busy
+  (newSession aborts the run). Permission mode is not carried. Children
+  register only the entry renderers. Tests inject `complete` and
+  `resolveRecipe`.
 - `btw/` owns the `/btw` command — "by the way" side questions: pi executes
   extension commands immediately even while streaming, so a mid-flow question
   runs its handler without interrupting, queuing, or steering the run, and

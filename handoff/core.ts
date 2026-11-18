@@ -10,6 +10,24 @@ import { pathToFileURL } from "node:url";
 /** Custom entry written into the new session (never in model context). */
 export const HANDOFF_ENTRY_TYPE = "aio-handoff";
 
+/** Proposal card in the current session, shown before the user confirms. */
+export const HANDOFF_PROPOSAL_ENTRY_TYPE = "aio-handoff-proposal";
+
+/** Plan-style menu shown under each proposal card. */
+export const PROPOSAL_ACTIONS = {
+	start: "Start the new session",
+	edit: "Edit the prompt",
+	refine: "Refine with feedback",
+	cancel: "Cancel",
+} as const;
+
+export type ProposalAction = keyof typeof PROPOSAL_ACTIONS;
+
+export function proposalActionOf(label: string | undefined): ProposalAction {
+	const match = (Object.keys(PROPOSAL_ACTIONS) as ProposalAction[]).find((key) => PROPOSAL_ACTIONS[key] === label);
+	return match ?? "cancel";
+}
+
 export const HANDOFF_SYSTEM_PROMPT = `You are a context transfer assistant. Given a conversation history and the user's goal for a new thread, generate a focused prompt that:
 
 1. Summarizes relevant context from the conversation (decisions made, approaches taken, key findings)
@@ -121,10 +139,17 @@ export function buildHandoffRequest(conversationText: string, goal: string): str
 	return `## Conversation History\n\n${conversationText}\n\n## User's Goal for New Thread\n\n${goal}`;
 }
 
+/** A refinement keeps the full history and goal, then asks for a revised draft. */
+export function buildRefineRequest(request: string, draft: string, feedback: string): string {
+	return `${request}\n\n## Current Draft\n\n${draft}\n\n## Requested Changes\n\n${feedback}\n\nRewrite the draft with these changes. Output only the revised prompt.`;
+}
+
 /** Plain path for read/rg plus a file:// target for terminals with links. */
 export function appendPreviousConversationLink(prompt: string, sessionFile: string | undefined): string {
 	if (!sessionFile) return prompt;
 	const transcriptPath = resolve(sessionFile);
+	// A refined draft can keep the link section from the previous draft.
+	if (prompt.includes(transcriptPath)) return prompt;
 	const transcriptUrl = pathToFileURL(transcriptPath).href;
 	return `${prompt.trimEnd()}\n\n## Previous conversation\nFull pi transcript (JSONL): [\`${transcriptPath}\`](${transcriptUrl})\n\nUse \`read\` or \`rg\` on this file if the summary omits a detail.`;
 }
@@ -170,6 +195,64 @@ export interface HandoffEntryData {
 	/** Carried custom entry types (for the transcript note). */
 	carried: string[];
 	createdAt: string;
+	/** The trusted `.pi-recipe` default enforced in the new session. */
+	recipe?: HandoffRecipeData;
+}
+
+/** Session keys a recipe sets; the recipe value wins over the old session. */
+export type RecipeOwnedKey = "model" | "thinking" | "style" | "advisor";
+
+export interface HandoffRecipeData {
+	name: string;
+	file: string;
+	owns: RecipeOwnedKey[];
+	/** Set when the running launch cannot load the recipe's extensions/model scope. */
+	restartNote?: string;
+}
+
+/** Structural subset of RecipeConfig: core stays free of recipe imports. */
+export interface RecipeKeysLike {
+	model?: string;
+	thinkingLevel?: string;
+	style?: string;
+	advisor?: unknown;
+}
+
+/** `specThinking`: the model spec carries a `:level` suffix (parseModelSpec). */
+export function recipeOwnedKeys(config: RecipeKeysLike, specThinking = false): RecipeOwnedKey[] {
+	const owned: RecipeOwnedKey[] = [];
+	if (config.model?.trim()) owned.push("model");
+	if (config.thinkingLevel || specThinking) owned.push("thinking");
+	if (config.style) owned.push("style");
+	if (config.advisor) owned.push("advisor");
+	return owned;
+}
+
+/** Carried entry types minus those the enforced recipe replaces. */
+export function carriedTypesFor(
+	types: ReadonlyArray<string>,
+	recipe: { owns: ReadonlyArray<RecipeOwnedKey> } | undefined,
+	keys: { recipe: string; style: string; advisor: string },
+): string[] {
+	if (!recipe) return [...types];
+	return types.filter((type) => {
+		if (type === keys.recipe) return false;
+		if (type === keys.style) return !recipe.owns.includes("style");
+		if (type === keys.advisor) return !recipe.owns.includes("advisor");
+		return true;
+	});
+}
+
+export interface HandoffProposalData {
+	version: 1;
+	goal: string;
+	prompt: string;
+	revision: number;
+	model?: string;
+	carried: string[];
+	recipe?: HandoffRecipeData;
+	/** Why a `.pi-recipe` in the cwd is not enforced (untrusted, no default). */
+	recipeNote?: string;
 }
 
 /** The handoff entry of a new session, if it is the newest one on the branch. */

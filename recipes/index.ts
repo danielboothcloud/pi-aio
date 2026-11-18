@@ -504,6 +504,14 @@ function persistedRecipeFor(
 	}
 }
 
+/** A recipe-state entry written before session_start that names the trusted directory default. */
+function pinnedDirectoryDefault(ctx: ExtensionContext): string | undefined {
+	const recipes = recipeRuntime().recipes;
+	if (recipes.defaultSource !== "directory" || !recipes.defaultRecipe) return undefined;
+	const persisted = persistedRecipeFor(ctx);
+	return persisted.present && persisted.name === recipes.defaultRecipe ? persisted.name : undefined;
+}
+
 async function sessionStart(
 	pi: ExtensionAPI,
 	event: SessionStartEvent,
@@ -546,8 +554,15 @@ async function sessionStart(
 	// Selection precedence: flag > bridge env > session entry > startup default.
 	let name: string | undefined;
 	let source: RecipeSourceMarker | undefined;
+	// /handoff pins the trusted `.pi-recipe` default in its new session's
+	// setup; that pin outranks the launch flag and bridge env.
+	const handoffPin = event.reason === "new" ? pinnedDirectoryDefault(ctx) : undefined;
+	if (handoffPin) {
+		name = handoffPin;
+		source = "session";
+	}
 	// A deliberate /resume follows its target, not the original launch's flag.
-	const flag = event.reason === "resume" ? undefined : pi.getFlag(RECIPE_FLAG);
+	const flag = event.reason === "resume" || handoffPin ? undefined : pi.getFlag(RECIPE_FLAG);
 	if (typeof flag === "string" && flag.trim()) {
 		name = flag.trim();
 		source = "flag";

@@ -714,6 +714,23 @@ test("an explicit launch --recipe still overrides the folder default on /new", a
 	assert.equal(recipeRuntime().source, "flag");
 });
 
+test("/handoff's pinned folder default outranks the launch --recipe and env on /new", async () => {
+	const cwd = makeRepo("repo-new-handoff", { defaultRecipe: "repo", recipes: { repo: {} } });
+	recordRecipeFileTrust(join(cwd, ".pi-recipe"), true);
+	const { pi, state } = makeMocks();
+	await registerRecipes(pi as never);
+	state.flagValues.set(RECIPE_FLAG, "home");
+	await withEnv({ [ACTIVE_RECIPE_ENV]: "work", [RECIPE_STAGE_ENV]: "1" }, async () => {
+		state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name: "repo" } }];
+		await fire(state, "session_start", { type: "session_start", reason: "new" }, { ...makeCtx(state), cwd });
+		assert.equal(recipeRuntime().activeName, "repo");
+		// A pin naming another recipe is a normal carried entry: the flag wins.
+		state.branchEntries = [{ type: "custom", customType: RECIPE_STATE_ENTRY, data: { name: "work" } }];
+		await fire(state, "session_start", { type: "session_start", reason: "new" }, { ...makeCtx(state), cwd });
+		assert.equal(recipeRuntime().activeName, "home");
+	});
+});
+
 test("a directory relaunch is a default: a restored session recipe outranks it", async () => {
 	const { pi, state } = makeMocks();
 	await registerRecipes(pi as never);

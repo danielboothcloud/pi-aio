@@ -20,6 +20,12 @@ Albarran — see `LICENSE`).
   the model not to continue the conversation.
 - The serialized history has a size limit (60% of the model context window).
   A longer history keeps its start and its newest part.
+- The draft is a proposal, as in plan mode: a transcript card (not in model
+  context) and a menu to start, edit, refine with feedback (regenerate), or
+  cancel. Only "start" creates the new session. The prompt is prefilled.
+- A trusted `.pi-recipe` default in the cwd is enforced in the new session
+  (`recipe.ts`). Its keys replace the old recipe, model, thinking, style,
+  and advisor values. An unknown version is asked about once.
 - `/handoff` without a goal asks for one. It refuses while the agent is busy,
   because the new session aborts the running turn.
 - The loader is TUI-only. RPC hosts generate without a loader.
@@ -28,4 +34,4 @@ Albarran — see `LICENSE`).
   entries and writes an `aio-handoff` entry before the new session starts.
   The new session restores the recipe, advisor override, style, model, and
   thinking level. A width-safe `HANDOFF` note renders at its top.
-- Subagent children register only the entry renderer.
+- Subagent children register only the entry renderers.
