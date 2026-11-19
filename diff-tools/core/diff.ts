@@ -193,6 +193,18 @@ export function getSepStyle(): HunkSeparatorStyle {
 	return _sepStyle;
 }
 
+function unchangedLines(gap: number): string {
+	return `${gap} unchanged ${gap === 1 ? "line" : "lines"}`;
+}
+
+/** Default label: hidden line count first, so a long function name truncates last. */
+function autoSepLabel(ctx: string | undefined, gap: number | null): string {
+	if (ctx && gap && gap > 0) return ` ${unchangedLines(gap)} · ${ctx} `;
+	if (ctx) return ` ${ctx} `;
+	if (gap && gap > 0) return ` ${unchangedLines(gap)} `;
+	return "";
+}
+
 /**
  * Generate a hunk separator label for the unified view.
  * Returns the full label including spacing, or an empty string when no useful label exists.
@@ -222,10 +234,7 @@ export function sepLabelUnified(
 			if (gap && gap > 0) return ` +${gap} lines `;
 			return "";
 		default:
-			if (ctx && gap && gap > 0) return ` ${ctx} — +${gap} lines `;
-			if (ctx) return ` ${ctx} `;
-			if (gap && gap > 0) return ` +${gap} lines `;
-			return "";
+			return autoSepLabel(ctx, gap);
 	}
 }
 
@@ -259,10 +268,7 @@ export function sepLabelSplit(
 			if (gap && gap > 0) return ` ${gap} lines `;
 			return "";
 		default:
-			if (ctx && gap && gap > 0) return ` ${ctx} — +${gap} lines `;
-			if (ctx) return ` ${ctx} `;
-			if (gap && gap > 0) return ` +${gap} lines `;
-			return "";
+			return autoSepLabel(ctx, gap);
 	}
 }
 
@@ -316,8 +322,37 @@ export function computeHunkBlocks(diff: ParsedDiff): HunkBlock[] {
 	return blocks;
 }
 
+// Declarations worth naming in a hunk separator (functions, classes, methods, arrow consts).
+const FUNC_CONTEXT_RE =
+	/^\s*(?:(?:export|default|async|public|private|protected|static|abstract|override|pub(?:\([^)]*\))?|unsafe|extern)\s+)*(?:(?:function\*?|class|interface|enum|struct|trait|impl|def|fn|func|module|namespace)\b|(?:const|let|var)\s+[\w$]+\s*=\s*(?:async\s*)?(?:\([^)]*\)|[\w$]+)\s*(?::[^=]+)?=>|(?!(?:if|for|while|switch|catch|return|else)\b)[\w$]+\s*\([^)]*\)\s*(?::\s*[^{]+)?\{\s*$)/;
+const MAX_FUNC_CONTEXT_CHARS = 80;
+
+function indentOf(line: string): number {
+	return line.replace(/\t/g, "  ").search(/\S/);
+}
+
+/**
+ * Nearest declaration that still encloses a 1-based line, like git's `@@ … @@ funcname`.
+ * A declaration encloses the line only if every line between them is indented deeper.
+ */
+export function findFunctionContext(lines: string[], beforeLine: number): string | undefined {
+	const first = lines[beforeLine - 1];
+	let minIndent = first?.trim() ? indentOf(first) : Number.POSITIVE_INFINITY;
+	for (let i = Math.min(beforeLine - 2, lines.length - 1); i >= 0 && minIndent > 0; i--) {
+		if (!lines[i].trim()) continue;
+		const indent = indentOf(lines[i]);
+		if (indent < minIndent && FUNC_CONTEXT_RE.test(lines[i])) {
+			const text = lines[i].trim().replace(/\s*\{$/, "");
+			return text.length > MAX_FUNC_CONTEXT_CHARS ? `${text.slice(0, MAX_FUNC_CONTEXT_CHARS - 1)}…` : text;
+		}
+		minIndent = Math.min(minIndent, indent);
+	}
+	return undefined;
+}
+
 export function parseDiff(oldContent: string, newContent: string, ctx = 3): ParsedDiff {
 	const patch = Diff.structuredPatch("", "", oldContent, newContent, "", "", { context: ctx });
+	const oldLines = oldContent.split("\n");
 	const lines: DiffLine[] = [];
 	let added = 0;
 	let removed = 0;
@@ -329,6 +364,7 @@ export function parseDiff(oldContent: string, newContent: string, ctx = 3): Pars
 			oldLines: h.oldLines,
 			newStart: h.newStart,
 			newLines: h.newLines,
+			context: findFunctionContext(oldLines, h.oldStart),
 		};
 
 		// Emit hunk metadata as a synthetic sep (position 0 for first hunk,

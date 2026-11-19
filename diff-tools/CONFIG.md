@@ -63,7 +63,14 @@ For example, to remove the custom patch tool:
 | `splitMinCodeWidth` | `integer` | `60` | Min code cols per side in split |
 | `maxPreviewLines` | `integer` | `60` | Max lines in edit preview |
 | `maxRenderLines` | `integer` | `150` | Max lines in write output |
-| `wordDiffMinSimilarity` | `number` | `0.15` | Similarity threshold for word-diff (0–1) |
+
+### How changes are shown
+
+- **Line pairing:** a deleted line and the added line that edits it share one split row. Lines without a match get a hatched (`╱`) empty cell on the other side.
+- **Word emphasis:** only the changed words of a paired line get the stronger highlight color. Whitespace-only edits get no emphasis, and neither does a line that changed almost completely.
+- **Split or unified:** split view needs at least 150 columns and 60 code columns per side. Set `DIFF_SPLIT_MIN_WIDTH` and `DIFF_SPLIT_MIN_CODE_WIDTH` to change these limits. Narrower terminals use unified view.
+- **Wrapping:** long lines wrap at a space when possible, not in the middle of a word.
+- **Separators:** a thin rule across the full width marks hidden lines, e.g. `── 6 unchanged lines · add(item: string) ───`. The name is the nearest declaration that encloses the next hunk.
 
 ---
 
@@ -245,8 +252,7 @@ The file `pi-diff.example.json` contains all options with their defaults:
  "splitMinWidth": 150,
  "splitMinCodeWidth": 60,
  "maxPreviewLines": 60,
- "maxRenderLines": 150,
- "wordDiffMinSimilarity": 0.15
+ "maxRenderLines": 150
 }
 ```
 

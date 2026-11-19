@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import {
 	computeHunkBlocks,
+	findFunctionContext,
 	getSepStyle,
 	type HunkMeta,
 	parseDiff,
@@ -208,7 +209,7 @@ describe("sepLabelUnified", () => {
 	const makeMeta = (ctx?: string): HunkMeta => ({ oldStart: 10, oldLines: 6, newStart: 10, newLines: 8, context: ctx });
 
 	it("auto style shows context + gap when both available", () => {
-		expect(sepLabelUnified("auto", makeMeta("fn()"), 5)).toBe(" fn() — +5 lines ");
+		expect(sepLabelUnified("auto", makeMeta("fn()"), 5)).toBe(" 5 unchanged lines · fn() ");
 	});
 
 	it("auto style shows context without gap", () => {
@@ -216,7 +217,8 @@ describe("sepLabelUnified", () => {
 	});
 
 	it("auto style shows gap only", () => {
-		expect(sepLabelUnified("auto", makeMeta(), 5)).toBe(" +5 lines ");
+		expect(sepLabelUnified("auto", makeMeta(), 5)).toBe(" 5 unchanged lines ");
+		expect(sepLabelUnified("auto", makeMeta(), 1)).toBe(" 1 unchanged line ");
 	});
 
 	it("auto style omits separator when nothing useful is available", () => {
@@ -261,7 +263,7 @@ describe("sepLabelSplit", () => {
 	const makeMeta = (ctx?: string): HunkMeta => ({ oldStart: 10, oldLines: 6, newStart: 10, newLines: 8, context: ctx });
 
 	it("auto style shows context + gap without decorative ellipses", () => {
-		expect(sepLabelSplit("auto", makeMeta("fn()"), 5)).toBe(" fn() — +5 lines ");
+		expect(sepLabelSplit("auto", makeMeta("fn()"), 5)).toBe(" 5 unchanged lines · fn() ");
 	});
 
 	it("context style shows context without decorative ellipses", () => {
@@ -348,5 +350,41 @@ describe("computeHunkBlocks", () => {
 			for (const d of block.deletions) expect(d.type).toBe("del");
 			for (const a of block.additions) expect(a.type).toBe("add");
 		}
+	});
+});
+
+describe("findFunctionContext", () => {
+	const source = [
+		"function unused() {",
+		"\treturn 1;",
+		"}",
+		"export class Box {",
+		"\tadd(item: string) {",
+		"\t\tconst a = 1;",
+		"\t\tconst b = 2;",
+		"\t}",
+		"}",
+		"const x = 1;",
+	];
+
+	it("names the innermost declaration that encloses the line", () => {
+		expect(findFunctionContext(source, 7)).toBe("add(item: string)");
+	});
+
+	it("ignores a declaration that closed before the line", () => {
+		expect(findFunctionContext(source, 10)).toBeUndefined();
+	});
+
+	it("skips control-flow blocks", () => {
+		expect(findFunctionContext(["def run():", "    if ok:", "        x = 1"], 3)).toBe(
+			"def run():",
+		);
+	});
+
+	it("is attached to parsed hunks", () => {
+		const oldText = `${source.join("\n")}\n`;
+		const newText = oldText.replace("const b = 2;", "const b = 3;");
+		const sep = parseDiff(oldText, newText, 1).lines[0];
+		expect(sep.hunkMeta?.context).toBe("add(item: string)");
 	});
 });
