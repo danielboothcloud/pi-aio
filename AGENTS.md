@@ -644,6 +644,19 @@ generated `dist/` tree without changing the package contract.
   get a command context. `doubleEscapeAction: "none"` (global, or trusted
   project settings) keeps double-Esc inert. Native `/tree`, `/fork` and
   `pi --resume` remain available. TUI-only; intercepts clear on shutdown.
+- `slash-typos/` holds back a mistyped slash command (`/handof goal`) that
+  Pi would otherwise send to the model as text. An `input` handler compares
+  a `/name` (no second slash, so paths pass) with `pi.getCommands()` plus
+  Pi's built-in command names (`BUILTIN_COMMANDS`, which `getCommands` omits;
+  keep it in sync with Pi's slash-commands doc). A near miss (edit distance
+  ≤1 for names of ≤4 characters, else ≤2; adjacent swaps count 1) or a unique
+  prefix of ≥3 characters returns `handled`, shows a "did you mean" warning,
+  and, for one suggestion, puts the corrected command plus the original
+  arguments in the editor. Exact names, distant words, `extension` input,
+  no-UI (print) sessions, and text with a leading space pass through.
+  It registers before the queue: the first `handled` result stops later
+  `input` handlers, so the queue never records a held-back typo. Subagent
+  children register nothing.
 - This is one npm package, not a monorepo; feature directories do not need
   nested `AGENTS.md` files.
 

@@ -41,6 +41,7 @@ import { registerHandoff } from "./handoff/index.js";
 import { registerCommit } from "./git-commit/index.js";
 import { registerSessionNaming } from "./session-naming/index.js";
 import { registerSessionNav } from "./session-nav/index.js";
+import { registerSlashTypos } from "./slash-typos/index.js";
 import { registerNotifications } from "./notifications/index.js";
 
 export {
@@ -90,6 +91,9 @@ export default async function aio(pi: ExtensionAPI): Promise<void> {
 	// see hypa/index.ts isRtkClaimedCommand). It must also run before the queue
 	// and pretty-tools registrations, which own the final bash tool surface.
 	registerHypa(pi);
+	// A held-back slash typo returns `handled`, and the first such result wins:
+	// registering before the queue keeps the typo out of its queued list.
+	registerSlashTypos(pi);
 	// Queue installs its editor after user-bash so its factory wins; it
 	// extends BashHintEditor, keeping the !bash hint behavior intact.
 	registerQueue(pi);

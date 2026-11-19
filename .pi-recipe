@@ -10,6 +10,7 @@
       "models": [
           "anthropic/claude-opus-5-5"
       ],
+      "advisor": "anthropic/claude-fable-5-2",
       "mcpServers": {},
       "extensions": [
         "npm:@upstash/context7-pi",
