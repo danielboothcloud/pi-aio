@@ -90,6 +90,8 @@ import {
 } from "./trampoline.js";
 
 import { registerRecipeStatusRenderer, showRecipeStatus } from "./status.js";
+import { runRecipeEditCommand } from "./add-command.js";
+import { RECIPE_EDIT_KEYS } from "./edit.js";
 import { resumedRecipeForLaunch } from "./continue.js";
 import { relaunchFromSession, selectedSessionRelaunch } from "./resume.js";
 import { PIG_TRUST_ASKED_ENV, isPigHost, startedByPigLauncher } from "./pig-host.js";
@@ -273,7 +275,7 @@ async function askDirectoryTrust(pi: ExtensionAPI, ctx: ExtensionContext, file: 
 // -- /recipe init -------------------------------------------------------------
 
 /** `/recipe <word>` subcommands; a recipe literally named one keeps switching. */
-const RESERVED_NAMES = new Set(["off", "none", "status", "trust", "untrust", "init"]);
+const RESERVED_NAMES = new Set(["off", "none", "status", "trust", "untrust", "init", "add", "remove"]);
 const RECIPE_NAME = /^[A-Za-z0-9][\w.-]*$/;
 
 export function suggestRecipeName(cwd: string): string {
@@ -300,11 +302,8 @@ export function recipeScaffold(
 	// An empty `models` means "no scope": pi falls back to settings.json
 	// enabledModels, so other models stay selectable. Scope the scaffold to
 	// its own model so the file alone decides what is available.
-	const models = template?.models?.length
-		? template.models
-		: model
-			? [parseModelSpec(model).model]
-			: [];
+	const ownScope = model ? [parseModelSpec(model).model] : [];
+	const models = template?.models?.length ? template.models : ownScope;
 	Object.assign(recipe, {
 		models,
 		mcpServers: template?.mcpServers ?? {},
@@ -794,8 +793,17 @@ export async function registerRecipes(
 
 	pi.registerCommand("recipe", {
 		description:
-			"Show, switch, or clear the active launch recipe (aio-recipes.json); init/trust/untrust manage this folder's .pi-recipe",
+			"Show, switch, or clear the active launch recipe (aio-recipes.json); add/remove edit it; init/trust/untrust manage this folder's .pi-recipe",
 		getArgumentCompletions: (prefix) => {
+			// `add <key>` / `remove <key>`: complete the editable recipe keys.
+			const editMatch = /^(add|remove)\s+(\S*)$/.exec(prefix.trimStart());
+			if (editMatch && !recipeRuntime().recipes.recipes[prefix.trim()]) {
+				const [, verb = "add", partial = ""] = editMatch;
+				const options = RECIPE_EDIT_KEYS
+					.filter((info) => info.key.startsWith(partial.toLowerCase()))
+					.map((info) => ({ label: info.key, value: `${verb} ${info.key}`, description: info.description }));
+				return options.length > 0 ? options : null;
+			}
 			// `init [name] --from <home recipe>`: complete the template name.
 			const fromMatch = /^(init\b.*--from\s+)(\S*)$/.exec(prefix.trimStart());
 			if (fromMatch) {
@@ -835,6 +843,8 @@ export async function registerRecipes(
 				["init", !file, "create a .pi-recipe for this folder"],
 				["trust", file !== undefined && runtime.directoryTrust !== "trusted", "trust this folder's .pi-recipe and start its default"],
 				["untrust", file !== undefined && runtime.directoryTrust !== "unknown", "forget the .pi-recipe trust decision"],
+				["add", runtime.activeName !== undefined, "add a model, scope, extension, MCP server, … to the active recipe"],
+				["remove", runtime.activeName !== undefined, "remove or unset a key of the active recipe"],
 			];
 			for (const [word, offered, description] of subcommands) {
 				if (offered && word.startsWith(wanted) && !runtime.recipes.recipes[word]) {
@@ -857,7 +867,7 @@ export async function registerRecipes(
 				showRecipeStatus(pi, ctx, { format: requested.endsWith("--json") ? "json" : "text" });
 				return;
 			}
-			// Like `status`, a recipe literally named trust/untrust/init keeps switching.
+			// Like `status`, a recipe literally named trust/untrust/init/add/remove keeps switching.
 			if (!state.recipes.recipes[requested]) {
 				if (requested === "trust") {
 					await trustDirectoryRecipe(pi, ctx);
@@ -869,6 +879,19 @@ export async function registerRecipes(
 				}
 				if (requested === "init" || requested.startsWith("init ")) {
 					await initDirectoryRecipe(pi, ctx, requested.slice("init".length));
+					return;
+				}
+				const edit = /^(add|remove)(?:\s+(.*))?$/.exec(requested);
+				if (edit) {
+					try {
+						await runRecipeEditCommand(pi, ctx, edit[1] === "add" ? "add" : "remove", edit[2] ?? "", {
+							refresh: refreshRecipes,
+							notify,
+							relaunch: options.relaunch,
+						});
+					} catch (error) {
+						notify(ctx, `recipes: ${edit[1]} failed: ${errorText(error)}`, "error");
+					}
 					return;
 				}
 			}

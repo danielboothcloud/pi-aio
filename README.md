@@ -134,6 +134,10 @@ Trusted projects may override or add recipes in `<project>/.pi/aio-recipes.json`
 }
 ```
 
+AIO reads these files; it writes one only when you run `/recipe add` or
+`/recipe remove` and confirm the change (see [Editing the active
+recipe](#editing-the-active-recipe--recipe-add-recipe-remove)).
+
 Recipes support only `description`, `model`, `thinkingLevel`, `models`,
 `mcpServers`, `extensions`, `blocklist`, `permissionMode`, `style`, and
 `advisor`; other keys are ignored.
@@ -266,6 +270,41 @@ global config, so the file works the same for every clone:
   overwrites an existing file;
   edits you make afterwards are asked about once on the next start.
 
+### Editing the active recipe — `/recipe add`, `/recipe remove`
+
+`/recipe add <key>` adds to or changes the **active** recipe; `/recipe remove
+<key>` removes one list entry or unsets the key. Without a key, a picker lists
+the keys:
+
+| Key | Writes | Picker |
+| --- | --- | --- |
+| `model` | `model` (keeps an existing `:thinking` suffix; also appends to a non-empty `models` list that does not cover it) | available models: current first, then `enabledModels` and the session scope; or type a spec |
+| `scope` (`models`) | appends to `models` | same models list, or type a pattern |
+| `thinking` | `thinkingLevel` | thinking levels |
+| `advisor` | `advisor` (`provider/model[:reasoning]`; the object form keeps its limits) | model, then reasoning |
+| `extension` | appends to `extensions` | global settings `packages`/`extensions`, or type a source |
+| `mcp` | `mcpServers.<name>` | servers from your other recipes, or a new name plus URL/command line |
+| `style`, `mode` | `style`, `permissionMode` (or an existing `mode`) | `/style` names, permission modes |
+
+- The change goes to the file that defines the active recipe: the folder's
+  `.pi-recipe`, the trusted project's `.pi/aio-recipes.json`, or your global
+  `aio-recipes.json` (`AIO_RECIPES_FILE` when set). A dialog names the file
+  and the change first; nothing is written if you decline.
+- Only strict JSON is edited. A file that does not parse (for example, one
+  with comments) is refused, never overwritten. Other recipes, keys, key
+  order, and indentation are kept. The global file is backed up to
+  `aio-recipes.json.bak` before each write. An edited `.pi-recipe` stays
+  trusted (you approved the change).
+- Project recipes cannot take `models`/`extensions`: the relaunch bridge never
+  reads `.pi/aio-recipes.json`.
+- Model, thinking, advisor, style, mode, and MCP apply immediately, like
+  `/recipe <name>`. A `models`/`extensions` change restarts pi on the same
+  session file in the TUI (when idle). RPC, a busy TUI, and PiG show the exact
+  `pi --session …` (or `pig --session …`) restart command instead. A session
+  without a saved file yet applies them on the next start.
+- Requires a session UI (TUI or RPC). A recipe named `add` or `remove` still
+  switches with `/recipe add`; `/recipe add <key>` edits.
+
 ### The relaunch bridge
 
 Pi discovers the extension set before running extension factories and resolves
@@ -369,7 +408,8 @@ selection and registrations, **not whether a remote model can answer**.
   auto-activates only on a fresh `pi` start. A relaunch for a `.pi-recipe`
   default is marked `AIO_RECIPE_ORIGIN=directory` and keeps default priority.
 - `/recipe init`, `/recipe trust`, and `/recipe untrust` manage the folder's
-  `.pi-recipe`; a recipe literally named `init`, `trust`, or `untrust` keeps
+  `.pi-recipe`; `/recipe add` and `/recipe remove` edit the active recipe. A
+  recipe literally named `init`, `trust`, `untrust`, `add`, or `remove` keeps
   switching, like `status`.
 - The active recipe is pinned on the session branch, so forking and tree
   navigation follow the branch's own timeline; subagent children never

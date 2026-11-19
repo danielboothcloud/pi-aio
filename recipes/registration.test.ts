@@ -591,17 +591,21 @@ test("an existing recipe named status keeps its switching semantics", async () =
 test("/recipe completions cover names, descriptions, and off", async () => {
 	const { pi, state } = makeMocks();
 	await registerRecipes(pi as never);
+	const command = state.commands.get("recipe")!;
+	const inactive = (await command.getArgumentCompletions?.("")) as Array<{ value: string }> | null;
+	assert.equal(inactive?.some((c) => c.value === "add" || c.value === "remove") ?? false, false, "edit words need an active recipe");
 	// Completions read the recipe cache the session populated.
 	await fire(state, "session_start", { type: "session_start", reason: "startup" }, makeCtx(state));
-	const command = state.commands.get("recipe")!;
 	const completions = (await command.getArgumentCompletions?.("")) as Array<{
 		value: string;
 		description: string;
 	}>;
 	assert.deepEqual(
 		completions.map((c) => c.value),
-		["home", "work", "off", "init", "status"],
+		["home", "work", "off", "init", "add", "remove", "status"],
 	);
+	const keys = (await command.getArgumentCompletions?.("add m")) as Array<{ value: string }>;
+	assert.deepEqual(keys.map((c) => c.value), ["add model", "add mcp", "add mode"]);
 	// Each named recipe carries its configured description.
 	assert.equal(
 		completions.find((c) => c.value === "work")!.description,

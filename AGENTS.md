@@ -72,8 +72,8 @@ generated `dist/` tree without changing the package contract.
 - `recipes/` owns `--recipe` and `/recipe`: named launch configurations from
   `<agentDir>/aio-recipes.json` (two-tier: trusted project
   `/.pi/aio-recipes.json` recipes override same-name globals; the global file
-  is also replaced whole by `AIO_RECIPES_FILE` for tests, and is never
-  written by AIO). Session-scoped keys (model plus
+  is also replaced whole by `AIO_RECIPES_FILE` for tests; only
+  `/recipe add`/`remove` write it, after an explicit confirm). Session-scoped keys (model plus
   `:thinking` spec suffix, thinking level, and MCP servers registered through
   `registerMcpServer`/`unregisterMcpServer` by this feature only)
   apply at `session_start` and on `/recipe` switches — the command refreshes
@@ -187,6 +187,22 @@ generated `dist/` tree without changing the package contract.
   portable: its `defaultRecipe` resolves only against its own `recipes`
   (never global/project ones; otherwise ignored with a warning);
   `/recipe trust` / `/recipe untrust` record or forget the decision.
+  `/recipe add|remove [key]` (`add-command.ts` UI, pure `edit.ts`) edits the
+  ACTIVE recipe in the file that defines it (`.pi-recipe`, trusted project
+  `.pi/aio-recipes.json`, or the global file) after a `ctx.ui.confirm` naming
+  file and change; keys model/scope(`models`)/thinking/advisor/extension/mcp/
+  style/mode. Strict JSON only (unparseable files are refused, never
+  rewritten; comments are not preserved), atomic temp+rename (symlinks
+  followed), file indent kept, a changed-on-disk file is not overwritten, the
+  global file gets `<file>.bak` first, and an edited `.pi-recipe` is re-trusted
+  for its new hash. Project recipes refuse restart keys (the bridge never reads
+  them). After writing it re-applies like a live switch (`live: true`); a
+  `models`/`extensions` change reuses `selectedSessionRelaunch` +
+  `relaunchFromSession` (TUI and idle only, exact `--session` file); RPC, a
+  busy TUI, and PiG get a restart hint, and a session without a saved file
+  gets a next-start hint. MCP picks come from other recipes or a typed
+  URL/command (Pi exports no `mcp.json` reader). `applyRecipe` syncs MCP even
+  when the new config has none, so removed/switched-away servers unregister.
   Recipes support only description/model/thinkingLevel/models/mcpServers/extensions/blocklist/
   permissionMode/style/advisor; unknown keys are ignored. `advisor`
   (session-scoped; see `advisor/`) is published via `setRecipeAdvisor`;
@@ -209,7 +225,7 @@ generated `dist/` tree without changing the package contract.
   into the hard blocklist as source `recipe:<name>`; it can only add rules.
   It is mirrored into `AIO_RECIPE_BLOCKLIST` so subagent children (which never
   activate recipes) keep enforcing it; a top-level pi clears a stray copy at
-  registration and reads the env only under `AIO_SUBAGENT_CHILD=1`. Recipes literally named `init`/`trust`/`untrust` keep
+  registration and reads the env only under `AIO_SUBAGENT_CHILD=1`. Recipes literally named `init`/`trust`/`untrust`/`add`/`remove` keep
   switching. Every process strips legacy `recipe-context` messages from model
   context, even while a recipe is active. Subagent children register only that
   cleanup filter and the status renderer (no recipe activation). Status is dual-channel (frame

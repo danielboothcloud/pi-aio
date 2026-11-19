@@ -364,9 +364,11 @@ export async function applyRecipe(
 		}
 	}
 
-	if (Object.keys(config.mcpServers ?? {}).length > 0) {
+	const wantsMcp = Object.keys(config.mcpServers ?? {}).length > 0;
+	// Also sync when emptied, so a removed or switched-away server is unregistered.
+	if (wantsMcp || runtimeState.registeredMcp.size > 0) {
 		warnings.push(...syncRecipeMcpServers(pi, def));
-		applied.push("mcp");
+		if (wantsMcp) applied.push("mcp");
 	}
 	if ((config.blocklist?.length ?? 0) > 0) applied.push("blocklist");
 	if (config.permissionMode) {
