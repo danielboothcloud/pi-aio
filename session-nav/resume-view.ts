@@ -6,12 +6,12 @@ import { type ChromeTheme, plural } from "../ui/chrome.js";
 import {
 	type FrameSection,
 	innerWidth,
-	printableInput,
 	renderFrame,
 	splitRow,
 	visibleWindow,
 	wrapLimited,
 } from "./frame.js";
+import { type ListKeyState, listKey, searchLabel } from "./keys.js";
 import {
 	filterSessions,
 	groupSessions,
@@ -44,7 +44,7 @@ export class ResumePicker {
 	private closed = false;
 
 	scope: ResumeScope = "folder";
-	query = "";
+	keys: ListKeyState = { mode: "normal", query: "" };
 	private readonly lists = new Map<ResumeScope, SessionLike[]>();
 	private readonly errors = new Map<ResumeScope, string>();
 	private readonly previews = new Map<string, LastExchange | "loading" | "error">();
@@ -69,6 +69,10 @@ export class ResumePicker {
 				this.options.requestRender();
 			},
 		);
+	}
+
+	get query(): string {
+		return this.keys.query;
 	}
 
 	/** Sessions in display order (grouped, newest first). */
@@ -110,35 +114,37 @@ export class ResumePicker {
 
 	handleInput(data: string): void {
 		if (this.closed) return;
-		const page = Math.max(1, this.listRows() - 2);
 		if (matchesKey(data, Key.ctrl("c"))) this.finish(undefined);
-		else if (matchesKey(data, Key.escape)) {
-			if (this.query) {
-				this.query = "";
-				this.keepSelectionVisible();
-			} else this.finish(undefined);
-		} else if (matchesKey(data, Key.tab) || matchesKey(data, Key.shift("tab"))) {
+		else if (matchesKey(data, Key.tab) || matchesKey(data, Key.shift("tab"))) {
 			this.scope = this.scope === "folder" ? "all" : "folder";
 			this.load(this.scope);
 			this.keepSelectionVisible();
-		} else if (matchesKey(data, Key.up)) this.move(-1);
-		else if (matchesKey(data, Key.down)) this.move(1);
-		else if (matchesKey(data, Key.pageUp)) this.move(-page);
-		else if (matchesKey(data, Key.pageDown)) this.move(page);
-		else if (matchesKey(data, Key.enter)) {
-			const session = this.selected();
-			if (session) this.finish(session.path);
-		} else if (matchesKey(data, Key.backspace)) {
-			this.query = this.query.slice(0, -1);
-			this.keepSelectionVisible();
-		} else {
-			const char = printableInput(data);
-			if (char !== undefined) {
-				this.query += char;
-				this.keepSelectionVisible();
-			}
-		}
+		} else this.handleListInput(data);
 		this.options.requestRender();
+	}
+
+	private handleListInput(data: string): void {
+		// Left/Right stay inert here; only `l` doubles as enter.
+		if (matchesKey(data, Key.left) || matchesKey(data, Key.right)) return;
+		const { state, action } = listKey(this.keys, data, Math.max(1, this.listRows() - 2));
+		this.keys = state;
+		switch (action.type) {
+			case "escape":
+				this.finish(undefined);
+				break;
+			case "move":
+				this.move(action.delta);
+				break;
+			case "enter":
+			case "right": {
+				const session = this.selected();
+				if (session) this.finish(session.path);
+				break;
+			}
+			case "query":
+				this.keepSelectionVisible();
+				break;
+		}
 	}
 
 	private listRows(): number {
@@ -154,9 +160,7 @@ export class ResumePicker {
 		const scopeLabel = this.scope === "folder"
 			? `${theme.fg("accent", "◉ this folder")}  ${theme.fg("dim", "○ all")}`
 			: `${theme.fg("dim", "○ this folder")}  ${theme.fg("accent", "◉ all")}`;
-		const search = this.query
-			? `${theme.fg("accent", "search")} ${this.query}${theme.fg("accent", "▏")}`
-			: theme.fg("dim", "type to search");
+		const search = searchLabel(theme, this.keys, "/ to search");
 
 		const sections: FrameSection[] = [{ lines: [splitRow(search, scopeLabel, inner)] }];
 		const list = this.lists.get(this.scope);
@@ -170,8 +174,14 @@ export class ResumePicker {
 			sections.push({ lines: this.renderRows(inner) });
 			if (session) sections.push({ label: "preview", lines: this.renderPreview(session, inner) });
 		}
-		sections.push({ lines: [theme.fg("dim", "↑↓ choose · enter open · tab this folder/all · esc close")] });
+		sections.push({ lines: [theme.fg("dim", this.hint())] });
 		return renderFrame(theme, width, `▎ RESUME · ${folder}`, sections);
+	}
+
+	private hint(): string {
+		if (this.keys.mode === "search") return "type to search · ↑↓ choose · enter open · esc done";
+		const esc = this.query ? "esc clear search" : "esc close";
+		return `j/k move · l/enter open · tab this folder/all · / search · ${esc}`;
 	}
 
 	private renderRows(width: number): string[] {

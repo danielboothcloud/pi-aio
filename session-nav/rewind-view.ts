@@ -12,6 +12,7 @@ import {
 	visibleWindow,
 	wrapLimited,
 } from "./frame.js";
+import { type ListKeyState, listKey, searchLabel } from "./keys.js";
 import { cleanPromptTitle, matchesQuery, relativeAge, relativeAgeLong } from "./text.js";
 
 export interface RewindResult {
@@ -40,7 +41,7 @@ export class RewindPicker {
 	private closed = false;
 
 	view: "list" | "actions" = "list";
-	query = "";
+	keys: ListKeyState = { mode: "normal", query: "" };
 	private selectedId: string | undefined;
 	private actionIndex = 0;
 
@@ -52,6 +53,10 @@ export class RewindPicker {
 		this.requestRender = options.requestRender;
 		this.now = options.now ?? Date.now;
 		this.selectedId = (this.checkpoints.find((checkpoint) => checkpoint.isCurrent) ?? this.checkpoints[0])?.id;
+	}
+
+	get query(): string {
+		return this.keys.query;
 	}
 
 	private filtered(): Checkpoint[] {
@@ -97,30 +102,26 @@ export class RewindPicker {
 	}
 
 	private handleListInput(data: string): void {
-		const page = Math.max(1, this.listRows() - 1);
-		if (matchesKey(data, Key.escape)) {
-			if (this.query) this.query = "";
-			else this.finish(undefined);
-		} else if (matchesKey(data, Key.up)) this.move(-1);
-		else if (matchesKey(data, Key.down)) this.move(1);
-		else if (matchesKey(data, Key.pageUp)) this.move(-page);
-		else if (matchesKey(data, Key.pageDown)) this.move(page);
-		else if (matchesKey(data, Key.home)) this.move(-Infinity);
-		else if (matchesKey(data, Key.end)) this.move(Infinity);
-		else if (matchesKey(data, Key.enter) || matchesKey(data, Key.right)) {
-			if (this.selected()) {
-				this.view = "actions";
-				this.actionIndex = 0;
-			}
-		} else if (matchesKey(data, Key.backspace)) {
-			this.query = this.query.slice(0, -1);
-			this.keepSelectionVisible();
-		} else {
-			const char = printableInput(data);
-			if (char !== undefined) {
-				this.query += char;
+		const { state, action } = listKey(this.keys, data, Math.max(1, this.listRows() - 1));
+		this.keys = state;
+		switch (action.type) {
+			case "escape":
+				this.finish(undefined);
+				break;
+			case "move":
+				this.move(action.delta);
+				break;
+			case "enter":
+			case "right":
+				if (this.selected()) {
+					this.view = "actions";
+					this.actionIndex = 0;
+					this.keys = { ...this.keys, mode: "normal" };
+				}
+				break;
+			case "query":
 				this.keepSelectionVisible();
-			}
+				break;
 		}
 	}
 
@@ -136,11 +137,12 @@ export class RewindPicker {
 			return;
 		}
 		const options = rewindOptions(checkpoint);
-		if (matchesKey(data, Key.escape) || matchesKey(data, Key.left)) {
+		const key = printableInput(data);
+		if (matchesKey(data, Key.escape) || matchesKey(data, Key.left) || key === "h") {
 			this.view = "list";
-		} else if (matchesKey(data, Key.up)) {
+		} else if (matchesKey(data, Key.up) || key === "k") {
 			this.actionIndex = Math.max(0, this.actionIndex - 1);
-		} else if (matchesKey(data, Key.down)) {
+		} else if (matchesKey(data, Key.down) || key === "j") {
 			this.actionIndex = Math.min(options.length - 1, this.actionIndex + 1);
 		} else if (matchesKey(data, Key.enter)) {
 			const option = options[this.actionIndex];
@@ -153,7 +155,11 @@ export class RewindPicker {
 
 	private listRows(): number {
 		// Frame (2) + intro (1) + 2 dividers + preview (4) + hint (1).
-		return Math.max(3, this.maxRows() - 10 - (this.query ? 1 : 0));
+		return Math.max(3, this.maxRows() - 10 - (this.showsSearchRow() ? 1 : 0));
+	}
+
+	private showsSearchRow(): boolean {
+		return this.keys.mode === "search" || this.query !== "";
 	}
 
 	render(width: number): string[] {
@@ -167,7 +173,7 @@ export class RewindPicker {
 		const items = this.filtered();
 		const title = `▎ REWIND · ${plural(this.checkpoints.length, "checkpoint")}`;
 		const intro = [theme.fg("muted", "Go back to an earlier point. Files on disk are not changed.")];
-		if (this.query) intro.push(`${theme.fg("accent", "filter")} ${this.query}${theme.fg("accent", "▏")}`);
+		if (this.showsSearchRow()) intro.push(searchLabel(theme, this.keys, ""));
 
 		const rows: string[] = [];
 		if (items.length === 0) {
@@ -189,9 +195,15 @@ export class RewindPicker {
 		const checkpoint = items.length ? this.selected() : undefined;
 		if (checkpoint) sections.push({ label: "preview", lines: this.renderPreview(checkpoint, inner) });
 		sections.push({
-			lines: [theme.fg("dim", "↑↓ choose · enter select · type to filter · esc close")],
+			lines: [theme.fg("dim", this.listHint())],
 		});
 		return renderFrame(theme, width, title, sections);
+	}
+
+	private listHint(): string {
+		if (this.keys.mode === "search") return "type to filter · ↑↓ choose · enter select · esc done";
+		const esc = this.query ? "esc clear filter" : "esc close";
+		return `j/k move · l/enter select · g/G top/bottom · / search · ${esc}`;
 	}
 
 	private renderItem(checkpoint: Checkpoint, active: boolean, width: number): string {
@@ -243,7 +255,7 @@ export class RewindPicker {
 			{ lines: [splitRow(theme.fg("text", heading), theme.fg("dim", when), inner)] },
 			{ label: "what to do", lines: rows },
 			{ lines: description },
-			{ lines: [theme.fg("dim", "↑↓ choose · enter confirm · esc back")] },
+			{ lines: [theme.fg("dim", "j/k choose · enter confirm · h/esc back")] },
 		]);
 	}
 }

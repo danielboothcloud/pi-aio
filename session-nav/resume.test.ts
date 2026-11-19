@@ -96,21 +96,66 @@ test("tab switches to all folders, enter returns the selected path", async () =>
 	const text = view.render(100).join("\n");
 	assert.match(text, /◉ all/);
 	assert.match(text, /debug the hang\s+pi-aio · 2h · 10 msgs/);
-	for (const char of "hang") view.handleInput(char);
+	for (const char of "/hang") view.handleInput(char);
 	view.handleInput("\r");
 	assert.deepEqual(results, ["/s/e.jsonl"]);
 });
 
-test("search filters; esc clears it before closing", async () => {
+test("/ searches; esc keeps the filter, then clears it, then closes", async () => {
 	const { view, results } = picker();
 	await flush();
-	for (const char of "spec") view.handleInput(char);
+	assert.match(view.render(100).join("\n"), /\/ to search[\s\S]*j\/k move · l\/enter open · tab this folder\/all · \/ search · esc close/);
+	for (const char of "/spec") view.handleInput(char);
 	assert.equal(view.selected()?.id, "b");
-	assert.doesNotMatch(view.render(100).join("\n"), /bmad/);
+	let text = view.render(100).join("\n");
+	assert.match(text, /\/spec▏/);
+	assert.match(text, /type to search · ↑↓ choose · enter open · esc done/);
+	assert.doesNotMatch(text, /bmad/);
+	view.handleInput("\x1b");
+	assert.deepEqual(view.keys, { mode: "normal", query: "spec" });
+	text = view.render(100).join("\n");
+	assert.match(text, /\/spec /);
+	assert.match(text, /esc clear search/);
 	view.handleInput("\x1b");
 	assert.equal(view.query, "");
+	assert.deepEqual(results, []);
 	view.handleInput("\x1b");
 	assert.deepEqual(results, [undefined]);
+});
+
+test("normal mode: j/k/g/G move, l opens, h and arrows left/right stay inert", async () => {
+	const { view, results } = picker();
+	await flush();
+	assert.equal(view.selected()?.id, "a");
+	view.handleInput("j");
+	assert.equal(view.selected()?.id, "b");
+	view.handleInput("G");
+	assert.equal(view.selected()?.id, "d");
+	view.handleInput("k");
+	assert.equal(view.selected()?.id, "c");
+	view.handleInput("g");
+	assert.equal(view.selected()?.id, "a");
+	view.handleInput("x"); // letters no longer type into the filter
+	view.handleInput("h");
+	view.handleInput("\x1b[C");
+	view.handleInput("\x1b[D");
+	assert.equal(view.query, "");
+	assert.deepEqual(results, []);
+	view.handleInput("j");
+	view.handleInput("l");
+	assert.deepEqual(results, ["/s/b.jsonl"]);
+});
+
+test("search mode: h/j/k/l type into the filter; tab still switches scope", async () => {
+	const { view } = picker();
+	await flush();
+	view.handleInput("/");
+	for (const char of "hjkl") view.handleInput(char);
+	assert.equal(view.query, "hjkl");
+	assert.match(view.render(100).join("\n"), /No sessions match the search/);
+	view.handleInput("\t");
+	assert.equal(view.scope, "all");
+	assert.equal(view.keys.mode, "search");
 });
 
 test("every line fits the width; rows respect maxRows", async () => {
@@ -118,9 +163,12 @@ test("every line fits the width; rows respect maxRows", async () => {
 		const { view } = picker(12);
 		await flush();
 		await flush();
-		const lines = view.render(width);
-		for (const line of lines) assert.ok(visibleWidth(line) <= width, `${width}: ${line}`);
-		assert.ok(lines.length <= 14, `${width}: ${lines.length} rows`);
+		for (const keys of ["", "/b"]) {
+			for (const key of keys) view.handleInput(key);
+			const lines = view.render(width);
+			for (const line of lines) assert.ok(visibleWidth(line) <= width, `${width}: ${line}`);
+			assert.ok(lines.length <= 14, `${width}: ${lines.length} rows`);
+		}
 	}
 });
 

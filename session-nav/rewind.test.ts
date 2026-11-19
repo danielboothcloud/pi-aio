@@ -123,18 +123,80 @@ test("picker: enter opens actions, choosing one returns checkpoint + action", ()
 	assert.deepEqual(results.map((r) => r && [r.checkpoint.id, r.action]), [["u2", "after"]]);
 });
 
-test("picker: typing filters, esc clears filter then closes", () => {
+test("picker: / searches, esc keeps the filter, then clears it, then closes", () => {
 	const { view, results } = picker();
+	view.handleInput("/");
+	assert.equal(view.keys.mode, "search");
+	assert.match(view.render(80).join("\n"), /\/▏[\s\S]*type to filter/);
 	for (const char of "aband") view.handleInput(char);
 	const filtered = view.render(80).join("\n");
-	assert.match(filtered, /filter aband/);
+	assert.match(filtered, /\/aband▏/);
 	assert.doesNotMatch(filtered, /second prompt/);
 	assert.equal(view.selected()?.id, "u3b");
+	view.handleInput("\x1b");
+	assert.deepEqual(view.keys, { mode: "normal", query: "aband" });
+	assert.match(view.render(80).join("\n"), /\/aband\n?[\s\S]*esc clear filter/);
 	view.handleInput("\x1b");
 	assert.equal(view.query, "");
 	assert.deepEqual(results, []);
 	view.handleInput("\x1b");
 	assert.deepEqual(results, [undefined]);
+});
+
+test("picker: hjkl and g/G navigate in normal mode", () => {
+	const { view, results } = picker();
+	assert.match(view.render(80).join("\n"), /j\/k move · l\/enter select · g\/G top\/bottom · \/ search · esc close/);
+	assert.equal(view.selected()?.id, "u3");
+	view.handleInput("j");
+	assert.equal(view.selected()?.id, "u3b");
+	view.handleInput("G");
+	assert.equal(view.selected()?.id, "u1");
+	view.handleInput("k");
+	assert.equal(view.selected()?.id, "u2");
+	view.handleInput("g");
+	assert.equal(view.selected()?.id, "u3");
+	view.handleInput("h"); // nothing to go back to from the list
+	assert.equal(view.view, "list");
+	assert.equal(view.query, "");
+	view.handleInput("j");
+	view.handleInput("j");
+	view.handleInput("l");
+	assert.equal(view.view, "actions");
+	assert.match(view.render(80).join("\n"), /j\/k choose · enter confirm · h\/esc back/);
+	view.handleInput("j");
+	view.handleInput("j");
+	view.handleInput("k");
+	view.handleInput("l"); // l never confirms an action
+	assert.equal(results.length, 0);
+	view.handleInput("h");
+	assert.equal(view.view, "list");
+	view.handleInput("l");
+	view.handleInput("j");
+	view.handleInput("\r");
+	assert.deepEqual(results.map((r) => r && [r.checkpoint.id, r.action]), [["u2", "after"]]);
+});
+
+test("picker: h/j/k/l edit the filter while searching", () => {
+	const { view } = picker();
+	view.handleInput("/");
+	for (const char of "hjkl/") view.handleInput(char);
+	assert.equal(view.query, "hjkl/");
+	assert.equal(view.view, "list");
+	assert.match(view.render(80).join("\n"), /No prompts match the filter/);
+	view.handleInput("\x7f");
+	assert.equal(view.query, "hjkl");
+});
+
+test("picker: enter while searching opens actions; back returns to normal mode with the filter", () => {
+	const { view } = picker();
+	view.handleInput("/");
+	for (const char of "second") view.handleInput(char);
+	view.handleInput("\r");
+	assert.equal(view.view, "actions");
+	view.handleInput("\x1b");
+	assert.equal(view.view, "list");
+	assert.deepEqual(view.keys, { mode: "normal", query: "second" });
+	assert.equal(view.selected()?.id, "u2");
 });
 
 test("picker: esc in actions goes back to the list", () => {
@@ -149,11 +211,17 @@ test("picker: every line fits narrow and wide widths, list respects maxRows", ()
 	for (const width of [8, 20, 40, 79, 140]) {
 		const { view } = picker(12);
 		for (const line of view.render(width)) assert.ok(visibleWidth(line) <= width, `${width}: ${line}`);
+		view.handleInput("/");
+		view.handleInput("p");
+		for (const line of view.render(width)) assert.ok(visibleWidth(line) <= width, `${width}: ${line}`);
 		view.handleInput("\r");
 		for (const line of view.render(width)) assert.ok(visibleWidth(line) <= width, `${width}: ${line}`);
 	}
 	const { view } = picker(12);
 	assert.ok(view.render(80).length <= 14);
+	view.handleInput("/");
+	view.handleInput("p");
+	assert.ok(view.render(80).length <= 14, "search row stays within maxRows");
 });
 
 test("picker starts on 'you are here' even when alternates are newer", () => {

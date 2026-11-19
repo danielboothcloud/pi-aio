@@ -624,10 +624,15 @@ generated `dist/` tree without changing the package contract.
   on an idle, empty editor opens `/rewind`: only the user's prompts are
   listed (tool calls and injected context fold into each turn), newest
   first, with relative age, edit/tool counts, "you are here" and
-  "⑂ alternate" markers, type-to-filter, and a preview. Enter opens one
-  plain-English action step mapped to public command-context APIs: edit
-  and resend (`navigateTree(prompt)`), go back to right after the answer
-  (`navigateTree(turn end)`, hidden at the leaf), rewind with a summary
+  "⑂ alternate" markers, vim-style keys, and a preview. Both pickers share
+  `session-nav/keys.ts`: normal mode j/k/g/G move, l opens (h backs out of the
+  action step), `/` starts a search where every printable key edits the
+  filter; Esc leaves search keeping the filter, then clears it, then
+  closes/backs. Arrows, PageUp/PageDown, Home/End, Enter work in both
+  modes. Enter opens one plain-English action step mapped to public
+  command-context APIs: edit and resend (`navigateTree(prompt)`), go back
+  to right after the answer (`navigateTree(turn end)`, hidden at the
+  leaf), rewind with a summary
   (`summarize: true`), and start a new session (`fork(..., before)`). It
   states that files on disk are not changed. `/resume` (exact text) and a
   bound `app.session.resume` key open `/sessions`: day-grouped sessions
