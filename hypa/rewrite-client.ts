@@ -222,15 +222,13 @@ function posixShellQuote(value: string): string {
 }
 
 /**
- * Replace a leading bare `hypa` token with the already-resolved binary path.
+ * Make every bare `hypa` in a rewritten command run the already-resolved binary.
  *
  * Pi's bash tool (Git Bash on Windows) cannot exec `.cmd` shims by bare name and
- * does not inherit the user PATH / shim dir. The extension already resolved the
- * native binary via {@link resolveHypaBinary}; substitute that path so bash can
- * exec it. Quote with POSIX quoting (paths often contain spaces).
- *
- * Only the leading unquoted token is replaced so this composes with later
- * insertions after token 0 (e.g. `--timeout-ms N`).
+ * does not inherit the user PATH / shim dir. A compound rewrite such as
+ * `hypa git status && hypa -c "ls -la"` has a `hypa` at the start of each part,
+ * so a leading shell function `hypa() { '<path>' "$@"; };` covers all of them
+ * without parsing the command. Quote with POSIX quoting (paths often contain spaces).
  */
 export function qualifyRewrittenHypaCommand(
 	command: string,
@@ -239,10 +237,10 @@ export function qualifyRewrittenHypaCommand(
 ): string {
 	// Unresolved bare name: never emit a command bash still cannot resolve.
 	if (!resolvedBinary || resolvedBinary === "hypa") return command;
-	if (command !== "hypa" && !command.startsWith("hypa ")) return command;
+	if (!/(^|[\s;&|(])hypa(\s|$)/.test(command)) return command;
 	const prefix = bashPrefixForResolvedBinary(resolvedBinary, jsRuntime);
 	if (prefix === undefined) return command;
-	return prefix + command.slice("hypa".length);
+	return `hypa() { ${prefix} "$@"; }; ${command}`;
 }
 
 /**

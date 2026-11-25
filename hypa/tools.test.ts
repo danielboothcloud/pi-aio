@@ -7,10 +7,12 @@ import {
 	buildFindCommand,
 	buildGrepCommand,
 	buildLsCommand,
+	buildHypaReadArgs,
 	buildReadCommand,
 	detectSupportedImageMimeType,
 	limitStdoutLines,
 	looksLikeOpaqueBinary,
+	registerHypaTools,
 	shellQuote,
 	splitRawCommand,
 	tryBuildImageReadResult,
@@ -275,4 +277,64 @@ test("tryBuildImageReadResult returns null for ordinary text so cat path can run
 	await writeFile(path, "hello from hypa_read\n", "utf8");
 	const result = await tryBuildImageReadResult(path);
 	assert.equal(result, null);
+});
+
+test("buildHypaReadArgs uses hypa read with smart mode by default", () => {
+	assert.deepEqual(buildHypaReadArgs({ path: "src/main.rs" }), ["read", "src/main.rs", "--mode", "smart"]);
+	assert.deepEqual(buildHypaReadArgs({ path: "-odd.rs", mode: "outline" }), ["read", "./-odd.rs", "--mode", "outline"]);
+	assert.deepEqual(buildHypaReadArgs({ path: "a.rs", mode: "full", maxTokens: 99.7 }), [
+		"read",
+		"a.rs",
+		"--mode",
+		"full",
+		"--max-tokens",
+		"99",
+	]);
+});
+
+test("buildHypaReadArgs slices exactly with hypa raw in full mode", () => {
+	assert.deepEqual(buildHypaReadArgs({ path: "a.rs", mode: "full", offset: 10, limit: 5 }), [
+		"raw",
+		"sed",
+		"-n",
+		"10,14p",
+		"a.rs",
+	]);
+	assert.deepEqual(buildHypaReadArgs({ path: "a.rs", mode: "full", offset: 3 }), ["raw", "sed", "-n", "3,$p", "a.rs"]);
+	// Other modes keep the compressed sed path.
+	assert.equal(buildHypaReadArgs({ path: "a.rs", offset: 3 }), undefined);
+	assert.equal(buildHypaReadArgs({ path: "a.rs", mode: "smart", limit: 3 }), undefined);
+});
+
+test("buildHypaReadArgs rejects slices of whole-file modes and unknown modes", () => {
+	assert.throws(() => buildHypaReadArgs({ path: "a.rs", mode: "outline", offset: 2 }), /omit offset and limit/);
+	assert.throws(() => buildHypaReadArgs({ path: "a.rs", mode: "bogus" as never }), /mode must be one of/);
+});
+
+test("hypa_read passes mode to hypa read and documents full mode for edits", async () => {
+	const tools = new Map<string, any>();
+	const calls: Array<{ command: string; args: string[] }> = [];
+	registerHypaTools(
+		{
+			async exec(command: string, args: string[]) {
+				calls.push({ command, args });
+				return { stdout: "SUMMARY\nFile: a.rs\n", stderr: "", code: 0, killed: false };
+			},
+			registerTool(definition: any) {
+				tools.set(definition.name, definition);
+			},
+		},
+		{ binary: "/opt/hypa" } as never,
+	);
+	const read = tools.get("hypa_read");
+	assert.deepEqual(read.parameters.properties.mode.enum, ["smart", "full", "outline", "signatures", "pruned"]);
+	assert.match(read.description, /mode: "full" or the Read tool before you edit/);
+	assert.ok(read.promptGuidelines.some((line: string) => /mode: "full"/.test(line)));
+
+	const dir = await mkdtemp(join(tmpdir(), "hypa-read-mode-"));
+	const path = join(dir, "a.rs");
+	await writeFile(path, "fn main() {}\n", "utf8");
+	const result = await read.execute("t1", { path, mode: "full" }, undefined, undefined, {});
+	assert.deepEqual(calls[0], { command: "/opt/hypa", args: ["read", path, "--mode", "full"] });
+	assert.equal(result.content[0].text, "SUMMARY\nFile: a.rs\n");
 });

@@ -162,7 +162,7 @@ test("commands rtk declined are still rewritten and qualified by hypa", async ()
 			{ command: "/tmp/hypa-test-bin", args: ["rewrite", "--json", "curl -s example.com"] },
 		]);
 		// injectExecutionTimeout (no timeout) then qualify with the resolved binary.
-		assert.equal(event.input.command, '/tmp/hypa-test-bin -c "curl -s example.com"');
+		assert.equal(event.input.command, 'hypa() { /tmp/hypa-test-bin "$@"; }; hypa -c "curl -s example.com"');
 	});
 });
 

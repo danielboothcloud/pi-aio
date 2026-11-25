@@ -63,7 +63,7 @@ test("simulated tool call qualifies rewritten command with the resolved Windows 
 	const binary = String.raw`C:\Program Files\Hypa\hypa.exe`;
 	const status = mapRewriteResult({ input: "git status", outcome: "Rewritten", command: "hypa git status" });
 	const result = applyStatus("git status", status, false, "deny", { resolvedBinary: binary });
-	assert.equal(result.event.input.command, `'${binary}' git status`);
+	assert.equal(result.event.input.command, `hypa() { '${binary}' "$@"; }; hypa git status`);
 	assert.equal(result.block, undefined);
 });
 
@@ -75,7 +75,7 @@ test("simulated ask-allow path qualifies rewritten command with the resolved bin
 		command: "hypa -c 'sudo reboot'",
 	});
 	const result = applyStatus("sudo reboot", status, false, "allow", { resolvedBinary: binary });
-	assert.equal(result.event.input.command, "/opt/homebrew/bin/hypa -c 'sudo reboot'");
+	assert.equal(result.event.input.command, "hypa() { /opt/homebrew/bin/hypa \"$@\"; }; hypa -c 'sudo reboot'");
 	assert.equal(result.block, undefined);
 });
 
@@ -125,7 +125,7 @@ test("simulated passthrough does not inject timeout onto the original command", 
 	assert.equal(result.event.input.command, "echo ok");
 });
 
-test("simulated tool call injects timeout then qualifies the leading hypa token", () => {
+test("simulated tool call injects timeout then qualifies hypa", () => {
 	const binary = String.raw`C:\Program Files\Hypa\hypa.exe`;
 	const status = mapRewriteResult({
 		input: "sleep 31",
@@ -133,5 +133,5 @@ test("simulated tool call injects timeout then qualifies the leading hypa token"
 		command: 'hypa -c "sleep 31"',
 	});
 	const result = applyStatus("sleep 31", status, false, "deny", { timeout: 35, resolvedBinary: binary });
-	assert.equal(result.event.input.command, `'${binary}' --timeout-ms 35000 -c "sleep 31"`);
+	assert.equal(result.event.input.command, `hypa() { '${binary}' "$@"; }; hypa --timeout-ms 35000 -c "sleep 31"`);
 });

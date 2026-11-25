@@ -158,30 +158,25 @@ export function registerReadTool(
 							typeof p.limit === "number"
 								? offset + Math.max(0, p.limit)
 								: Infinity;
-						const numberedLines = normalizeLineEndings(routed.stdout)
-							.trimEnd()
-							.split("\n")
-							.map((line) => /^\s*(\d+)\s+[│|]\s?(.*)$/.exec(line))
-							.filter((match): match is RegExpExecArray => match !== null)
-							.map((match) => ({
-								number: Number(match[1]),
-								text: match[2] ?? "",
-							}));
-						const selected = numberedLines
-							.filter((line) => line.number >= offset && line.number < end)
-							.map((line) => line.text);
-						const start = offset - 1;
-						const tc = truncateRtkOutput(selected.join("\n"));
-						return {
-							content: [{ type: "text" as const, text: tc }],
-							details: {
-								_type: "readFile",
-								filePath,
-								content: tc,
-								offset: start,
-								lineCount: tc ? tc.split("\n").length : 0,
-							} as ReadDetails,
-						};
+						const numberedLines = parseRtkNumberedLines(routed.stdout);
+						// Unparseable rtk output must never look like an empty file; use the SDK read.
+						if (numberedLines.length > 0 || !routed.stdout.trim()) {
+							const selected = numberedLines
+								.filter((line) => line.number >= offset && line.number < end)
+								.map((line) => line.text);
+							const start = offset - 1;
+							const tc = truncateRtkOutput(selected.join("\n"));
+							return {
+								content: [{ type: "text" as const, text: tc }],
+								details: {
+									_type: "readFile",
+									filePath,
+									content: tc,
+									offset: start,
+									lineCount: tc ? tc.split("\n").length : 0,
+								} as ReadDetails,
+							};
+						}
 					}
 				}
 
@@ -364,6 +359,21 @@ export function registerReadTool(
 			return text;
 		},
 	} as unknown as ToolDefinition<any, any, any>);
+}
+
+// rtk 1.1 separates the line number with `│`/`|`; rtk 1.2 uses a tab.
+// Tab first so content like `  | cell` after a tab is not eaten as a separator.
+const RTK_NUMBERED_LINE = /^\s*(\d+)(?:\t|\s+[│|]\s?)(.*)$/;
+
+export function parseRtkNumberedLines(
+	stdout: string,
+): { number: number; text: string }[] {
+	return normalizeLineEndings(stdout)
+		.trimEnd()
+		.split("\n")
+		.map((line) => RTK_NUMBERED_LINE.exec(line))
+		.filter((match): match is RegExpExecArray => match !== null)
+		.map((match) => ({ number: Number(match[1]), text: match[2] ?? "" }));
 }
 
 function getText(result: Result): string {

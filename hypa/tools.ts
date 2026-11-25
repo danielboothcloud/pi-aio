@@ -11,6 +11,7 @@ import { access, mkdtemp, open, readFile, stat, writeFile } from "node:fs/promis
 import { constants } from "node:fs";
 import { homedir, platform, tmpdir } from "node:os";
 import { join } from "node:path";
+import { StringEnum } from "@earendil-works/pi-ai";
 import { Text } from "@earendil-works/pi-tui";
 import type { HypaPiConfig } from "./types.js";
 import { getExecArgs } from "./rewrite-client.js";
@@ -35,6 +36,7 @@ type PiToolParams = {
 	offset?: number;
 	limit?: number;
 	maxTokens?: number;
+	mode?: HypaReadMode;
 	glob?: string;
 	ignoreCase?: boolean;
 	literal?: boolean;
@@ -109,13 +111,20 @@ const shellSchema = {
 	additionalProperties: false,
 } as const;
 
+export const HYPA_READ_MODES = ["smart", "full", "outline", "signatures", "pruned"] as const;
+export type HypaReadMode = (typeof HYPA_READ_MODES)[number];
+
 const readSchema = {
 	type: "object",
 	properties: {
 		path: textParameter("Path to read, relative to Pi cwd or absolute"),
 		offset: numberParameter("Line number to start reading from (1-indexed)"),
 		limit: numberParameter("Maximum number of lines to read"),
-		maxTokens: numberParameter("Approximate maximum tokens to return after Hypa compression"),
+		maxTokens: numberParameter("Approximate maximum tokens to return after Hypa compression (whole-file reads only)"),
+		mode: StringEnum(HYPA_READ_MODES, {
+			description:
+				'Hypa read mode (default smart). Use "full" before you edit a file; outline/signatures show only symbols.',
+		}),
 	},
 	required: ["path"],
 	additionalProperties: false,
@@ -210,17 +219,51 @@ function normalizePathArg(path: string): string {
 	return unprefixed;
 }
 
+/**
+ * Argv for `hypa read`. Whole-file reads use it in every mode because `hypa -c cat`
+ * drops lines from source files. Line slices in full mode use `hypa raw` for exact output.
+ */
+export function buildHypaReadArgs(params: {
+	path: string;
+	offset?: number;
+	limit?: number;
+	maxTokens?: number;
+	mode?: HypaReadMode;
+}): string[] | undefined {
+	const normalized = normalizePathArg(params.path);
+	// Leading-dash relative paths would parse as CLI options.
+	const argPath = normalized.startsWith("-") ? `./${normalized}` : normalized;
+	const mode = params.mode;
+	if (mode !== undefined && !HYPA_READ_MODES.includes(mode)) {
+		throw new Error(`hypa_read mode must be one of: ${HYPA_READ_MODES.join(", ")}`);
+	}
+	if (params.offset !== undefined || params.limit !== undefined) {
+		if (mode === "outline" || mode === "signatures") {
+			throw new Error(`hypa_read mode "${mode}" reads the whole file; omit offset and limit`);
+		}
+		if (mode !== "full") return undefined;
+		return ["raw", "sed", "-n", sedRange(params.offset, params.limit), argPath];
+	}
+	const args = ["read", argPath, "--mode", mode ?? "smart"];
+	if (params.maxTokens !== undefined) args.push("--max-tokens", String(Math.max(1, Math.floor(params.maxTokens))));
+	return args;
+}
+
+function sedRange(offset?: number, limit?: number): string {
+	const start = Math.max(1, Math.floor(offset ?? 1));
+	const end = limit !== undefined ? start + Math.max(1, Math.floor(limit)) - 1 : "$";
+	return `${start},${end}p`;
+}
+
 export function buildReadCommand(path: string, offset?: number, limit?: number): string {
 	const normalized = normalizePathArg(path);
 	if (offset !== undefined || limit !== undefined) {
-		const start = Math.max(1, Math.floor(offset ?? 1));
-		const end = limit !== undefined ? start + Math.max(1, Math.floor(limit)) - 1 : "$";
 		// BSD sed has no `--` end-of-options (macOS treats `--` as a filename).
 		// cat/grep/ls keep `--`; find is separate. Leading-dash relative paths get a
 		// `./` prefix so sed does not parse them as options (shell quoting alone does
 		// not help argv flags).
 		const sedPath = normalized.startsWith("-") ? `./${normalized}` : normalized;
-		return `sed -n ${shellQuote(`${start},${end}p`)} ${shellQuote(sedPath)}`;
+		return `sed -n ${shellQuote(sedRange(offset, limit))} ${shellQuote(sedPath)}`;
 	}
 	return `cat -- ${shellQuote(normalized)}`;
 }
@@ -533,6 +576,7 @@ function renderHypaReadCall(args: Record<string, unknown>, theme: any) {
 	pushParam(extras, args, "offset");
 	pushParam(extras, args, "limit");
 	pushParam(extras, args, "maxTokens");
+	pushParam(extras, args, "mode");
 	return renderCallLine("hypa_read ", main, extras, theme);
 }
 
@@ -654,10 +698,12 @@ export function registerHypaTools(pi: PiApi, config: HypaPiConfig) {
 	pi.registerTool({
 		name: "hypa_read",
 		label: "hypa_read",
-		description: `Read a file through Hypa compression. Supports text (offset/limit line slices) and images (png/jpeg/gif/webp via content sniffing → vision attachments). Text output is truncated to ${DEFAULT_MAX_LINES} lines or ${formatSize(DEFAULT_MAX_BYTES)} with full output saved when needed.`,
+		description: `Read a file through Hypa compression. Modes: smart (default), full, outline, signatures, pruned. Compressed modes can omit lines, so use mode: "full" or the Read tool before you edit a file. Supports text (offset/limit line slices) and images (png/jpeg/gif/webp via content sniffing → vision attachments). Text output is truncated to ${DEFAULT_MAX_LINES} lines or ${formatSize(DEFAULT_MAX_BYTES)} with full output saved when needed.`,
 		promptSnippet: "Read file contents through Hypa compression (text or images)",
 		promptGuidelines: [
 			"Use hypa_read to inspect file contents instead of cat/head/tail via shell.",
+			'Before you edit a file, read it with hypa_read mode: "full" or with the Read tool; other modes can omit lines.',
+			'Use hypa_read mode: "outline" or "signatures" for a quick symbol map of a large file.',
 			"Image files are returned as vision image attachments (magic-byte detection), not text dumps.",
 		],
 		parameters: readSchema,
@@ -668,9 +714,15 @@ export function registerHypaTools(pi: PiApi, config: HypaPiConfig) {
 				if (imageResult) return imageResult;
 			}
 
-			const command = buildReadCommand(params.path ?? "", params.offset, params.limit);
-			const timeoutMs = params.maxTokens ? undefined : undefined;
-			const result = await runHypaCommand(pi, config, command, timeoutMs, false, signal);
+			const path = params.path ?? "";
+			const readArgs = buildHypaReadArgs({ ...params, path });
+			if (readArgs) {
+				const [execBin, execArgs] = getExecArgs(config.binary, readArgs);
+				const result = await pi.exec(execBin, execArgs, { signal });
+				return toToolText(result, `hypa ${readArgs.map((a) => shellQuote(a)).join(" ")}`);
+			}
+			const command = buildReadCommand(path, params.offset, params.limit);
+			const result = await runHypaCommand(pi, config, command, undefined, false, signal);
 			return toToolText(result, command);
 		},
 		renderCall(args: any, theme: any) {

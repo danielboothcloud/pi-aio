@@ -47,6 +47,17 @@ are independent of rtk's bash path and never compete with it.
   the aio package root (the script lives one level deeper than upstream).
 - `aio` owns the `@hypabolic/hypa` dependency declaration that was
   previously in the standalone package manifest.
+- `qualifyRewrittenHypaCommand` prefixes a shell function
+  `hypa() { '<resolved path>' "$@"; };` instead of replacing only the
+  leading token. Compound rewrites (`hypa git status && hypa -c "ls"`) start
+  several parts with a bare `hypa`; upstream qualified only the first, so
+  later parts failed with `hypa: command not found` when hypa was not on PATH.
+- `hypa_read` has a `mode` parameter (`smart`, `full`, `outline`,
+  `signatures`, `pruned`). Whole-file reads run `hypa read <path> --mode
+  <mode>` (default `smart`) and pass `maxTokens` as `--max-tokens`, because
+  upstream's `hypa -c "cat ..."` dropped lines from source files. Line slices
+  in `full` mode run `hypa raw sed -n ...` for exact output; other slices keep
+  the compressed `hypa -c "sed ..."` path; `outline`/`signatures` slices throw.
 
 ## Tests
 

@@ -249,6 +249,74 @@ test("read routes text through RTK and preserves offset/limit", async () => {
 	});
 });
 
+test("read accepts the tab separator from newer RTK releases", async () => {
+	const sdkCalls = { count: 0 };
+	const { tool } = captureTool(
+		(pi) =>
+			registerReadTool(pi, "/repo", undefined, sdkResult("sdk", sdkCalls)),
+		{
+			stdout:
+				"     1\tfn main() {\n     2\t\tlet x = 1; │ y\n     3\t  | cell |\n     4\t}\n",
+		},
+	);
+
+	const result = await tool.execute(
+		"read-tab",
+		{ path: "src/main.rs" },
+		undefined,
+		undefined,
+		ctx,
+	);
+	assert.equal(
+		result.content[0]?.text,
+		"fn main() {\n\tlet x = 1; │ y\n  | cell |\n}",
+	);
+	assert.equal(sdkCalls.count, 0);
+});
+
+test("read falls back to the SDK when RTK output has no numbered lines", async () => {
+	const sdkCalls = { count: 0 };
+	const { tool } = captureTool(
+		(pi) =>
+			registerReadTool(
+				pi,
+				"/repo",
+				undefined,
+				sdkResult("fn main() {}", sdkCalls),
+			),
+		{ stdout: "fn main() {}\n" },
+	);
+
+	const result = await tool.execute(
+		"read-unparsed",
+		{ path: "src/main.rs" },
+		undefined,
+		undefined,
+		ctx,
+	);
+	assert.equal(result.content[0]?.text, "fn main() {}");
+	assert.equal(sdkCalls.count, 1);
+});
+
+test("read of an empty file stays empty without an SDK call", async () => {
+	const sdkCalls = { count: 0 };
+	const { tool } = captureTool(
+		(pi) =>
+			registerReadTool(pi, "/repo", undefined, sdkResult("sdk", sdkCalls)),
+		{ stdout: "" },
+	);
+
+	const result = await tool.execute(
+		"read-empty",
+		{ path: "empty.txt" },
+		undefined,
+		undefined,
+		ctx,
+	);
+	assert.equal(result.content[0]?.text, "");
+	assert.equal(sdkCalls.count, 0);
+});
+
 test("image reads use the SDK because RTK cannot return image content", async () => {
 	const sdkCalls = { count: 0 };
 	const { tool, calls } = captureTool((pi) =>

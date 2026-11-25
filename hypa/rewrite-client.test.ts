@@ -287,20 +287,34 @@ test("getExecArgs wraps Windows uppercase .CMD binaries with cmd", () => {
 	assert.deepEqual(getExecArgs("C:\\hypa.CMD", ["arg"], "win32"), ["cmd", ["/c", "C:\\hypa.CMD", "arg"]]);
 });
 
+const fnPrefix = (prefix: string) => `hypa() { ${prefix} "$@"; }; `;
+
 test("qualifyRewrittenHypaCommand quotes a Windows hypa.exe path with spaces", () => {
 	const binary = String.raw`C:\Program Files\Hypa\hypa.exe`;
 	assert.equal(
 		qualifyRewrittenHypaCommand('hypa -c "echo hello"', binary),
-		`'${binary}' -c "echo hello"`,
+		`${fnPrefix(`'${binary}'`)}hypa -c "echo hello"`,
 	);
 });
 
 test("qualifyRewrittenHypaCommand replaces bare hypa git status", () => {
 	const binary = String.raw`C:\Users\test\AppData\Local\Hypa\hypa.exe`;
-	assert.equal(qualifyRewrittenHypaCommand("hypa git status", binary), `'${binary}' git status`);
+	assert.equal(qualifyRewrittenHypaCommand("hypa git status", binary), `${fnPrefix(`'${binary}'`)}hypa git status`);
 });
 
-test("qualifyRewrittenHypaCommand leaves already-qualified and non-hypa commands unchanged", () => {
+test("qualifyRewrittenHypaCommand covers every hypa in a compound rewrite", () => {
+	const binary = "/opt/homebrew/bin/hypa";
+	assert.equal(
+		qualifyRewrittenHypaCommand('hypa git status && hypa -c "ls -la"', binary),
+		`${fnPrefix(binary)}hypa git status && hypa -c "ls -la"`,
+	);
+	assert.equal(
+		qualifyRewrittenHypaCommand("cat a | grep b ; hypa git log", binary),
+		`${fnPrefix(binary)}cat a | grep b ; hypa git log`,
+	);
+});
+
+test("qualifyRewrittenHypaCommand leaves commands without a bare hypa unchanged", () => {
 	const binary = String.raw`C:\Program Files\Hypa\hypa.exe`;
 	assert.equal(
 		qualifyRewrittenHypaCommand(`'${binary}' -c "echo hello"`, binary),
@@ -310,6 +324,7 @@ test("qualifyRewrittenHypaCommand leaves already-qualified and non-hypa commands
 	assert.equal(qualifyRewrittenHypaCommand("/usr/bin/hypa git status", binary), "/usr/bin/hypa git status");
 	assert.equal(qualifyRewrittenHypaCommand("git status", binary), "git status");
 	assert.equal(qualifyRewrittenHypaCommand("'hypa' git status", binary), "'hypa' git status");
+	assert.equal(qualifyRewrittenHypaCommand("hypabolic run", binary), "hypabolic run");
 });
 
 test("qualifyRewrittenHypaCommand fails open when the binary is still a bare hypa name", () => {
@@ -317,38 +332,29 @@ test("qualifyRewrittenHypaCommand fails open when the binary is still a bare hyp
 	assert.equal(qualifyRewrittenHypaCommand('hypa -c "echo hello"', ""), 'hypa -c "echo hello"');
 });
 
-test("qualifyRewrittenHypaCommand does not replace later hypa tokens", () => {
-	const binary = String.raw`C:\Program Files\Hypa\hypa.exe`;
-	assert.equal(
-		qualifyRewrittenHypaCommand("hypa -c \"hypa git status\"", binary),
-		`'${binary}' -c "hypa git status"`,
-	);
-	assert.equal(qualifyRewrittenHypaCommand("echo hypa git status", binary), "echo hypa git status");
-});
-
 test("qualifyRewrittenHypaCommand leaves POSIX-safe paths unquoted", () => {
 	assert.equal(
 		qualifyRewrittenHypaCommand('hypa -c "echo hello"', "/opt/homebrew/bin/hypa"),
-		'/opt/homebrew/bin/hypa -c "echo hello"',
+		`${fnPrefix("/opt/homebrew/bin/hypa")}hypa -c "echo hello"`,
 	);
 });
 
 test("qualifyRewrittenHypaCommand POSIX-quotes paths with spaces or quotes", () => {
 	assert.equal(
 		qualifyRewrittenHypaCommand("hypa git status", "/opt/Hypa CLI/hypa"),
-		"'/opt/Hypa CLI/hypa' git status",
+		`${fnPrefix("'/opt/Hypa CLI/hypa'")}hypa git status`,
 	);
 	assert.equal(
 		qualifyRewrittenHypaCommand("hypa git status", "/opt/matthew's/hypa"),
-		`'/opt/matthew'"'"'s/hypa' git status`,
+		`${fnPrefix(`'/opt/matthew'"'"'s/hypa'`)}hypa git status`,
 	);
 });
 
-test("qualifyRewrittenHypaCommand only rewrites the leading token so later insertions compose", () => {
-	const binary = String.raw`C:\Program Files\Hypa\hypa.exe`;
+test("qualifyRewrittenHypaCommand keeps inserted timeout flags", () => {
+	const binary = "/opt/homebrew/bin/hypa";
 	assert.equal(
 		qualifyRewrittenHypaCommand("hypa --timeout-ms 5000 git status", binary),
-		`'${binary}' --timeout-ms 5000 git status`,
+		`${fnPrefix(binary)}hypa --timeout-ms 5000 git status`,
 	);
 });
 
@@ -366,6 +372,6 @@ test("qualifyRewrittenHypaCommand wraps .js entrypoints with the host runtime", 
 	const runtime = String.raw`C:\Program Files\nodejs\node.exe`;
 	assert.equal(
 		qualifyRewrittenHypaCommand("hypa git status", binary, runtime),
-		`'${runtime}' '${binary}' git status`,
+		`${fnPrefix(`'${runtime}' '${binary}'`)}hypa git status`,
 	);
 });

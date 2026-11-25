@@ -50,7 +50,7 @@ type HypaExtensionAPI = ExtensionAPI & {
 };
 
 function applyRewrittenBashCommand(command: string, timeout: unknown, resolvedBinary: string): string {
-	// Timeout first so qualify still sees a leading bare `hypa` token.
+	// Timeout first: injection only inspects the leading `hypa` token.
 	return qualifyRewrittenHypaCommand(injectExecutionTimeout(command, timeout), resolvedBinary);
 }
 
