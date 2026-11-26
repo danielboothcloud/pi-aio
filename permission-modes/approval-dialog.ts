@@ -13,7 +13,7 @@
  * falls back to the original `ctx.ui.select` path there.
  */
 
-import { withAgentPrompt } from "../notifications/protocol.js";
+import { blockedMessage, type CustomOptions, withAgentPrompt } from "../notifications/protocol.js";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import {
 	type Component,
@@ -144,6 +144,17 @@ export async function showMutationApproval(
 		? `${outsideBody(outside)}\n${preview ?? ""}`.replace(/\n$/, "")
 		: preview;
 
+	const options: CustomOptions = {
+		overlay: true,
+		overlayOptions: {
+			anchor: "bottom-center",
+			width: "100%",
+			maxHeight: "100%",
+			margin: { left: 0, right: 0, bottom: 0 },
+		},
+		// pi reports custom components as blocked (OSC 7501) only when asked; pi >= 1.5.1 honors it on overlays.
+		blocked: { kind: "permission", message: blockedMessage(header, "The agent needs permission") },
+	};
 	const result = await withAgentPrompt(pi, ctx, { kind: "custom", title: "Approval needed", body, preview: header }, () => ctx.ui.custom<ApprovalDecision | undefined>(
 		(tui, theme, _kb, done) =>
 			new ApprovalDialog({
@@ -156,15 +167,7 @@ export async function showMutationApproval(
 				done,
 				variant: outside ? "outside" : "default",
 			}),
-		{
-			overlay: true,
-			overlayOptions: {
-				anchor: "bottom-center",
-				width: "100%",
-				maxHeight: "100%",
-				margin: { left: 0, right: 0, bottom: 0 },
-			},
-		},
+		options,
 	));
 
 	if (result === "allow") return "allow";

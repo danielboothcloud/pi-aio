@@ -320,16 +320,16 @@ test("showMutationApproval uses the scrollable overlay in TUI mode and maps resu
 		kb: unknown,
 		done: (r: string) => void,
 	) => unknown;
-	const customCalls: { overlay: boolean }[] = [];
+	const customCalls: { overlay: boolean; blocked?: { kind: string; message: string } }[] = [];
 	const ctx = {
 		mode: "tui",
 		ui: {
 			custom: async (
 				f: typeof factory,
-				opts: { overlay: boolean },
+				opts: { overlay: boolean; blocked?: { kind: string; message: string } },
 			): Promise<string | undefined> => {
 				factory = f;
-				customCalls.push({ overlay: opts.overlay });
+				customCalls.push({ overlay: opts.overlay, blocked: opts.blocked });
 				// Simulate the host: build the component, drive it, then resolve.
 				return new Promise<string | undefined>((resolve) => {
 					const component = f(
@@ -354,6 +354,8 @@ test("showMutationApproval uses the scrollable overlay in TUI mode and maps resu
 	assert.equal(r, "allow");
 	assert.equal(customCalls.length, 1);
 	assert.equal(customCalls[0].overlay, true);
+	// pi reports blocked program status (OSC 7501) while the overlay waits.
+	assert.deepEqual(customCalls[0].blocked, { kind: "permission", message: "Allow edit on src/x.ts?" });
 });
 
 test("outside variant: folder option maps to allowScope and keeps the three-row layout", () => {

@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { matchesKey } from "@earendil-works/pi-tui";
-import { withAgentPrompt } from "../notifications/protocol.js";
+import { blockedMessage, type CustomOptions, withAgentPrompt } from "../notifications/protocol.js";
 import {
 	loadConfig,
 	resolveCollapseKey,
@@ -273,6 +273,21 @@ Preview content is rendered as markdown in a monospace box. Multi-line text with
 			}
 
 			try {
+				const overlayOptions: CustomOptions = {
+					overlay: true,
+					overlayOptions: {
+						anchor: "bottom-center",
+						width: "100%",
+						maxHeight: "100%",
+						margin: { left: 0, right: 0, bottom: 0 },
+					},
+					onHandle: (handle) => {
+						overlayHandleRef.current = handle;
+						sessionRef.current?.setOverlayHandle(handle);
+					},
+					// pi reports custom components as blocked (OSC 7501) only when asked; pi >= 1.5.1 honors it on overlays.
+					blocked: { kind: "question", message: blockedMessage(typed.questions[0]?.question, "The agent has a question") },
+				};
 				const result = await withAgentPrompt(pi, ctx, { kind: "custom", title: "Question waiting", body: "The agent needs your answer to continue.", preview: typed.questions[0]?.question }, () => ctx.ui.custom<QuestionnaireResult>(
 					(tui, theme, _kb, done) => {
 						const session = new QuestionnaireSession({
@@ -286,19 +301,7 @@ Preview content is rendered as markdown in a monospace box. Multi-line text with
 						sessionRef.current = session;
 						return session.component;
 					},
-					{
-						overlay: true,
-						overlayOptions: {
-							anchor: "bottom-center",
-							width: "100%",
-							maxHeight: "100%",
-							margin: { left: 0, right: 0, bottom: 0 },
-						},
-						onHandle: (handle) => {
-							overlayHandleRef.current = handle;
-							sessionRef.current?.setOverlayHandle(handle);
-						},
-					},
+					overlayOptions,
 				));
 
 				// A TUI questionnaire ALWAYS resolves a QuestionnaireResult (cancel

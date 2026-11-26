@@ -14,6 +14,21 @@ export interface AgentPrompt {
 }
 let nextPromptId = 0;
 
+/** `ctx.ui.custom()` options plus `blocked`, which the pinned pi 1.2.0 types lack (pi >= 1.5.0 has it). */
+export type CustomOptions = NonNullable<Parameters<ExtensionContext["ui"]["custom"]>[1]> & {
+	blocked?: { kind: "question" | "permission" | "auth"; message: string };
+};
+
+/** Max length of a blocked-status message; terminals and Sundae show it on one line. */
+export const BLOCKED_MESSAGE_MAX = 200;
+
+/** One-line message for pi's `blocked` program status, or the fallback when empty. */
+export function blockedMessage(text: string | undefined, fallback: string): string {
+	const line = (text ?? "").replace(/\s+/g, " ").trim();
+	if (!line) return fallback;
+	return line.length > BLOCKED_MESSAGE_MAX ? `${line.slice(0, BLOCKED_MESSAGE_MAX - 1)}…` : line;
+}
+
 /** Mark only agent-owned dialogs, immediately around the actual UI call. */
 export async function withAgentPrompt<T>(
 	pi: ExtensionAPI | undefined,

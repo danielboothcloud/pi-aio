@@ -104,6 +104,18 @@ describe("ask_user_question.execute — ctx.ui.custom dispatch", () => {
 		});
 	});
 
+	it("reports pi as blocked on a question while the overlay waits", async () => {
+		const tool = register();
+		const ctx = ctxWithCustom({ answers: [], cancelled: true });
+		await tool.execute?.("tc", BASE_PARAMS as never, undefined as never, undefined as never, ctx as never);
+		const custom = ctx.ui.custom as unknown as ReturnType<typeof vi.fn>;
+		expect(custom).toHaveBeenCalledTimes(1);
+		expect(custom.mock.calls[0]?.[1]).toMatchObject({
+			overlay: true,
+			blocked: { kind: "question", message: "Which?" },
+		});
+	});
+
 	it("Custom typed answer sets kind:'custom'", async () => {
 		const tool = register();
 		const ctx = ctxWithCustom({
